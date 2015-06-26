@@ -1,4 +1,5 @@
 import os
+from os.path import dirname
 
 __author__ = 'bakl'
 
@@ -43,10 +44,17 @@ class Band:
         else:
             return None
 
+ROOT_DIRECTORY = dirname(dirname(dirname(os.path.abspath(__file__))))
+  #  d = dirname(dirname(os.path.abspath(__file__)))
+
+
+def get_full_path(fname):
+    return os.path.join(ROOT_DIRECTORY, fname)
+
 
 def band_get_names():
     bands = dict(U="kait_U.dat", B="kait_B.dat", V="kait_V.dat", R="kait_R.dat", I="kait_I.dat")
-    d = os.path.dirname(os.path.abspath(__file__))
+    d = os.path.join(ROOT_DIRECTORY, "data/bands/KAIT")
     for k, v in bands.items():
         bands[k] = os.path.join(d, v)
     return bands

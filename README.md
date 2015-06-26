@@ -1,6 +1,7 @@
 # pystella
 
 
--- BAND
+* BAND
 
-The data of bands  was taken from  SNPY
+Acknowledgments:
+    The  bands data  was taken from  SNPY, see http://csp.obs.carnegiescience.edu/data/snpy/
