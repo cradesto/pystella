@@ -8,7 +8,6 @@ from util.arr_dict import merge_dicts
 __author__ = 'bakl'
 
 
-
 class Band:
     def __init__(self, name=None, fname=None, load=1):
         """Creates a band instance.  Required parameters:  name and file."""
@@ -16,6 +15,8 @@ class Band:
         self.file = fname  # location of the filter response
         self.wl = None  # wavelength of response
         self.resp = None  # response
+        self.zp = None  # zero points
+        self.file_zp = 'filters.dat'  # file with zero points data
         if fname is not None and load == 1:
             self.read()
 
@@ -39,6 +40,23 @@ class Band:
             finally:
                 f.close()
 
+            # read zero point
+            fname = os.path.join(dirname(os.path.abspath(self.file)), self.file_zp)
+            f = open(fname)
+            ptn_file = os.path.basename(self.file)
+            try:
+                lines = f.readlines()
+                for line in lines:
+                    if line[0] == "#":
+                        continue
+                    if string.split(line)[1] == ptn_file:
+                        self.zp = float(string.split(line)[2])
+                        break
+            except Exception:
+                print"Error in zero points data-file: %s.  Exception:  %s" % (fname, sys.exc_info()[0])
+            finally:
+                f.close()
+
     def wave_range(self):
         if self.wl is not None:
             return np.min(self.wl), np.max(self.wl)
@@ -46,7 +64,6 @@ class Band:
             return None
 
 ROOT_DIRECTORY = dirname(dirname(dirname(os.path.abspath(__file__))))
-  #  d = dirname(dirname(os.path.abspath(__file__)))
 
 
 def get_full_path(fname):
@@ -54,17 +71,26 @@ def get_full_path(fname):
 
 
 def band_get_names():
+    # KAIT
     bands1 = dict(U="kait_U.dat", B="kait_B.dat", V="kait_V.dat", R="kait_R.dat", I="kait_I.dat")
     d = os.path.join(ROOT_DIRECTORY, "data/bands/KAIT")
     for k, v in bands1.items():
         bands1[k] = os.path.join(d, v)
 
+    # USNO40
+    # bands2 = dict(V="usno_g.res", I="usno_i.res", R="usno_r.res", U="usno_u.res", B="usno_z.res") # for comparison
     bands2 = dict(g="usno_g.res", i="usno_i.res", r="usno_r.res", u="usno_u.res", z="usno_z.res")
     d = os.path.join(ROOT_DIRECTORY, "data/bands/USNO40")
     for k, v in bands2.items():
         bands2[k] = os.path.join(d, v)
 
-    return merge_dicts(bands1, bands2)
+    # SDSS
+    bands3 = dict(g="sdss_g.dat", i="sdss_i.dat", r="sdss_r.dat", u="sdss_u.dat", z="sdss_z.dat")
+    d = os.path.join(ROOT_DIRECTORY, "data/bands/SDSS")
+    for k, v in bands3.items():
+        bands3[k] = os.path.join(d, v)
+
+    return merge_dicts(bands1, bands3)
 
 
 def band_is_exist(name):
@@ -83,4 +109,4 @@ def band_by_name(name):
         b = Band(name=name, fname=bands[name], load=1)
         return b
     else:
-        None
+        return None
