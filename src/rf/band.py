@@ -1,16 +1,17 @@
 import os
-from os.path import dirname
-
-__author__ = 'bakl'
-
 import sys
 import numpy as np
 import string
+from os.path import dirname
+from util.arr_dict import merge_dicts
+
+__author__ = 'bakl'
+
 
 
 class Band:
     def __init__(self, name=None, fname=None, load=1):
-        """Creates a band instance.  Required parameters:  name and file.)."""
+        """Creates a band instance.  Required parameters:  name and file."""
         self.name = name
         self.file = fname  # location of the filter response
         self.wl = None  # wavelength of response
@@ -34,7 +35,7 @@ class Band:
                 self.resp = np.array([float(string.split(line)[1]) for line in lines if line[0] != "#"])
                 f.close()
             except Exception:
-                print"Error in band file: %s.  Exception:  %s" % (self.file, sys.exc_info()[0])
+                print"Error in rf file: %s.  Exception:  %s" % (self.file, sys.exc_info()[0])
             finally:
                 f.close()
 
@@ -53,11 +54,17 @@ def get_full_path(fname):
 
 
 def band_get_names():
-    bands = dict(U="kait_U.dat", B="kait_B.dat", V="kait_V.dat", R="kait_R.dat", I="kait_I.dat")
+    bands1 = dict(U="kait_U.dat", B="kait_B.dat", V="kait_V.dat", R="kait_R.dat", I="kait_I.dat")
     d = os.path.join(ROOT_DIRECTORY, "data/bands/KAIT")
-    for k, v in bands.items():
-        bands[k] = os.path.join(d, v)
-    return bands
+    for k, v in bands1.items():
+        bands1[k] = os.path.join(d, v)
+
+    bands2 = dict(g="usno_g.res", i="usno_i.res", r="usno_r.res", u="usno_u.res", z="usno_z.res")
+    d = os.path.join(ROOT_DIRECTORY, "data/bands/USNO40")
+    for k, v in bands2.items():
+        bands2[k] = os.path.join(d, v)
+
+    return merge_dicts(bands1, bands2)
 
 
 def band_is_exist(name):
@@ -67,7 +74,7 @@ def band_is_exist(name):
 
 def band_by_name(name):
     """
-        Get band by name, for example "U"
+        Get rf by name, for example "U"
     :param name: for example "U" or "B"
     :return: class Band with waves and respons
     """
