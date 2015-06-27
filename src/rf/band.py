@@ -16,6 +16,8 @@ class Band:
         self.file = fname  # location of the filter response
         self.wl = None  # wavelength of response
         self.resp = None  # response
+        self.zp = None  # zero points
+        self.file_zp = 'filters.dat'  # file with zero points data
         if fname is not None and load == 1:
             self.read()
 
@@ -26,7 +28,7 @@ class Band:
         return "%s" % self.name
 
     def read(self):
-        """Reads in the response for file and updates several member functions."""
+        """Reads the wave and response from file. Read zero point"""
         if self.file is not None:
             f = open(self.file)
             try:
@@ -39,14 +41,37 @@ class Band:
             finally:
                 f.close()
 
+            # read zero point
+            ptn_file = os.path.basename(self.file)
+            fname = os.path.join(dirname(os.path.abspath(self.file)), self.file_zp)
+
+            self.zp = read_zero_point(fname, ptn_file)
+
     def wave_range(self):
         if self.wl is not None:
             return np.min(self.wl), np.max(self.wl)
         else:
             return None
 
+
+def read_zero_point(fname, ptn_file):
+    f = open(fname)
+    try:
+        lines = f.readlines()
+        for line in lines:
+            if line[0] == "#":
+                continue
+            if string.split(line)[1] == ptn_file:
+                zp = float(string.split(line)[2])
+                return zp
+    except Exception:
+        print"Error in zero points data-file: %s.  Exception:  %s" % (fname, sys.exc_info()[0])
+        return np.nan
+    finally:
+        f.close()
+
+
 ROOT_DIRECTORY = dirname(dirname(dirname(os.path.abspath(__file__))))
-  #  d = dirname(dirname(os.path.abspath(__file__)))
 
 
 def get_full_path(fname):
@@ -54,17 +79,33 @@ def get_full_path(fname):
 
 
 def band_get_names():
+    # KAIT
     bands1 = dict(U="kait_U.dat", B="kait_B.dat", V="kait_V.dat", R="kait_R.dat", I="kait_I.dat")
     d = os.path.join(ROOT_DIRECTORY, "data/bands/KAIT")
     for k, v in bands1.items():
         bands1[k] = os.path.join(d, v)
 
+    # USNO40
+    # bands2 = dict(V="usno_g.res", I="usno_i.res", R="usno_r.res", U="usno_u.res", B="usno_z.res") # for comparison
     bands2 = dict(g="usno_g.res", i="usno_i.res", r="usno_r.res", u="usno_u.res", z="usno_z.res")
     d = os.path.join(ROOT_DIRECTORY, "data/bands/USNO40")
     for k, v in bands2.items():
         bands2[k] = os.path.join(d, v)
 
-    return merge_dicts(bands1, bands2)
+    # SDSS
+    bands3 = dict(g="sdss_g.dat", i="sdss_i.dat", r="sdss_r.dat", u="sdss_u.dat", z="sdss_z.dat")
+    d = os.path.join(ROOT_DIRECTORY, "data/bands/SDSS")
+    for k, v in bands3.items():
+        bands3[k] = os.path.join(d, v)
+
+    # SWIFT
+    bands4 = dict(UVM2="photonUVM2.dat", UVW1="photonUVW1.dat", UVW2="photonUVW2.dat", U_UVOT="photonU_UVOT.dat"
+                  , B_UVOT="photonB_UVOT.dat", V_UVOT="photonV_UVOT.dat")
+    d = os.path.join(ROOT_DIRECTORY, "data/bands/SWIFTUVOT")
+    for k, v in bands4.items():
+        bands4[k] = os.path.join(d, v)
+
+    return merge_dicts(bands1, bands3, bands4)
 
 
 def band_is_exist(name):
@@ -83,4 +124,4 @@ def band_by_name(name):
         b = Band(name=name, fname=bands[name], load=1)
         return b
     else:
-        None
+        return None
