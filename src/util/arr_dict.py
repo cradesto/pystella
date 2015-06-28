@@ -1,3 +1,5 @@
+import csv
+
 __author__ = 'bakl'
 
 
@@ -10,3 +12,14 @@ def merge_dicts(*dict_args):
     for dictionary in dict_args:
         result.update(dictionary)
     return result
+
+
+def dict_save(dictionary, fname):
+    """
+    Save dict to file. Keys are column's names, values are column data
+    """
+    with open(fname, 'wb') as f:
+        writer = csv.writer(f, delimiter='\t')
+        writer.writerow(dictionary.keys())
+        for row in zip(*dictionary.values()):
+            writer.writerow(list(row))

@@ -8,7 +8,6 @@ from util.arr_dict import merge_dicts
 __author__ = 'bakl'
 
 
-
 class Band:
     def __init__(self, name=None, fname=None, load=1):
         """Creates a band instance.  Required parameters:  name and file."""
@@ -78,32 +77,53 @@ def get_full_path(fname):
     return os.path.join(ROOT_DIRECTORY, fname)
 
 
-def band_get_names():
-    # KAIT
-    bands1 = dict(U="kait_U.dat", B="kait_B.dat", V="kait_V.dat", R="kait_R.dat", I="kait_I.dat")
+def bands_dict_KAIT():
+    bands = dict(U="kait_U.dat", B="kait_B.dat", V="kait_V.dat", R="kait_R.dat", I="kait_I.dat")
     d = os.path.join(ROOT_DIRECTORY, "data/bands/KAIT")
-    for k, v in bands1.items():
-        bands1[k] = os.path.join(d, v)
+    for k, v in bands.items():
+        bands[k] = os.path.join(d, v)
 
-    # USNO40
-    # bands2 = dict(V="usno_g.res", I="usno_i.res", R="usno_r.res", U="usno_u.res", B="usno_z.res") # for comparison
-    bands2 = dict(g="usno_g.res", i="usno_i.res", r="usno_r.res", u="usno_u.res", z="usno_z.res")
+    return bands
+
+
+def bands_dict_USNO():
+    # bands = dict(V="usno_g.res", I="usno_i.res", R="usno_r.res", U="usno_u.res", B="usno_z.res") # for comparison
+    bands = dict(g="usno_g.res", i="usno_i.res", r="usno_r.res", u="usno_u.res", z="usno_z.res")
     d = os.path.join(ROOT_DIRECTORY, "data/bands/USNO40")
-    for k, v in bands2.items():
-        bands2[k] = os.path.join(d, v)
+    for k, v in bands.items():
+        bands[k] = os.path.join(d, v)
+    return bands
 
-    # SDSS
-    bands3 = dict(g="sdss_g.dat", i="sdss_i.dat", r="sdss_r.dat", u="sdss_u.dat", z="sdss_z.dat")
+
+def bands_dict_SDSS():
+    bands = dict(g="sdss_g.dat", i="sdss_i.dat", r="sdss_r.dat", u="sdss_u.dat", z="sdss_z.dat")
     d = os.path.join(ROOT_DIRECTORY, "data/bands/SDSS")
-    for k, v in bands3.items():
-        bands3[k] = os.path.join(d, v)
+    for k, v in bands.items():
+        bands[k] = os.path.join(d, v)
+    return bands
 
-    # SWIFT
+
+def bands_dict_SWIFT():
     bands4 = dict(UVM2="photonUVM2.dat", UVW1="photonUVW1.dat", UVW2="photonUVW2.dat", U_UVOT="photonU_UVOT.dat"
                   , B_UVOT="photonB_UVOT.dat", V_UVOT="photonV_UVOT.dat")
     d = os.path.join(ROOT_DIRECTORY, "data/bands/SWIFTUVOT")
     for k, v in bands4.items():
         bands4[k] = os.path.join(d, v)
+    return bands4
+
+
+def band_get_names():
+    # KAIT
+    bands1 = bands_dict_KAIT()
+
+    # USNO40
+    bands2 = bands_dict_USNO()
+
+    # SDSS
+    bands3 = bands_dict_SDSS()
+
+    # SWIFT
+    bands4 = bands_dict_SWIFT()
 
     return merge_dicts(bands1, bands3, bands4)
 
