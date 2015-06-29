@@ -1,6 +1,6 @@
 import os
 from os.path import dirname
-from io.stella import Stella
+from model.stella import Stella
 from rf import band
 from util.arr_dict import dict_save
 
@@ -25,11 +25,12 @@ def compute_mag():
         if mags is not None:
             dict_mags[n] = mags
 
-    dict_save(dict_mags, 'test_mags_'+''.join(bands)+'.txt')
+    dict_save(dict_mags, 'test_mags_' + ''.join(bands) + '.txt')
 
 
 def main():
     compute_mag()
+
 
 if __name__ == '__main__':
     main()

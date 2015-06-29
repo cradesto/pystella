@@ -31,7 +31,8 @@ class Stella:
         f.close()
 
         freqs = [map(float, header1.split())]
-        freqs = np.log10(freqs)
+        freqs = np.exp(np.log(10)*freqs)
+        freqs = freqs.reshape(-1)
         serial.set_freq(freqs)
 
         # TODO read time timeph, nfrus, dum, ttt(Nfreq)

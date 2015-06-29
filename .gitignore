@@ -58,3 +58,5 @@ target/
 
 # PyCharm
 .idea/
+
+test_mags_UBVRI.txt
