@@ -1,5 +1,6 @@
 from math import log10
 from util.phys_var import phys
+from operator import itemgetter
 
 __author__ = 'bakl'
 from scipy import interpolate
@@ -7,11 +8,14 @@ import numpy as np
 
 
 class Spectrum:
-    def __init__(self, name, wl=None, flux=None):
+    def __init__(self, name, wl=None, flux=None, is_sort_wl=False):
         """Creates a Spectrum instance.  Required parameters:  name."""
         self.name = name
+        if is_sort_wl:
+            wl, flux = [list(x) for x in zip(*sorted(zip(wl, flux), key=itemgetter(0)))]
         self.wl = wl  # wavelength of flux
         self.flux = flux  # flux
+
 
     def convolution_band(self, band):
         x = self.wl
@@ -20,6 +24,7 @@ class Spectrum:
         tck = interpolate.splrep(x, y, s=0)
         flux_band = interpolate.splev(band.wl, tck, der=0)
 
+        # todo понять какие потоки приходят и как интегрировать?
         a = np.trapz(band.wl * band.resp * flux_band, band.wl)
         b = np.trapz(band.wl * band.resp, band.wl)
         return a / b
@@ -33,7 +38,7 @@ class Spectrum:
             return mag
 
 
-class SeriesSpectrum():
+class SeriesSpectrum:
     def __init__(self, name):
         """Creates a Series of Spectrum instance."""
         self.name = name
@@ -71,7 +76,7 @@ class SeriesSpectrum():
         if not self.is_time():
             return None
 
-        mags = []
+        mags = np.zeros(len(self.data))
         for k in range(len(self.data)):
             spec = self.data[k]
             mag = spec.flux_to_mag(band)

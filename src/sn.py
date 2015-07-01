@@ -14,7 +14,7 @@ def compute_mag():
     model = Stella("cat_R1000_M15_Ni007_E15", path=path)
     model.show_info()
 
-    serial_spec = model.read_serial_spectrum()
+    serial_spec = model.read_serial_spectrum(t_diff=1.05)
 
     bands = ['U', 'B', 'V', 'R', "I"]
     dict_mags = dict((k, None) for k in bands)

@@ -1,6 +1,7 @@
 import os
 from rf.spectrum import SeriesSpectrum, Spectrum
 import numpy as np
+import math
 
 __author__ = 'bakl'
 
@@ -20,30 +21,45 @@ class Stella:
             if os.path.isfile(fname):
                 print "Exist %s-file: %s" % (e, fname)
 
-    def read_serial_spectrum(self):
+    def read_serial_spectrum(self, t_diff=1.05):
         fname = os.path.join(self.path, self.name+'.ph')
         serial = SeriesSpectrum(self.name)
 
-        # TODO read first line with frequencies
+        # read first line with frequencies
         f = open(fname, 'r')
         # read NX,NY,NZ
         header1 = f.readline()
         f.close()
 
         freqs = [map(float, header1.split())]
-        freqs = np.exp(np.log(10)*freqs)
-        freqs = freqs.reshape(-1)
+        freqs = np.array(freqs).reshape(-1)
+        freqs = np.exp(math.log(10)*freqs)
         serial.set_freq(freqs)
 
         # TODO read time timeph, nfrus, dum, ttt(Nfreq)
         data = np.loadtxt(fname, comments='!', skiprows=1)
-        times = data[:, 1]
-        serial.set_times(times)
+
+        times = np.array(data[:, 0])
+        is_times = np.zeros(len(times), dtype=bool)
+        k = 1
+        for i in range(len(times)):
+            if np.abs(times[i]/times[k]) > t_diff:
+                is_times[k] = True
+                k = i
+        is_times[0] = True
+        is_times[-1] = True
+        times_thin = times[is_times]
 
         sdata = []
         for i in range(len(times)):
-            s = Spectrum(self.name, wl=serial.wl, flux=data[i, 3:])
-            sdata.append(s)
+            if is_times[i]:
+                fl = np.array(data[i, 3:])
+                fl[fl < 0] = 0.
+                fl = np.exp(math.log(10)*fl)
+                s = Spectrum(self.name, wl=serial.wl, flux=fl, is_sort_wl=True)
+                sdata.append(s)
+
         serial.set_data(sdata)
+        serial.set_times(times_thin)
         return serial
 

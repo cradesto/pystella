@@ -3,6 +3,7 @@ import sys
 import numpy as np
 import string
 from os.path import dirname
+from util.phys_var import phys
 from util.arr_dict import merge_dicts
 
 __author__ = 'bakl'
@@ -34,6 +35,7 @@ class Band:
                 lines = f.readlines()
                 self.wl = np.array([float(string.split(line)[0]) for line in lines if line[0] != "#"])
                 self.resp = np.array([float(string.split(line)[1]) for line in lines if line[0] != "#"])
+                self.wl = self.wl * phys.angs_to_cm
                 f.close()
             except Exception:
                 print"Error in rf file: %s.  Exception:  %s" % (self.file, sys.exc_info()[0])
