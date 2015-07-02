@@ -24,8 +24,8 @@ class Spectrum:
         tck = interpolate.splrep(x, y, s=0)
         flux_band = interpolate.splev(band.wl, tck, der=0)
 
-        # todo понять какие потоки приходят и как интегрировать?
-        a = np.trapz(band.wl * band.resp * flux_band, band.wl)
+        # todo what is flux here?
+        a = np.trapz(band.wl**2/phys.c * band.resp * flux_band, band.wl)
         b = np.trapz(band.wl * band.resp, band.wl)
         return a / b
 

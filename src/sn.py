@@ -4,9 +4,29 @@ from model.stella import Stella
 from rf import band
 from util.arr_dict import dict_save
 
+import matplotlib.pyplot as plt
+
 __author__ = 'bakl'
 
 ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
+
+
+
+def plot_bands(dict_mags, bands):
+    plt.title(''.join(bands)+' filter response')
+    lblbands = dict(U='U', B='B', V='V', R='R', I='I')
+    x = dict_mags['time']
+    for n in bands:
+        y = dict_mags[n]
+        plt.plot(x, y, label=lblbands[n])
+
+    plt.gca().invert_yaxis()
+    plt.ylim((-10, -20))
+    plt.legend()
+    plt.ylabel('Amplitude Response')
+    plt.xlabel('Wave [A]')
+    plt.grid()
+    plt.show()
 
 
 def compute_mag():
@@ -25,11 +45,14 @@ def compute_mag():
         if mags is not None:
             dict_mags[n] = mags
 
-    dict_save(dict_mags, 'test_mags_' + ''.join(bands) + '.txt')
+    return bands, dict_mags
 
 
 def main():
-    compute_mag()
+    bands, dict_mags = compute_mag()
+
+    dict_save(dict_mags, 'test_mags_' + ''.join(bands) + '.txt')
+    plot_bands(dict_mags, bands)
 
 
 if __name__ == '__main__':
