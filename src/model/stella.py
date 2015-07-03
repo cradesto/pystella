@@ -56,7 +56,7 @@ class Stella:
                 fl = np.array(data[i, 3:])
                 fl[fl < 0] = 0.
                 fl = np.exp(math.log(10)*fl)
-                s = Spectrum(self.name, wl=serial.wl, flux=fl, is_sort_wl=True)
+                s = Spectrum(self.name, freq=serial.freq, flux=fl, is_sort_wl=True)
                 sdata.append(s)
 
         serial.set_data(sdata)

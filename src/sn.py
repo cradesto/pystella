@@ -21,7 +21,7 @@ def plot_bands(dict_mags, bands):
         plt.plot(x, y, label=lblbands[n])
 
     plt.gca().invert_yaxis()
-    plt.ylim((-10, -20))
+    plt.ylim((-12, -23))
     plt.legend()
     plt.ylabel('Amplitude Response')
     plt.xlabel('Wave [A]')
@@ -41,7 +41,7 @@ def compute_mag():
     dict_mags['time'] = serial_spec.times
     for n in bands:
         b = band.band_by_name(n)
-        mags = serial_spec.flux_to_mag(b)
+        mags = serial_spec.flux_to_mags(b)
         if mags is not None:
             dict_mags[n] = mags
 

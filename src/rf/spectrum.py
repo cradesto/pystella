@@ -8,25 +8,26 @@ import numpy as np
 
 
 class Spectrum:
-    def __init__(self, name, wl=None, flux=None, is_sort_wl=False):
+    def __init__(self, name, freq=None, flux=None, is_sort_wl=False):
         """Creates a Spectrum instance.  Required parameters:  name."""
         self.name = name
         if is_sort_wl:
-            wl, flux = [list(x) for x in zip(*sorted(zip(wl, flux), key=itemgetter(0)))]
-        self.wl = wl  # wavelength of flux
-        self.flux = flux  # flux
-
+            freq, flux = [list(x) for x in zip(*sorted(zip(freq, flux), key=itemgetter(0)))]
+        self.freq = np.array(freq)  # wavelength of flux [cm]
+        self.flux_q = np.array(flux)  # flux [erg / (cm^2*Hz) ]
 
     def convolution_band(self, band):
-        x = self.wl
-        y = self.flux
+        # y = self.flux_q
+        # y = y *  / self.wl**2  # to lambda
 
-        tck = interpolate.splrep(x, y, s=0)
-        flux_band = interpolate.splev(band.wl, tck, der=0)
+        tck = interpolate.splrep(self.freq, self.flux_q, s=0)
+        freq_b = phys.c / band.wl
+        flux_intrp = interpolate.splev(freq_b, tck, der=0)
 
         # todo what is flux here?
-        a = np.trapz(band.wl**2/phys.c * band.resp * flux_band, band.wl)
-        b = np.trapz(band.wl * band.resp, band.wl)
+        a = np.trapz(band.resp * flux_intrp , freq_b)
+        b = np.trapz(band.resp , freq_b)
+        zp = -2.5 * np.log10(abs(b))
         return a / b
 
     def flux_to_mag(self, band):
@@ -34,7 +35,7 @@ class Spectrum:
         if conv <= 0:
             return None
         else:
-            mag = -2.5 * np.log10(conv) + band.zp
+            mag = -2.5 * np.log10(conv) - phys.ZP_AB  # + band.zp
             return mag
 
 
@@ -45,7 +46,7 @@ class SeriesSpectrum:
         self.times = None
         self.nfreq = None
         self.wl = None  # waves
-        self.freqs = None
+        self.freq = None
         self.data = None  # array where index -> Spectrum at the times[index]
 
     def set_times(self, times):
@@ -61,16 +62,16 @@ class SeriesSpectrum:
             raise ValueError("freqs must be array with len > 0.")
         if np.all(freqs == 0):
             raise ValueError("No freqs item equals 0.")
-        self.freqs = freqs
-        self.wl = phys.c / self.freqs
-        self.nfreq = len(self.freqs)
+        self.freq = freqs
+        self.wl = phys.c / self.freq
+        self.nfreq = len(self.freq)
 
     def set_data(self, sdata):
         if sdata is None or len(sdata) == 0:
             raise ValueError("data must be array with len > 0.")
         self.data = sdata
 
-    def flux_to_mag(self, band):
+    def flux_to_mags(self, band):
         if band is None:
             return None
         if not self.is_time():

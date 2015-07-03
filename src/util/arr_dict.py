@@ -22,4 +22,7 @@ def dict_save(dictionary, fname):
         writer = csv.writer(f, delimiter='\t')
         writer.writerow(dictionary.keys())
         for row in zip(*dictionary.values()):
-            writer.writerow(list(row))
+            # writer.writerow(list(row))
+            writer.writerow(['{:12f}'.format(x) for x in row])
+            #writer.writerow(['{:3.4e}'.format(x) for x in row])
+
