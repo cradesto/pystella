@@ -5,6 +5,7 @@ __author__ = 'bakl'
 
 class phys:
 
+    h = 6.626068e-27  # erg s
     c = 2.9979245800e10  # cm/s
     angs_to_cm = 1.e-8
     cm_to_angs = 1. / angs_to_cm

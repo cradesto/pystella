@@ -1,41 +1,59 @@
 from math import log10
-from util.phys_var import phys
+from src.util.phys_var import phys
 from operator import itemgetter
 
 __author__ = 'bakl'
 from scipy import interpolate
+from scipy.integrate import simps as integralfunc
 import numpy as np
 
 
 class Spectrum:
-    def __init__(self, name, freq=None, flux=None, is_sort_wl=False):
+    def __init__(self, name, freq=None, flux=None, is_sort_wl=True):
         """Creates a Spectrum instance.  Required parameters:  name."""
         self.name = name
+        x = np.array(freq, copy=True)
+        flux = np.array(flux, copy=True)
+        # if is_sort_wl:
+        #    freq, flux = [list(x) for x in zip(*sorted(zip(freq, flux), key=itemgetter(0)))]
         if is_sort_wl:
-            freq, flux = [list(x) for x in zip(*sorted(zip(freq, flux), key=itemgetter(0)))]
-        self.freq = np.array(freq)  # wavelength of flux [cm]
-        self.flux_q = np.array(flux)  # flux [erg / (cm^2*Hz) ]
+            sorti = np.argsort(freq)
+            freq = freq[sorti]
+            flux = flux[sorti]
+
+        self.freq = freq  # wavelength of flux [cm]
+        self.flux_q = flux  # flux [erg / (cm^2*Hz) ]
+        # self.freq = np.array(freq)  # wavelength of flux [cm]
+        # self.flux_q = np.array(flux)  # flux [erg / (cm^2*Hz) ]
 
     def convolution_band(self, band):
-        # y = self.flux_q
-        # y = y *  / self.wl**2  # to lambda
-
         tck = interpolate.splrep(self.freq, self.flux_q, s=0)
-        freq_b = phys.c / band.wl
-        flux_intrp = interpolate.splev(freq_b, tck, der=0)
+        flux_intrp = interpolate.splev(band.freq, tck, der=0)
 
         # todo what is flux here?
-        a = np.trapz(band.resp * flux_intrp , freq_b)
-        b = np.trapz(band.resp , freq_b)
+        # a = np.trapz(band.resp * flux_intrp , freq_b)
+        a = integralfunc(band.resp * flux_intrp / band.freq, band.freq)
+        # b = np.trapz(band.resp , freq_b)
+        b = integralfunc(band.resp / band.freq, band.freq)
         zp = -2.5 * np.log10(abs(b))
         return a / b
 
+    def response(self, band):
+        tck = interpolate.splrep(self.freq, self.flux_q, s=0)
+        flux_intrp = interpolate.splev(band.freq, tck, der=0)
+
+        # TODO what about h here?
+        a = integralfunc(band.resp * flux_intrp / (band.freq * phys.h), band.freq)
+        a = -a  # due to order freq
+        return a
+
     def flux_to_mag(self, band):
-        conv = self.convolution_band(band)
+        # conv = self.convolution_band(band)
+        conv = self.response(band)
         if conv <= 0:
             return None
         else:
-            mag = -2.5 * np.log10(conv) - phys.ZP_AB  # + band.zp
+            mag = -2.5 * np.log10(conv) + band.zp  # - phys.ZP_AB  # + band.zp
             return mag
 
 

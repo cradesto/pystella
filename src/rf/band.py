@@ -3,23 +3,37 @@ import sys
 import numpy as np
 import string
 from os.path import dirname
-from util.phys_var import phys
-from util.arr_dict import merge_dicts
+from src.util.phys_var import phys
+from src.util.arr_dict import merge_dicts
 
 __author__ = 'bakl'
 
 
-class Band:
+class Band(object):
     def __init__(self, name=None, fname=None, load=1):
         """Creates a band instance.  Required parameters:  name and file."""
         self.name = name
         self.file = fname  # location of the filter response
-        self.wl = None  # wavelength of response
+        self.__freq = None  # frequencies of response [cm]
+        self.__wl = None  # wavelength of response [cm]
         self.resp = None  # response
         self.zp = None  # zero points
         self.file_zp = 'filters.dat'  # file with zero points data
         if fname is not None and load == 1:
             self.read()
+
+    @property
+    def freq(self):
+        return self.__freq
+
+    @property
+    def wl(self):
+        return self.__wl
+
+    @wl.setter
+    def wl(self, wl):
+        self.__wl = wl
+        self.__freq = phys.c / self.__wl
 
     def __str__(self):
         return "%s" % self.name
@@ -33,9 +47,9 @@ class Band:
             f = open(self.file)
             try:
                 lines = f.readlines()
-                self.wl = np.array([float(string.split(line)[0]) for line in lines if line[0] != "#"])
+                wl = np.array([float(string.split(line)[0]) for line in lines if line[0] != "#"])
                 self.resp = np.array([float(string.split(line)[1]) for line in lines if line[0] != "#"])
-                self.wl = self.wl * phys.angs_to_cm
+                self.wl = wl * phys.angs_to_cm
                 f.close()
             except Exception:
                 print"Error in rf file: %s.  Exception:  %s" % (self.file, sys.exc_info()[0])
@@ -53,6 +67,20 @@ class Band:
             return np.min(self.wl), np.max(self.wl)
         else:
             return None
+
+    def summary(self, out=sys.stdout):
+        """Get a quick summary of the band
+
+        Args:
+         out (str or open file): where to write the summary
+
+        Returns:
+             None
+        """
+        print >> out, '-' * 80
+        print >> out, "Band: ", self.name
+        print >> out, "wave length = %.3f, %3.f " % (min(self.wl)*1e8, max(self.wl)*1e8)
+        print >> out, ""
 
 
 def read_zero_point(fname, ptn_file):

@@ -1,7 +1,7 @@
 import os
-from rf.spectrum import SeriesSpectrum, Spectrum
 import numpy as np
 import math
+from src.rf.spectrum import SeriesSpectrum, Spectrum
 
 __author__ = 'bakl'
 
@@ -36,7 +36,7 @@ class Stella:
         freqs = np.exp(math.log(10)*freqs)
         serial.set_freq(freqs)
 
-        # TODO read time timeph, nfrus, dum, ttt(Nfreq)
+        # read time timeph, nfrus, dum, ttt(Nfreq)
         data = np.loadtxt(fname, comments='!', skiprows=1)
 
         times = np.array(data[:, 0])

@@ -2,6 +2,7 @@ import unittest
 import src.rf.band as band
 import src.rf.spectrum as spectrum
 import numpy as np
+from src.util.phys_var import phys
 
 __author__ = 'bakl'
 
@@ -11,8 +12,9 @@ class TestSpectrum(unittest.TestCase):
         nf = 100
         start, end = 10, 1e5
         wl = np.linspace(start, end, nf)
+        freq = phys.c / (wl*1.e-8)
         flux = np.ones(nf)
-        self.sp = spectrum.Spectrum('uniform', wl=wl, flux=flux)
+        self.sp = spectrum.Spectrum('uniform', freq=freq, flux=flux)
 
     def test_convolution_band(self):
         b = band.band_by_name('U')

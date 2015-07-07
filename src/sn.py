@@ -16,12 +16,14 @@ def plot_bands(dict_mags, bands):
     plt.title(''.join(bands)+' filter response')
     lblbands = dict(U='U', B='B', V='V', R='R', I='I')
     x = dict_mags['time']
+    lims = (-12, -23)
     for n in bands:
         y = dict_mags[n]
-        plt.plot(x, y, label=lblbands[n])
+        plt.plot(x, y, label=n)
+        lims = (max(y), min(y))
 
     plt.gca().invert_yaxis()
-    plt.ylim((-12, -23))
+    plt.ylim(lims)
     plt.legend()
     plt.ylabel('Amplitude Response')
     plt.xlabel('Wave [A]')
@@ -29,14 +31,13 @@ def plot_bands(dict_mags, bands):
     plt.show()
 
 
-def compute_mag():
+def compute_mag(bands):
     path = os.path.join(ROOT_DIRECTORY, 'tests', 'data', 'stella')
     model = Stella("cat_R1000_M15_Ni007_E15", path=path)
     model.show_info()
 
     serial_spec = model.read_serial_spectrum(t_diff=1.05)
 
-    bands = ['U', 'B', 'V', 'R', "I"]
     dict_mags = dict((k, None) for k in bands)
     dict_mags['time'] = serial_spec.times
     for n in bands:
@@ -45,11 +46,12 @@ def compute_mag():
         if mags is not None:
             dict_mags[n] = mags
 
-    return bands, dict_mags
+    return dict_mags
 
 
 def main():
-    bands, dict_mags = compute_mag()
+    bands = ['U', 'B', 'V', 'R', "I", 'UVM2', "UVW1", "UVW2", 'g', "r", "i"]
+    dict_mags = compute_mag(bands)
 
     dict_save(dict_mags, 'test_mags_' + ''.join(bands) + '.txt')
     plot_bands(dict_mags, bands)
