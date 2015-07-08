@@ -12,39 +12,49 @@ class Spectrum:
     def __init__(self, name, freq=None, flux=None, is_sort_wl=True):
         """Creates a Spectrum instance.  Required parameters:  name."""
         self.name = name
-        x = np.array(freq, copy=True)
+        freq = np.array(freq, copy=True)
         flux = np.array(flux, copy=True)
         # if is_sort_wl:
         #    freq, flux = [list(x) for x in zip(*sorted(zip(freq, flux), key=itemgetter(0)))]
+        wl = phys.c / freq
         if is_sort_wl:
-            sorti = np.argsort(freq)
+            sorti = np.argsort(wl)
+            wl = wl[sorti]
             freq = freq[sorti]
             flux = flux[sorti]
 
-        self.freq = freq  # wavelength of flux [cm]
+        self.wl = wl  # wavelength of flux [cm]
+        self.freq = freq  # frequencies of flux [cm]
         self.flux_q = flux  # flux [erg / (cm^2*Hz) ]
-        # self.freq = np.array(freq)  # wavelength of flux [cm]
-        # self.flux_q = np.array(flux)  # flux [erg / (cm^2*Hz) ]
+        self.flux_wl = self.flux_q * phys.c * phys.cm_to_angs / self.wl ** 2  # flux [erg / (cm^2*A) ]
 
     def convolution_band(self, band):
-        tck = interpolate.splrep(self.freq, self.flux_q, s=0)
-        flux_intrp = interpolate.splev(band.freq, tck, der=0)
+        flux = Spectrum.flux_to_10pc(self.flux_wl)  # move to 10 pc
+        # tck = interpolate.splrep(self.freq, self.flux_q, s=0)
+        # flux_intrp = interpolate.splev(band.freq, tck, der=0)
 
-        # todo what is flux here?
+        tck = interpolate.splrep(self.wl, flux, s=0)
+        flux_intrp = interpolate.splev(band.wl, tck, der=0)
+
+        # for i in range(1, len(band.wl)):
+        #     print "band.wl=%8g  flux_intrp=%g " %(band.wl[i], flux_intrp[i])
+        # for i in range(1, len(self.wl)):
+        #     if min(band.wl) < self.wl[i]*phys.cm_to_angs < max(band.wl):
+        #         print "wl=%8g    flux_wl=%g" %(self.wl[i],  self.flux_wl[i])
         # a = np.trapz(band.resp * flux_intrp , freq_b)
-        a = integralfunc(band.resp * flux_intrp / band.freq, band.freq)
+        a = integralfunc(band.resp * flux_intrp, band.wl)
         # b = np.trapz(band.resp , freq_b)
-        b = integralfunc(band.resp / band.freq, band.freq)
-        zp = -2.5 * np.log10(abs(b))
+        b = integralfunc(band.resp, band.wl)
         return a / b
 
     def response(self, band):
-        tck = interpolate.splrep(self.freq, self.flux_q, s=0)
-        flux_intrp = interpolate.splev(band.freq, tck, der=0)
+        flux = Spectrum.flux_to_10pc(self.flux_wl)  # move to 10 pc
+
+        tck = interpolate.splrep(self.wl, flux, s=0)
+        flux_intrp = interpolate.splev(band.wl, tck, der=0)
 
         # TODO what about h here?
-        a = integralfunc(band.resp * flux_intrp / (band.freq * phys.h), band.freq)
-        a = -a  # due to order freq
+        a = integralfunc(flux_intrp * band.resp * band.wl * phys.cm_to_angs, band.wl)
         return a
 
     def flux_to_mag(self, band):
@@ -55,6 +65,14 @@ class Spectrum:
         else:
             mag = -2.5 * np.log10(conv) + band.zp  # - phys.ZP_AB  # + band.zp
             return mag
+
+    def flux_to_AB(self):
+        magAB = -2.5 * np.log10(Spectrum.flux_to_10pc(self.flux_q)) + phys.ZP_AB
+        return magAB
+
+    @staticmethod
+    def flux_to_10pc(flux):
+        return flux / (4 * np.pi * (10 * phys.pc) ** 2)
 
 
 class SeriesSpectrum:
@@ -102,9 +120,3 @@ class SeriesSpectrum:
             mags[k] = mag
 
         return mags
-
-
-
-
-
-

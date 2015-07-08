@@ -3,6 +3,7 @@ from os.path import dirname
 from model.stella import Stella
 from rf import band
 from util.arr_dict import dict_save
+import numpy as np
 
 import matplotlib.pyplot as plt
 
@@ -15,12 +16,18 @@ ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
 def plot_bands(dict_mags, bands):
     plt.title(''.join(bands)+' filter response')
     lblbands = dict(U='U', B='B', V='V', R='R', I='I')
+    bandshift = dict(U=6.9, B=3.7, V=0, R=-2.4, I=-4.7, UVM2=11.3, UVW1=10, UVW2=13.6, g=2.5, r=-1.2, i=-3.7)
+    colors = dict(U="magenta", B="black", V="red", R="magenta", I="black", UVM2="green", UVW1="red", UVW2="blue", g="blue", r="cyan", i="green")
+    dist = 24e6  # distance to SN 2013ab
+    dm = 5*np.log10(dist)-5  # distance module
     x = dict_mags['time']
     lims = (-12, -23)
+    lims = (39, 9)
     for n in bands:
         y = dict_mags[n]
-        plt.plot(x, y, label=n)
-        lims = (max(y), min(y))
+        y += dm + bandshift[n]
+        plt.plot(x, y, label=n, color=colors[n])
+        # lims = (max(y), min(y))
 
     plt.gca().invert_yaxis()
     plt.ylim(lims)
