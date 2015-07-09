@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import math
-from src.rf.spectrum import SeriesSpectrum, Spectrum
+from pystella.rf.spectrum import SeriesSpectrum, Spectrum
 
 __author__ = 'bakl'
 
@@ -15,11 +15,13 @@ class Stella:
             self.show_info()
 
     def show_info(self):
-        ext = ('tt', 'ph', 'res')
+        ext = ('tt', 'ph', 'res', 'swd')
         for e in ext:
             fname = os.path.join(self.path, self.name+'.'+e)
             if os.path.isfile(fname):
                 print "Exist %s-file: %s" % (e, fname)
+            else:
+                print "No %s-file: %s" % (e, fname)
 
     def read_serial_spectrum(self, t_diff=1.05):
         fname = os.path.join(self.path, self.name+'.ph')

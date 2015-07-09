@@ -1,5 +1,5 @@
 from math import log10
-from src.util.phys_var import phys
+from pystella.util.phys_var import phys
 from operator import itemgetter
 
 __author__ = 'bakl'
@@ -26,7 +26,7 @@ class Spectrum:
         self.wl = wl  # wavelength of flux [cm]
         self.freq = freq  # frequencies of flux [cm]
         self.flux_q = flux  # flux [erg / (cm^2*Hz) ]
-        self.flux_wl = self.flux_q * phys.c * phys.cm_to_angs / self.wl ** 2  # flux [erg / (cm^2*A) ]
+        self.flux_wl = self.flux_q * phys.c / self.wl**2  # flux [erg/cm^2/cm) ]
 
     def convolution_band(self, band):
         flux = Spectrum.flux_to_10pc(self.flux_wl)  # move to 10 pc
@@ -48,13 +48,19 @@ class Spectrum:
         return a / b
 
     def response(self, band):
-        flux = Spectrum.flux_to_10pc(self.flux_wl)  # move to 10 pc
+        if min(self.wl) > band.wl[0] or max(self.wl) < band.wl[-1]:
+            raise ValueError("Spectrum must be wider then band: "+str(band))
 
-        tck = interpolate.splrep(self.wl, flux, s=0)
-        flux_intrp = interpolate.splev(band.wl, tck, der=0)
+        flux = Spectrum.flux_to_10pc(self.flux_wl)  # move to 10 pc
+        flux = flux / phys.cm_to_angs  #  to flux [erg/cm^2/A) ]
+        wl_s = self.wl * phys.cm_to_angs
+        wl_b = band.wl*phys.cm_to_angs
+
+        tck = interpolate.splrep(wl_s, flux, s=0)
+        flux_intrp = interpolate.splev(wl_b, tck, der=0)
 
         # TODO what about h here?
-        a = integralfunc(flux_intrp * band.resp * band.wl * phys.cm_to_angs, band.wl)
+        a = integralfunc(flux_intrp * band.resp*wl_b, wl_b)/(phys.c*phys.cm_to_angs)/phys.h
         return a
 
     def flux_to_mag(self, band):
@@ -63,7 +69,7 @@ class Spectrum:
         if conv <= 0:
             return None
         else:
-            mag = -2.5 * np.log10(conv) + band.zp  # - phys.ZP_AB  # + band.zp
+            mag = -2.5 * np.log10(conv) + band.zp
             return mag
 
     def flux_to_AB(self):

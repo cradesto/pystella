@@ -1,8 +1,8 @@
 import unittest
-import src.rf.band as band
-import src.rf.spectrum as spectrum
+import pystella.rf.band as band
+import pystella.rf.spectrum as spectrum
 import numpy as np
-from src.util.phys_var import phys
+from pystella.util.phys_var import phys
 
 __author__ = 'bakl'
 

@@ -3,8 +3,8 @@ import sys
 import numpy as np
 import string
 from os.path import dirname
-from src.util.phys_var import phys
-from src.util.arr_dict import merge_dicts
+from pystella.util.phys_var import phys
+from pystella.util.arr_dict import merge_dicts
 
 __author__ = 'bakl'
 
