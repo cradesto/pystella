@@ -79,7 +79,7 @@ def compute_mag(name, bands):
 def mags_save(dictionary, bands, fname):
     with open(fname, 'wb') as f:
         writer = csv.writer(f, delimiter='\t')
-        writer.writerow('# time'.split() + bands)
+        writer.writerow(['{:^8s}'.format(x) for x in ['time']+bands])
         for i, (row) in enumerate(zip(*[dictionary[k] for k in 'time'.split()+bands])):
             # row = row[-1:] + row[:-1]  # make time first column
             writer.writerow(['{:8.3f}'.format(x) for x in row])
