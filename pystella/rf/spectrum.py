@@ -26,14 +26,13 @@ class Spectrum:
         self.wl = wl  # wavelength of flux [cm]
         self.freq = freq  # frequencies of flux [cm]
         self.flux_q = flux  # flux [erg / (cm^2*Hz) ]
-        self.flux_wl = self.flux_q * phys.c / self.wl**2  # flux [erg/cm^2/cm) ]
+        self.flux_wl = self.flux_q * phys.c / self.wl ** 2  # flux [erg/cm^2/cm) ]
 
     def convolution_band(self, band):
-        flux = Spectrum.flux_to_10pc(self.flux_wl)  # move to 10 pc
         # tck = interpolate.splrep(self.freq, self.flux_q, s=0)
         # flux_intrp = interpolate.splev(band.freq, tck, der=0)
 
-        tck = interpolate.splrep(self.wl, flux, s=0)
+        tck = interpolate.splrep(self.wl, self.flux_wl, s=0)
         flux_intrp = interpolate.splev(band.wl, tck, der=0)
 
         # for i in range(1, len(band.wl)):
@@ -47,14 +46,16 @@ class Spectrum:
         b = integralfunc(band.resp, band.wl)
         return a / b
 
-    def response(self, band, is_b_spline=True):
+    def response(self, band, z=0, is_b_spline=True):
         if min(self.wl) > band.wl[0] or max(self.wl) < band.wl[-1]:
-            raise ValueError("Spectrum must be wider then band: "+str(band))
+            raise ValueError("Spectrum must be wider then band: " + str(band))
 
-        flux = Spectrum.flux_to_10pc(self.flux_wl)  # move to 10 pc
-        flux = flux / phys.cm_to_angs  #  to flux [erg/cm^2/A) ]
+        flux = self.flux_wl / phys.cm_to_angs  # to flux [erg/cm^2/A) ]
         wl_s = self.wl * phys.cm_to_angs
-        wl_b = band.wl*phys.cm_to_angs
+        wl_b = band.wl * phys.cm_to_angs
+
+        if z > 0:
+            wl_s /= 1. + z  # redshift the flux
 
         if is_b_spline:
             tck = interpolate.splrep(wl_s, flux, s=0)
@@ -62,7 +63,7 @@ class Spectrum:
         else:
             flux_intrp = np.interp(wl_b, wl_s, flux, 0, 0)  # One-dimensional linear interpolation.
 
-        a = integralfunc(flux_intrp * band.resp * wl_b, wl_b)/(phys.c*phys.cm_to_angs)/phys.h
+        a = integralfunc(flux_intrp * band.resp * wl_b, wl_b) / (phys.c * phys.cm_to_angs) / phys.h
         return a
 
     def flux_to_mag(self, band):
@@ -75,8 +76,33 @@ class Spectrum:
             return mag
 
     def flux_to_AB(self):
-        magAB = -2.5 * np.log10(Spectrum.flux_to_10pc(self.flux_q)) + phys.ZP_AB
+        magAB = -2.5 * np.log10(self.flux_q) + phys.ZP_AB
         return magAB
+
+    def k_cor(self, band_r, band_o, z):
+        """
+        Compute K-correction for observed and rest-frame bands.
+
+       Args:
+          band_r: Rest-frame band.
+          band_o: Observed band.
+          z:     redshift
+
+       Returns:
+          2-tuple: (K,flag)
+
+          * K: K-correction
+          * flag: 1 -> success, 0->failed
+       """
+        # todo make k-correction with b-splinesec
+        resp_0 = self.response(band_r, is_b_spline=False)
+        resp_z = self.response(band_o, z=z, is_b_spline=False)
+
+        if resp_0 < 0 or resp_z <= 0:
+            return 0.0, 0
+        else:
+            kcor = -2.5*np.log10(resp_z / resp_0 / (1 + z)) + band_r.zp - band_o.zp
+            return kcor, 1
 
     @staticmethod
     def flux_to_10pc(flux):
