@@ -14,7 +14,7 @@ class Band(object):
         """Creates a band instance.  Required parameters:  name and file."""
         self.name = name
         self.file = fname  # location of the filter response
-        self.__freq = None  # frequencies of response [cm]
+        self.__freq = None  # frequencies of response [Hz]
         self.__wl = None  # wavelength of response [cm]
         self.resp = None  # response
         self.zp = None  # zero points
@@ -62,6 +62,7 @@ class Band(object):
 
             self.zp = read_zero_point(fname, ptn_file)
 
+    @property
     def wave_range(self):
         if self.wl is not None:
             return np.min(self.wl), np.max(self.wl)
