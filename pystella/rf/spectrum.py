@@ -47,7 +47,7 @@ class Spectrum:
         b = integralfunc(band.resp, band.wl)
         return a / b
 
-    def response(self, band):
+    def response(self, band, is_b_spline=True):
         if min(self.wl) > band.wl[0] or max(self.wl) < band.wl[-1]:
             raise ValueError("Spectrum must be wider then band: "+str(band))
 
@@ -56,11 +56,13 @@ class Spectrum:
         wl_s = self.wl * phys.cm_to_angs
         wl_b = band.wl*phys.cm_to_angs
 
-        tck = interpolate.splrep(wl_s, flux, s=0)
-        flux_intrp = interpolate.splev(wl_b, tck, der=0)
+        if is_b_spline:
+            tck = interpolate.splrep(wl_s, flux, s=0)
+            flux_intrp = interpolate.splev(wl_b, tck, der=0)
+        else:
+            flux_intrp = np.interp(wl_b, wl_s, flux, 0, 0)  # One-dimensional linear interpolation.
 
-        # TODO what about h here?
-        a = integralfunc(flux_intrp * band.resp*wl_b, wl_b)/(phys.c*phys.cm_to_angs)/phys.h
+        a = integralfunc(flux_intrp * band.resp * wl_b, wl_b)/(phys.c*phys.cm_to_angs)/phys.h
         return a
 
     def flux_to_mag(self, band):

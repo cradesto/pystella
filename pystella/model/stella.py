@@ -14,17 +14,29 @@ class Stella:
         if info:
             self.show_info()
 
+    def __str__(self):
+        return "%s, path: %s" % (self.name, self.path)
+
+    def __repr__(self):
+        return "%s, path: %s" % (self.name, self.path)
+        # return "%s" % self.name
+
     def show_info(self):
         ext = ('tt', 'ph', 'res', 'swd')
         for e in ext:
-            fname = os.path.join(self.path, self.name+'.'+e)
+            fname = os.path.join(self.path, self.name + '.' + e)
             if os.path.isfile(fname):
                 print "Exist %s-file: %s" % (e, fname)
             else:
                 print "No %s-file: %s" % (e, fname)
 
+    @property
+    def is_any_data(self):
+        ext = ('tt', 'ph', 'res', 'swd')
+        return any(map(os.path.isfile, [os.path.join(self.path, self.name + '.' + e) for e in ext]))
+
     def read_serial_spectrum(self, t_diff=1.05):
-        fname = os.path.join(self.path, self.name+'.ph')
+        fname = os.path.join(self.path, self.name + '.ph')
         serial = SeriesSpectrum(self.name)
 
         # read first line with frequencies
@@ -35,7 +47,7 @@ class Stella:
 
         freqs = [map(float, header1.split())]
         freqs = np.array(freqs).reshape(-1)
-        freqs = np.exp(math.log(10)*freqs)
+        freqs = np.exp(math.log(10) * freqs)
         serial.set_freq(freqs)
 
         # read time timeph, nfrus, dum, ttt(Nfreq)
@@ -45,7 +57,7 @@ class Stella:
         is_times = np.zeros(len(times), dtype=bool)
         k = 1
         for i in range(len(times)):
-            if np.abs(times[i]/times[k]) > t_diff:
+            if np.abs(times[i] / times[k]) > t_diff:
                 is_times[k] = True
                 k = i
         is_times[0] = True
@@ -57,11 +69,10 @@ class Stella:
             if is_times[i]:
                 fl = np.array(data[i, 3:])
                 fl[fl < 0] = 0.
-                fl = np.exp(math.log(10)*fl)
+                fl = np.exp(math.log(10) * fl)
                 s = Spectrum(self.name, freq=serial.freq, flux=fl, is_sort_wl=True)
                 sdata.append(s)
 
         serial.set_data(sdata)
         serial.set_times(times_thin)
         return serial
-

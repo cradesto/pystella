@@ -1,13 +1,16 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+__author__ = 'bakl'
+
 import os
+import sys, getopt
 from os.path import dirname
 import csv
 import numpy as np
 import matplotlib.pyplot as plt
 
-from model.stella import Stella
-from rf import band
-
-__author__ = 'bakl'
+from pystella.model.stella import Stella
+from pystella.rf import band
 
 ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
 
@@ -58,10 +61,13 @@ def plot_bands(dict_mags, bands):
     plt.show()
 
 
-def compute_mag(name, bands):
-    path = os.path.join(ROOT_DIRECTORY, 'tests', 'data', 'stella')
+def compute_mag(name, path, bands):
     model = Stella(name, path=path)
     model.show_info()
+
+    if not model.is_any_data:
+        print "No data for: " + str(model)
+        return None
 
     serial_spec = model.read_serial_spectrum(t_diff=1.05)
 
@@ -79,22 +85,66 @@ def compute_mag(name, bands):
 def mags_save(dictionary, bands, fname):
     with open(fname, 'wb') as f:
         writer = csv.writer(f, delimiter='\t')
-        writer.writerow(['{:^8s}'.format(x) for x in ['time']+bands])
-        for i, (row) in enumerate(zip(*[dictionary[k] for k in 'time'.split()+bands])):
+        writer.writerow(['{:^8s}'.format(x) for x in ['time'] + bands])
+        for i, (row) in enumerate(zip(*[dictionary[k] for k in 'time'.split() + bands])):
             # row = row[-1:] + row[:-1]  # make time first column
             writer.writerow(['{:8.3f}'.format(x) for x in row])
             # writer.writerow(['{:3.4e}'.format(x) for x in row])
 
 
-def main():
-    name = "cat_R1000_M15_Ni007_E15"
-    bands = ['U', 'B', 'V', 'R', "I"]
-    bands = ['U', 'B', 'V', 'R', "I", 'UVM2', "UVW1", "UVW2", 'g', "r", "i"]
-    dict_mags = compute_mag(name, bands)
+def usage():
+    print "Usage:"
+    print "  sn.py [params]"
+    print "  -b <bands>: string like U-B-V-R-I-g-r-i-UVM2-UVW1-UVW2, default: U-B-V-R-I"
+    print "  -i <model name>.  Ex: cat_R1000_M15_Ni007_E15"
+    print "  -d <model directory>, default: ./"
+    print "  -h: print usage"
 
-    mags_save(dict_mags, bands, name+'_' + ''.join(bands) + '.txt')
-    plot_bands(dict_mags, bands)
+
+def main(name=''):
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "hd:i:b:")
+    except getopt.GetoptError as err:
+        print str(err)  # will print something like "option -a not recognized"
+        usage()
+        sys.exit(2)
+
+    if len(opts) == 0:
+        usage()
+        sys.exit(2)
+
+    # set prf from command line
+    if not name and not ('-i' in opts):
+        print 'You should specify model name'  # will print something like "option -a not recognized"
+        usage()
+        sys.exit(2)
+
+    bands = ['U', 'B', 'V', 'R', "I"]
+    # bands = ['U', 'B', 'V', 'R', "I", 'UVM2', "UVW1", "UVW2", 'g', "r", "i"]
+
+    path = ROOT_DIRECTORY
+    for opt, arg in opts:
+        if opt == '-b':
+            bands = str(arg).split('-')
+            for b in bands:
+                if not band.band_is_exist(b):
+                    print 'No such band: ' + b
+                    sys.exit(2)
+        if opt == '-d':
+            path = str(arg)
+            if not (os.path.isdir(path) and os.path.exists(path)):
+                print "No such directory: " + path
+                sys.exit(2)
+        elif opt == '-h':
+            usage()
+            sys.exit(2)
+
+    dict_mags = compute_mag(name, path, bands)
+
+    if dict_mags is not None:
+        mags_save(dict_mags, bands, name + '_' + ''.join(bands) + '.txt')
+        plot_bands(dict_mags, bands)
 
 
 if __name__ == '__main__':
-    main()
+    main(name="cat_R1000_M15_Ni007_E15")
