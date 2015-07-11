@@ -66,13 +66,20 @@ class Spectrum:
         a = integralfunc(flux_intrp * band.resp * wl_b, wl_b) / (phys.c * phys.cm_to_angs) / phys.h
         return a
 
-    def flux_to_mag(self, band):
-        # conv = self.convolution_band(band)
-        conv = self.response(band)
+    def flux_to_mag(self, band, z=0):
+        conv = self.response(band, z)
         if conv <= 0:
             return None
         else:
             mag = -2.5 * np.log10(conv) + band.zp
+            return mag
+
+    def flux_to_magAB(self, band, z=0):
+        conv = self.response(band, z=z)
+        if conv <= 0:
+            return None
+        else:
+            mag = -2.5 * np.log10(conv) + phys.ZP_AB
             return mag
 
     def flux_to_AB(self):
@@ -89,20 +96,18 @@ class Spectrum:
           z:     redshift
 
        Returns:
-          2-tuple: (K,flag)
-
           * K: K-correction
-          * flag: 1 -> success, 0->failed
+          * If failed return None
        """
         # todo make k-correction with b-splinesec
         resp_0 = self.response(band_r, is_b_spline=False)
         resp_z = self.response(band_o, z=z, is_b_spline=False)
 
         if resp_0 < 0 or resp_z <= 0:
-            return 0.0, 0
+            return None
         else:
             kcor = -2.5*np.log10(resp_z / resp_0 / (1 + z)) + band_r.zp - band_o.zp
-            return kcor, 1
+            return kcor
 
     @staticmethod
     def flux_to_10pc(flux):

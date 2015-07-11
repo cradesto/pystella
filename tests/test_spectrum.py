@@ -43,9 +43,9 @@ class TestSpectrum(unittest.TestCase):
         b_r = band.band_by_name('U')
         b_o = band.band_by_name('U')
         z = 0
-        k_cor, err = self.sp.k_cor(b_r, b_o, z=z)
-        self.assertTrue(err > 0., "Return error for k_cor. \
-                            Now k_kor is %f for band-rest %s and band-obs %s." % (k_cor, b_r, b_o))
+        k_cor = self.sp.k_cor(b_r, b_o, z=z)
+        self.assertIsNotNone(k_cor, "Return error for k_cor. \
+                            Band-rest %s and band-obs %s." % (b_r, b_o))
         self.assertAlmostEqual(k_cor, 0.,
                                msg="For uniform flux=1 it should be k_cor==0. \
                             Now k_kor is %f for band-rest %s and band-obs %s." % (k_cor, b_r, b_o))

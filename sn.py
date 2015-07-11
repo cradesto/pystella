@@ -15,7 +15,7 @@ from pystella.rf import band
 ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
 
 
-def plot_bands(dict_mags, bands):
+def plot_bands(dict_mags, bands, title=''):
     plt.title(''.join(bands) + ' filter response')
 
     colors = dict(U="blue", B="cyan", V="black", R="red", I="magenta", UVM2="green", UVW1="red", UVW2="blue",
@@ -57,13 +57,15 @@ def plot_bands(dict_mags, bands):
     plt.legend()
     plt.ylabel('Magnitude')
     plt.xlabel('Time [days]')
+    plt.title(title)
     plt.grid()
     plt.show()
 
 
-def compute_mag(name, path, bands):
+def compute_mag(name, path, bands, is_show_info=True):
     model = Stella(name, path=path)
-    model.show_info()
+    if is_show_info:
+        model.show_info()
 
     if not model.is_any_data:
         print "No data for: " + str(model)
@@ -92,18 +94,21 @@ def mags_save(dictionary, bands, fname):
             # writer.writerow(['{:3.4e}'.format(x) for x in row])
 
 
+
 def usage():
     print "Usage:"
     print "  sn.py [params]"
     print "  -b <bands>: string like U-B-V-R-I-g-r-i-UVM2-UVW1-UVW2, default: U-B-V-R-I"
     print "  -i <model name>.  Ex: cat_R1000_M15_Ni007_E15"
     print "  -d <model directory>, default: ./"
+    print "  -s silence mode, no info, no plot"
     print "  -h: print usage"
 
 
 def main(name=''):
+    is_silence = False
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hd:i:b:")
+        opts, args = getopt.getopt(sys.argv[1:], "shd:i:b:")
     except getopt.GetoptError as err:
         print str(err)  # will print something like "option -a not recognized"
         usage()
@@ -114,10 +119,14 @@ def main(name=''):
         sys.exit(2)
 
     # set prf from command line
-    if not name and not ('-i' in opts):
-        print 'You should specify model name'  # will print something like "option -a not recognized"
-        usage()
-        sys.exit(2)
+    if not name:
+        for opt, arg in opts:
+            if opt == '-i':
+                name = str(arg)
+                break
+        if name == '':
+            print 'Error: you should specify the name of model.'  # will print something like "option -a not recognized"
+            sys.exit(2)
 
     bands = ['U', 'B', 'V', 'R', "I"]
     # bands = ['U', 'B', 'V', 'R', "I", 'UVM2', "UVW1", "UVW2", 'g', "r", "i"]
@@ -130,6 +139,8 @@ def main(name=''):
                 if not band.band_is_exist(b):
                     print 'No such band: ' + b
                     sys.exit(2)
+        if opt == '-s':
+            is_silence = True
         if opt == '-d':
             path = str(arg)
             if not (os.path.isdir(path) and os.path.exists(path)):
@@ -139,12 +150,16 @@ def main(name=''):
             usage()
             sys.exit(2)
 
-    dict_mags = compute_mag(name, path, bands)
+    dict_mags = compute_mag(name, path, bands, is_show_info=not is_silence)
 
     if dict_mags is not None:
-        mags_save(dict_mags, bands, name + '_' + ''.join(bands) + '.txt')
-        plot_bands(dict_mags, bands)
+        fname = os.path.join(path, name + '_' + ''.join(bands) + '.dat')
+        mags_save(dict_mags, bands, fname)
+        print "Magnitudes have been saved to " + fname
+        if not is_silence:
+            plot_bands(dict_mags, bands, title=name)
 
 
 if __name__ == '__main__':
-    main(name="cat_R1000_M15_Ni007_E15")
+    main()
+    # main(name="cat_R1000_M15_Ni007_E15")
