@@ -26,12 +26,12 @@ class Spectrum:
         self.wl = wl  # wavelength of flux [cm]
         self.freq = freq  # frequencies of flux [cm]
         self.flux_q = flux  # flux [erg / (cm^2*Hz) ]
-        self.flux_wl = self.flux_q * phys.c / self.wl ** 2  # flux [erg/cm^2/cm) ]
+
+    @property
+    def flux_wl(self):
+        return self.flux_q * phys.c / self.wl ** 2  # flux [erg/cm^2/cm) ]
 
     def convolution_band(self, band):
-        # tck = interpolate.splrep(self.freq, self.flux_q, s=0)
-        # flux_intrp = interpolate.splev(band.freq, tck, der=0)
-
         tck = interpolate.splrep(self.wl, self.flux_wl, s=0)
         flux_intrp = interpolate.splev(band.wl, tck, der=0)
 
@@ -46,16 +46,28 @@ class Spectrum:
         b = integralfunc(band.resp, band.wl)
         return a / b
 
-    def response(self, band, z=0, is_b_spline=True):
+    def response(self, band, z=0, dl=0, is_b_spline=True):
+        """
+        Compute response flux using provided spectral band
+        :param band:  photometric band
+        :param z:  redshift
+        :param dl: luminosity distance [parsec], default
+        :param is_b_spline:  the method of interpolation
+        :return: :raise ValueError:
+        """
         if min(self.wl) > band.wl[0] or max(self.wl) < band.wl[-1]:
             raise ValueError("Spectrum must be wider then band: " + str(band))
 
-        flux = self.flux_wl / phys.cm_to_angs  # to flux [erg/cm^2/A) ]
+        flux = self.flux_wl
+        if dl > 0.:
+            flux = Spectrum.flux_to_distance_lum(flux, dl)  # move to lum distance
+        flux = flux / phys.cm_to_angs  # to flux [erg/cm^2/A) ]
         wl_s = self.wl * phys.cm_to_angs
         wl_b = band.wl * phys.cm_to_angs
 
         if z > 0:
             wl_s /= 1. + z  # redshift the flux
+            flux *= 1. + z
 
         if is_b_spline:
             tck = interpolate.splrep(wl_s, flux, s=0)
@@ -66,16 +78,16 @@ class Spectrum:
         a = integralfunc(flux_intrp * band.resp * wl_b, wl_b) / (phys.c * phys.cm_to_angs) / phys.h
         return a
 
-    def flux_to_mag(self, band, z=0):
-        conv = self.response(band, z)
+    def flux_to_mag(self, band, z=0, dl=0):
+        conv = self.response(band, z, dl=dl)
         if conv <= 0:
             return None
         else:
             mag = -2.5 * np.log10(conv) + band.zp
             return mag
 
-    def flux_to_magAB(self, band, z=0):
-        conv = self.response(band, z=z)
+    def flux_to_magAB(self, band, z=0, dl=0):
+        conv = self.response(band, z=z, dl=dl)
         if conv <= 0:
             return None
         else:
@@ -110,8 +122,8 @@ class Spectrum:
             return kcor
 
     @staticmethod
-    def flux_to_10pc(flux):
-        return flux / (4 * np.pi * (10 * phys.pc) ** 2)
+    def flux_to_distance_lum(flux, dl):
+        return flux / (4 * np.pi * (dl * phys.pc) ** 2)
 
 
 class SeriesSpectrum:
@@ -146,7 +158,7 @@ class SeriesSpectrum:
             raise ValueError("data must be array with len > 0.")
         self.data = sdata
 
-    def flux_to_mags(self, band):
+    def flux_to_mags(self, band, z=0, dl=0):
         if band is None:
             return None
         if not self.is_time():
@@ -155,7 +167,7 @@ class SeriesSpectrum:
         mags = np.zeros(len(self.data))
         for k in range(len(self.data)):
             spec = self.data[k]
-            mag = spec.flux_to_mag(band)
+            mag = spec.flux_to_mag(band, z=z, dl=dl)
             mags[k] = mag
 
         return mags

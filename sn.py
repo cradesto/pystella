@@ -3,10 +3,12 @@
 __author__ = 'bakl'
 
 import os
-import sys, getopt
+import sys
+import getopt
 from os.path import dirname
 import csv
 import numpy as np
+
 import matplotlib.pyplot as plt
 
 from pystella.model.stella import Stella
@@ -73,15 +75,13 @@ def compute_mag(name, path, bands, is_show_info=True):
 
     serial_spec = model.read_serial_spectrum(t_diff=1.05)
 
-    dict_mags = dict((k, None) for k in bands)
-    dict_mags['time'] = serial_spec.times
+    mags = dict((k, None) for k in bands)
     for n in bands:
         b = band.band_by_name(n)
-        mags = serial_spec.flux_to_mags(b)
-        if mags is not None:
-            dict_mags[n] = mags
+        mags[n] = serial_spec.flux_to_mags(b, dl=10)
 
-    return dict_mags
+    mags['time'] = serial_spec.times
+    return mags
 
 
 def mags_save(dictionary, bands, fname):
@@ -94,14 +94,13 @@ def mags_save(dictionary, bands, fname):
             # writer.writerow(['{:3.4e}'.format(x) for x in row])
 
 
-
 def usage():
     print "Usage:"
     print "  sn.py [params]"
     print "  -b <bands>: string like U-B-V-R-I-g-r-i-UVM2-UVW1-UVW2, default: U-B-V-R-I"
     print "  -i <model name>.  Ex: cat_R1000_M15_Ni007_E15"
     print "  -d <model directory>, default: ./"
-    print "  -s silence mode, no info, no plot"
+    print "  -s silence mode: no info, no plot"
     print "  -h: print usage"
 
 
@@ -128,8 +127,8 @@ def main(name=''):
             print 'Error: you should specify the name of model.'  # will print something like "option -a not recognized"
             sys.exit(2)
 
-    bands = ['U', 'B', 'V', 'R', "I"]
-    # bands = ['U', 'B', 'V', 'R', "I", 'UVM2', "UVW1", "UVW2", 'g', "r", "i"]
+    # bands = ['U', 'B', 'V', 'R', "I"]
+    bands = ['U', 'B', 'V', 'R', "I", 'UVM2', "UVW1", "UVW2", 'g', "r", "i"]
 
     path = ROOT_DIRECTORY
     for opt, arg in opts:
@@ -150,14 +149,15 @@ def main(name=''):
             usage()
             sys.exit(2)
 
-    dict_mags = compute_mag(name, path, bands, is_show_info=not is_silence)
+    mags_dict = compute_mag(name, path, bands, is_show_info=not is_silence)
 
-    if dict_mags is not None:
-        fname = os.path.join(path, name + '_' + ''.join(bands) + '.dat')
-        mags_save(dict_mags, bands, fname)
+    if mags_dict is not None:
+        # fname = os.path.join(path, name + '_' + ''.join(bands) + '.dat')
+        fname = os.path.join(path, name + '.ubv')
+        mags_save(mags_dict, bands, fname)
         print "Magnitudes have been saved to " + fname
         if not is_silence:
-            plot_bands(dict_mags, bands, title=name)
+            plot_bands(mags_dict, bands, title=name)
 
 
 if __name__ == '__main__':
