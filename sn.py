@@ -24,7 +24,7 @@ def plot_bands(dict_mags, bands, title=''):
                   g="black", r="red", i="magenta")
     lntypes = dict(U="-", B="-", V="-", R="-", I="-", UVM2="-.", UVW1="-.", UVW2="-.", g="--", r="--", i="--")
     band_shift = dict(U=6.9, B=3.7, V=0, R=-2.4, I=-4.7, UVM2=11.3, UVW1=10, UVW2=13.6, g=2.5, r=-1.2, i=-3.7)
-    # band_shift = dict((k, 0) for k, v in band_shift.items())  # no y-shift
+    band_shift = dict((k, 0) for k, v in band_shift.items())  # no y-shift
 
     dist = 24e6  # distance to SN 2013ab
     dm = 5 * np.log10(dist) - 5  # distance module
@@ -73,14 +73,18 @@ def compute_mag(name, path, bands, is_show_info=True):
         print "No data for: " + str(model)
         return None
 
-    serial_spec = model.read_serial_spectrum(t_diff=1.05)
+    serial_spec = model.read_serial_spectrum(t_diff=0.)
+    #serial_spec = model.read_serial_spectrum(t_diff=1.05)
 
     mags = dict((k, None) for k in bands)
+
+    z, distance = 0, 10.  # pc for Absolute magnitude
+    # z, distance = 0.145, 687.7e6  # pc for comparison with Maria
     for n in bands:
         b = band.band_by_name(n)
-        mags[n] = serial_spec.flux_to_mags(b, dl=10)
+        mags[n] = serial_spec.flux_to_mags(b, z=z, dl=distance)
 
-    mags['time'] = serial_spec.times
+    mags['time'] = serial_spec.times * (1. + z)
     return mags
 
 

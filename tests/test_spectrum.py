@@ -11,7 +11,7 @@ class TestSpectrum(unittest.TestCase):
     def setUp(self):
         nf = 100
         start, end = 10, 1e5
-        wl = np.linspace(start, end, nf)
+        wl = np.exp(np.linspace(np.log(start), np.log(end), nf))
         freq = phys.c / (wl * 1.e-8)
         # freq = freq[np.argsort(freq)]  # ascending order
         flux = np.ones(nf)
@@ -36,8 +36,9 @@ class TestSpectrum(unittest.TestCase):
         for n in bands:
             b = band.band_by_name(n)
             mag = self.sp.flux_to_mag(b)
-            self.assertTrue(mag > 0.,
-                            msg="For uniform flux=1 it should be mag==1. Now mag is %f for band %s." % (mag, b))
+            self.assertAlmostEqual(mag, phys.ZP_AB, delta=1.,
+                                   msg="For uniform flux=1 it should be mag==AB zero point. \
+                                        Now mag is %f for band %s." % (mag, b))
 
     def test_k_cor_uniform(self):
         b_r = band.band_by_name('U')
@@ -57,7 +58,6 @@ class TestSpectrum(unittest.TestCase):
         k_cor, err = self.sp.k_cor(b_r, b_o, z=z)
         self.assertTrue(err > 0., "Return error for k_cor. \
                             Now k_kor is %f for band-rest %s and band-obs %s." % (k_cor, b_r, b_o))
-
 
 
 def main():
