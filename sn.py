@@ -99,9 +99,10 @@ def mags_save(dictionary, bands, fname):
 
 
 def usage():
+    bands = band.band_get_names().keys()
     print "Usage:"
     print "  sn.py [params]"
-    print "  -b <bands>: string like U-B-V-R-I-g-r-i-UVM2-UVW1-UVW2, default: U-B-V-R-I"
+    print "  -b <bands>: string, default: U-B-V-R-I. Available: " + '-'.join(bands)
     print "  -i <model name>.  Ex: cat_R1000_M15_Ni007_E15"
     print "  -d <model directory>, default: ./"
     print "  -s silence mode: no info, no plot"

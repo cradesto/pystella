@@ -108,14 +108,21 @@ def get_full_path(fname):
     return os.path.join(ROOT_DIRECTORY, fname)
 
 
-def bands_dict_KAIT():
-    bands = dict(U="kait_U.dat", B="kait_B.dat", V="kait_V.dat", R="kait_R.dat", I="kait_I.dat")
-    d = os.path.join(ROOT_DIRECTORY, "data/bands/KAIT")
+def bands_dict_STANDARD():
+    bands = dict(R="R.txt")
+    d = os.path.join(ROOT_DIRECTORY, "data/bands/STANDART")
     for k, v in bands.items():
         bands[k] = os.path.join(d, v)
 
     return bands
 
+def bands_dict_KAIT():
+    bands = dict(U="kait_U.dat", B="kait_B.dat", V="kait_V.dat", RKAIT="kait_R.dat", I="kait_I.dat")
+    d = os.path.join(ROOT_DIRECTORY, "data/bands/KAIT")
+    for k, v in bands.items():
+        bands[k] = os.path.join(d, v)
+
+    return bands
 
 def bands_dict_USNO():
     # bands = dict(V="usno_g.res", I="usno_i.res", R="usno_r.res", U="usno_u.res", B="usno_z.res") # for comparison
@@ -144,6 +151,9 @@ def bands_dict_SWIFT():
 
 
 def band_get_names():
+    # STANDARD
+    bands0 = bands_dict_STANDARD()
+
     # KAIT
     bands1 = bands_dict_KAIT()
 
@@ -156,7 +166,7 @@ def band_get_names():
     # SWIFT
     bands4 = bands_dict_SWIFT()
 
-    return merge_dicts(bands1, bands3, bands4)
+    return merge_dicts(bands0, bands1, bands3, bands4)
 
 
 def band_is_exist(name):
