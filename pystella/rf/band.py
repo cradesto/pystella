@@ -109,7 +109,7 @@ def get_full_path(fname):
 
 
 def bands_dict_STANDARD():
-    bands = dict(R="R.txt")
+    bands = dict(RSTD="R.txt")
     d = os.path.join(ROOT_DIRECTORY, "data/bands/STANDART")
     for k, v in bands.items():
         bands[k] = os.path.join(d, v)
@@ -117,7 +117,7 @@ def bands_dict_STANDARD():
     return bands
 
 def bands_dict_KAIT():
-    bands = dict(U="kait_U.dat", B="kait_B.dat", V="kait_V.dat", RKAIT="kait_R.dat", I="kait_I.dat")
+    bands = dict(U="kait_U.dat", B="kait_B.dat", V="kait_V.dat", R="kait_R.dat", I="kait_I.dat")
     d = os.path.join(ROOT_DIRECTORY, "data/bands/KAIT")
     for k, v in bands.items():
         bands[k] = os.path.join(d, v)

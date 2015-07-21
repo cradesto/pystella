@@ -74,7 +74,7 @@ def compute_mag(name, path, bands, is_show_info=True):
         return None
 
     serial_spec = model.read_serial_spectrum(t_diff=0.)
-    #serial_spec = model.read_serial_spectrum(t_diff=1.05)
+    # serial_spec = model.read_serial_spectrum(t_diff=1.05)
 
     mags = dict((k, None) for k in bands)
 
@@ -102,7 +102,7 @@ def usage():
     bands = band.band_get_names().keys()
     print "Usage:"
     print "  sn.py [params]"
-    print "  -b <bands>: string, default: U-B-V-R-I. Available: " + '-'.join(bands)
+    print "  -b <bands>: string, default: U-B-V-R-I. Available: " + '-'.join(sorted(bands))
     print "  -i <model name>.  Ex: cat_R1000_M15_Ni007_E15"
     print "  -d <model directory>, default: ./"
     print "  -s silence mode: no info, no plot"
