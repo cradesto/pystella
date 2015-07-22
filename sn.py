@@ -1,11 +1,15 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+from pystella.util.string_misc import str2bool
+
 __author__ = 'bakl'
 
 import os
 import sys
 import getopt
-from os.path import dirname
+from os.path import dirname, basename
+from os import listdir
+from os.path import isfile, join
 import csv
 import numpy as np
 
@@ -64,17 +68,18 @@ def plot_bands(dict_mags, bands, title=''):
     plt.show()
 
 
-def compute_mag(name, path, bands, is_show_info=True):
+def compute_mag(name, path, bands, is_show_info=True, is_save=False):
     model = Stella(name, path=path)
     if is_show_info:
+        print ''
         model.show_info()
 
-    if not model.is_any_data:
+    if not model.is_spec_data:
         print "No data for: " + str(model)
         return None
 
-    serial_spec = model.read_serial_spectrum(t_diff=0.)
-    # serial_spec = model.read_serial_spectrum(t_diff=1.05)
+    # serial_spec = model.read_serial_spectrum(t_diff=0.)
+    serial_spec = model.read_serial_spectrum(t_diff=1.05)
 
     mags = dict((k, None) for k in bands)
 
@@ -85,6 +90,14 @@ def compute_mag(name, path, bands, is_show_info=True):
         mags[n] = serial_spec.flux_to_mags(b, z=z, dl=distance)
 
     mags['time'] = serial_spec.times * (1. + z)
+
+    if mags is not None:
+        fname = os.path.join(path, name + '.ubv')
+        if is_save:
+            mags_save(mags, bands, fname)
+            print "Magnitudes have been saved to " + fname
+        if is_show_info:
+            plot_bands(mags, bands, title=name)
     return mags
 
 
@@ -103,16 +116,21 @@ def usage():
     print "Usage:"
     print "  sn.py [params]"
     print "  -b <bands>: string, default: U-B-V-R-I. Available: " + '-'.join(sorted(bands))
-    print "  -i <model name>.  Ex: cat_R1000_M15_Ni007_E15"
+    print "  -i <model name>.  Example: cat_R450_M15_Ni007_E7"
     print "  -d <model directory>, default: ./"
-    print "  -s silence mode: no info, no plot"
-    print "  -h: print usage"
+    print "  -e <model extension> is used to define model name, default: tt "
+    print "  -s  silence mode: no info, no plot"
+    print "  -w  write magnitudes to file, default 'False'"
+    print "  -h  print usage"
 
 
-def main(name=''):
+def main(name='', model_ext='.tt'):
     is_silence = False
+    is_save_mags = False
+    path = ''
+
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "shd:i:b:")
+        opts, args = getopt.getopt(sys.argv[1:], "swhd:e:i:b:")
     except getopt.GetoptError as err:
         print str(err)  # will print something like "option -a not recognized"
         usage()
@@ -122,47 +140,59 @@ def main(name=''):
         usage()
         sys.exit(2)
 
-    # set prf from command line
     if not name:
         for opt, arg in opts:
             if opt == '-i':
+                path = ROOT_DIRECTORY
                 name = str(arg)
                 break
-        if name == '':
-            print 'Error: you should specify the name of model.'  # will print something like "option -a not recognized"
-            sys.exit(2)
+                # if name == '':
+                #     print 'Error: you should specify the name of model.'
+                #     sys.exit(2)
 
     # bands = ['U', 'B', 'V', 'R', "I"]
     bands = ['U', 'B', 'V', 'R', "I", 'UVM2', "UVW1", "UVW2", 'g', "r", "i"]
 
-    path = ROOT_DIRECTORY
     for opt, arg in opts:
+        if opt == '-e':
+            model_ext = '.' + arg
+            continue
         if opt == '-b':
             bands = str(arg).split('-')
             for b in bands:
                 if not band.band_is_exist(b):
                     print 'No such band: ' + b
                     sys.exit(2)
+            continue
         if opt == '-s':
             is_silence = True
+            continue
+        if opt == '-w':
+            is_save_mags = True
+            continue
         if opt == '-d':
             path = str(arg)
             if not (os.path.isdir(path) and os.path.exists(path)):
                 print "No such directory: " + path
                 sys.exit(2)
+            continue
         elif opt == '-h':
             usage()
             sys.exit(2)
 
-    mags_dict = compute_mag(name, path, bands, is_show_info=not is_silence)
+    if name != '':
+        compute_mag(name, path, bands, is_show_info=not is_silence, is_save=is_save_mags)
 
-    if mags_dict is not None:
-        # fname = os.path.join(path, name + '_' + ''.join(bands) + '.dat')
-        fname = os.path.join(path, name + '.ubv')
-        mags_save(mags_dict, bands, fname)
-        print "Magnitudes have been saved to " + fname
-        if not is_silence:
-            plot_bands(mags_dict, bands, title=name)
+    elif path != '':  # run for whole path
+        names = []
+        files = [f for f in listdir(path) if isfile(join(path, f)) and f.endswith(model_ext)]
+        for f in files:
+            names.append(os.path.splitext(f)[0])
+        if len(names) > 0:
+          for name in names:
+             compute_mag(name, path, bands, is_show_info=not is_silence, is_save=is_save_mags)
+        else:
+            print "There are no models in the directory: %s with extension: %s " % (path, model_ext)
 
 
 if __name__ == '__main__':

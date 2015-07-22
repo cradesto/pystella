@@ -35,6 +35,11 @@ class Stella:
         ext = ('tt', 'ph', 'res', 'swd')
         return any(map(os.path.isfile, [os.path.join(self.path, self.name + '.' + e) for e in ext]))
 
+    @property
+    def is_spec_data(self):
+        ext = ['ph']
+        return any(map(os.path.isfile, [os.path.join(self.path, self.name + '.' + e) for e in ext]))
+
     def read_serial_spectrum(self, t_diff=1.05):
         fname = os.path.join(self.path, self.name + '.ph')
         serial = SeriesSpectrum(self.name)
