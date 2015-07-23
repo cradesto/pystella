@@ -32,9 +32,11 @@ def plot_bands(dict_mags, bands, title='', distance=10):
 
     dm = 5 * np.log10(distance) - 5  # distance module
     # dm = 0
-    lims = (-10, -22)
+    lims = [-12, -19]
     lims += dm
-    is_auto_lim = False
+    is_auto_lim = True
+    if is_auto_lim:
+        lims = [0, 0]
 
     def lbl(b):
         shift = band_shift[b]
@@ -51,11 +53,12 @@ def plot_bands(dict_mags, bands, title='', distance=10):
         y += dm + band_shift[n]
         plt.plot(x, y, label=lbl(n), color=colors[n], ls=lntypes[n], linewidth=2.0)
         if is_auto_lim:
-            if lims[0] < max(y):
-                lims[0] = max(y)+1
-            if lims[1] > min(y):
-                lims[1] = min(y)-1
+            if lims[0] < max(y[len(y)/2:]) or lims[0] == 0:
+                lims[0] = max(y[len(y)/2:])
+            if lims[1] > min(y) or lims[1] == 0:
+                lims[1] = min(y)
 
+    lims = np.add(lims, [1, -1])
     plt.gca().invert_yaxis()
     plt.xlim([-10, 200])
     plt.ylim(lims)
