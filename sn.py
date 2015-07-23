@@ -21,7 +21,7 @@ from pystella.rf import band
 ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
 
 
-def plot_bands(dict_mags, bands, title=''):
+def plot_bands(dict_mags, bands, title='', distance=10):
     plt.title(''.join(bands) + ' filter response')
 
     colors = dict(U="blue", B="cyan", V="black", R="red", I="magenta", UVM2="green", UVW1="red", UVW2="blue",
@@ -30,11 +30,10 @@ def plot_bands(dict_mags, bands, title=''):
     band_shift = dict(U=6.9, B=3.7, V=0, R=-2.4, I=-4.7, UVM2=11.3, UVW1=10, UVW2=13.6, g=2.5, r=-1.2, i=-3.7)
     band_shift = dict((k, 0) for k, v in band_shift.items())  # no y-shift
 
-    dist = 24e6  # distance to SN 2013ab
-    dm = 5 * np.log10(dist) - 5  # distance module
+    dm = 5 * np.log10(distance) - 5  # distance module
     # dm = 0
-    lims = (-12, -23)
-    lims = [39, 8]
+    lims = (-10, -22)
+    lims += dm
     is_auto_lim = False
 
     def lbl(b):
@@ -53,9 +52,9 @@ def plot_bands(dict_mags, bands, title=''):
         plt.plot(x, y, label=lbl(n), color=colors[n], ls=lntypes[n], linewidth=2.0)
         if is_auto_lim:
             if lims[0] < max(y):
-                lims[0] = max(y)
+                lims[0] = max(y)+1
             if lims[1] > min(y):
-                lims[1] = min(y)
+                lims[1] = min(y)-1
 
     plt.gca().invert_yaxis()
     plt.xlim([-10, 200])
@@ -97,7 +96,7 @@ def compute_mag(name, path, bands, is_show_info=True, is_save=False):
             mags_save(mags, bands, fname)
             print "Magnitudes have been saved to " + fname
         if is_show_info:
-            plot_bands(mags, bands, title=name)
+            plot_bands(mags, bands, title=name, distance=distance)
     return mags
 
 
@@ -150,8 +149,8 @@ def main(name='', model_ext='.tt'):
                 #     print 'Error: you should specify the name of model.'
                 #     sys.exit(2)
 
-    # bands = ['U', 'B', 'V', 'R', "I"]
-    bands = ['U', 'B', 'V', 'R', "I", 'UVM2', "UVW1", "UVW2", 'g', "r", "i"]
+    bands = ['U', 'B', 'V', 'R', "I"]
+    # bands = ['U', 'B', 'V', 'R', "I", 'UVM2', "UVW1", "UVW2", 'g', "r", "i"]
 
     for opt, arg in opts:
         if opt == '-e':
