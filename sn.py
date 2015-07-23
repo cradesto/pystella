@@ -24,10 +24,15 @@ ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
 def plot_bands(dict_mags, bands, title='', distance=10):
     plt.title(''.join(bands) + ' filter response')
 
-    colors = dict(U="blue", B="cyan", V="black", R="red", I="magenta", UVM2="green", UVW1="red", UVW2="blue",
-                  g="black", r="red", i="magenta")
-    lntypes = dict(U="-", B="-", V="-", R="-", I="-", UVM2="-.", UVW1="-.", UVW2="-.", g="--", r="--", i="--")
-    band_shift = dict(U=6.9, B=3.7, V=0, R=-2.4, I=-4.7, UVM2=11.3, UVW1=10, UVW2=13.6, g=2.5, r=-1.2, i=-3.7)
+    colors = dict(U="blue", B="cyan", V="black", R="red", I="magenta",
+                  UVM2="green", UVW1="red", UVW2="blue",
+                  g="black", r="red", i="magenta", u="blue", z="magenta")
+    lntypes = dict(U="-", B="-", V="-", R="-", I="-",
+                   UVM2="-.", UVW1="-.", UVW2="-.",
+                   u="--", g="--", r="--", i="--", z="--")
+    band_shift = dict(U=6.9, B=3.7, V=0, R=-2.4, I=-4.7,
+                      UVM2=11.3, UVW1=10, UVW2=13.6,
+                      u=3.5, g=2.5, r=-1.2, i=-3.7, z=-4.2)
     band_shift = dict((k, 0) for k, v in band_shift.items())  # no y-shift
 
     dm = 5 * np.log10(distance) - 5  # distance module
