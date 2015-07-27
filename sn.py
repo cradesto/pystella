@@ -122,7 +122,7 @@ def usage():
     bands = band.band_get_names().keys()
     print "Usage:"
     print "  sn.py [params]"
-    print "  -b <bands>: string, default: U-B-V-R-I. Available: " + '-'.join(sorted(bands))
+    print "  -b <bands>: string, default: U-B-V-R-I, for example U-B-V-I-R-U-g-i-r-u-z-UVW1-UVW2.\n     Available: " + '-'.join(sorted(bands))
     print "  -i <model name>.  Example: cat_R450_M15_Ni007_E7"
     print "  -d <model directory>, default: ./"
     print "  -e <model extension> is used to define model name, default: tt "
