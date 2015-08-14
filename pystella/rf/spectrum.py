@@ -6,7 +6,7 @@ __author__ = 'bakl'
 from scipy import interpolate
 from scipy.integrate import simps as integralfunc
 import numpy as np
-
+import matplotlib.pyplot as plt
 
 class Spectrum:
     def __init__(self, name, freq=None, flux=None, is_sort_wl=True):
@@ -121,6 +121,16 @@ class Spectrum:
             kcor = -2.5*np.log10(resp_z / resp_0 / (1 + z)) + band_r.zp - band_o.zp
             return kcor
 
+    def plot_spec(self, title=''):
+        plt.title('Spectrum: '+title)
+        plt.plot(self.wl* phys.cm_to_angs,  self.flux_wl)
+        plt.xscale('log')
+        plt.yscale('log')
+        plt.ylabel('Flux')
+        plt.xlabel('Wave [A]')
+        plt.grid()
+        plt.show()
+
     @staticmethod
     def flux_to_distance_lum(flux, dl):
         return flux / (4 * np.pi * (dl * phys.pc) ** 2)
@@ -169,5 +179,7 @@ class SeriesSpectrum:
             spec = self.data[k]
             mag = spec.flux_to_mag(band, z=z, dl=dl)
             mags[k] = mag
+            # if self.times[k] > 50:
+            #     spec.plot_spec(title="t=%f, mag=%f" % (self.times[k], mag))
 
         return mags

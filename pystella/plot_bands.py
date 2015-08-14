@@ -1,3 +1,5 @@
+from pystella.util.phys_var import phys
+
 __author__ = 'bakl'
 
 import matplotlib.pyplot as plt
@@ -10,7 +12,7 @@ def plot_griuz():
     bands = dict(g='g', i='r+', r='r', u='o', z='*')
     for k, v in bands.items():
         b = band.band_by_name(k)
-        plt.plot(b.wl,  b.resp, v, label=k)
+        plt.plot(b.wl*phys.cm_to_angs,  b.resp, v, label=k)
 
     plt.legend()
     plt.ylabel('Amplitude Response')
@@ -24,7 +26,7 @@ def plot_UBVRI():
     bands = dict(U='b', B='c', V='g', R='r', I='p')
     for k, v in bands.items():
         b = band.band_by_name(k)
-        plt.plot(b.wl,  b.resp, v, label=k)
+        plt.plot(b.wl*phys.cm_to_angs,  b.resp, v, label=k)
     plt.legend()
     plt.ylabel('Amplitude Response')
     plt.xlabel('Wave [A]')
@@ -37,7 +39,7 @@ def plot_SWIFT():
     bands = dict(UVM2='m', UVW1='r', UVW2='b', U_UVOT='k', B_UVOT='c', V_UVOT='g')
     for k, v in bands.items():
         b = band.band_by_name(k)
-        plt.plot(b.wl,  b.resp, v, label=k)
+        plt.plot(b.wl*phys.cm_to_angs,  b.resp, v, label=k)
     plt.legend()
     plt.ylabel('Amplitude Response')
     plt.xlabel('Wave [A]')
