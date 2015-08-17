@@ -12,23 +12,37 @@ def distance_modulus(distance):
     return 5 * np.log(distance / 10.0) / np.log(10.)
 
 
-def distance_from_modulus(m, M):
+def distance_from_modulus(mag, abs_mag):
     """Given the distance modulus, return the distance to the source, in parsecs.
     Uses Carroll and Ostlie's formula,
     .. math:: d = 10^{(m - M + 5)/5}"""
-    return 10.0 ** (m - M + 5) / 5
+    return 10.0 ** (mag - abs_mag + 5) / 5
 
 
-def lamb_to_hz(lamb):
-    """Takes in a wavelength in Angstroms and converts it to Hz"""
-    return p.c / (lamb * 1e-8)
+def val_to_hz(val, inp="Hz"):
+    """Takes value in a wavelength in Angstroms and converts it to Hz"""
+    if inp == "Hz":
+        return val
+    elif inp == "A":
+        return p.c / (val * 1e-8)
+    elif inp == "cm":
+        return p.c / val
+    else:
+        raise ValueError("inp must be 'Hz', 'A','cm'")
 
 
-def hz_to_lamb(Hz):
-    """Takes in a frequency in Hz and converts it to wavelength in Angstroms
-    :param Hz:
+def val_to_wl(val, inp="Hz"):
+    """Takes value and converts it to wavelength in cm
+    :param val:
     """
-    return 1e8 * p.c / Hz
+    if inp == "Hz":
+        return p.c / val
+    elif inp == "A":
+        return val * 1e-8
+    elif inp == "cm":
+        return val
+    else:
+        raise ValueError("inp must be 'Hz', 'A','cm'")
 
 
 def pc_to_cm(parsec):
@@ -41,28 +55,6 @@ def au_to_cm(dist):
     return dist * p.AU
 
 
-def astro_blackbody(nu, T, r, R):
-    """Use to model the flux from an astrophysical source as from a blackbody.
-    Takes in frequency in Hz, Temperature in Kelvin, radius and distance in cm.
-    Assumes spherical sounce and F = pi B (R/r)**2 from Rybicki.
-    Returns flux in Jy"""
-    Fnu = 2 * np.pi * p.h * nu ** 3 * R ** 2 / (r ** 2 * p.c ** 2 * (np.exp(p.h * nu / (p.k * T)) - 1))
-    Jy = 1e23 * Fnu
-    return Jy
-
-
-def astro_blackbody_bolometric_luminosity(T, R):
-    """Assume a spherical blackbody at constant temperature.
-    Determine the integrated luminosity in ergs/s. All input units cgs"""
-    return 4 * np.pi * p.sigma_SB * R ** 2 * T ** 4
-
-
-def fit_astro_blackbody(nu, r):
-    """Takes in known values and returns a function useful for fitting temperature and radius"""
-    func = lambda T, R: astro_blackbody(nu, T, r, R)
-    return func
-
-
 def planck_partition(nu, temperature):
     """
     Planck partition function
@@ -70,32 +62,42 @@ def planck_partition(nu, temperature):
     :param temperature: [K]
     :return: partition
     """
-    return 1. / (np.exp(p.h * nu / (p.k * temperature)) - 1)
+    return 1. / (np.exp(p.h*nu / (p.k*temperature)) - 1)
 
 
-def planck(x, T, inp="waveA", out="freq"):
+def planck(x, temperature, inp="Hz", out="freq"):
     """General Planck blackbody function.
-    Specify `inp` for whether one desires input as wavelength (Angstroms) or frequency (Hz).
+    Specify `inp` for whether one desires input as wavelength [Angstroms(A), cm] or frequency [Hz].
     Specify `out` for whether one desires output as :math:`B_\lambda` or :math:`B_\nu`."""
-    # TODO: better error checking here on inp and out.
     if out == "freq":
-        if inp == "waveA":
-            nu = p.c / (x * 1e-8)
-        elif inp == "wave":
-            nu = p.c / x
-        else:
-            nu = x
-        return ((2 * p.h * nu ** 3) / p.c ** 2) * planck_partition(nu, T)
+        nu = val_to_hz(x, inp)
+        return 2*p.h/p.c**2 * nu**3 * planck_partition(nu, temperature)
+    elif out == 'wave':
+        wl = val_to_wl(x, inp)
+        return 2 * p.h * p.c**2 / wl**5 * planck_partition(p.c/wl, temperature)
     else:
-        if inp == "waveA":
-            lamb = x * 1e-8
-        elif inp == "wave":
-            lamb = x
-        else:
-            lamb = p.c / x
-        return 2 * p.h * p.c**2 / lamb**5 * planck_partition(p.c/lamb, T)
+        raise ValueError("out must be 'freq' or 'wave' ")
 
 
-def fit_planck(x, inp="waveA", out="freq"):
-    return lambda T: planck(x, T, inp, out)
+def bb_luminosity_bolometric(temperature, radius):
+    """Assume a spherical blackbody at constant temperature.
+    Determine the integrated luminosity in ergs/s. All input units cgs"""
+    return 4*np.pi * p.sigma_SB * radius**2 * temperature**4
 
+
+def bb_flux_dist(nu, temperature, r, radius):
+    """Use to model the flux from an astrophysical source as from a blackbody.
+    Takes in frequency in Hz, Temperature in Kelvin, radius and distance in cm.
+    Assumes spherical source and F = pi B (R/r)**2 from Rybicki.
+    Returns flux"""
+    return np.pi * planck(nu, temperature, inp="Hz") * radius**2 / r**2
+
+
+def bb_fit_flux_dist(nu, r):
+    """Takes in known values and returns a function useful for fitting temperature and radius"""
+    func = lambda temperature, radius: bb_flux_dist(nu, temperature, r, radius)
+    return func
+
+
+def fit_planck(x, inp="Hz", out="freq"):
+    return lambda temperature: planck(x, temperature, inp, out)

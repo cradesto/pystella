@@ -19,3 +19,4 @@ class phys:
     pc = 206265 * AU
     M_sun = 1.99e33  # g
     L_sun = 3.9e33  # ergs
+
