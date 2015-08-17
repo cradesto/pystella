@@ -1,13 +1,12 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-from pystella.util.string_misc import str2bool
 
 __author__ = 'bakl'
 
 import os
 import sys
 import getopt
-from os.path import dirname, basename
+from os.path import dirname
 from os import listdir
 from os.path import isfile, join
 import csv
@@ -21,7 +20,7 @@ from pystella.rf import band
 ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
 
 
-def plot_bands(dict_mags, bands, title='', distance=10):
+def plot_bands(dict_mags, bands, title='', distance=10.):
     plt.title(''.join(bands) + ' filter response')
 
     colors = dict(U="blue", B="cyan", V="black", R="red", I="magenta",
@@ -58,8 +57,8 @@ def plot_bands(dict_mags, bands, title='', distance=10):
         y += dm + band_shift[n]
         plt.plot(x, y, label=lbl(n), color=colors[n], ls=lntypes[n], linewidth=2.0)
         if is_auto_lim:
-            if lims[0] < max(y[len(y)/2:]) or lims[0] == 0:
-                lims[0] = max(y[len(y)/2:])
+            if lims[0] < max(y[len(y) / 2:]) or lims[0] == 0:
+                lims[0] = max(y[len(y) / 2:])
             if lims[1] > min(y) or lims[1] == 0:
                 lims[1] = min(y)
 
@@ -122,7 +121,8 @@ def usage():
     bands = band.band_get_names().keys()
     print "Usage:"
     print "  sn.py [params]"
-    print "  -b <bands>: string, default: U-B-V-R-I, for example U-B-V-I-R-U-g-i-r-u-z-UVW1-UVW2.\n     Available: " + '-'.join(sorted(bands))
+    print "  -b <bands>: string, default: U-B-V-R-I, for example U-B-V-R-I-u-g-i-r-z-UVW1-UVW2.\n" \
+          "     Available: " + '-'.join(sorted(bands))
     print "  -i <model name>.  Example: cat_R450_M15_Ni007_E7"
     print "  -d <model directory>, default: ./"
     print "  -e <model extension> is used to define model name, default: tt "
@@ -196,8 +196,8 @@ def main(name='', model_ext='.tt'):
         for f in files:
             names.append(os.path.splitext(f)[0])
         if len(names) > 0:
-          for name in names:
-             compute_mag(name, path, bands, is_show_info=not is_silence, is_save=is_save_mags)
+            for name in names:
+                compute_mag(name, path, bands, is_show_info=not is_silence, is_save=is_save_mags)
         else:
             print "There are no models in the directory: %s with extension: %s " % (path, model_ext)
 
