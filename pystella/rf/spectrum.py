@@ -1,12 +1,16 @@
 from math import log10
+import scipy
 from pystella.util.phys_var import phys
 from operator import itemgetter
+from scipy.optimize import curve_fit
 
 __author__ = 'bakl'
 from scipy import interpolate
 from scipy.integrate import simps as integralfunc
+import scipy.optimize as opt
 import numpy as np
 import matplotlib.pyplot as plt
+import pystella.util.rf as rf
 
 class Spectrum:
     def __init__(self, name, freq=None, flux=None, is_sort_wl=True):
@@ -123,7 +127,7 @@ class Spectrum:
 
     def plot_spec(self, title=''):
         plt.title('Spectrum: '+title)
-        plt.plot(self.wl* phys.cm_to_angs,  self.flux_wl)
+        plt.plot(self.wl*phys.cm_to_angs,  self.flux_wl)
         plt.xscale('log')
         plt.yscale('log')
         plt.ylabel('Flux')
@@ -131,9 +135,58 @@ class Spectrum:
         plt.grid()
         plt.show()
 
+    def fit_t_color(self):
+        """
+        Fitting Spectrum by planck function and find the color temperature
+        :return:   color temperature
+        """
+        nu = self.freq
+        b = .28977721  # [cm]
+        # Tinit = 1.e4
+        Tinit = self.t_wien()
+
+        def func(freq, T):
+            return rf.planck(freq, T, inp="Hz", out="freq")
+        popt, pcov = curve_fit(func, nu, self.flux_q, p0=Tinit)
+        return popt
+
+    def t_wien(self):
+        """
+        Find temperature of Spectrum as Wien's law
+        :return: temperature
+        """
+        b = .28977721  # [cm]
+        tck = interpolate.splrep(self.wl, self.flux_wl)
+        def func(wl):
+            return -interpolate.splev(wl, tck, der=0)
+        wl_max = opt.fmin(func, x0=self.wl[len(self.wl)/2])
+        Twien = b / wl_max
+        return Twien
+
     @staticmethod
     def flux_to_distance_lum(flux, dl):
-        return flux / (4 * np.pi * (dl * phys.pc) ** 2)
+        """
+        Compute flux at distance dl
+        :param flux:  flux
+        :param dl: luminosity distance [parsec]
+        :return: :raise ValueError:
+        """
+        return flux / (4*np.pi * rf.pc_to_cm(dl)**2)
+
+
+class SpectrumPlanck(Spectrum):
+    """
+        Planck Spectrum
+    """
+
+    def __init__(self, freq, temperature, name='bb'):
+        flux = rf.planck(freq, temperature=temperature)
+        Spectrum.__init__(self, name, freq=freq, flux=flux)
+        self.T = temperature
+
+    @property
+    def Tbb(self):
+        return self.T
 
 
 class SeriesSpectrum:

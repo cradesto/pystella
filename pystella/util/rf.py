@@ -62,7 +62,9 @@ def planck_partition(nu, temperature):
     :param temperature: [K]
     :return: partition
     """
-    return 1. / (np.exp(p.h*nu / (p.k*temperature)) - 1)
+    x = np.exp(-p.h*nu / (p.k*temperature))
+    return x/(1.-x)
+    # return 1. / (np.exp(p.h*nu / (p.k*temperature)) - 1)
 
 
 def planck(x, temperature, inp="Hz", out="freq"):

@@ -3,6 +3,7 @@ import pystella.rf.band as band
 import pystella.rf.spectrum as spectrum
 import numpy as np
 from pystella.util.phys_var import phys
+import pystella.util.rf as rf
 
 __author__ = 'bakl'
 
@@ -12,7 +13,7 @@ class TestSpectrum(unittest.TestCase):
         nf = 100
         start, end = 10, 1e5
         wl = np.exp(np.linspace(np.log(start), np.log(end), nf))
-        freq = phys.c / (wl * 1.e-8)
+        freq = rf.val_to_hz(wl, inp="A")
         # freq = freq[np.argsort(freq)]  # ascending order
         flux = np.ones(nf)
         self.sp = spectrum.Spectrum('uniform', freq=freq, flux=flux)
