@@ -40,22 +40,28 @@ class Stella:
         ext = ['ph']
         return any(map(os.path.isfile, [os.path.join(self.path, self.name + '.' + e) for e in ext]))
 
+    @property
+    def is_tt_data(self):
+        ext = ['tt']
+        return any(map(os.path.isfile, [os.path.join(self.path, self.name + '.' + e) for e in ext]))
+
     def read_serial_spectrum(self, t_diff=1.05):
-        fname = os.path.join(self.path, self.name + '.ph')
         serial = SeriesSpectrum(self.name)
 
         # read first line with frequencies
+        fname = os.path.join(self.path, self.name + '.ph')
         f = open(fname, 'r')
-        # read NX,NY,NZ
-        header1 = f.readline()
-        f.close()
+        try:
+            # read NX,NY,NZ
+            header1 = f.readline()
+        finally:
+            f.close()
 
         freqs = [map(float, header1.split())]
         freqs = np.array(freqs).reshape(-1)
         freqs = np.exp(math.log(10) * freqs)
         serial.set_freq(freqs)
 
-        # read time timeph, nfrus, dum, ttt(Nfreq)
         data = np.loadtxt(fname, comments='!', skiprows=1)
 
         times = np.array(data[:, 0])
@@ -81,3 +87,23 @@ class Stella:
         serial.set_data(sdata)
         serial.set_times(times_thin)
         return serial
+
+    def read_tt_data(self):
+        num_line_header = 88
+        header = ''
+        fname = os.path.join(self.path, self.name + '.tt')
+        f = open(fname, 'r')
+        try:
+            for _ in xrange(num_line_header-1):
+                next(f)
+            header = next(f)
+        finally:
+            f.close()
+
+        names = map(str.strip, header.split())
+        # block = np.loadtxt(fname, skiprows=num_line_header+1)
+        # block.dtype.names = names
+        # dtype = {'names': names, 'formats': 'float64'*len(names)}
+        dtype = np.dtype({'names': names, 'formats':  [np.float64] * len(names)})
+        block = np.loadtxt(fname, skiprows=num_line_header+1, dtype=dtype)
+        return block

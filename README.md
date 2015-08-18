@@ -8,28 +8,32 @@
 
 >>> cd pystella
 
->>> ./sn.py [params]
+>>> ./ubv.py [params]
 ```
 
 #### Usage:
 
-  sn.py [params]
-  
--  -b <bands>: string like U-B-V-R-I-g-r-i-UVM2-UVW1-UVW2, default: U-B-V-R-I
--  -i <model name>.  Ex: cat_R1000_M15_Ni007_E15
+  ubv.py [params]
+
+-  -b <bands>: string, default: U-B-V-R-I, for example U-B-V-R-I-u-g-i-r-z-UVW1-UVW2.
+     Available: U-B-V-R-I-u-g-i-r-z-UVM2-UVW1-UVW2-U_UVOT-B_UVOT-V_UVOT
+-  -i <model name>.  Example: cat_R450_M15_Ni007_E7
 -  -d <model directory>, default: ./
--  -s silence mode: no info, no plot
--  -h: print usage
+-  -e <model extension> is used to define model name, default: tt 
+-  -s  silence mode: no info, no plot
+-  -w  write magnitudes to file, default 'False'
+-  -h  print usage
+
 
 ```bash
->>>./sn.py  -i cat_R1000_M15_Ni007_E15  -d ~/Sn/Release/seb_git/res/tt  -b U-B-V
+>>>./ubv.py  -i cat_R1000_M15_Ni007_E15  -d ~/Sn/Release/seb_git/res/tt  -b U-B-V
 ```
 
 Run script for all *.ph-files in the DIR:
 ```bash
->>> find DIR  -name "*.ph" | sed -r 's/\.ph$//' | while read fn; do ./sn.py -i $(basename  $fn)  -d $(dirname $fn) -s; done
+>>> find DIR  -name "*.ph" | sed -r 's/\.ph$//' | while read fn; do ./ubv.py -i $(basename  $fn)  -d $(dirname $fn) -s; done
 ```
-
+also the same could be done with key '-d' without model's name. 
 
 
 Acknowledgments:

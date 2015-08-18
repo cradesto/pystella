@@ -10,6 +10,8 @@ __author__ = 'bakl'
 
 
 class Band(object):
+    Cache = dict()
+
     def __init__(self, name=None, fname=None, load=1):
         """Creates a band instance.  Required parameters:  name and file."""
         self.name = name
@@ -42,7 +44,7 @@ class Band(object):
         return "%s" % self.name
 
     def read(self):
-        """Reads the wave and response from file. Read zero point"""
+        """Reads the waves and response from file. Read zero point"""
         if self.file is not None:
             f = open(self.file)
             try:
@@ -51,8 +53,8 @@ class Band(object):
                 self.resp = np.array([float(string.split(line)[1]) for line in lines if line[0] != "#"])
                 self.wl = wl * phys.angs_to_cm
                 f.close()
-            except Exception:
-                print"Error in rf file: %s.  Exception:  %s" % (self.file, sys.exc_info()[0])
+            # except Exception:
+            #     print"Error in rf file: %s.  Exception:  %s" % (self.file, sys.exc_info()[0])
             finally:
                 f.close()
 
@@ -94,9 +96,9 @@ def read_zero_point(fname, ptn_file):
             if string.split(line)[1] == ptn_file:
                 zp = float(string.split(line)[2])
                 return zp
-    except Exception:
-        print"Error in zero points data-file: %s.  Exception:  %s" % (fname, sys.exc_info()[0])
-        return np.nan
+    # except Exception:
+    #     print"Error in zero points data-file: %s.  Exception:  %s" % (fname, sys.exc_info()[0])
+    #     return np.nan
     finally:
         f.close()
 
@@ -180,9 +182,13 @@ def band_by_name(name):
     :param name: for example "U" or "B"
     :return: class Band with waves and respons
     """
+    if name in Band.Cache:
+        return Band.Cache[name]
+
     if band_is_exist(name):
         bands = band_get_names()
         b = Band(name=name, fname=bands[name], load=1)
+        Band.Cache[name] = b
         return b
     else:
         return None

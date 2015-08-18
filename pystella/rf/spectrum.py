@@ -1,5 +1,6 @@
 from math import log10
 import scipy
+import math
 from pystella.util.phys_var import phys
 from operator import itemgetter
 from scipy.optimize import curve_fit
@@ -180,13 +181,19 @@ class SpectrumPlanck(Spectrum):
     """
 
     def __init__(self, freq, temperature, name='bb'):
-        flux = rf.planck(freq, temperature=temperature)
+        flux = math.pi * rf.planck(freq, temperature=temperature)
         Spectrum.__init__(self, name, freq=freq, flux=flux)
         self.T = temperature
+        self.zeta = 0.
 
     @property
     def Tbb(self):
         return self.T
+
+    def correct_zeta(self, zeta):
+        self.zeta = zeta
+        self.flux_q *= zeta**2
+        self.flux_wl *= zeta**2
 
 
 class SeriesSpectrum:

@@ -1,9 +1,9 @@
 import unittest
-import pystella.rf.spectrum as spectrum
 import numpy as np
 import pylab as plt
 from scipy.optimize import curve_fit
 
+import pystella.rf.spectrum as spectrum
 import pystella.util.rf as rf
 
 __author__ = 'bakl'

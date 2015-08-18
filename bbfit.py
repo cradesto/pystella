@@ -16,6 +16,9 @@ import matplotlib.pyplot as plt
 
 from pystella.model.stella import Stella
 from pystella.rf import band
+import pystella.rf.spectrum as spectrum
+import pystella.util.rf as rf
+import scipy.optimize as opt
 
 ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
 
@@ -74,14 +77,28 @@ def plot_bands(dict_mags, bands, title='', distance=10.):
     plt.show()
 
 
-def compute_mag(name, path, bands, is_show_info=True, is_save=False):
+def epsilon(x, freq, mag, bands,  z=0, distance=10):
+    Tcol, zeta = x
+    sp = spectrum.SpectrumPlanck(freq, Tcol)
+    sp.correct_zeta(zeta)
+    # filters = [band.band_by_name(n) for n in bands]
+    mag_bb = {n: sp.flux_to_mag(band.band_by_name(n), z=z, dl=distance) for n in bands}
+    summa = 0
+    for b in bands:
+        e = abs(mag[b] - mag_bb[b])
+        summa = summa + e
+    return summa
+
+
+def compute_tcolor(name, path, bands, is_show_info=False, is_save=False):
     model = Stella(name, path=path)
-    if is_show_info:
-        print ''
-        model.show_info()
 
     if not model.is_spec_data:
-        print "No data for: " + str(model)
+        print "No ph-data for: " + str(model)
+        return None
+
+    if not model.is_tt_data:
+        print "No tt-data for: " + str(model)
         return None
 
     # serial_spec = model.read_serial_spectrum(t_diff=0.)
@@ -90,21 +107,35 @@ def compute_mag(name, path, bands, is_show_info=True, is_save=False):
     mags = dict((k, None) for k in bands)
 
     z, distance = 0, 10.  # pc for Absolute magnitude
-    # z, distance = 0.145, 687.7e6  # pc for comparison with Maria
     for n in bands:
         b = band.band_by_name(n)
         mags[n] = serial_spec.flux_to_mags(b, z=z, dl=distance)
 
-    mags['time'] = serial_spec.times * (1. + z)
+    mags['time'] = serial_spec.times
 
-    if mags is not None:
-        fname = os.path.join(path, name + '.ubv')
-        if is_save:
-            mags_save(mags, bands, fname)
-            print "Magnitudes have been saved to " + fname
-        if is_show_info:
-            plot_bands(mags, bands, title=name, distance=distance)
-    return mags
+    # read R_ph
+    tt = model.read_tt_data()
+
+    # fit mags by B(T_col) and get \zeta\theta & T_col
+    nt = 10
+
+
+    def compute_Tcolor_zeta(mags):
+        Tcolors = list()
+        zetaR = list()
+        for nt in range(len(mags['time'])):
+            t = mags['time'][nt]
+            if t < 10:
+                continue
+            mag = {b: mags[b][nt] for b in bands}
+            temp, w = opt.fmin(epsilon, x0=np.array([1.e4, 1]), args=(serial_spec.freq, mag, bands, z, distance))
+            Tcolors.append(temp)
+            zetaR.append(w)
+        return Tcolors, zetaR
+
+    Tcolors, zetaR = compute_Tcolor_zeta(mags)
+    # show results
+    plt.plot(Tcolors, zetaR, linewidth=2.0)
 
 
 def mags_save(dictionary, bands, fname):
@@ -120,7 +151,7 @@ def mags_save(dictionary, bands, fname):
 def usage():
     bands = band.band_get_names().keys()
     print "Usage:"
-    print "  sn.py [params]"
+    print "  bbfit.py [params]"
     print "  -b <bands>: string, default: U-B-V-R-I, for example U-B-V-R-I-u-g-i-r-z-UVW1-UVW2.\n" \
           "     Available: " + '-'.join(sorted(bands))
     print "  -i <model name>.  Example: cat_R450_M15_Ni007_E7"
@@ -153,12 +184,8 @@ def main(name='', model_ext='.tt'):
                 path = ROOT_DIRECTORY
                 name = str(arg)
                 break
-                # if name == '':
-                #     print 'Error: you should specify the name of model.'
-                #     sys.exit(2)
 
-    bands = ['U', 'B', 'V', 'R', "I"]
-    # bands = ['U', 'B', 'V', 'R', "I", 'UVM2', "UVW1", "UVW2", 'g', "r", "i"]
+    bands = ['B', 'V']
 
     for opt, arg in opts:
         if opt == '-e':
@@ -188,7 +215,7 @@ def main(name='', model_ext='.tt'):
             sys.exit(2)
 
     if name != '':
-        compute_mag(name, path, bands, is_show_info=not is_silence, is_save=is_save_mags)
+        compute_tcolor(name, path, bands, is_show_info=not is_silence, is_save=is_save_mags)
 
     elif path != '':  # run for whole path
         names = []
@@ -197,7 +224,7 @@ def main(name='', model_ext='.tt'):
             names.append(os.path.splitext(f)[0])
         if len(names) > 0:
             for name in names:
-                compute_mag(name, path, bands, is_show_info=not is_silence, is_save=is_save_mags)
+                compute_tcolor(name, path, bands, is_show_info=not is_silence, is_save=is_save_mags)
         else:
             print "There are no models in the directory: %s with extension: %s " % (path, model_ext)
 
