@@ -1,24 +1,23 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+from pystella.rf.star import Star
 
 __author__ = 'bakl'
 
 import os
 import sys
 import getopt
-from os.path import dirname
-from os import listdir
-from os.path import isfile, join
+from os.path import isfile, join, dirname
 import csv
-import numpy as np
 
+import numpy as np
+import scipy.optimize as optim
+from scipy import interpolate
 import matplotlib.pyplot as plt
 
+from pystella.rf import band, spectrum
 from pystella.model.stella import Stella
-from pystella.rf import band
-import pystella.rf.spectrum as spectrum
 import pystella.util.rf as rf
-import scipy.optimize as opt
 
 ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
 
@@ -77,17 +76,37 @@ def plot_bands(dict_mags, bands, title='', distance=10.):
     plt.show()
 
 
-def epsilon(x, freq, mag, bands,  z=0, distance=10):
-    Tcol, zeta = x
-    sp = spectrum.SpectrumPlanck(freq, Tcol)
+def epsilon(x, freq, mag, bands, radius, dist):
+    temp_color, zeta = x
+    sp = spectrum.SpectrumPlanck(freq, temp_color)
     sp.correct_zeta(zeta)
-    # filters = [band.band_by_name(n) for n in bands]
-    mag_bb = {n: sp.flux_to_mag(band.band_by_name(n), z=z, dl=distance) for n in bands}
-    summa = 0
+
+    star = Star("bb", sp)
+    star.set_radius_ph(radius)
+    star.set_distance(dist)
+    mag_bb = {b: star.flux_to_mag(band.band_by_name(b)) for b in bands}
+    e = 0
     for b in bands:
-        e = abs(mag[b] - mag_bb[b])
-        summa = summa + e
-    return summa
+        e += abs(mag[b] - mag_bb[b])
+    return e
+
+
+def compute_Tcolor_zeta(mags, tt, bands, freq, dist):
+    temp = list()
+    zeta_radius = list()
+    Rph_spline = interpolate.splrep(tt['time'], tt['Rph'], s=0)
+    for nt in range(len(mags['time'])):
+        t = mags['time'][nt]
+        if t < min(tt['time']):
+            continue
+        if t > max(tt['time']):
+            break
+        mag = {b: mags[b][nt] for b in bands}
+        radius = interpolate.splev(t, Rph_spline)
+        tcolor, w = optim.fmin(epsilon, x0=np.array([1.e4, 1]), args=(freq, mag, bands, radius, dist))
+        temp.append(tcolor)
+        zeta_radius.append(w)
+    return temp, zeta_radius
 
 
 def compute_tcolor(name, path, bands, is_show_info=False, is_save=False):
@@ -101,51 +120,58 @@ def compute_tcolor(name, path, bands, is_show_info=False, is_save=False):
         print "No tt-data for: " + str(model)
         return None
 
+    print "\nRun: %s for %s " % (name, join(bands))
+
     # serial_spec = model.read_serial_spectrum(t_diff=0.)
     serial_spec = model.read_serial_spectrum(t_diff=1.05)
 
-    mags = dict((k, None) for k in bands)
-
-    z, distance = 0, 10.  # pc for Absolute magnitude
+    distance = rf.pc_to_cm(10.)  # pc for Absolute magnitude
+    l = list()
     for n in bands:
         b = band.band_by_name(n)
-        mags[n] = serial_spec.flux_to_mags(b, z=z, dl=distance)
+        l.append(serial_spec.flux_to_mags(b, dl=distance))
 
+    mags = np.array(np.zeros(len(l[0])),
+                    dtype=np.dtype({'names': ['time'] + bands, 'formats': [np.float64] * (len(bands) + 1)}))
     mags['time'] = serial_spec.times
+    for n in bands:
+        mags[n] = l.pop(0)
+    # mags = np.array([serial_spec.times] + l,
+    #                 dtype=np.dtype({'names': ['time']+bands, 'formats':  [np.float64] * (len(bands)+1)}))
 
     # read R_ph
     tt = model.read_tt_data()
 
+    # time cut
+    t_cut = 2.  # days
+    mags = mags[mags['time'] > t_cut]
+    tt = tt[tt['time'] > t_cut]
+
     # fit mags by B(T_col) and get \zeta\theta & T_col
-    nt = 10
+    Tcolors, zetaR = compute_Tcolor_zeta(mags, tt=tt, bands=bands, freq=serial_spec.freq, dist=distance)
 
 
-    def compute_Tcolor_zeta(mags):
-        Tcolors = list()
-        zetaR = list()
-        for nt in range(len(mags['time'])):
-            t = mags['time'][nt]
-            if t < 10:
-                continue
-            mag = {b: mags[b][nt] for b in bands}
-            temp, w = opt.fmin(epsilon, x0=np.array([1.e4, 1]), args=(serial_spec.freq, mag, bands, z, distance))
-            Tcolors.append(temp)
-            zetaR.append(w)
-        return Tcolors, zetaR
-
-    Tcolors, zetaR = compute_Tcolor_zeta(mags)
     # show results
+    res = np.array(np.zeros(len(Tcolors)),
+                   dtype=np.dtype({'names': ['time', 'Tcol', 'zeta'], 'formats': [np.float64] * 3}))
+    res['time'] = mags['time']
+    res['Tcol'] = Tcolors
+    res['zeta'] = zetaR
+
+    res_save(res, fname=name+"_tcolor_zeta.dat")
+    print "\nFinish: %s for %d times" % (name, len(Tcolors))
+
     plt.plot(Tcolors, zetaR, linewidth=2.0)
+    plt.show()
 
 
-def mags_save(dictionary, bands, fname):
+def res_save(narr, fname):
+    names = narr.dtype.names
     with open(fname, 'wb') as f:
         writer = csv.writer(f, delimiter='\t')
-        writer.writerow(['{:^8s}'.format(x) for x in ['time'] + bands])
-        for i, (row) in enumerate(zip(*[dictionary[k] for k in 'time'.split() + bands])):
-            # row = row[-1:] + row[:-1]  # make time first column
+        writer.writerow(['{:^8s}'.format(x) for x in names])
+        for i, (row) in enumerate(zip(*[narr[k] for k in names])):
             writer.writerow(['{:8.3f}'.format(x) for x in row])
-            # writer.writerow(['{:3.4e}'.format(x) for x in row])
 
 
 def usage():
@@ -219,7 +245,7 @@ def main(name='', model_ext='.tt'):
 
     elif path != '':  # run for whole path
         names = []
-        files = [f for f in listdir(path) if isfile(join(path, f)) and f.endswith(model_ext)]
+        files = [f for f in os.listdir(path) if isfile(join(path, f)) and f.endswith(model_ext)]
         for f in files:
             names.append(os.path.splitext(f)[0])
         if len(names) > 0:

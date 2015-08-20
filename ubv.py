@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+from pystella.util import rf
 
 __author__ = 'bakl'
 
@@ -93,7 +94,7 @@ def compute_mag(name, path, bands, is_show_info=True, is_save=False):
     # z, distance = 0.145, 687.7e6  # pc for comparison with Maria
     for n in bands:
         b = band.band_by_name(n)
-        mags[n] = serial_spec.flux_to_mags(b, z=z, dl=distance)
+        mags[n] = serial_spec.flux_to_mags(b, z=z, dl=rf.pc_to_cm(distance))
 
     mags['time'] = serial_spec.times * (1. + z)
 

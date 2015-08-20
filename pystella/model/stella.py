@@ -96,14 +96,13 @@ class Stella:
         try:
             for _ in xrange(num_line_header-1):
                 next(f)
+            # time Tbb rbb Teff Rlast_sc R(tau2/3) Mbol MU MB MV MI MR Mbolavg  gdepos
             header = next(f)
         finally:
             f.close()
 
         names = map(str.strip, header.split())
-        # block = np.loadtxt(fname, skiprows=num_line_header+1)
-        # block.dtype.names = names
-        # dtype = {'names': names, 'formats': 'float64'*len(names)}
+        names = [w.replace('R(tau2/3)', 'Rph') for w in names]
         dtype = np.dtype({'names': names, 'formats':  [np.float64] * len(names)})
         block = np.loadtxt(fname, skiprows=num_line_header+1, dtype=dtype)
         return block

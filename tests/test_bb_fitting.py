@@ -24,7 +24,7 @@ class TestSpectrumFitting(unittest.TestCase):
                                msg="For planck  Tcolor [%f] should be equal Tbb [%f]." % (Tcol, self.sp.Tbb))
 
     def test_t_wien(self):
-        Twien = self.sp.t_wien()
+        Twien = self.sp.temperature_wien
         self.assertAlmostEqual(Twien, self.sp.Tbb,
                                msg="For planck  Twien [%f] should be equal Tbb [%f]." % (Twien, self.sp.Tbb)
                                , delta=0.1)
