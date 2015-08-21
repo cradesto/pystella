@@ -22,56 +22,35 @@ import pystella.util.rf as rf
 ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
 
 
-def plot_bands(dict_mags, bands, title='', distance=10.):
-    plt.title(''.join(bands) + ' filter response')
+def plot_zeta(res_dic, set_bands, title=''):
+    colors = {"B-V": "blue", 'B-V-I': "cyan", 'V-I': "black"}
+    lntypes = {"B-V": "-", 'B-V-I': "-.", 'V-I': "--"}
 
-    colors = dict(U="blue", B="cyan", V="black", R="red", I="magenta",
-                  UVM2="green", UVW1="red", UVW2="blue",
-                  g="black", r="red", i="magenta", u="blue", z="magenta")
-    lntypes = dict(U="-", B="-", V="-", R="-", I="-",
-                   UVM2="-.", UVW1="-.", UVW2="-.",
-                   u="--", g="--", r="--", i="--", z="--")
-    band_shift = dict(U=6.9, B=3.7, V=0, R=-2.4, I=-4.7,
-                      UVM2=11.3, UVW1=10, UVW2=13.6,
-                      u=3.5, g=2.5, r=-1.2, i=-3.7, z=-4.2)
-    band_shift = dict((k, 0) for k, v in band_shift.items())  # no y-shift
-
-    dm = 5 * np.log10(distance) - 5  # distance module
-    # dm = 0
-    lims = [-12, -19]
-    lims += dm
-    is_auto_lim = True
+    xlim = [0, 25000]
+    ylim = [0, 5]
+    is_auto_lim = False
     if is_auto_lim:
-        lims = [0, 0]
+        xlim = [0, 0]
+        ylim = [0, 0]
 
-    def lbl(b):
-        shift = band_shift[b]
-        l = b
-        if shift > 0:
-            l += '+' + str(shift)
-        elif shift < 0:
-            l += '-' + str(abs(shift))
-        return l
-
-    x = dict_mags['time']
-    for n in bands:
-        y = dict_mags[n]
-        y += dm + band_shift[n]
-        plt.plot(x, y, label=lbl(n), color=colors[n], ls=lntypes[n], linewidth=2.0)
+    for n in set_bands:
+        x = res_dic[n]['Tcol']
+        y = res_dic[n]['zeta']
+        plt.plot(x, y, label=n, color=colors[n], ls=lntypes[n], linewidth=2.0)
         if is_auto_lim:
-            if lims[0] < max(y[len(y) / 2:]) or lims[0] == 0:
-                lims[0] = max(y[len(y) / 2:])
-            if lims[1] > min(y) or lims[1] == 0:
-                lims[1] = min(y)
+            xlim[0], xlim[1] = min(np.append(x, xlim[0])), max(np.append(x, xlim[1]))
+            ylim[0], ylim[1] = min(np.append(x, ylim[0])), max(np.append(y, ylim[1]))
 
-    lims = np.add(lims, [1, -1])
-    plt.gca().invert_yaxis()
-    plt.xlim([-10, 200])
-    plt.ylim(lims)
+    # plt.xlim(xlim)
+    # ylim = np.add(ylim, [1, -1])
+    # plt.ylim(ylim)
     plt.legend()
-    plt.ylabel('Magnitude')
-    plt.xlabel('Time [days]')
-    plt.title(title)
+    plt.ylabel('Zeta')
+    plt.xlabel('T_color')
+    if title != '':
+        plt.title(title)
+    else:
+        plt.title('; '.join(set_bands) + ' filter response')
     plt.grid()
     plt.show()
 
@@ -158,11 +137,14 @@ def compute_tcolor(name, path, bands, is_show_info=False, is_save=False):
     res['Tcol'] = Tcolors
     res['zeta'] = zetaR
 
-    res_save(res, fname=name+"_tcolor_zeta.dat")
     print "\nFinish: %s for %d times" % (name, len(Tcolors))
 
-    plt.plot(Tcolors, zetaR, linewidth=2.0)
-    plt.show()
+    if is_save:
+        fname = os.path.join(path, "%s.%s_%s.dat" % (name, "TcolorZeta", '-'.join(bands),))
+        print "\nSave Tcolor & Zeta for %s in %s." % (bands, fname)
+        res_save(res, fname=fname)
+
+    return res
 
 
 def res_save(narr, fname):
@@ -211,17 +193,17 @@ def main(name='', model_ext='.tt'):
                 name = str(arg)
                 break
 
-    bands = ['B', 'V']
+    set_bands = ['B', 'V']
 
     for opt, arg in opts:
         if opt == '-e':
             model_ext = '.' + arg
             continue
         if opt == '-b':
-            bands = str(arg).split('-')
-            for b in bands:
-                if not band.band_is_exist(b):
-                    print 'No such band: ' + b
+            set_bands = str(arg).split('-')
+            for bset in set_bands:
+                if not band.band_is_exist(bset):
+                    print 'No such band: ' + bset
                     sys.exit(2)
             continue
         if opt == '-s':
@@ -240,8 +222,14 @@ def main(name='', model_ext='.tt'):
             usage()
             sys.exit(2)
 
+    set_bands = ['B-V-I', 'B-V', 'V-I']
+
     if name != '':
-        compute_tcolor(name, path, bands, is_show_info=not is_silence, is_save=is_save_mags)
+        dic = dict((k, None) for k in set_bands)
+        for bset in set_bands:
+            dic[bset] = compute_tcolor(name, path, bset.split('-')
+                                       , is_show_info=not is_silence, is_save=is_save_mags)
+        plot_zeta(dic, set_bands)
 
     elif path != '':  # run for whole path
         names = []
@@ -250,7 +238,7 @@ def main(name='', model_ext='.tt'):
             names.append(os.path.splitext(f)[0])
         if len(names) > 0:
             for name in names:
-                compute_tcolor(name, path, bands, is_show_info=not is_silence, is_save=is_save_mags)
+                compute_tcolor(name, path, set_bands, is_show_info=not is_silence, is_save=is_save_mags)
         else:
             print "There are no models in the directory: %s with extension: %s " % (path, model_ext)
 
