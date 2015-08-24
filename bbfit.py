@@ -25,8 +25,6 @@ ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
 
 
 def plot_zeta(models_dic, set_bands, title=''):
-    plt.close('all')
-
     colors = {"B-V": "blue", 'B-V-I': "cyan", 'V-I': "black"}
     lntypes = {"B-V": "-", 'B-V-I': "-.", 'V-I': "--"}
     markers = {0: u'tickleft', 1: u'tickright', 2: u'tickup', 3: u'tickdown', 4: u'caretleft'
@@ -156,6 +154,7 @@ def compute_tcolor(name, path, bands, is_show_info=False, is_save=False):
 
     # fit mags by B(T_col) and get \zeta\theta & T_col
     Tcolors, zetaR = compute_Tcolor_zeta(mags, tt=tt, bands=bands, freq=serial_spec.freq, dist=distance)
+
 
     # show results
     res = np.array(np.zeros(len(Tcolors)),
