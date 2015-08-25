@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-import random
 from matplotlib import gridspec
+
 from pystella.rf.star import Star
 
 __author__ = 'bakl'
@@ -27,14 +27,11 @@ ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
 def plot_zeta(models_dic, set_bands, title=''):
     colors = {"B-V": "blue", 'B-V-I': "cyan", 'V-I': "black"}
     lntypes = {"B-V": "-", 'B-V-I': "-.", 'V-I': "--"}
-    markers = {0: u'tickleft', 1: u'tickright', 2: u'tickup', 3: u'tickdown', 4: u'caretleft'
-        , u'D': u'diamond', 6: u'caretup', 7: u'caretdown', u's': u'square', u'|': u'vline'
-        , None: u'nothing', u'None': u'nothing', u'x': u'x', 5: u'caretright', u'_': u'hline'
-        , u'^': u'triangle_up', u' ': u'nothing', u'd': u'thin_diamond', u'h': u'hexagon1'
-        , u'+': u'plus', u'*': u'star', u',': u'pixel', u'o': u'circle', u'.': u'point'
-        , u'1': u'tri_down', u'p': u'pentagon', u'3': u'tri_left', u'2': u'tri_up'
-        , u'4': u'tri_right', u'H': u'hexagon2', u'v': u'triangle_down', u'': u'nothing'
-        , u'8': u'octagon', u'<': u'triangle_left', u'>': u'triangle_right'}
+    markers = {u'D': u'diamond', 6: u'caretup', u's': u'square', u'x': u'x'
+        , 5: u'caretright', u'^': u'triangle_up', u'd': u'thin_diamond', u'h': u'hexagon1'
+        , u'+': u'plus', u'*': u'star', u'o': u'circle', u'p': u'pentagon', u'3': u'tri_left'
+        , u'H': u'hexagon2', u'v': u'triangle_down', u'8': u'octagon', u'<': u'triangle_left'}
+    markers = markers.keys()
     xlim = [0, 25000]
     ylim = [0, 5]
     is_auto_lim = False
@@ -50,7 +47,9 @@ def plot_zeta(models_dic, set_bands, title=''):
     gs1.update(wspace=0.3, hspace=0.3, left=0.05, right=0.95)
 
     ax_cache = {}
+    mi = 0
     for mname, mdic in models_dic.iteritems():
+        mi += 1
         i = 0
         for n in set_bands:
             x = mdic[n]['Tcol']
@@ -60,14 +59,12 @@ def plot_zeta(models_dic, set_bands, title=''):
             else:
                 ax = fig.add_subplot(gs1[i, 0])
                 ax_cache[n] = ax
-            makr = random.randint(0, len(markers)-1)
-            marker = markers.keys()[makr]
-            ax.plot(x, y, marker='o', label=n, markersize=5, color=colors[n], ls=lntypes[n], linewidth=1.5)
+            ax.plot(x, y, marker=markers[mi % (len(markers)-1)], label=mname, markersize=5, color=colors[n], ls="-.", linewidth=1.5)
             if is_auto_lim:
                 xlim[0], xlim[1] = min(np.append(x, xlim[0])), max(np.append(x, xlim[1]))
                 ylim[0], ylim[1] = min(np.append(x, ylim[0])), max(np.append(y, ylim[1]))
 
-            ax.legend()
+            ax.legend(prop={'size': 6})
             ax.set_ylabel('Zeta')
             ax.set_xlabel('T_color')
             ax.set_title(n)
@@ -108,7 +105,7 @@ def compute_Tcolor_zeta(mags, tt, bands, freq, dist):
             break
         mag = {b: mags[b][nt] for b in bands}
         radius = interpolate.splev(t, Rph_spline)
-        tcolor, w = optim.fmin(epsilon, x0=np.array([1.e4, 1]), args=(freq, mag, bands, radius, dist))
+        tcolor, w = optim.fmin(epsilon, x0=np.array([1.e4, 1]), args=(freq, mag, bands, radius, dist), disp=0)
         temp.append(tcolor)
         zeta_radius.append(w)
     return temp, zeta_radius
@@ -124,8 +121,6 @@ def compute_tcolor(name, path, bands, is_show_info=False, is_save=False):
     if not model.is_tt_data:
         print "No tt-data for: " + str(model)
         return None
-
-    print "\nRun: %s for %s " % (name, join(bands))
 
     # serial_spec = model.read_serial_spectrum(t_diff=0.)
     serial_spec = model.read_serial_spectrum(t_diff=1.05)
@@ -162,8 +157,6 @@ def compute_tcolor(name, path, bands, is_show_info=False, is_save=False):
     res['time'] = mags['time']
     res['Tcol'] = Tcolors
     res['zeta'] = zetaR
-
-    print "\nFinish: %s for %d times" % (name, len(Tcolors))
 
     if is_save:
         fname = os.path.join(path, "%s.%s_%s.dat" % (name, "TcolorZeta", '-'.join(bands),))
@@ -261,17 +254,21 @@ def main(name='', model_ext='.tt'):
 
     elif path != '':  # run for whole path
         names = []
+        im = 0
         files = [f for f in os.listdir(path) if isfile(join(path, f)) and f.endswith(model_ext)]
         for f in files:
             names.append(os.path.splitext(f)[0])
         if len(names) > 0:
             dic_models = {}  # dict((k, None) for k in names)
             for name in names:
+                im += 1
                 dic = {}  # dict((k, None) for k in set_bands)
+                print "\nRun: %s [%d/%d]" % (name, im, len(names))
                 for bset in set_bands:
                     dic[bset] = compute_tcolor(name, path, bset.split('-')
                                                , is_show_info=not is_silence, is_save=is_save_mags)
                 dic_models[name] = dic
+                print "\nFinish: %s" % name
             plot_zeta(dic_models, set_bands)
         else:
             print "There are no models in the directory: %s with extension: %s " % (path, model_ext)
