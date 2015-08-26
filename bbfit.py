@@ -24,7 +24,7 @@ import pystella.util.rf as rf
 ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
 
 
-def plot_zeta(models_dic, set_bands, title=''):
+def plot_zeta(models_dic, set_bands, title='', is_fit=False):
     colors = {"B-V": "blue", 'B-V-I': "cyan", 'V-I': "black"}
     lntypes = {"B-V": "-", 'B-V-I': "-.", 'V-I': "--"}
     markers = {u'D': u'diamond', 6: u'caretup', u's': u'square', u'x': u'x'
@@ -51,16 +51,20 @@ def plot_zeta(models_dic, set_bands, title=''):
     for mname, mdic in models_dic.iteritems():
         mi += 1
         i = 0
-        for n in set_bands:
-            x = mdic[n]['Tcol']
-            y = mdic[n]['zeta']
-            if n in ax_cache:
-                ax = ax_cache[n]
+        for bset in set_bands:
+            x = mdic[bset]['Tcol']
+            y = mdic[bset]['zeta']
+            if bset in ax_cache:
+                ax = ax_cache[bset]
             else:
                 ax = fig.add_subplot(gs1[i, 0])
-                ax_cache[n] = ax
-            ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label=mname, markersize=5, color=colors[n], ls="-.",
+                ax_cache[bset] = ax
+            ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label=mname, markersize=5, color=colors[bset], ls="-.",
                     linewidth=1.5)
+            # dessart
+            if is_fit:
+                yd = zeta_fit_dessart(x, bset)
+                ax.plot(x, yd, color='red', ls="-", linewidth=1.5)
             if is_auto_lim:
                 xlim[0], xlim[1] = min(np.append(x, xlim[0])), max(np.append(x, xlim[1]))
                 ylim[0], ylim[1] = min(np.append(x, ylim[0])), max(np.append(y, ylim[1]))
@@ -70,7 +74,7 @@ def plot_zeta(models_dic, set_bands, title=''):
             ax.set_ylim(ylim)
             ax.set_ylabel('Zeta')
             ax.set_xlabel('T_color')
-            ax.set_title(n)
+            ax.set_title(bset)
             i += 1
 
     # plt.xlim(xlim)
@@ -80,6 +84,26 @@ def plot_zeta(models_dic, set_bands, title=''):
     plt.grid()
     plt.show()
 
+
+def zeta_fit_dessart(Tcol, bset):
+    """
+    Zeta fit from Dessart, L., & Hillier, D. J. (2005). doi:10.1051/0004-6361:20053217
+    :param Tcol:
+    :param bset:
+    :return:
+    """
+    a = {
+        'B-V': [0.47188, -0.25399, 0.32630],
+        'B-V-I': [0.63241, -0.38375, 0.28425],
+        'V-I': [0.81662, -0.62896, 0.33852],
+        'J-H-K': [0.10786, 1.12374, 0.]
+    }
+    zeta = 0
+    i = 0
+    for ai in a[bset]:
+        zeta += ai * (1.e4/Tcol)**i
+        i += 1
+    return zeta
 
 def epsilon(x, freq, mag, bands, radius, dist):
     temp_color, zeta = x
@@ -196,6 +220,7 @@ def usage():
     print "  -e <model extension> is used to define model name, default: tt "
     print "  -s  silence mode: no info, no plot"
     print "  -f  force mode: rewrite tcolor-files even if it exists"
+    print "  -a  plot Dessart&Hillier fit"
     print "  -w  write magnitudes to file, default 'False'"
     print "  -h  print usage"
 
@@ -205,10 +230,11 @@ def main(name='', model_ext='.tt'):
     is_silence = False
     is_force = False
     is_save = False
+    is_fit = False
     path = './'
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "fswhd:e:i:b:")
+        opts, args = getopt.getopt(sys.argv[1:], "afswhd:e:i:b:")
     except getopt.GetoptError as err:
         print str(err)  # will print something like "option -a not recognized"
         usage()
@@ -248,6 +274,9 @@ def main(name='', model_ext='.tt'):
             is_force = True
             is_save = True
             continue
+        if opt == '-a':
+            is_fit = True
+            continue
         if opt == '-d':
             path = str(arg)
             if not (os.path.isdir(path) and os.path.exists(path)):
@@ -286,7 +315,7 @@ def main(name='', model_ext='.tt'):
 
             dic_results[name] = dic
             print "Finish: %s" % name
-        plot_zeta(dic_results, set_bands)
+        plot_zeta(dic_results, set_bands, is_fit=is_fit)
     else:
         print "There are no models in the directory: %s with extension: %s " % (path, model_ext)
 
