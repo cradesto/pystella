@@ -32,8 +32,8 @@ def plot_zeta(models_dic, set_bands, title=''):
         , u'+': u'plus', u'*': u'star', u'o': u'circle', u'p': u'pentagon', u'3': u'tri_left'
         , u'H': u'hexagon2', u'v': u'triangle_down', u'8': u'octagon', u'<': u'triangle_left'}
     markers = markers.keys()
-    xlim = [0, 25000]
-    ylim = [0, 5]
+    xlim = [0, 30000]
+    ylim = [0, 3]
     is_auto_lim = False
     if is_auto_lim:
         xlim = [0, 0]
@@ -59,12 +59,15 @@ def plot_zeta(models_dic, set_bands, title=''):
             else:
                 ax = fig.add_subplot(gs1[i, 0])
                 ax_cache[n] = ax
-            ax.plot(x, y, marker=markers[mi % (len(markers)-1)], label=mname, markersize=5, color=colors[n], ls="-.", linewidth=1.5)
+            ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label=mname, markersize=5, color=colors[n], ls="-.",
+                    linewidth=1.5)
             if is_auto_lim:
                 xlim[0], xlim[1] = min(np.append(x, xlim[0])), max(np.append(x, xlim[1]))
                 ylim[0], ylim[1] = min(np.append(x, ylim[0])), max(np.append(y, ylim[1]))
 
-            ax.legend(prop={'size': 6})
+            ax.legend(prop={'size': 5})
+            ax.set_xlim(xlim)
+            ax.set_ylim(ylim)
             ax.set_ylabel('Zeta')
             ax.set_xlabel('T_color')
             ax.set_title(n)
@@ -150,7 +153,6 @@ def compute_tcolor(name, path, bands, is_show_info=False, is_save=False):
     # fit mags by B(T_col) and get \zeta\theta & T_col
     Tcolors, zetaR = compute_Tcolor_zeta(mags, tt=tt, bands=bands, freq=serial_spec.freq, dist=distance)
 
-
     # show results
     res = np.array(np.zeros(len(Tcolors)),
                    dtype=np.dtype({'names': ['time', 'Tcol', 'zeta'], 'formats': [np.float64] * 3}))
@@ -158,15 +160,15 @@ def compute_tcolor(name, path, bands, is_show_info=False, is_save=False):
     res['Tcol'] = Tcolors
     res['zeta'] = zetaR
 
-    if is_save:
-        fname = os.path.join(path, "%s.%s_%s.dat" % (name, "TcolorZeta", '-'.join(bands),))
-        print "\nSave Tcolor & Zeta for %s in %s." % (bands, fname)
-        res_save(res, fname=fname)
-
     return res
 
 
-def res_save(narr, fname):
+def cache_name(name, path, bands):
+    fname = os.path.join(path, "%s.%s.zeta" % (name, bands))
+    return fname
+
+
+def cache_save(narr, fname):
     names = narr.dtype.names
     with open(fname, 'wb') as f:
         writer = csv.writer(f, delimiter='\t')
@@ -175,27 +177,38 @@ def res_save(narr, fname):
             writer.writerow(['{:8.3f}'.format(x) for x in row])
 
 
+def cache_load(fname):
+    header = 'time Tcol zeta'
+    names = map(str.strip, header.split())
+    dtype = np.dtype({'names': names, 'formats':  [np.float64] * len(names)})
+    block = np.loadtxt(fname, skiprows=1, dtype=dtype)
+    return block
+
+
 def usage():
     bands = band.band_get_names().keys()
     print "Usage:"
     print "  bbfit.py [params]"
-    print "  -b <bands>: string, default: U-B-V-R-I, for example U-B-V-R-I-u-g-i-r-z-UVW1-UVW2.\n" \
+    print "  -b <set_bands>: delimiter '_'. Default: B-V-I_B-V_V-I.\n" \
           "     Available: " + '-'.join(sorted(bands))
     print "  -i <model name>.  Example: cat_R450_M15_Ni007_E7"
     print "  -d <model directory>, default: ./"
     print "  -e <model extension> is used to define model name, default: tt "
     print "  -s  silence mode: no info, no plot"
+    print "  -f  force mode: rewrite tcolor-files even if it exists"
     print "  -w  write magnitudes to file, default 'False'"
     print "  -h  print usage"
 
 
+
 def main(name='', model_ext='.tt'):
     is_silence = False
-    is_save_mags = False
-    path = ''
+    is_force = False
+    is_save = False
+    path = './'
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "swhd:e:i:b:")
+        opts, args = getopt.getopt(sys.argv[1:], "fswhd:e:i:b:")
     except getopt.GetoptError as err:
         print str(err)  # will print something like "option -a not recognized"
         usage()
@@ -212,14 +225,14 @@ def main(name='', model_ext='.tt'):
                 name = str(arg)
                 break
 
-    set_bands = ['B', 'V']
+    set_bands = ['B-V-I', 'B-V', 'V-I']
 
     for opt, arg in opts:
         if opt == '-e':
             model_ext = '.' + arg
             continue
         if opt == '-b':
-            set_bands = str(arg).split('-')
+            set_bands = str(arg).split('_')
             for bset in set_bands:
                 if not band.band_is_exist(bset):
                     print 'No such band: ' + bset
@@ -229,7 +242,11 @@ def main(name='', model_ext='.tt'):
             is_silence = True
             continue
         if opt == '-w':
-            is_save_mags = True
+            is_save = True
+            continue
+        if opt == '-f':
+            is_force = True
+            is_save = True
             continue
         if opt == '-d':
             path = str(arg)
@@ -241,37 +258,37 @@ def main(name='', model_ext='.tt'):
             usage()
             sys.exit(2)
 
-    set_bands = ['B-V-I', 'B-V', 'V-I']
-
+    names = []
     if name != '':
-        dic_models = {name: None}
-        dic = {}  # dict((k, None) for k in set_bands)
-        for bset in set_bands:
-            dic[bset] = compute_tcolor(name, path, bset.split('-')
-                                       , is_show_info=not is_silence, is_save=is_save_mags)
-        dic_models[name] = dic
-        plot_zeta(dic_models, set_bands)
-
-    elif path != '':  # run for whole path
-        names = []
-        im = 0
+        names.append(name)
+    else:   # run for all files in the path
         files = [f for f in os.listdir(path) if isfile(join(path, f)) and f.endswith(model_ext)]
         for f in files:
             names.append(os.path.splitext(f)[0])
-        if len(names) > 0:
-            dic_models = {}  # dict((k, None) for k in names)
-            for name in names:
-                im += 1
-                dic = {}  # dict((k, None) for k in set_bands)
-                print "\nRun: %s [%d/%d]" % (name, im, len(names))
-                for bset in set_bands:
-                    dic[bset] = compute_tcolor(name, path, bset.split('-')
-                                               , is_show_info=not is_silence, is_save=is_save_mags)
-                dic_models[name] = dic
-                print "\nFinish: %s" % name
-            plot_zeta(dic_models, set_bands)
-        else:
-            print "There are no models in the directory: %s with extension: %s " % (path, model_ext)
+
+    im = 0
+    if len(names) > 0:
+        dic_results = {}  # dict((k, None) for k in names)
+        for name in names:
+            im += 1
+            dic = {}  # dict((k, None) for k in set_bands)
+            print "\nRun: %s [%d/%d]" % (name, im, len(names))
+            for bset in set_bands:
+                fname = cache_name(name, path, bset)
+                if not is_force and os.path.exists(fname):
+                    dic[bset] = cache_load(fname)
+                else:
+                    dic[bset] = compute_tcolor(name, path, bset.split('-'),
+                                               is_show_info=not is_silence, is_save=is_save)
+                    if is_save:
+                        print "Save Tcolor & Zeta for %s in %s." % (bset, fname)
+                        cache_save(dic[bset], fname=fname)
+
+            dic_results[name] = dic
+            print "Finish: %s" % name
+        plot_zeta(dic_results, set_bands)
+    else:
+        print "There are no models in the directory: %s with extension: %s " % (path, model_ext)
 
 
 if __name__ == '__main__':

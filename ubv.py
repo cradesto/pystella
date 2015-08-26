@@ -37,11 +37,12 @@ def plot_bands(dict_mags, bands, title='', distance=10.):
 
     dm = 5 * np.log10(distance) - 5  # distance module
     # dm = 0
-    lims = [-12, -19]
-    lims += dm
+    xlims = [-10, 200]
+    ylims = [-12, -19]
+    ylims += dm
     is_auto_lim = True
     if is_auto_lim:
-        lims = [0, 0]
+        ylims = [0, 0]
 
     def lbl(b):
         shift = band_shift[b]
@@ -58,15 +59,15 @@ def plot_bands(dict_mags, bands, title='', distance=10.):
         y += dm + band_shift[n]
         plt.plot(x, y, label=lbl(n), color=colors[n], ls=lntypes[n], linewidth=2.0)
         if is_auto_lim:
-            if lims[0] < max(y[len(y) / 2:]) or lims[0] == 0:
-                lims[0] = max(y[len(y) / 2:])
-            if lims[1] > min(y) or lims[1] == 0:
-                lims[1] = min(y)
+            if ylims[0] < max(y[len(y) / 2:]) or ylims[0] == 0:
+                ylims[0] = max(y[len(y) / 2:])
+            if ylims[1] > min(y) or ylims[1] == 0:
+                ylims[1] = min(y)
 
-    lims = np.add(lims, [1, -1])
+    ylims = np.add(ylims, [1, -1])
     plt.gca().invert_yaxis()
-    plt.xlim([-10, 200])
-    plt.ylim(lims)
+    plt.xlim(xlims)
+    plt.ylim(ylims)
     plt.legend()
     plt.ylabel('Magnitude')
     plt.xlabel('Time [days]')

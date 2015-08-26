@@ -89,20 +89,24 @@ class Stella:
         return serial
 
     def read_tt_data(self):
-        num_line_header = 88
-        header = ''
+        num_line_header = 87
         fname = os.path.join(self.path, self.name + '.tt')
-        f = open(fname, 'r')
-        try:
-            for _ in xrange(num_line_header-1):
-                next(f)
-            # time Tbb rbb Teff Rlast_sc R(tau2/3) Mbol MU MB MV MI MR Mbolavg  gdepos
-            header = next(f)
-        finally:
-            f.close()
-
-        names = map(str.strip, header.split())
-        names = [w.replace('R(tau2/3)', 'Rph') for w in names]
-        dtype = np.dtype({'names': names, 'formats':  [np.float64] * len(names)})
-        block = np.loadtxt(fname, skiprows=num_line_header+1, dtype=dtype)
-        return block
+        header = ''
+        i = 0
+        with open(fname, "r") as f:
+            for line in f:
+                i += 1
+                if i < num_line_header:
+                    continue
+                if line.lstrip().startswith("time"):
+                    header = line
+                    break
+        # time Tbb rbb Teff Rlast_sc R(tau2/3) Mbol MU MB MV MI MR Mbolavg  gdepos
+        if header != '':
+            names = map(str.strip, header.split())
+            names = [w.replace('R(tau2/3)', 'Rph') for w in names]
+            dtype = np.dtype({'names': names, 'formats':  [np.float64] * len(names)})
+            block = np.loadtxt(fname, skiprows=num_line_header+1, dtype=dtype)
+            return block
+        else:
+            return None
