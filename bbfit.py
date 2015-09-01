@@ -24,7 +24,7 @@ import pystella.util.rf as rf
 ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
 
 
-def plot_zeta(models_dic, set_bands, title='', is_fit=False):
+def plot_zeta(models_dic, set_bands, title='', is_fit=False, is_time_points=False):
     colors = {"B-V": "blue", 'B-V-I': "cyan", 'V-I': "black"}
     lntypes = {"B-V": "-", 'B-V-I': "-.", 'V-I': "--"}
     markers = {u'D': u'diamond', 6: u'caretup', u's': u'square', u'x': u'x'
@@ -32,6 +32,9 @@ def plot_zeta(models_dic, set_bands, title='', is_fit=False):
         , u'+': u'plus', u'*': u'star', u'o': u'circle', u'p': u'pentagon', u'3': u'tri_left'
         , u'H': u'hexagon2', u'v': u'triangle_down', u'8': u'octagon', u'<': u'triangle_left'}
     markers = markers.keys()
+
+    t_points = [1, 2, 3, 4,  5, 10, 20, 40, 80, 150]
+
     xlim = [0, 30000]
     ylim = [0, 3]
     is_auto_lim = False
@@ -54,20 +57,28 @@ def plot_zeta(models_dic, set_bands, title='', is_fit=False):
         for bset in set_bands:
             x = mdic[bset]['Tcol']
             y = mdic[bset]['zeta']
+            z = mdic[bset]['time']
             if bset in ax_cache:
                 ax = ax_cache[bset]
             else:
                 ax = fig.add_subplot(gs1[i, 0])
                 ax_cache[bset] = ax
-            ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label=mname, markersize=5, color=colors[bset], ls="-.",
+            ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label=mname, markersize=5, color=colors[bset],
+                    ls="-.",
                     linewidth=1.5)
-            # dessart
-            if is_fit:
+
+            if is_fit:  # dessart
                 yd = zeta_fit_dessart(x, bset)
                 ax.plot(x, yd, color='red', ls="-", linewidth=1.5)
             if is_auto_lim:
                 xlim[0], xlim[1] = min(np.append(x, xlim[0])), max(np.append(x, xlim[1]))
                 ylim[0], ylim[1] = min(np.append(x, ylim[0])), max(np.append(y, ylim[1]))
+            if is_time_points:
+                integers = [np.abs(z - t).argmin() for t in t_points]  # set time points
+                for (X, Y, Z) in zip(x[integers], y[integers], z[integers]):
+                    ax.annotate('{:.0f}'.format(Z), xy=(X, Y), xytext=(-10, 20), ha='right',
+                                textcoords='offset points',
+                                arrowprops=dict(arrowstyle='->', shrinkA=0))
 
             ax.legend(prop={'size': 5})
             ax.set_xlim(xlim)
@@ -76,6 +87,8 @@ def plot_zeta(models_dic, set_bands, title='', is_fit=False):
             ax.set_xlabel('T_color')
             ax.set_title(bset)
             i += 1
+            t_min = z[y.argmin()]
+            print "t_min=%f in %s" % (t_min, bset)
 
     # plt.xlim(xlim)
     # ylim = np.add(ylim, [1, -1])
@@ -101,9 +114,10 @@ def zeta_fit_dessart(Tcol, bset):
     zeta = 0
     i = 0
     for ai in a[bset]:
-        zeta += ai * (1.e4/Tcol)**i
+        zeta += ai * (1.e4 / Tcol) ** i
         i += 1
     return zeta
+
 
 def epsilon(x, freq, mag, bands, radius, dist):
     temp_color, zeta = x
@@ -138,7 +152,7 @@ def compute_Tcolor_zeta(mags, tt, bands, freq, dist):
     return temp, zeta_radius
 
 
-def compute_tcolor(name, path, bands, is_show_info=False, is_save=False):
+def compute_tcolor(name, path, bands, t_cut=2.):
     model = Stella(name, path=path)
 
     if not model.is_spec_data:
@@ -169,8 +183,7 @@ def compute_tcolor(name, path, bands, is_show_info=False, is_save=False):
     # read R_ph
     tt = model.read_tt_data()
 
-    # time cut
-    t_cut = 2.  # days
+    # time cut  days
     mags = mags[mags['time'] > t_cut]
     tt = tt[tt['time'] > t_cut]
 
@@ -204,7 +217,7 @@ def cache_save(narr, fname):
 def cache_load(fname):
     header = 'time Tcol zeta'
     names = map(str.strip, header.split())
-    dtype = np.dtype({'names': names, 'formats':  [np.float64] * len(names)})
+    dtype = np.dtype({'names': names, 'formats': [np.float64] * len(names)})
     block = np.loadtxt(fname, skiprows=1, dtype=dtype)
     return block
 
@@ -225,13 +238,10 @@ def usage():
     print "  -h  print usage"
 
 
-
-def main(name='', model_ext='.tt'):
+def main(name='', path='./', is_force=False, is_save=False):
     is_silence = False
-    is_force = False
-    is_save = False
     is_fit = False
-    path = './'
+    model_ext = '.tt'
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], "afswhd:e:i:b:")
@@ -290,7 +300,7 @@ def main(name='', model_ext='.tt'):
     names = []
     if name != '':
         names.append(name)
-    else:   # run for all files in the path
+    else:  # run for all files in the path
         files = [f for f in os.listdir(path) if isfile(join(path, f)) and f.endswith(model_ext)]
         for f in files:
             names.append(os.path.splitext(f)[0])
@@ -307,19 +317,18 @@ def main(name='', model_ext='.tt'):
                 if not is_force and os.path.exists(fname):
                     dic[bset] = cache_load(fname)
                 else:
-                    dic[bset] = compute_tcolor(name, path, bset.split('-'),
-                                               is_show_info=not is_silence, is_save=is_save)
+                    dic[bset] = compute_tcolor(name, path, bset.split('-'), t_cut=0.9)
                     if is_save:
                         print "Save Tcolor & Zeta for %s in %s." % (bset, fname)
                         cache_save(dic[bset], fname=fname)
 
             dic_results[name] = dic
             print "Finish: %s" % name
-        plot_zeta(dic_results, set_bands, is_fit=is_fit)
+        plot_zeta(dic_results, set_bands, is_fit=is_fit, is_time_points=True)
     else:
         print "There are no models in the directory: %s with extension: %s " % (path, model_ext)
 
 
 if __name__ == '__main__':
     main()
-    # main(name="cat_R1000_M15_Ni007_E15")
+    # main(name="cat_R1000_M15_Ni007_E15", path="~/Sn/Release/seb_git/res/tt",, is_force=True, is_save=True)

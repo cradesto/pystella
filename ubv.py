@@ -21,7 +21,7 @@ from pystella.rf import band
 ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
 
 
-def plot_bands(dict_mags, bands, title='', distance=10.):
+def plot_bands(dict_mags, bands, title='', distance=10., is_time_points=True):
     plt.title(''.join(bands) + ' filter response')
 
     colors = dict(U="blue", B="cyan", V="black", R="red", I="magenta",
@@ -34,6 +34,8 @@ def plot_bands(dict_mags, bands, title='', distance=10.):
                       UVM2=11.3, UVW1=10, UVW2=13.6,
                       u=3.5, g=2.5, r=-1.2, i=-3.7, z=-4.2)
     band_shift = dict((k, 0) for k, v in band_shift.items())  # no y-shift
+
+    t_points = [2, 5, 10, 20, 40, 80, 150]
 
     dm = 5 * np.log10(distance) - 5  # distance module
     # dm = 0
@@ -54,10 +56,19 @@ def plot_bands(dict_mags, bands, title='', distance=10.):
         return l
 
     x = dict_mags['time']
+    is_first = True
     for n in bands:
         y = dict_mags[n]
         y += dm + band_shift[n]
         plt.plot(x, y, label=lbl(n), color=colors[n], ls=lntypes[n], linewidth=2.0)
+        if is_time_points and is_first:
+            is_first = False
+            integers = [np.abs(x - t).argmin() for t in t_points]  # set time points
+            for (X, Y) in zip(x[integers], y[integers]):
+                plt.annotate('{:.0f}'.format(X), xy=(X, Y), xytext=(10, -30), ha='right',
+                            textcoords='offset points',
+                            arrowprops=dict(arrowstyle='->', shrinkA=0))
+
         if is_auto_lim:
             if ylims[0] < max(y[len(y) / 2:]) or ylims[0] == 0:
                 ylims[0] = max(y[len(y) / 2:])
@@ -105,7 +116,7 @@ def compute_mag(name, path, bands, is_show_info=True, is_save=False):
             mags_save(mags, bands, fname)
             print "Magnitudes have been saved to " + fname
         if is_show_info:
-            plot_bands(mags, bands, title=name, distance=distance)
+            plot_bands(mags, bands, title=name, distance=distance, is_time_points=True)
     return mags
 
 
