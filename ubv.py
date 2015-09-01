@@ -8,7 +8,6 @@ import os
 import sys
 import getopt
 from os.path import dirname
-from os import listdir
 from os.path import isfile, join
 import csv
 import numpy as np
@@ -21,7 +20,7 @@ from pystella.rf import band
 ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
 
 
-def plot_bands(dict_mags, bands, title='', distance=10., is_time_points=True):
+def plot_bands(dict_mags, bands, title='', fname='', distance=10., is_time_points=True):
     plt.title(''.join(bands) + ' filter response')
 
     colors = dict(U="blue", B="cyan", V="black", R="red", I="magenta",
@@ -66,8 +65,8 @@ def plot_bands(dict_mags, bands, title='', distance=10., is_time_points=True):
             integers = [np.abs(x - t).argmin() for t in t_points]  # set time points
             for (X, Y) in zip(x[integers], y[integers]):
                 plt.annotate('{:.0f}'.format(X), xy=(X, Y), xytext=(10, -30), ha='right',
-                            textcoords='offset points',
-                            arrowprops=dict(arrowstyle='->', shrinkA=0))
+                             textcoords='offset points',
+                             arrowprops=dict(arrowstyle='->', shrinkA=0))
 
         if is_auto_lim:
             if ylims[0] < max(y[len(y) / 2:]) or ylims[0] == 0:
@@ -84,10 +83,13 @@ def plot_bands(dict_mags, bands, title='', distance=10., is_time_points=True):
     plt.xlabel('Time [days]')
     plt.title(title)
     plt.grid()
+    if fname != '':
+        plt.savefig("ubv_%s.png" % fname, format='png')
     plt.show()
+    # plt.close()
 
 
-def compute_mag(name, path, bands, is_show_info=True, is_save=False):
+def compute_mag(name, path, bands, z=0., distance=10., is_show_info=True, is_save=False):
     model = Stella(name, path=path)
     if is_show_info:
         print ''
@@ -102,8 +104,7 @@ def compute_mag(name, path, bands, is_show_info=True, is_save=False):
 
     mags = dict((k, None) for k in bands)
 
-    z, distance = 0, 10.  # pc for Absolute magnitude
-    # z, distance = 0.145, 687.7e6  # pc for comparison with Maria
+    # z, distance = 0, 10.  # pc for Absolute magnitude
     for n in bands:
         b = band.band_by_name(n)
         mags[n] = serial_spec.flux_to_mags(b, z=z, dl=rf.pc_to_cm(distance))
@@ -115,8 +116,15 @@ def compute_mag(name, path, bands, is_show_info=True, is_save=False):
         if is_save:
             mags_save(mags, bands, fname)
             print "Magnitudes have been saved to " + fname
-        if is_show_info:
-            plot_bands(mags, bands, title=name, distance=distance, is_time_points=True)
+
+    if is_show_info:
+        # print the time of maximum LC
+        t = mags['time']
+        idxes = [t > 2.]
+        for n in bands:
+            t_min = t[idxes][mags[n][idxes].argmin()]
+            print "t_max(%s) = %f" % (n, t_min)
+
     return mags
 
 
@@ -140,6 +148,7 @@ def usage():
     print "  -d <model directory>, default: ./"
     print "  -e <model extension> is used to define model name, default: tt "
     print "  -s  silence mode: no info, no plot"
+    print "  -t  plot time points"
     print "  -w  write magnitudes to file, default 'False'"
     print "  -h  print usage"
 
@@ -147,10 +156,11 @@ def usage():
 def main(name='', model_ext='.tt'):
     is_silence = False
     is_save_mags = False
+    is_plot_time_points = False
     path = ''
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "swhd:e:i:b:")
+        opts, args = getopt.getopt(sys.argv[1:], "hswtd:e:i:b:")
     except getopt.GetoptError as err:
         print str(err)  # will print something like "option -a not recognized"
         usage()
@@ -190,6 +200,9 @@ def main(name='', model_ext='.tt'):
         if opt == '-w':
             is_save_mags = True
             continue
+        if opt == '-t':
+            is_plot_time_points = True
+            continue
         if opt == '-d':
             path = str(arg)
             if not (os.path.isdir(path) and os.path.exists(path)):
@@ -200,19 +213,22 @@ def main(name='', model_ext='.tt'):
             usage()
             sys.exit(2)
 
+    names = []
     if name != '':
-        compute_mag(name, path, bands, is_show_info=not is_silence, is_save=is_save_mags)
-
-    elif path != '':  # run for whole path
-        names = []
-        files = [f for f in listdir(path) if isfile(join(path, f)) and f.endswith(model_ext)]
+        names.append(name)
+    else:  # run for all files in the path
+        files = [f for f in os.listdir(path) if isfile(join(path, f)) and f.endswith(model_ext)]
         for f in files:
             names.append(os.path.splitext(f)[0])
-        if len(names) > 0:
-            for name in names:
-                compute_mag(name, path, bands, is_show_info=not is_silence, is_save=is_save_mags)
-        else:
-            print "There are no models in the directory: %s with extension: %s " % (path, model_ext)
+
+    if len(names) > 0:
+        for name in names:
+            mags = compute_mag(name, path, bands, is_show_info=not is_silence, is_save=is_save_mags)
+            if not is_silence:
+                # z, distance = 0.145, 687.7e6  # pc for comparison with Maria
+                plot_bands(mags, bands, title=name, fname='', is_time_points=is_plot_time_points)
+    else:
+        print "There are no models in the directory: %s with extension: %s " % (path, model_ext)
 
 
 if __name__ == '__main__':

@@ -10,6 +10,7 @@ import os
 import sys
 import getopt
 from os.path import isfile, join, dirname
+from subprocess import Popen
 import csv
 
 import numpy as np
@@ -33,7 +34,7 @@ def plot_zeta(models_dic, set_bands, title='', is_fit=False, is_time_points=Fals
         , u'H': u'hexagon2', u'v': u'triangle_down', u'8': u'octagon', u'<': u'triangle_left'}
     markers = markers.keys()
 
-    t_points = [1, 2, 3, 4,  5, 10, 20, 40, 80, 150]
+    t_points = [1, 2, 3, 4, 5, 10, 20, 40, 80, 150]
 
     xlim = [0, 30000]
     ylim = [0, 3]
@@ -68,8 +69,9 @@ def plot_zeta(models_dic, set_bands, title='', is_fit=False, is_time_points=Fals
                     linewidth=1.5)
 
             if is_fit:  # dessart
-                yd = zeta_fit_dessart(x, bset)
-                ax.plot(x, yd, color='red', ls="-", linewidth=1.5)
+                xx = x[z > 2.]
+                yd = zeta_fit_dessart(xx, bset)
+                ax.plot(xx, yd, color='red', ls="-", linewidth=1.5)
             if is_auto_lim:
                 xlim[0], xlim[1] = min(np.append(x, xlim[0])), max(np.append(x, xlim[1]))
                 ylim[0], ylim[1] = min(np.append(x, ylim[0])), max(np.append(y, ylim[1]))
@@ -87,8 +89,8 @@ def plot_zeta(models_dic, set_bands, title='', is_fit=False, is_time_points=Fals
             ax.set_xlabel('T_color')
             ax.set_title(bset)
             i += 1
-            t_min = z[y.argmin()]
-            print "t_min=%f in %s" % (t_min, bset)
+            t_min = z[y[x > 5000.].argmin()]
+            print "t_min( %s) = %f" % (bset, t_min)
 
     # plt.xlim(xlim)
     # ylim = np.add(ylim, [1, -1])
@@ -234,27 +236,30 @@ def usage():
     print "  -s  silence mode: no info, no plot"
     print "  -f  force mode: rewrite tcolor-files even if it exists"
     print "  -a  plot Dessart&Hillier fit"
+    print "  -u  plot UBV"
+    print "  -t  plot time points"
     print "  -w  write magnitudes to file, default 'False'"
     print "  -h  print usage"
 
 
-def main(name='', path='./', is_force=False, is_save=False):
+def main(name='', path='./', is_force=False, is_save=False, is_plot_time_points = False):
     is_silence = False
     is_fit = False
+    is_plot_ubv = False
     model_ext = '.tt'
+    ubv_args = ''
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "afswhd:e:i:b:")
+        opts, args = getopt.getopt(sys.argv[1:], "afhsuwtd:e:i:b:")
     except getopt.GetoptError as err:
         print str(err)  # will print something like "option -a not recognized"
         usage()
         sys.exit(2)
 
-    if len(opts) == 0:
-        usage()
-        sys.exit(2)
-
     if not name:
+        if len(opts) == 0:
+            usage()
+            sys.exit(2)
         for opt, arg in opts:
             if opt == '-i':
                 path = ROOT_DIRECTORY
@@ -276,9 +281,18 @@ def main(name='', path='./', is_force=False, is_save=False):
             continue
         if opt == '-s':
             is_silence = True
+            ubv_args += opt+' '
+            continue
+        if opt == '-u':
+            is_plot_ubv = True
+            continue
+        if opt == '-t':
+            is_plot_time_points = True
+            ubv_args += opt+' '
             continue
         if opt == '-w':
             is_save = True
+            ubv_args += opt+' '
             continue
         if opt == '-f':
             is_force = True
@@ -324,11 +338,21 @@ def main(name='', path='./', is_force=False, is_save=False):
 
             dic_results[name] = dic
             print "Finish: %s" % name
-        plot_zeta(dic_results, set_bands, is_fit=is_fit, is_time_points=True)
+        if is_plot_ubv:
+            os.system("./ubv.py -i %s -d %s %s & " % (name, path, ubv_args))
+            # p = Popen("./ubv.py -i %s -d %s " % (name, path))  # something long running
+            # print subprocess.Popen("./ubv.py -i %s -d %s " % (name, path), shell=False,
+            #                        stdout=subprocess.PIPE).stdout.read()
+            # call(["./ubv.py", "-i %s -d %s " % (name, path)])
+            # p.terminate()
+        if not is_silence:
+            plot_zeta(dic_results, set_bands, is_fit=is_fit, is_time_points=is_plot_time_points)
+
     else:
         print "There are no models in the directory: %s with extension: %s " % (path, model_ext)
 
 
 if __name__ == '__main__':
     main()
-    # main(name="cat_R1000_M15_Ni007_E15", path="~/Sn/Release/seb_git/res/tt",, is_force=True, is_save=True)
+    # main(name="cat_R1000_M15_Ni007_E15", path="/home/bakl/Sn/Release/seb_git/res/tt",
+    #      is_force=False, is_save=True, is_plot_time_points=True)
