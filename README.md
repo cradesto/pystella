@@ -18,7 +18,7 @@
 -  -b <bands>: string, default: U-B-V-R-I, for example U-B-V-R-I-u-g-i-r-z-UVW1-UVW2.
      Available: U-B-V-R-I-u-g-i-r-z-UVM2-UVW1-UVW2-U_UVOT-B_UVOT-V_UVOT
 -  -i <model name>.  Example: cat_R450_M15_Ni007_E7
--  -d <model directory>, default: ./
+-  -p <model path (directory)>, default: ./
 -  -e <model extension> is used to define model name, default: tt 
 -  -s  silence mode: no info, no plot
 -  -w  write magnitudes to file, default 'False'

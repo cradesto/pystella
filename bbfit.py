@@ -231,7 +231,7 @@ def usage():
     print "  -b <set_bands>: delimiter '_'. Default: B-V-I_B-V_V-I.\n" \
           "     Available: " + '-'.join(sorted(bands))
     print "  -i <model name>.  Example: cat_R450_M15_Ni007_E7"
-    print "  -d <model directory>, default: ./"
+    print "  -p <model path(directory)>, default: ./"
     print "  -e <model extension> is used to define model name, default: tt "
     print "  -s  silence mode: no info, no plot"
     print "  -f  force mode: rewrite tcolor-files even if it exists"
@@ -250,7 +250,7 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_time_points 
     ubv_args = ''
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "afhsuwtd:e:i:b:")
+        opts, args = getopt.getopt(sys.argv[1:], "afhsuwtp:e:i:b:")
     except getopt.GetoptError as err:
         print str(err)  # will print something like "option -a not recognized"
         usage()
@@ -301,7 +301,7 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_time_points 
         if opt == '-a':
             is_fit = True
             continue
-        if opt == '-d':
+        if opt == '-p':
             path = str(arg)
             if not (os.path.isdir(path) and os.path.exists(path)):
                 print "No such directory: " + path
@@ -340,11 +340,6 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_time_points 
             print "Finish: %s" % name
         if is_plot_ubv:
             os.system("./ubv.py -i %s -d %s %s & " % (name, path, ubv_args))
-            # p = Popen("./ubv.py -i %s -d %s " % (name, path))  # something long running
-            # print subprocess.Popen("./ubv.py -i %s -d %s " % (name, path), shell=False,
-            #                        stdout=subprocess.PIPE).stdout.read()
-            # call(["./ubv.py", "-i %s -d %s " % (name, path)])
-            # p.terminate()
         if not is_silence:
             plot_zeta(dic_results, set_bands, is_fit=is_fit, is_time_points=is_plot_time_points)
 

@@ -1,9 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 from pystella.util import rf
-
-__author__ = 'bakl'
-
 import os
 import sys
 import getopt
@@ -16,6 +13,9 @@ import matplotlib.pyplot as plt
 
 from pystella.model.stella import Stella
 from pystella.rf import band
+
+__author__ = 'bakl'
+
 
 ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
 
@@ -59,7 +59,7 @@ def plot_bands(dict_mags, bands, title='', fname='', distance=10., is_time_point
     for n in bands:
         y = dict_mags[n]
         y += dm + band_shift[n]
-        plt.plot(x, y, label=lbl(n), color=colors[n], ls=lntypes[n], linewidth=2.0)
+        plt.plot(x, y, label=lbl(n), color=colors[n], ls=lntypes[n], linewidth=2.0, marker='s')
         if is_time_points and is_first:
             is_first = False
             integers = [np.abs(x - t).argmin() for t in t_points]  # set time points
@@ -90,6 +90,17 @@ def plot_bands(dict_mags, bands, title='', fname='', distance=10., is_time_point
 
 
 def compute_mag(name, path, bands, z=0., distance=10., is_show_info=True, is_save=False):
+    """
+        Compute magnitude in bands for the 'name' model.
+    :param name: the name of a model and data files
+    :param path: the directory with data-files
+    :param bands: photometric bands
+    :param z: redshift, default 0
+    :param distance: distance to star in parsec, default 10 pc
+    :param is_show_info: flag to trun some information, default True
+    :param is_save: flag to save result in file, default False
+    :return: dictionary with keys = bands, value = star's magnitudes
+    """
     model = Stella(name, path=path)
     if is_show_info:
         print ''
@@ -145,8 +156,10 @@ def usage():
     print "  -b <bands>: string, default: U-B-V-R-I, for example U-B-V-R-I-u-g-i-r-z-UVW1-UVW2.\n" \
           "     Available: " + '-'.join(sorted(bands))
     print "  -i <model name>.  Example: cat_R450_M15_Ni007_E7"
-    print "  -d <model directory>, default: ./"
+    print "  -p <model directory>, default: ./"
     print "  -e <model extension> is used to define model name, default: tt "
+    print "  -d <distance> [pc].  Default: 10 pc"
+    print "  -z <redshift>.  Default: 0"
     print "  -s  silence mode: no info, no plot"
     print "  -t  plot time points"
     print "  -w  write magnitudes to file, default 'False'"
@@ -158,9 +171,11 @@ def main(name='', model_ext='.tt'):
     is_save_mags = False
     is_plot_time_points = False
     path = ''
+    z = 0
+    distance = 10.  # pc
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hswtd:e:i:b:")
+        opts, args = getopt.getopt(sys.argv[1:], "hswtd:p:e:i:b:z:")
     except getopt.GetoptError as err:
         print str(err)  # will print something like "option -a not recognized"
         usage()
@@ -203,7 +218,13 @@ def main(name='', model_ext='.tt'):
         if opt == '-t':
             is_plot_time_points = True
             continue
+        if opt == '-z':
+            z = float(arg)
+            continue
         if opt == '-d':
+            distance = float(arg)
+            continue
+        if opt == '-p':
             path = str(arg)
             if not (os.path.isdir(path) and os.path.exists(path)):
                 print "No such directory: " + path
@@ -212,6 +233,8 @@ def main(name='', model_ext='.tt'):
         elif opt == '-h':
             usage()
             sys.exit(2)
+
+    print "Plot magnitudes on z=%f at distance=%f" % (z, distance)
 
     names = []
     if name != '':
@@ -223,7 +246,8 @@ def main(name='', model_ext='.tt'):
 
     if len(names) > 0:
         for name in names:
-            mags = compute_mag(name, path, bands, is_show_info=not is_silence, is_save=is_save_mags)
+            mags = compute_mag(name, path, bands, z=z, distance=distance,
+                               is_show_info=not is_silence, is_save=is_save_mags)
             if not is_silence:
                 # z, distance = 0.145, 687.7e6  # pc for comparison with Maria
                 plot_bands(mags, bands, title=name, fname='', is_time_points=is_plot_time_points)
