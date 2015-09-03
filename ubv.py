@@ -24,6 +24,7 @@ def plot_bands(dict_mags, bands, title='', fname='', distance=10., is_time_point
     plt.title(''.join(bands) + ' filter response')
 
     colors = dict(U="blue", B="cyan", V="black", R="red", I="magenta",
+                  J="blue", H="cyan", K="black",
                   UVM2="green", UVW1="red", UVW2="blue",
                   g="black", r="red", i="magenta", u="blue", z="magenta")
     lntypes = dict(U="-", B="-", V="-", R="-", I="-",

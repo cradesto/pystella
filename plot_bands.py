@@ -1,10 +1,12 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 from pystella.util.phys_var import phys
+import matplotlib.pyplot as plt
+import pystella.rf.band as band
 
 __author__ = 'bakl'
 
-import matplotlib.pyplot as plt
-
-import rf.band as band
 
 
 def plot_griuz():
@@ -34,6 +36,19 @@ def plot_UBVRI():
     plt.show()
 
 
+def plot_JHK():
+    plt.title('JHK filter response')
+    bands = dict(J='b', H='c', K='r')
+    for k, v in bands.items():
+        b = band.band_by_name(k)
+        plt.plot(b.wl*phys.cm_to_angs,  b.resp, v, label=k)
+    plt.legend()
+    plt.ylabel('Amplitude Response')
+    plt.xlabel('Wave [A]')
+    plt.grid()
+    plt.show()
+
+
 def plot_SWIFT():
     plt.title('SWIFT filter response')
     bands = dict(UVM2='m', UVW1='r', UVW2='b', U_UVOT='k', B_UVOT='c', V_UVOT='g')
@@ -49,6 +64,7 @@ def plot_SWIFT():
 
 def main():
     plot_UBVRI()
+    plot_JHK()
     plot_griuz()
     plot_SWIFT()
 

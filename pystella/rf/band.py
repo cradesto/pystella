@@ -126,6 +126,14 @@ def bands_dict_KAIT():
 
     return bands
 
+def bands_dict_Persson():
+    bands = dict(J="jfilter", H="hfilter", K="kfilter")
+    d = os.path.join(ROOT_DIRECTORY, "data/bands/Persson")
+    for k, v in bands.items():
+        bands[k] = os.path.join(d, v)
+
+    return bands
+
 def bands_dict_USNO():
     # bands = dict(V="usno_g.res", I="usno_i.res", R="usno_r.res", U="usno_u.res", B="usno_z.res") # for comparison
     bands = dict(g="usno_g.res", i="usno_i.res", r="usno_r.res", u="usno_u.res", z="usno_z.res")
@@ -159,6 +167,9 @@ def band_get_names():
     # KAIT
     bands1 = bands_dict_KAIT()
 
+    # HJK
+    bandsJHK = bands_dict_Persson()
+
     # USNO40
     bands2 = bands_dict_USNO()
 
@@ -168,7 +179,7 @@ def band_get_names():
     # SWIFT
     bands4 = bands_dict_SWIFT()
 
-    return merge_dicts(bands0, bands1, bands3, bands4)
+    return merge_dicts(bands0, bandsJHK, bands1, bands3, bands4)
 
 
 def band_is_exist(name):
