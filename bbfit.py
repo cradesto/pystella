@@ -24,7 +24,7 @@ __author__ = 'bakl'
 ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
 
 
-def plot_zeta(models_dic, set_bands, title='',
+def plot_zeta(models_dic, set_bands, t_cut=4.9, title='',
               is_plot_Tcolor=True, is_plot_Tnu=True, is_fit=False, is_time_points=False):
     colors = {"B-V": "blue", 'B-V-I': "cyan", 'V-I': "black"}
     lntypes = {"B-V": "-", 'B-V-I': "-.", 'V-I': "--"}
@@ -61,8 +61,11 @@ def plot_zeta(models_dic, set_bands, title='',
                 x = mdic[bset]['Tcol']
                 y = mdic[bset]['zeta']
                 z = mdic[bset]['time']
-                ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label='T_mag '+mname,
-                        markersize=5, color=colors[bset], ls="-.", linewidth=1.5)
+                x = x[z > t_cut]
+                y = y[z > t_cut]
+                z = z[z > t_cut]
+                ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label='T_mag ' + mname,
+                        markersize=5, color=colors[bset], ls="", linewidth=1.5)
                 if is_fit:  # dessart
                     xx = x[z > 2.]
                     yd = zeta_fit_dessart(xx, bset)
@@ -76,15 +79,19 @@ def plot_zeta(models_dic, set_bands, title='',
                 t_min = z[y[x > 5000.].argmin()]
                 print "t_min( %s) = %f" % (bset, t_min)
             if is_plot_Tnu:
+                z = mdic[bset]['time']
                 xT = mdic[bset]['Tnu']
                 zT = mdic[bset]['Teff']
                 yW = mdic[bset]['W']
-                ax.plot(xT, yW, label='T_nu '+mname, markersize=5, color=colors[bset],
+                xT = xT[z > t_cut]
+                yW = yW[z > t_cut]
+                zT = zT[z > t_cut]
+                z = z[z > t_cut]
+                ax.plot(xT, yW, label='T_nu ' + mname, markersize=5, color=colors[bset],
                         ls="--", linewidth=1.5)
-                ax.plot(zT, yW, label='T_eff '+mname, markersize=5, color=colors[bset],
+                ax.plot(zT, yW, label='T_eff ' + mname, markersize=5, color=colors[bset],
                         ls="-.", linewidth=1.5)
                 if is_time_points:
-                    z = mdic[bset]['time']
                     integers = [np.abs(z - t).argmin() for t in t_points]  # set time points
                     for (X, Y, Z) in zip(xT[integers], yW[integers], z[integers]):
                         ax.annotate('{:.0f}'.format(Z), xy=(X, Y), xytext=(-10, 20), ha='right',
@@ -164,7 +171,8 @@ def compute_Tcolor_zeta(mags, tt, bands, freq, dist):
         zeta_radius.append(w)
     return temp, zeta_radius
 
-def compute_Tnu_w(serial_spec, tt):
+
+def compute_Tnu_w(serial_spec, tt, t_cut=0.):
     temp_nu = list()
     temp_eff = list()
     W = list()
@@ -172,7 +180,7 @@ def compute_Tnu_w(serial_spec, tt):
     x_bb = rf.compute_x_bb()
     for nt in range(len(serial_spec.times)):
         t, spec = serial_spec.get_tspec(nt)
-        if t < min(tt['time']):
+        if t < min(tt['time']) or t < t_cut:
             continue
         if t > max(tt['time']):
             break
@@ -180,11 +188,11 @@ def compute_Tnu_w(serial_spec, tt):
         H = spec.compute_flux_bol()
         nu_bb = Hnu / H
         radius = interpolate.splev(t, Rph_spline)
-        H /= 4.*np.pi*radius**2
+        H /= 4. * np.pi * radius ** 2
 
         Tnu = phys.h / phys.k * nu_bb / x_bb
-        Teff = (H/phys.sigma_SB)**0.25
-        dilution = (Teff / Tnu)**4
+        Teff = (H / phys.sigma_SB) ** 0.25
+        dilution = (Teff / Tnu) ** 4
 
         temp_nu.append(Tnu)
         temp_eff.append(Teff)
@@ -228,7 +236,7 @@ def compute_tcolor(name, path, bands, t_cut=2.):
     tt = tt[tt['time'] > t_cut]
 
     # compute Tnu, W
-    Tnu, Teff, W = compute_Tnu_w(serial_spec, tt=tt)
+    Tnu, Teff, W = compute_Tnu_w(serial_spec, tt=tt, t_cut=t_cut)
 
     # fit mags by B(T_col) and get \zeta\theta & T_col
     Tcolors, zetaR = compute_Tcolor_zeta(mags, tt=tt, bands=bands, freq=serial_spec.freq, dist=distance)
@@ -387,7 +395,7 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_time_points=
         if is_plot_ubv:
             os.system("./ubv.py -i %s -d %s %s & " % (name, path, ubv_args))
         if not is_silence:
-            plot_zeta(dic_results, set_bands, is_fit=is_fit, is_time_points=is_plot_time_points)
+            plot_zeta(dic_results, set_bands, t_cut=1.9, is_fit=is_fit, is_time_points=is_plot_time_points)
 
     else:
         print "There are no models in the directory: %s with extension: %s " % (path, model_ext)
