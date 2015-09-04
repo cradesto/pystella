@@ -2,6 +2,7 @@
 
 import numpy as np
 from pystella.util.phys_var import phys as p
+from scipy import integrate
 
 
 def distance_modulus(distance):
@@ -62,8 +63,8 @@ def planck_partition(nu, temperature):
     :param temperature: [K]
     :return: partition
     """
-    x = np.exp(-p.h*nu / (p.k*temperature))
-    return x/(1.-x)
+    x = np.exp(-p.h * nu / (p.k * temperature))
+    return x / (1. - x)
     # return 1. / (np.exp(p.h*nu / (p.k*temperature)) - 1)
 
 
@@ -73,10 +74,10 @@ def planck(x, temperature, inp="Hz", out="freq"):
     Specify `out` for whether one desires output as :math:`B_\lambda` or :math:`B_\nu`."""
     if out == "freq":
         nu = val_to_hz(x, inp)
-        return 2*p.h/p.c**2 * nu**3 * planck_partition(nu, temperature)
+        return 2 * p.h / p.c ** 2 * nu ** 3 * planck_partition(nu, temperature)
     elif out == 'wave':
         wl = val_to_wl(x, inp)
-        return 2 * p.h * p.c**2 / wl**5 * planck_partition(p.c/wl, temperature)
+        return 2 * p.h * p.c ** 2 / wl ** 5 * planck_partition(p.c / wl, temperature)
     else:
         raise ValueError("out must be 'freq' or 'wave' ")
 
@@ -84,7 +85,7 @@ def planck(x, temperature, inp="Hz", out="freq"):
 def bb_luminosity_bolometric(temperature, radius):
     """Assume a spherical blackbody at constant temperature.
     Determine the integrated luminosity in ergs/s. All input units cgs"""
-    return 4*np.pi * p.sigma_SB * radius**2 * temperature**4
+    return 4 * np.pi * p.sigma_SB * radius ** 2 * temperature ** 4
 
 
 def bb_flux_dist(nu, temperature, r, radius):
@@ -92,7 +93,7 @@ def bb_flux_dist(nu, temperature, r, radius):
     Takes in frequency in Hz, Temperature in Kelvin, radius and distance in cm.
     Assumes spherical source and F = pi B (R/r)**2 from Rybicki.
     Returns flux"""
-    return np.pi * planck(nu, temperature, inp="Hz") * radius**2 / r**2
+    return np.pi * planck(nu, temperature, inp="Hz") * radius ** 2 / r ** 2
 
 
 def bb_fit_flux_dist(nu, r):
@@ -103,3 +104,14 @@ def bb_fit_flux_dist(nu, r):
 
 def fit_planck(x, inp="Hz", out="freq"):
     return lambda temperature: planck(x, temperature, inp, out)
+
+
+def compute_x_bb():
+    """
+    Compute const x_bb for nu weighted with Planck.
+    H nu / k T = x_bb --- const
+    :return: const
+    """
+    a, err1 = integrate.quad(lambda x: x ** 4 * np.exp(-x) / (1. - np.exp(-x)), 0, np.inf)
+    b, err2 = integrate.quad(lambda x: x ** 3 * np.exp(-x) / (1. - np.exp(-x)), 0, np.inf)
+    return a / b

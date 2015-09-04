@@ -4,7 +4,7 @@ __author__ = 'bakl'
 import math
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy import interpolate
+from scipy import interpolate, integrate
 import scipy.optimize as opt
 import pystella.util.rf as rf
 from pystella.util.phys_var import phys
@@ -71,6 +71,14 @@ class Spectrum:
         Twien = b / wl_max
         return Twien
 
+    def compute_flux_nu_bol(self):
+        Hnu = integrate.simps(self.flux * self.freq, self.freq)
+        return abs(Hnu)  # due to order freq
+
+    def compute_flux_bol(self):
+        H = integrate.simps(self.flux, self.freq)
+        return abs(H)  # due to order freq
+
     @staticmethod
     def flux_to_distance(flux, dl):
         """
@@ -134,6 +142,12 @@ class SeriesSpectrum:
             raise ValueError("data must be array with len > 0.")
         self.data = sdata
 
+    def get_spec(self, idx):
+        return self.data[idx]
+
+    def get_tspec(self, idx):
+        return self.times[idx], self.data[idx]
+
     def flux_to_mags(self, band, z=0, dl=0):
         if band is None:
             return None
@@ -142,8 +156,7 @@ class SeriesSpectrum:
 
         mags = np.zeros(len(self.data))
         for k in range(len(self.data)):
-            spec = self.data[k]
-            star = Star(k, spec)
+            star = Star(k, self.get_spec(k))
             star.set_distance(dl)
             star.set_redshift(z)
             mag = star.flux_to_mag(band)
