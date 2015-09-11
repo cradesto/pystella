@@ -12,6 +12,8 @@ from os.path import isfile, join, dirname
 import csv
 
 import numpy as np
+from matplotlib import colors
+import six
 
 from pystella.rf import band, spectrum
 from pystella.rf.star import Star
@@ -25,13 +27,21 @@ ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
 
 
 def plot_zeta_oneframe(models_dic, set_bands, t_cut=4.9, title='',
-              is_plot_Tcolor=True, is_plot_Tnu=True, is_fit=False, is_time_points=False):
-    colors = {"B-V": "blue", 'B-V-I': "cyan", 'V-I': "brown"}
+                       is_plot_Tcolor=True, is_plot_Tnu=True, is_fit=False, is_time_points=False):
+    # colors = {"B-V": "blue", 'B-V-I': "cyan", 'V-I': "brown"}
+    _colors = ["blue", "cyan", "brown", 'darkseagreen', 'tomato', 'olive', 'orange', 'skyblue', 'darkviolet']
     lntypes = {"B-V": "-", 'B-V-I': "-.", 'V-I': "--"}
-    markers = {u'o': u'circle',u'D': u'diamond', 6: u'caretup', u's': u'square', u'x': u'x'
+    markers = {u'o': u'circle', u'D': u'diamond', 6: u'caretup', u's': u'square', u'x': u'x'
         , 5: u'caretright', u'^': u'triangle_up', u'd': u'thin_diamond', u'h': u'hexagon1'
-        , u'+': u'plus', u'*': u'star',  u'p': u'pentagon', u'3': u'tri_left'
+        , u'+': u'plus', u'*': u'star', u'p': u'pentagon', u'3': u'tri_left'
         , u'H': u'hexagon2', u'v': u'triangle_down', u'8': u'octagon', u'<': u'triangle_left'}
+    # _colors = list(six.iteritems(colors.cnames))
+    #
+    # # Add the single letter colors.
+    # for name, rgb in six.iteritems(colors.ColorConverter.colors):
+    #     hex_ = colors.rgb2hex(rgb)
+    #     _colors.append((name, hex_))
+
     markers = markers.keys()
 
     t_points = [1, 2, 3, 4, 5, 10, 20, 40, 80, 150]
@@ -47,9 +57,11 @@ def plot_zeta_oneframe(models_dic, set_bands, t_cut=4.9, title='',
     ax = fig.add_subplot(gs1[0, 0])
 
     mi = 0
+    ib = 0
     for mname, mdic in models_dic.iteritems():
         mi += 1
         for bset in set_bands:
+            ib += 1
             if is_plot_Tcolor:
                 x = mdic[bset]['Tcol']
                 y = mdic[bset]['zeta']
@@ -57,17 +69,19 @@ def plot_zeta_oneframe(models_dic, set_bands, t_cut=4.9, title='',
                 x = x[z > t_cut]
                 y = y[z > t_cut]
                 z = z[z > t_cut]
+                bcolor = _colors[ib % (len(_colors)-1)]
                 ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label='%s T_mag %s' % (bset, mname),
-                        markersize=4, color=colors[bset], ls="", linewidth=1.5)
+                        markersize=4, color=bcolor, ls="", linewidth=1.5)
                 if is_fit:  # dessart
                     xx = x[z > 2.]
                     yd = zeta_fit_dessart(xx, bset)
-                    ax.plot(xx, yd, color=colors[bset], ls="-", linewidth=1.5)
+                    if yd is not None:
+                        ax.plot(xx, yd, color=bcolor, ls="-", linewidth=1.5)
                 if is_time_points:
                     integers = [np.abs(z - t).argmin() for t in t_points]  # set time points
                     for (X, Y, Z) in zip(x[integers], y[integers], z[integers]):
                         ax.annotate('{:.0f}'.format(Z), xy=(X, Y), xytext=(-10, 20), ha='right',
-                                    textcoords='offset points', color=colors[bset],
+                                    textcoords='offset points', color=bcolor,
                                     arrowprops=dict(arrowstyle='->', shrinkA=0))
                 t_min = z[y[x > 5000.].argmin()]
                 print "t_min( %s) = %f" % (bset, t_min)
@@ -193,7 +207,7 @@ def plot_zeta(models_dic, set_bands, t_cut=4.9, title='',
             ax.set_title(bset)
             i += 1
 
-    #     plt.title('; '.join(set_bands) + ' filter response')
+    # plt.title('; '.join(set_bands) + ' filter response')
     plt.grid()
     plt.show()
 
@@ -211,6 +225,8 @@ def zeta_fit_dessart(Tcol, bset):
         'V-I': [0.81662, -0.62896, 0.33852],
         'J-H-K': [0.10786, 1.12374, 0.]
     }
+    if bset not in a:
+        return None
     zeta = 0
     i = 0
     for ai in a[bset]:
@@ -268,7 +284,7 @@ def compute_Tnu_w(serial_spec, tt, t_cut=0.):
         H = spec.compute_flux_bol()
         nu_bb = Hnu / H
         radius = interpolate.splev(t, Rph_spline)
-        H /= 4.*np.pi * radius**2
+        H /= 4. * np.pi * radius ** 2
 
         Tnu = phys.h / phys.k * nu_bb / x_bb
         Teff = (H / phys.sigma_SB) ** 0.25
@@ -400,7 +416,7 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_time_points=
                 name = str(arg)
                 break
 
-    set_bands = ['B-V-I', 'B-V', 'V-I']
+    set_bands = ['U-B-V-I', 'U-B-V-R-I', 'U-B', 'V-R', 'B-V-I', 'B-V', 'V-I']
 
     for opt, arg in opts:
         if opt == '-e':
@@ -409,9 +425,10 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_time_points=
         if opt == '-b':
             set_bands = str(arg).split('_')
             for bset in set_bands:
-                if not band.band_is_exist(bset):
-                    print 'No such band: ' + bset
-                    sys.exit(2)
+                for b in bset.split('-'):
+                    if not band.band_is_exist(b):
+                        print 'No such band: ' + b
+                        sys.exit(2)
             continue
         if opt == '-s':
             is_silence = True
