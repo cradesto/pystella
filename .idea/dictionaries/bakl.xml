@@ -3,9 +3,16 @@
     <words>
       <w>astro</w>
       <w>bakl</w>
+      <w>bcolor</w>
       <w>blackbody</w>
       <w>bolometric</w>
       <w>boltzman</w>
+      <w>bset</w>
+      <w>caretright</w>
+      <w>caretup</w>
+      <w>darkseagreen</w>
+      <w>darkviolet</w>
+      <w>dessart</w>
       <w>fname</w>
       <w>freqs</w>
       <w>griuz</w>
@@ -13,8 +20,12 @@
       <w>lims</w>
       <w>pystella</w>
       <w>sdss</w>
+      <w>skyblue</w>
       <w>snpy</w>
       <w>swiftuvot</w>
+      <w>tcol</w>
+      <w>tcolor</w>
+      <w>teff</w>
       <w>usno</w>
       <w>wien</w>
     </words>

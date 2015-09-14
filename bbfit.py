@@ -1,19 +1,16 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-from matplotlib import gridspec
-import matplotlib.pyplot as plt
 from scipy.optimize import fmin
 from scipy import interpolate
-
 import os
 import sys
 import getopt
 from os.path import isfile, join, dirname
 import csv
-
 import numpy as np
-from matplotlib import colors
-import six
+
+from matplotlib import gridspec
+import matplotlib.pyplot as plt
 
 from pystella.rf import band, spectrum
 from pystella.rf.star import Star
@@ -25,25 +22,19 @@ __author__ = 'bakl'
 
 ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
 
+_colors = ["blue", "cyan", "brown", 'darkseagreen', 'tomato', 'olive', 'orange',
+           'skyblue', 'darkviolet']
+# colors = {"B-V": "blue", 'B-V-I': "cyan", 'V-I': "brown"}
+lntypes = {"B-V": "-", 'B-V-I': "-.", 'V-I': "--"}
+markers = {u'D': u'diamond', 6: u'caretup', u's': u'square', u'x': u'x',
+           5: u'caretright', u'^': u'triangle_up', u'd': u'thin_diamond', u'h': u'hexagon1',
+           u'+': u'plus', u'*': u'star', u'o': u'circle', u'p': u'pentagon', u'3': u'tri_left',
+           u'H': u'hexagon2', u'v': u'triangle_down', u'8': u'octagon', u'<': u'triangle_left'}
+markers = markers.keys()
 
-def plot_zeta_oneframe(models_dic, set_bands, t_cut=4.9, title='',
+
+def plot_zeta_oneframe(models_dic, set_bands, t_cut=4.9,
                        is_plot_Tcolor=True, is_plot_Tnu=True, is_fit=False, is_time_points=False):
-    # colors = {"B-V": "blue", 'B-V-I': "cyan", 'V-I': "brown"}
-    _colors = ["blue", "cyan", "brown", 'darkseagreen', 'tomato', 'olive', 'orange', 'skyblue', 'darkviolet']
-    lntypes = {"B-V": "-", 'B-V-I': "-.", 'V-I': "--"}
-    markers = {u'o': u'circle', u'D': u'diamond', 6: u'caretup', u's': u'square', u'x': u'x'
-        , 5: u'caretright', u'^': u'triangle_up', u'd': u'thin_diamond', u'h': u'hexagon1'
-        , u'+': u'plus', u'*': u'star', u'p': u'pentagon', u'3': u'tri_left'
-        , u'H': u'hexagon2', u'v': u'triangle_down', u'8': u'octagon', u'<': u'triangle_left'}
-    # _colors = list(six.iteritems(colors.cnames))
-    #
-    # # Add the single letter colors.
-    # for name, rgb in six.iteritems(colors.ColorConverter.colors):
-    #     hex_ = colors.rgb2hex(rgb)
-    #     _colors.append((name, hex_))
-
-    markers = markers.keys()
-
     t_points = [1, 2, 3, 4, 5, 10, 20, 40, 80, 150]
 
     xlim = [2500, 15000]
@@ -51,6 +42,7 @@ def plot_zeta_oneframe(models_dic, set_bands, t_cut=4.9, title='',
 
     # setup figure
     plt.matplotlib.rcParams.update({'font.size': 8})
+    plt.rc('text', usetex=True)
     fig = plt.figure(num=None, figsize=(7, 7), dpi=100, facecolor='w', edgecolor='k')
     gs1 = gridspec.GridSpec(1, 1)
     gs1.update(wspace=0.3, hspace=0.3, left=0.05, right=0.95)
@@ -69,14 +61,17 @@ def plot_zeta_oneframe(models_dic, set_bands, t_cut=4.9, title='',
                 x = x[z > t_cut]
                 y = y[z > t_cut]
                 z = z[z > t_cut]
-                bcolor = _colors[ib % (len(_colors)-1)]
+                bcolor = _colors[ib % (len(_colors) - 1)]
                 ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label='%s T_mag %s' % (bset, mname),
                         markersize=4, color=bcolor, ls="", linewidth=1.5)
-                if is_fit:  # dessart
+                if is_fit:  # dessart & eastman
                     xx = x[z > 2.]
-                    yd = zeta_fit_dessart(xx, bset)
+                    yd = zeta_fit(xx, bset, "dessart")
                     if yd is not None:
                         ax.plot(xx, yd, color=bcolor, ls="-", linewidth=1.5)
+                    yd = zeta_fit(xx, bset, "eastman")
+                    if yd is not None:
+                        ax.plot(xx, yd, color=bcolor, ls="--", linewidth=1.5)
                 if is_time_points:
                     integers = [np.abs(z - t).argmin() for t in t_points]  # set time points
                     for (X, Y, Z) in zip(x[integers], y[integers], z[integers]):
@@ -112,8 +107,8 @@ def plot_zeta_oneframe(models_dic, set_bands, t_cut=4.9, title='',
     ax.legend(prop={'size': 8})
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
-    ax.set_ylabel('Zeta')
-    ax.set_xlabel('T_color')
+    ax.set_ylabel(r'\Zeta')
+    ax.set_xlabel(r'T_{color}')
     # ax.set_title(bset)
 
     #     plt.title('; '.join(set_bands) + ' filter response')
@@ -121,23 +116,17 @@ def plot_zeta_oneframe(models_dic, set_bands, t_cut=4.9, title='',
     plt.show()
 
 
-def plot_zeta(models_dic, set_bands, t_cut=4.9, title='',
+def plot_zeta(models_dic, set_bands, t_cut=4.9,
               is_plot_Tcolor=True, is_plot_Tnu=True, is_fit=False, is_time_points=False):
-    colors = {"B-V": "blue", 'B-V-I': "cyan", 'V-I': "black"}
-    lntypes = {"B-V": "-", 'B-V-I': "-.", 'V-I': "--"}
-    markers = {u'D': u'diamond', 6: u'caretup', u's': u'square', u'x': u'x'
-        , 5: u'caretright', u'^': u'triangle_up', u'd': u'thin_diamond', u'h': u'hexagon1'
-        , u'+': u'plus', u'*': u'star', u'o': u'circle', u'p': u'pentagon', u'3': u'tri_left'
-        , u'H': u'hexagon2', u'v': u'triangle_down', u'8': u'octagon', u'<': u'triangle_left'}
-    markers = markers.keys()
-
     t_points = [1, 2, 3, 4, 5, 10, 20, 40, 80, 150]
 
-    xlim = [0, 30000]
-    ylim = [0, 3]
+    xlim = [4000, 12000]
+    ylim = [0, 1.5]
 
     # setup figure
-    plt.matplotlib.rcParams.update({'font.size': 8})
+    plt.matplotlib.rcParams.update({'font.size': 9})
+    # plt.rc('text', usetex=True)
+    # plt.rc('font', family='serif')
     fig = plt.figure(num=None, figsize=(7, 7), dpi=100, facecolor='w', edgecolor='k')
     gs1 = gridspec.GridSpec(len(set_bands), 1)
     # gs1 = gridspec.GridSpec(2, 4, width_ratios=(8, 1, 8, 1))
@@ -145,10 +134,12 @@ def plot_zeta(models_dic, set_bands, t_cut=4.9, title='',
 
     ax_cache = {}
     mi = 0
+    ib = 0
     for mname, mdic in models_dic.iteritems():
         mi += 1
         i = 0
         for bset in set_bands:
+            ib += 1
             if bset in ax_cache:
                 ax = ax_cache[bset]
             else:
@@ -161,49 +152,54 @@ def plot_zeta(models_dic, set_bands, t_cut=4.9, title='',
                 x = x[z > t_cut]
                 y = y[z > t_cut]
                 z = z[z > t_cut]
+                bcolor = _colors[ib % (len(_colors) - 1)]
                 ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label='T_mag ' + mname,
-                        markersize=5, color=colors[bset], ls="", linewidth=1.5)
+                        markersize=5, color=bcolor, ls="", linewidth=1.5)
                 if is_fit:  # dessart
                     xx = x[z > 2.]
-                    yd = zeta_fit_dessart(xx, bset)
-                    ax.plot(xx, yd, color='red', ls="-", linewidth=1.5)
+                    yd = zeta_fit(xx, bset, "dessart")
+                    if yd is not None:
+                        ax.plot(xx, yd, color=bcolor, ls="--", linewidth=1.1, label='Dessart')
+                    yd = zeta_fit(xx, bset, "eastman")
+                    if yd is not None:
+                        ax.plot(xx, yd, color=bcolor, ls="-.", linewidth=1.1, label='Eastman')
                 if is_time_points:
                     integers = [np.abs(z - t).argmin() for t in t_points]  # set time points
                     for (X, Y, Z) in zip(x[integers], y[integers], z[integers]):
                         ax.annotate('{:.0f}'.format(Z), xy=(X, Y), xytext=(-10, 20), ha='right',
-                                    textcoords='offset points', color=colors[bset],
+                                    textcoords='offset points', color=bcolor,
                                     arrowprops=dict(arrowstyle='->', shrinkA=0))
                 t_min = z[y[x > 5000.].argmin()]
                 print "t_min( %s) = %f" % (bset, t_min)
             if is_plot_Tnu:
                 z = mdic[bset]['time']
-                xT = mdic[bset]['Tnu']
-                zT = mdic[bset]['Teff']
+                xTnu = mdic[bset]['Tnu']
+                zTeff = mdic[bset]['Teff']
                 yW = mdic[bset]['W']
-                xT = xT[z > t_cut]
+                xTnu = xTnu[z > t_cut]
                 yW = yW[z > t_cut]
-                zT = zT[z > t_cut]
+                zTeff = zTeff[z > t_cut]
                 z = z[z > t_cut]
-                ax.plot(xT, yW, label='T_nu ' + mname, markersize=5, color=colors[bset],
-                        ls="--", linewidth=1.5)
-                ax.plot(zT, yW, label='T_eff ' + mname, markersize=5, color=colors[bset],
+                ax.plot(xTnu, yW, label='T_nu ' + mname, markersize=5, color="magenta",
+                        ls="-.", linewidth=1.5)
+                ax.plot(zTeff, yW, label='T_eff ' + mname, markersize=5, color="red",
                         ls="-.", linewidth=1.5)
                 if is_time_points:
                     integers = [np.abs(z - t).argmin() for t in t_points]  # set time points
-                    for (X, Y, Z) in zip(xT[integers], yW[integers], z[integers]):
-                        ax.annotate('{:.0f}'.format(Z), xy=(X, Y), xytext=(-10, 20), ha='right',
-                                    textcoords='offset points', color='red',
-                                    arrowprops=dict(arrowstyle='->', shrinkA=0))
-                    for (X, Y, Z) in zip(zT[integers], yW[integers], z[integers]):
+                    for (X, Y, Z) in zip(xTnu[integers], yW[integers], z[integers]):
                         ax.annotate('{:.0f}'.format(Z), xy=(X, Y), xytext=(-10, 20), ha='right',
                                     textcoords='offset points', color='magenta',
+                                    arrowprops=dict(arrowstyle='->', shrinkA=0))
+                    for (X, Y, Z) in zip(zTeff[integers], yW[integers], z[integers]):
+                        ax.annotate('{:.0f}'.format(Z), xy=(X, Y), xytext=(-10, 20), ha='right',
+                                    textcoords='offset points', color='red',
                                     arrowprops=dict(arrowstyle='->', shrinkA=0))
 
             ax.legend(prop={'size': 5})
             ax.set_xlim(xlim)
             ax.set_ylim(ylim)
-            ax.set_ylabel('Zeta')
-            ax.set_xlabel('T_color')
+            ax.set_ylabel(r'$\zeta('+bset+')$')
+            ax.set_xlabel(r'$T_{color}$')
             ax.set_title(bset)
             i += 1
 
@@ -212,7 +208,7 @@ def plot_zeta(models_dic, set_bands, t_cut=4.9, title='',
     plt.show()
 
 
-def zeta_fit_dessart(Tcol, bset):
+def zeta_fit(Tcol, bset, src="dessart"):
     """
     Zeta fit from Dessart, L., & Hillier, D. J. (2005). doi:10.1051/0004-6361:20053217
     :param Tcol:
@@ -220,16 +216,26 @@ def zeta_fit_dessart(Tcol, bset):
     :return:
     """
     a = {
-        'B-V': [0.47188, -0.25399, 0.32630],
-        'B-V-I': [0.63241, -0.38375, 0.28425],
-        'V-I': [0.81662, -0.62896, 0.33852],
-        'J-H-K': [0.10786, 1.12374, 0.]
+        'dessart': {
+            'B-V': [0.47188, -0.25399, 0.32630],
+            'B-V-I': [0.63241, -0.38375, 0.28425],
+            'V-I': [0.81662, -0.62896, 0.33852],
+            'J-H-K': [0.10786, 1.12374, 0.]
+        },
+        'eastman': {
+            'B-V': [0.674, -0.741, 0.456],
+            'B-V-I': [0.686, -0.577, 0.316],
+            'V-I': [0.445, 0.0136, 0.],
+            'J-H-K': [1.45, -0.45, 0.]
+        }
     }
-    if bset not in a:
+    if src not in a:
+        return None
+    if bset not in a[src]:
         return None
     zeta = 0
     i = 0
-    for ai in a[bset]:
+    for ai in a[src][bset]:
         zeta += ai * (1.e4 / Tcol) ** i
         i += 1
     return zeta
@@ -337,7 +343,6 @@ def compute_tcolor(name, path, bands, t_cut=2.):
     # fit mags by B(T_col) and get \zeta\theta & T_col
     Tcolors, zetaR = compute_Tcolor_zeta(mags, tt=tt, bands=bands, freq=serial_spec.freq, dist=distance)
 
-
     # show results
     res = np.array(np.zeros(len(Tcolors)),
                    dtype=np.dtype({'names': ['time', 'Tcol', 'zeta', 'Tnu', 'Teff', 'W'],
@@ -385,7 +390,7 @@ def usage():
     print "  -e <model extension> is used to define model name, default: tt "
     print "  -s  silence mode: no info, no plot"
     print "  -f  force mode: rewrite tcolor-files even if it exists"
-    print "  -a  plot Dessart&Hillier fit"
+    print "  -a  plot the Eastman & Dessart fits"
     print "  -u  plot UBV"
     print "  -t  plot time points"
     print "  -w  write magnitudes to file, default 'False'"
@@ -416,7 +421,9 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_time_points=
                 name = str(arg)
                 break
 
-    set_bands = ['U-B-V-I', 'U-B-V-R-I', 'U-B', 'V-R', 'B-V-I', 'B-V', 'V-I']
+    set_bands = ['B-V', 'B-V-I', 'V-I']
+    # set_bands = ['B-V', 'B-V-I', 'V-I', 'J-H-K']
+    # set_bands = ['U-B-V-I', 'U-B-V-R-I', 'U-B', 'V-R', 'B-V-I', 'B-V', 'V-I']
 
     for opt, arg in opts:
         if opt == '-e':
@@ -492,8 +499,8 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_time_points=
         if is_plot_ubv:
             os.system("./ubv.py -i %s -d %s %s & " % (name, path, ubv_args))
         if not is_silence:
-            # plot_zeta(dic_results, set_bands, t_cut=1.9, is_fit=is_fit, is_time_points=is_plot_time_points)
-            plot_zeta_oneframe(dic_results, set_bands, t_cut=1.9, is_fit=is_fit, is_time_points=is_plot_time_points)
+            plot_zeta(dic_results, set_bands, t_cut=1.9, is_fit=is_fit, is_time_points=is_plot_time_points)
+            # plot_zeta_oneframe(dic_results, set_bands, t_cut=1.9, is_fit=is_fit, is_time_points=is_plot_time_points)
 
     else:
         print "There are no models in the directory: %s with extension: %s " % (path, model_ext)
