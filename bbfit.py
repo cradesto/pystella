@@ -33,20 +33,23 @@ markers = {u'D': u'diamond', 6: u'caretup', u's': u'square', u'x': u'x',
 markers = markers.keys()
 
 
-def plot_zeta_oneframe(models_dic, set_bands, t_cut=4.9,
-                       is_plot_Tcolor=True, is_plot_Tnu=True, is_fit=False, is_time_points=False):
+def plot_zeta_oneframe(models_dic, set_bands, t_cut=4.9, is_fit=False,
+                       is_plot_Tcolor=True, is_plot_Tnu=True, is_time_points=False):
     t_points = [1, 2, 3, 4, 5, 10, 20, 40, 80, 150]
 
-    xlim = [2500, 15000]
-    ylim = [0, 1.5]
+    xlim = [0, 25000]
+    ylim = [0, 2.5]
+    # xlim = [2500, 15000]
+    # ylim = [0, 1.5]
 
     # setup figure
-    plt.matplotlib.rcParams.update({'font.size': 8})
-    plt.rc('text', usetex=True)
+    plt.matplotlib.rcParams.update({'font.size': 14})
+    # plt.rc('text', usetex=True)
     fig = plt.figure(num=None, figsize=(7, 7), dpi=100, facecolor='w', edgecolor='k')
     gs1 = gridspec.GridSpec(1, 1)
-    gs1.update(wspace=0.3, hspace=0.3, left=0.05, right=0.95)
+    gs1.update(wspace=0.3, hspace=0.3, left=0.1, right=0.95)
     ax = fig.add_subplot(gs1[0, 0])
+    lw = 2.5
 
     mi = 0
     ib = 0
@@ -63,15 +66,15 @@ def plot_zeta_oneframe(models_dic, set_bands, t_cut=4.9,
                 z = z[z > t_cut]
                 bcolor = _colors[ib % (len(_colors) - 1)]
                 ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label='%s T_mag %s' % (bset, mname),
-                        markersize=4, color=bcolor, ls="", linewidth=1.5)
+                         markersize=4, color=bcolor, ls="", linewidth=lw)
                 if is_fit:  # dessart & eastman
                     xx = x[z > 2.]
                     yd = zeta_fit(xx, bset, "dessart")
                     if yd is not None:
-                        ax.plot(xx, yd, color=bcolor, ls="-", linewidth=1.5)
+                        ax.plot(xx, yd, color=bcolor, ls="-", linewidth=lw, label='%s Dessart 05' % bset)
                     yd = zeta_fit(xx, bset, "eastman")
                     if yd is not None:
-                        ax.plot(xx, yd, color=bcolor, ls="--", linewidth=1.5)
+                        ax.plot(xx, yd, color=bcolor, ls="--", linewidth=lw, label='%s Eastman 96' % bset)
                 if is_time_points:
                     integers = [np.abs(z - t).argmin() for t in t_points]  # set time points
                     for (X, Y, Z) in zip(x[integers], y[integers], z[integers]):
@@ -90,9 +93,9 @@ def plot_zeta_oneframe(models_dic, set_bands, t_cut=4.9,
             zTeff = zTeff[z > t_cut]
             z = z[z > t_cut]
             ax.plot(xTnu, yW, label='T_nu ' + mname, markersize=5, color="magenta",
-                    ls="-.", linewidth=2)
+                    ls="-.", linewidth=lw)
             ax.plot(zTeff, yW, label='T_eff ' + mname, markersize=5, color="red",
-                    ls="-.", linewidth=2)
+                    ls="-.", linewidth=lw)
             if is_time_points:
                 integers = [np.abs(z - t).argmin() for t in t_points]  # set time points
                 for (X, Y, Z) in zip(xTnu[integers], yW[integers], z[integers]):
@@ -107,8 +110,8 @@ def plot_zeta_oneframe(models_dic, set_bands, t_cut=4.9,
     ax.legend(prop={'size': 8})
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
-    ax.set_ylabel(r'\Zeta')
-    ax.set_xlabel(r'T_{color}')
+    ax.set_ylabel(r'$\zeta$')
+    ax.set_xlabel(r'$T_{color}$')
     # ax.set_title(bset)
 
     #     plt.title('; '.join(set_bands) + ' filter response')
@@ -118,19 +121,19 @@ def plot_zeta_oneframe(models_dic, set_bands, t_cut=4.9,
 
 def plot_zeta(models_dic, set_bands, t_cut=4.9,
               is_plot_Tcolor=True, is_plot_Tnu=True, is_fit=False, is_time_points=False):
-    t_points = [1, 2, 3, 4, 5, 10, 20, 40, 80, 150]
+    t_points = [1, 2, 3, 4, 5, 10, 30,  80, 150]
 
-    xlim = [4000, 12000]
-    ylim = [0, 1.5]
+    xlim = [0, 32000]
+    ylim = [0, 3.]
 
     # setup figure
-    plt.matplotlib.rcParams.update({'font.size': 9})
+    plt.matplotlib.rcParams.update({'font.size': 14})
     # plt.rc('text', usetex=True)
     # plt.rc('font', family='serif')
-    fig = plt.figure(num=None, figsize=(7, 7), dpi=100, facecolor='w', edgecolor='k')
+    fig = plt.figure(num=None, figsize=(8, 12), dpi=100, facecolor='w', edgecolor='k')
     gs1 = gridspec.GridSpec(len(set_bands), 1)
     # gs1 = gridspec.GridSpec(2, 4, width_ratios=(8, 1, 8, 1))
-    gs1.update(wspace=0.3, hspace=0.3, left=0.05, right=0.95)
+    gs1.update(wspace=0.3, hspace=0.3, left=0.15, right=0.95)
 
     ax_cache = {}
     mi = 0
@@ -152,17 +155,10 @@ def plot_zeta(models_dic, set_bands, t_cut=4.9,
                 x = x[z > t_cut]
                 y = y[z > t_cut]
                 z = z[z > t_cut]
+                # bcolor = "black"
                 bcolor = _colors[ib % (len(_colors) - 1)]
                 ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label='T_mag ' + mname,
                         markersize=5, color=bcolor, ls="", linewidth=1.5)
-                if is_fit:  # dessart
-                    xx = x[z > 2.]
-                    yd = zeta_fit(xx, bset, "dessart")
-                    if yd is not None:
-                        ax.plot(xx, yd, color=bcolor, ls="--", linewidth=1.1, label='Dessart')
-                    yd = zeta_fit(xx, bset, "eastman")
-                    if yd is not None:
-                        ax.plot(xx, yd, color=bcolor, ls="-.", linewidth=1.1, label='Eastman')
                 if is_time_points:
                     integers = [np.abs(z - t).argmin() for t in t_points]  # set time points
                     for (X, Y, Z) in zip(x[integers], y[integers], z[integers]):
@@ -178,12 +174,13 @@ def plot_zeta(models_dic, set_bands, t_cut=4.9,
                 yW = mdic[bset]['W']
                 xTnu = xTnu[z > t_cut]
                 yW = yW[z > t_cut]
+                yW = np.sqrt(yW)
                 zTeff = zTeff[z > t_cut]
                 z = z[z > t_cut]
                 ax.plot(xTnu, yW, label='T_nu ' + mname, markersize=5, color="magenta",
-                        ls="-.", linewidth=1.5)
+                        ls="-", linewidth=2.5)
                 ax.plot(zTeff, yW, label='T_eff ' + mname, markersize=5, color="red",
-                        ls="-.", linewidth=1.5)
+                        ls="-", linewidth=2.5)
                 if is_time_points:
                     integers = [np.abs(z - t).argmin() for t in t_points]  # set time points
                     for (X, Y, Z) in zip(xTnu[integers], yW[integers], z[integers]):
@@ -195,16 +192,34 @@ def plot_zeta(models_dic, set_bands, t_cut=4.9,
                                     textcoords='offset points', color='red',
                                     arrowprops=dict(arrowstyle='->', shrinkA=0))
 
-            ax.legend(prop={'size': 5})
-            ax.set_xlim(xlim)
-            ax.set_ylim(ylim)
-            ax.set_ylabel(r'$\zeta('+bset+')$')
-            ax.set_xlabel(r'$T_{color}$')
-            ax.set_title(bset)
             i += 1
 
+    if is_fit:  # dessart
+        xx = np.linspace(max(100, xlim[0]), xlim[1], num=50)
+        for bset in set_bands:
+            ib += 1
+            bcolor = "red"  #_colors[ib % (len(_colors) - 1)]
+            # bcolor = _colors[ib % (len(_colors) - 1)]
+            ax = ax_cache[bset]
+            yd = zeta_fit(xx, bset, "dessart")
+            if yd is not None:
+                ax.plot(xx, yd, color=bcolor, ls="--", linewidth=2.5, label='Dessart 05')
+            yd = zeta_fit(xx, bset, "eastman")
+            if yd is not None:
+                ax.plot(xx, yd, color=bcolor, ls="-.", linewidth=2.5, label='Eastman 96')
+    i = 0
+    for bset in set_bands:
+        i += 1
+        ax = ax_cache[bset]
+        ax.legend(prop={'size': 9})
+        ax.set_xlim(xlim)
+        ax.set_ylim(ylim)
+        ax.set_ylabel(r'$\zeta('+bset+')$')
+        if i == len(set_bands):
+            ax.set_xlabel(r'$T_{color}$')
+        ax.set_title(bset)
     # plt.title('; '.join(set_bands) + ' filter response')
-    plt.grid()
+    # plt.grid()
     plt.show()
 
 
@@ -391,13 +406,14 @@ def usage():
     print "  -s  silence mode: no info, no plot"
     print "  -f  force mode: rewrite tcolor-files even if it exists"
     print "  -a  plot the Eastman & Dessart fits"
+    print "  -n  plot T_nu & W fits"
     print "  -u  plot UBV"
     print "  -t  plot time points"
     print "  -w  write magnitudes to file, default 'False'"
     print "  -h  print usage"
 
 
-def main(name='', path='./', is_force=False, is_save=False, is_plot_time_points=False):
+def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu = False, is_plot_time_points=False):
     is_silence = False
     is_fit = False
     is_plot_ubv = False
@@ -405,7 +421,7 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_time_points=
     ubv_args = ''
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "afhsuwtp:e:i:b:")
+        opts, args = getopt.getopt(sys.argv[1:], "afhnsuwtp:e:i:b:")
     except getopt.GetoptError as err:
         print str(err)  # will print something like "option -a not recognized"
         usage()
@@ -443,6 +459,9 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_time_points=
             continue
         if opt == '-u':
             is_plot_ubv = True
+            continue
+        if opt == '-n':
+            is_plot_Tnu = True
             continue
         if opt == '-t':
             is_plot_time_points = True
@@ -497,10 +516,12 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_time_points=
             dic_results[name] = dic
             print "Finish: %s" % name
         if is_plot_ubv:
-            os.system("./ubv.py -i %s -d %s %s & " % (name, path, ubv_args))
+            os.system("./ubv.py -i %s -p %s %s & " % (name, path, ubv_args))
         if not is_silence:
-            plot_zeta(dic_results, set_bands, t_cut=1.9, is_fit=is_fit, is_time_points=is_plot_time_points)
-            # plot_zeta_oneframe(dic_results, set_bands, t_cut=1.9, is_fit=is_fit, is_time_points=is_plot_time_points)
+            plot_zeta(dic_results, set_bands, t_cut=1.9, is_fit=is_fit,
+                       is_plot_Tnu=is_plot_Tnu, is_time_points=is_plot_time_points)
+            # plot_zeta_oneframe(dic_results, set_bands, t_cut=1.9, is_fit=is_fit,
+            #                    is_plot_Tnu=is_plot_Tnu, is_time_points=is_plot_time_points)
 
     else:
         print "There are no models in the directory: %s with extension: %s " % (path, model_ext)
