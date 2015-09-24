@@ -13,6 +13,7 @@
       <w>darkseagreen</w>
       <w>darkviolet</w>
       <w>dessart</w>
+      <w>dmdt</w>
       <w>fname</w>
       <w>freqs</w>
       <w>griuz</w>
@@ -28,6 +29,8 @@
       <w>teff</w>
       <w>usno</w>
       <w>wien</w>
+      <w>xlim</w>
+      <w>ylim</w>
     </words>
   </dictionary>
 </component>

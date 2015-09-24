@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import math
+from pystella.model.sn_res import StellaRes
 from pystella.rf.spectrum import SeriesSpectrum, Spectrum
 
 __author__ = 'bakl'
@@ -41,9 +42,17 @@ class Stella:
         return any(map(os.path.isfile, [os.path.join(self.path, self.name + '.' + e) for e in ext]))
 
     @property
+    def is_res_data(self):
+        ext = ['res']
+        return any(map(os.path.isfile, [os.path.join(self.path, self.name + '.' + e) for e in ext]))
+
+    @property
     def is_tt_data(self):
         ext = ['tt']
         return any(map(os.path.isfile, [os.path.join(self.path, self.name + '.' + e) for e in ext]))
+
+    def get_res(self):
+        return StellaRes(self.name,self.path)
 
     def read_serial_spectrum(self, t_diff=1.05):
         serial = SeriesSpectrum(self.name)
