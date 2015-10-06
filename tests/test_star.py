@@ -20,8 +20,32 @@ class TestStar(unittest.TestCase):
         self.sp = spectrum.Spectrum('uniform', freq=freq, flux=flux)
         self.distance = 10  # pc
 
-    def test_check_band_zp(self):
+    def test_check_band_zp_UBVRI(self):
         bands = ['U', 'B', 'V', 'R', "I"]
+        star = Star('test', self.sp)
+        # star.set_radius_ph(self.distance)
+        # star.set_distance(self.distance)
+        for n in bands:
+            b = band.band_by_name(n)
+            mag = star.flux_to_mag(b)
+            self.assertAlmostEqual(mag, phys.ZP_AB, delta=1.,
+                                   msg="For uniform flux=1 it should be mag==AB zero point.\n \
+                                        Now mag is %f for band %s. ZP is %f" % (mag, b, phys.ZP_AB))
+
+    def test_check_band_zp_ugzri(self):
+        bands = ['u', 'g', 'z', 'r', "i"]
+        star = Star('test', self.sp)
+        # star.set_radius_ph(self.distance)
+        # star.set_distance(self.distance)
+        for n in bands:
+            b = band.band_by_name(n)
+            mag = star.flux_to_mag(b)
+            self.assertAlmostEqual(mag, phys.ZP_AB, delta=1.,
+                                   msg="For uniform flux=1 it should be mag==AB zero point.\n \
+                                        Now mag is %f for band %s. ZP is %f" % (mag, b, phys.ZP_AB))
+
+    def test_check_band_zp_ps1(self):
+        bands = ['gps1', 'zps1', 'rps1', "ips1", "y", "w"]
         star = Star('test', self.sp)
         # star.set_radius_ph(self.distance)
         # star.set_distance(self.distance)

@@ -151,6 +151,21 @@ def bands_dict_SDSS():
     return bands
 
 
+def bands_dict_PS1():
+    """
+        The Pan-STARRS1 Photometric System
+        see http://ipp.ifa.hawaii.edu/ps1.filters/
+
+    :return: band-pass filters
+    """
+    bands = dict(gps1="ps1_g.dat", ips1="ps1_i.dat", rps1="ps1_r.dat", zps1="ps1_z.dat",
+                 y="ps1_y.dat", w="ps1_w.dat")
+    d = os.path.join(ROOT_DIRECTORY, "data/bands/PS1")
+    for k, v in bands.items():
+        bands[k] = os.path.join(d, v)
+    return bands
+
+
 def bands_dict_SWIFT():
     bands4 = dict(UVM2="photonUVM2.dat", UVW1="photonUVW1.dat", UVW2="photonUVW2.dat", U_UVOT="photonU_UVOT.dat"
                   , B_UVOT="photonB_UVOT.dat", V_UVOT="photonV_UVOT.dat")
@@ -179,7 +194,10 @@ def band_get_names():
     # SWIFT
     bands4 = bands_dict_SWIFT()
 
-    return merge_dicts(bands0, bandsJHK, bands1, bands3, bands4)
+    # The Pan-STARRS1 Photometric System
+    bands5 = bands_dict_PS1()
+
+    return merge_dicts(bands0, bandsJHK, bands1, bands3, bands4, bands5)
 
 
 def band_is_exist(name):

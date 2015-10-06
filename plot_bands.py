@@ -62,11 +62,25 @@ def plot_SWIFT():
     plt.show()
 
 
+def plot_PS1():
+    plt.title('The Pan-STARRS1 Photometric  filter responses')
+    bands = dict(gps1='m', ips1='r', rps1='b', zps1='y', y='g', w='p')
+    for k, v in bands.items():
+        b = band.band_by_name(k)
+        plt.plot(b.wl*phys.cm_to_angs,  b.resp, v, label=k)
+    plt.legend()
+    plt.ylabel('Amplitude Response')
+    plt.xlabel('Wave [A]')
+    plt.grid()
+    plt.show()
+
+
 def main():
     plot_UBVRI()
     plot_JHK()
     plot_griuz()
     plot_SWIFT()
+    plot_PS1()
 
 if __name__ == '__main__':
     main()

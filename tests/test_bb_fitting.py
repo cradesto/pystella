@@ -43,7 +43,7 @@ class TestSpectrumFitting(unittest.TestCase):
 
     def test_fit_bb(self):
         nu = self.sp.freq
-        flux = self.sp.flux_q
+        flux = self.sp.flux
         Tinit = 1.e4
 
         def func(nu, T):
