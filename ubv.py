@@ -29,16 +29,14 @@ markers = markers.keys()
 
 def plot_all(models_dic, bands, is_time_points=True):
     colors = dict(U="blue", B="cyan", V="black", R="red", I="magenta",
-                  J="blue", H="cyan", K="black",
-                  UVM2="green", UVW1="red", UVW2="blue",
-                  g="black", r="red", i="magenta", u="blue", z="magenta")
+                  J="green", H="cyan", K="black",
+                  UVM2="skyblue", UVW1="orange", UVW2="blue",
+                  g="g", r="red", i="magenta", u="blue", z="chocolate",
+                  y='olive', w='tomato')
     lntypes = dict(U="-", B="-", V="-", R="-", I="-",
                    UVM2="-.", UVW1="-.", UVW2="-.",
-                   u="--", g="--", r="--", i="--", z="--")
-    band_shift = dict(U=6.9, B=3.7, V=0, R=-2.4, I=-4.7,
-                      UVM2=11.3, UVW1=10, UVW2=13.6,
-                      u=3.5, g=2.5, r=-1.2, i=-3.7, z=-4.2)
-    band_shift = dict((k, 0) for k, v in band_shift.items())  # no y-shift
+                   u="--", g="--", r="--", i="--", z="--", y="--", w="--")
+    band_shift = dict((k, 0) for k, v in colors.items())  # no y-shift
 
     t_points = [0.2, 1, 2, 3, 4, 5, 10, 20, 40, 80, 150]
     xlim = [-10, 210]
