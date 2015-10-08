@@ -1,3 +1,4 @@
+from pystella.rf import band
 from pystella.rf.star import Star
 
 __author__ = 'bakl'
@@ -131,7 +132,7 @@ class SeriesSpectrum:
     def set_freq(self, freqs):
         if freqs is None or len(freqs) == 0:
             raise ValueError("freqs must be array with len > 0.")
-        if np.all(freqs == 0):
+        if np.all(freqs == 0.):
             raise ValueError("No freqs item equals 0.")
         self.freq = freqs
         self.wl = phys.c / self.freq
@@ -148,8 +149,8 @@ class SeriesSpectrum:
     def get_tspec(self, idx):
         return self.times[idx], self.data[idx]
 
-    def flux_to_mags(self, band, z=0, dl=0):
-        if band is None:
+    def flux_to_mags(self, b, z=0., dl=0.):
+        if b is None:
             return None
         if not self.is_time():
             return None
@@ -159,9 +160,21 @@ class SeriesSpectrum:
             star = Star(k, self.get_spec(k))
             star.set_distance(dl)
             star.set_redshift(z)
-            mag = star.flux_to_mag(band)
+            # mag = star.flux_to_mag(b)
+            mag = star.flux_to_magAB(b)
             mags[k] = mag
             # if self.times[k] > 50:
             #     spec.plot_spec(title="t=%f, mag=%f" % (self.times[k], mag))
 
         return mags
+
+    def compute_mags(self, bands, z=0., dl=rf.pc_to_cm(10.)):
+        mags = dict((k, None) for k in bands)
+        for n in bands:
+            b = band.band_by_name(n)
+            mags[n] = self.flux_to_mags(b, z=z, dl=dl)
+
+        mags['time'] = self.times * (1. + z)
+
+        return mags
+

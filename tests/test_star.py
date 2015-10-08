@@ -21,14 +21,18 @@ class TestStar(unittest.TestCase):
         self.distance = 10  # pc
 
     def test_check_band_zp_UBVRI(self):
-        bands = ['U', 'B', 'V', 'R', "I"]
         star = Star('test', self.sp)
-        # star.set_radius_ph(self.distance)
-        # star.set_distance(self.distance)
+        # see https://www.astro.umd.edu/~ssm/ASTR620/mags.html#conversions
+        delta = {'B': 0.163, 'V': 0.044, 'R': -0.055, "I": -0.309}
+        bands = delta.keys()
         for n in bands:
             b = band.band_by_name(n)
-            mag = star.flux_to_mag(b)
-            self.assertAlmostEqual(mag, phys.ZP_AB, delta=1.,
+            # mag = star.flux_to_mag(b) - phys.ZP_AB_lmb
+
+            mag = star.flux_to_magAB(b) - phys.ZP_AB
+            # mag = star.flux_to_magAB(b) - delta[n] - phys.ZP_AB
+
+            self.assertAlmostEqual(mag, 0., delta=0.5,
                                    msg="For uniform flux=1 it should be mag==AB zero point.\n \
                                         Now mag is %f for band %s. ZP is %f" % (mag, b, phys.ZP_AB))
 
@@ -39,7 +43,8 @@ class TestStar(unittest.TestCase):
         # star.set_distance(self.distance)
         for n in bands:
             b = band.band_by_name(n)
-            mag = star.flux_to_mag(b)
+            # mag = star.flux_to_mag(b)
+            mag = star.flux_to_magAB(b)
             self.assertAlmostEqual(mag, phys.ZP_AB, delta=1.,
                                    msg="For uniform flux=1 it should be mag==AB zero point.\n \
                                         Now mag is %f for band %s. ZP is %f" % (mag, b, phys.ZP_AB))
@@ -51,7 +56,7 @@ class TestStar(unittest.TestCase):
         # star.set_distance(self.distance)
         for n in bands:
             b = band.band_by_name(n)
-            mag = star.flux_to_mag(b)
+            mag = star.flux_to_magAB(b)
             self.assertAlmostEqual(mag, phys.ZP_AB, delta=1.,
                                    msg="For uniform flux=1 it should be mag==AB zero point.\n \
                                         Now mag is %f for band %s. ZP is %f" % (mag, b, phys.ZP_AB))

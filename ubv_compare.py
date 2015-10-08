@@ -1,16 +1,15 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-from scipy.optimize import fmin
-from scipy import interpolate
 import os
 import sys
 import getopt
-from os.path import isfile, join, dirname
-import csv
+from os.path import dirname
 import numpy as np
 
 from matplotlib import gridspec
 import matplotlib.pyplot as plt
+from pystella.model.stella import Stella
+
 from pystella.rf import band
 
 __author__ = 'bakl'
@@ -20,7 +19,9 @@ ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
 _colors = ["blue", "cyan", "brown", 'darkseagreen', 'tomato', 'olive', 'orange',
            'skyblue', 'darkviolet']
 # colors = {"B-V": "blue", 'B-V-I': "cyan", 'V-I': "brown"}
-lntypes = {"B-V": "-", 'B-V-I': "-.", 'V-I': "--"}
+lntypes = dict(U="-", B="-", V="-", R="-", I="-",
+               UVM2="-.", UVW1="-.", UVW2="-.",
+               u="--", g="--", r="--", i="--", z="--")
 markers = {u'D': u'diamond', 6: u'caretup', u's': u'square', u'x': u'x',
            5: u'caretright', u'^': u'triangle_up', u'd': u'thin_diamond', u'h': u'hexagon1',
            u'+': u'plus', u'*': u'star', u'o': u'circle', u'p': u'pentagon', u'3': u'tri_left',
@@ -33,13 +34,10 @@ def plot_all(models_dic, bands, title='', is_time_points=True):
                   J="blue", H="cyan", K="black",
                   UVM2="green", UVW1="red", UVW2="blue",
                   g="black", r="red", i="magenta", u="blue", z="magenta")
-    lntypes = dict(U="-", B="-", V="-", R="-", I="-",
-                   UVM2="-.", UVW1="-.", UVW2="-.",
-                   u="--", g="--", r="--", i="--", z="--")
-    band_shift = dict(U=6.9, B=3.7, V=0, R=-2.4, I=-4.7,
-                      UVM2=11.3, UVW1=10, UVW2=13.6,
-                      u=3.5, g=2.5, r=-1.2, i=-3.7, z=-4.2)
-    band_shift = dict((k, 0) for k, v in band_shift.items())  # no y-shift
+    # band_shift = dict(U=6.9, B=3.7, V=0, R=-2.4, I=-4.7,
+    #                   UVM2=11.3, UVW1=10, UVW2=13.6,
+    #                   u=3.5, g=2.5, r=-1.2, i=-3.7, z=-4.2)
+    band_shift = dict((k, 0) for k, v in colors.items())  # no y-shift
 
     t_points = [0.2, 1, 2, 3, 4, 5, 10, 20, 40, 80, 150]
     xlim = [-10, 210]
@@ -71,7 +69,7 @@ def plot_all(models_dic, bands, title='', is_time_points=True):
             x = mdic['time']
             y = mdic[bname]
             bcolor = colors[bname]
-            ax.plot(x, y,  marker=markers[mi % (len(markers) - 1)], label='%s  %s' % (bname, mname),
+            ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label='%s  %s' % (lbl(bname), mname),
                     markersize=4, color=bcolor, ls="-", linewidth=lw)
             if is_time_points:
                 integers = [np.abs(x - t).argmin() for t in t_points]  # set time points
@@ -112,13 +110,51 @@ def usage():
     print "  -h  print usage"
 
 
+def compare_ABzVSugri(mname, path, bands=['u', 'g', 'r', 'i'], is_plot_time_points=False):
+    names = ['time'] + bands
+
+    dic_results = {}
+    fname = os.path.join(path, mname + '.ABz')
+    dic_results['ABz'] = cache_load(fname, names, skiprows=4)
+
+    fname = os.path.join(path, mname + '.ubv')
+    dic_results['ubv'] = cache_load(fname, names)
+
+    plot_all(dic_results, bands, title=mname, is_time_points=is_plot_time_points)
+
+
+def compare_ttVSubv(mname, path, bands=['U', 'B', 'V', 'R', 'I'], t_cut=1., is_plot_time_points=False):
+    dic_results = {}
+
+    model = Stella(mname, path=path)
+    tt = model.read_tt_data()
+
+    # time cut  days
+    mags = tt[tt['time'] > t_cut]
+    n1 = mags.dtype.names
+
+    def f(x):
+        if len(x) == 2 and x.startswith('M'):
+            return x.replace('M', '')
+        else:
+            return x
+
+    n2 = map(lambda x: f(x), n1)
+    mags.dtype.names = n2
+
+    dic_results['tt'] = mags
+
+    # ubv
+    serial_spec = model.read_serial_spectrum(t_diff=1.05)
+    mags = serial_spec.compute_mags(bands)
+    dic_results['ubv'] = mags
+
+    plot_all(dic_results, bands, title=mname, is_time_points=is_plot_time_points)
+
+
 def main():
-    is_plot_time_points = False
     path = '/home/bakl/Sn/Release/seb_git/res/tt/tanaka'
     mname = 'cat_R500_M15_Ni008_E40'
-
-    bands = ['u', 'g', 'r', 'i']
-    names = ['time'] + bands
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hp:i:b:")
@@ -151,14 +187,10 @@ def main():
             usage()
             sys.exit(2)
 
-    dic_results = {}
-    fname = os.path.join(path, mname+'.ABz')
-    dic_results['ABz'] = cache_load(fname, names, skiprows=4)
+    compare_ABzVSugri(mname, path)
 
-    fname = os.path.join(path, mname+'.ubv')
-    dic_results['ubv'] = cache_load(fname, names)
-
-    plot_all(dic_results, bands, title=mname, is_time_points=is_plot_time_points)
+    path = '/home/bakl/Sn/Release/seb_git/res/tt'
+    compare_ttVSubv(mname, path)
 
 
 if __name__ == '__main__':

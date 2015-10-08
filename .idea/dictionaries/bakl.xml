@@ -4,7 +4,9 @@
       <w>astro</w>
       <w>bakl</w>
       <w>bcolor</w>
+      <w>bessell</w>
       <w>blackbody</w>
+      <w>bname</w>
       <w>bolometric</w>
       <w>boltzman</w>
       <w>bset</w>
@@ -14,11 +16,14 @@
       <w>darkviolet</w>
       <w>dessart</w>
       <w>dmdt</w>
+      <w>dtype</w>
       <w>fname</w>
       <w>freqs</w>
       <w>griuz</w>
       <w>kait</w>
       <w>lims</w>
+      <w>lntypes</w>
+      <w>mdic</w>
       <w>mname</w>
       <w>pystella</w>
       <w>sdss</w>
@@ -28,10 +33,13 @@
       <w>tcol</w>
       <w>tcolor</w>
       <w>teff</w>
+      <w>tmin</w>
       <w>usno</w>
       <w>wien</w>
       <w>xlim</w>
+      <w>xlims</w>
       <w>ylim</w>
+      <w>ylims</w>
     </words>
   </dictionary>
 </component>

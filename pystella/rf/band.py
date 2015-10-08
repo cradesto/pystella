@@ -110,9 +110,9 @@ def get_full_path(fname):
     return os.path.join(ROOT_DIRECTORY, fname)
 
 
-def bands_dict_STANDARD():
-    bands = dict(RSTD="R.txt")
-    d = os.path.join(ROOT_DIRECTORY, "data/bands/STANDART")
+def bands_dict_Bessell():
+    bands = dict(U="U-bessell.dat", B="B-bessell.dat", V="V-bessell.dat", R="R-bessell.dat", I="I-bessell.dat")
+    d = os.path.join(ROOT_DIRECTORY, "data/bands/Bessell")
     for k, v in bands.items():
         bands[k] = os.path.join(d, v)
 
@@ -177,10 +177,12 @@ def bands_dict_SWIFT():
 
 def band_get_names():
     # STANDARD
-    bands0 = bands_dict_STANDARD()
+    # bands0 = bands_dict_STANDARD()
 
     # KAIT
-    bands1 = bands_dict_KAIT()
+    # bands1 = bands_dict_KAIT()
+    # Bessell
+    bands1 = bands_dict_Bessell()
 
     # HJK
     bandsJHK = bands_dict_Persson()
@@ -197,7 +199,7 @@ def band_get_names():
     # The Pan-STARRS1 Photometric System
     bands5 = bands_dict_PS1()
 
-    return merge_dicts(bands0, bandsJHK, bands1, bands3, bands4, bands5)
+    return merge_dicts(bands1, bandsJHK, bands3, bands4, bands5)
 
 
 def band_is_exist(name):

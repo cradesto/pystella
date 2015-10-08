@@ -17,7 +17,6 @@ from pystella.rf import band
 
 __author__ = 'bakl'
 
-
 ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
 
 markers = {u'D': u'diamond', 6: u'caretup', u's': u'square', u'x': u'x',
@@ -33,9 +32,6 @@ def plot_all(models_dic, bands, is_time_points=True):
                   UVM2="skyblue", UVW1="orange", UVW2="blue",
                   g="g", r="red", i="magenta", u="blue", z="chocolate",
                   y='olive', w='tomato')
-    lntypes = dict(U="-", B="-", V="-", R="-", I="-",
-                   UVM2="-.", UVW1="-.", UVW2="-.",
-                   u="--", g="--", r="--", i="--", z="--", y="--", w="--")
     band_shift = dict((k, 0) for k, v in colors.items())  # no y-shift
 
     t_points = [0.2, 1, 2, 3, 4, 5, 10, 20, 40, 80, 150]
@@ -68,7 +64,7 @@ def plot_all(models_dic, bands, is_time_points=True):
             x = mdic['time']
             y = mdic[bname]
             bcolor = colors[bname]
-            ax.plot(x, y,  marker=markers[mi % (len(markers) - 1)], label='%s  %s' % (bname, mname),
+            ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label='%s  %s' % (lbl(bname), mname),
                     markersize=4, color=bcolor, ls="-", linewidth=lw)
             if is_time_points:
                 integers = [np.abs(x - t).argmin() for t in t_points]  # set time points
@@ -88,6 +84,7 @@ def plot_all(models_dic, bands, is_time_points=True):
     #     plt.title('; '.join(set_bands) + ' filter response')
     plt.grid()
     plt.show()
+
 
 def plot_bands(dict_mags, bands, title='', fname='', distance=10., is_time_points=True):
     plt.title(''.join(bands) + ' filter response')
@@ -182,15 +179,7 @@ def compute_mag(name, path, bands, z=0., distance=10., is_show_info=True, is_sav
 
     # serial_spec = model.read_serial_spectrum(t_diff=0.)
     serial_spec = model.read_serial_spectrum(t_diff=1.05)
-
-    mags = dict((k, None) for k in bands)
-
-    # z, distance = 0, 10.  # pc for Absolute magnitude
-    for n in bands:
-        b = band.band_by_name(n)
-        mags[n] = serial_spec.flux_to_mags(b, z=z, dl=rf.pc_to_cm(distance))
-
-    mags['time'] = serial_spec.times * (1. + z)
+    mags = serial_spec.compute_mags(bands, z=z, dl=rf.pc_to_cm(distance))
 
     if mags is not None:
         fname = os.path.join(path, name + '.ubv')
@@ -200,10 +189,10 @@ def compute_mag(name, path, bands, z=0., distance=10., is_show_info=True, is_sav
 
     if is_show_info:
         # print the time of maximum LC
+        tmin = 2.0
         t = mags['time']
-        idxes = [t > 2.]
         for n in bands:
-            t_min = t[idxes][mags[n][idxes].argmin()]
+            t_min = t[t > tmin][mags[n][t > tmin].argmin()]
             print "t_max(%s) = %f" % (n, t_min)
 
     return mags
@@ -234,7 +223,6 @@ def usage():
     print "  -t  plot time points"
     print "  -w  write magnitudes to file, default 'False'"
     print "  -h  print usage"
-
 
 
 def main(name='', model_ext='.ph'):

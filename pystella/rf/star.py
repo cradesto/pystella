@@ -71,27 +71,27 @@ class Star:
         if self.radius_ph is None:
             raise ValueError("Photospheric radius has not been defined. ")
 
-        return 4.*np.pi * self.radius_ph**2 * self.Flux
+        return 4. * np.pi * self.radius_ph ** 2 * self.Flux
 
     @property
     def FluxObs(self):
         if self.IsRadiusDist:
-            return self.Luminosity / (4*np.pi * self.distance**2)
+            return self.Luminosity / (4 * np.pi * self.distance ** 2)
         elif self.IsDistance:
-            return self.Flux / (4*np.pi * self.distance**2)
+            return self.Flux / (4 * np.pi * self.distance ** 2)
         else:
             return self.Flux
 
     @property
     def FluxWlObs(self):
         if self.IsRadiusDist:
-            return self.Flux_wl * (self.radius_ph/self.distance)**2
+            return self.Flux_wl * (self.radius_ph / self.distance) ** 2
         elif self.IsDistance:
-            return self.Flux_wl / (4*np.pi * self.distance**2)
+            return self.Flux_wl / (4 * np.pi * self.distance ** 2)
         else:
             return self.Flux_wl
 
-    def _response(self, band, is_b_spline=True):
+    def _response_lmb(self, band, is_b_spline=True):
         """
         Compute response flux using provided spectral band
         :param band:  photometric band
@@ -115,11 +115,42 @@ class Star:
         a = integralfunc(flux_spline * band.resp * wl_b, wl_b) / (phys.c * phys.cm_to_angs) / phys.h
         return a
 
+    def _response_nu(self, band, is_b_spline=True):
+        """
+        Compute response flux using provided spectral band
+        :param band:  photometric band
+        :param is_b_spline:  the method of interpolation
+        :return: :raise ValueError:
+        """
+        nu_s = self.Freq
+        flux = self.FluxObs  # / phys.cm_to_angs  # to flux [erg/cm^2/A) ]
+
+        # sort
+        sorti = np.argsort(nu_s)
+        nu_s = nu_s[sorti]
+        flux = flux[sorti]
+
+        nu_b = band.freq
+
+        if min(nu_s) > nu_b[0] or max(nu_s) < nu_b[-1]:
+            raise ValueError("Spectrum must be wider then band: " + str(band))
+
+        if is_b_spline:
+            tck = interpolate.splrep(nu_s, flux, s=0)
+            flux_spline = interpolate.splev(nu_b, tck, der=0)
+        else:
+            flux_spline = np.interp(nu_b, nu_s, flux, 0, 0)  # One-dimensional linear interpolation.
+
+        a = integralfunc(flux_spline * band.resp / nu_b, nu_b)
+        b = integralfunc(band.resp / nu_b, nu_b)
+        return a / b
+
     def set_redshift(self, z):  # shift spectrum to rest frame
         self.z = z
 
-    def flux_to_mag(self, band):
-        conv = self._response(band)
+    def flux_to_mag_not_checked(self, band):
+        conv = self._response_lmb(band)
+        # conv = self._response_nu(band)
         if conv <= 0:
             return None
         else:
@@ -127,11 +158,11 @@ class Star:
             return mag
 
     def flux_to_magAB(self, band):
-        conv = self._response(band)
+        conv = self._response_nu(band)
         if conv <= 0:
             return None
         else:
-            mag = -2.5 * np.log10(conv) + phys.ZP_AB
+            mag = -2.5 * np.log10(conv) + phys.ZP_AB - band.zp
             return mag
 
     def flux_to_AB(self):
@@ -160,10 +191,10 @@ class Star:
             z_o = self.z
 
         self.set_redshift(0.)
-        resp_0 = self._response(band_r, is_b_spline=False)
+        resp_0 = self._response_lmb(band_r, is_b_spline=False)
 
         self.set_redshift(z_o)
-        resp_z = self._response(band_o, is_b_spline=False)
+        resp_z = self._response_lmb(band_o, is_b_spline=False)
 
         if resp_0 < 0 or resp_z <= 0:
             return None
@@ -172,9 +203,9 @@ class Star:
             return kcor
 
     @staticmethod
-    def flux_to_redshift(freq, flux, z):   # todo(bakl): check redshift, * F(nu*(1+Z))/F(nu)
+    def flux_to_redshift(freq, flux, z):  # todo(bakl): check redshift, * F(nu*(1+Z))/F(nu)
         if z <= 0.:
             return flux
-        flux_z = np.interp(freq*(1.+z), freq, flux)
-        flux *= (1.+z) * flux_z/flux
+        flux_z = np.interp(freq * (1. + z), freq, flux)
+        flux *= (1. + z) * flux_z / flux
         return flux

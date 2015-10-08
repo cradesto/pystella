@@ -12,7 +12,8 @@ class phys:
     # conversions
     angs_to_cm = 1.e-8
     cm_to_angs = 1. / angs_to_cm
-    ZP_AB = -48.6  # zero point AB magnitude
+    ZP_AB = -48.6  # zero point AB magnitude for nu
+    ZP_AB_lmb = -21.10  # zero point AB magnitude  for lambda
 
     # units
     AU = 1.4959787066e13  # cm
