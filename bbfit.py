@@ -66,7 +66,7 @@ def plot_zeta_oneframe(models_dic, set_bands, t_cut=4.9, is_fit=False,
                 z = z[z > t_cut]
                 bcolor = _colors[ib % (len(_colors) - 1)]
                 ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label='%s T_mag %s' % (bset, mname),
-                         markersize=4, color=bcolor, ls="", linewidth=lw)
+                        markersize=4, color=bcolor, ls="", linewidth=lw)
                 if is_fit:  # dessart & eastman
                     xx = x[z > 2.]
                     yd = zeta_fit(xx, bset, "dessart")
@@ -121,7 +121,7 @@ def plot_zeta_oneframe(models_dic, set_bands, t_cut=4.9, is_fit=False,
 
 def plot_zeta(models_dic, set_bands, t_cut=4.9,
               is_plot_Tcolor=True, is_plot_Tnu=True, is_fit=False, is_time_points=False):
-    t_points = [1, 2, 3, 4, 5, 10, 30,  80, 150]
+    t_points = [1, 2, 3, 4, 5, 10, 30, 80, 150]
 
     xlim = [0, 32000]
     ylim = [0, 3.]
@@ -198,7 +198,7 @@ def plot_zeta(models_dic, set_bands, t_cut=4.9,
         xx = np.linspace(max(100, xlim[0]), xlim[1], num=50)
         for bset in set_bands:
             ib += 1
-            bcolor = "red"  #_colors[ib % (len(_colors) - 1)]
+            bcolor = "red"  # _colors[ib % (len(_colors) - 1)]
             # bcolor = _colors[ib % (len(_colors) - 1)]
             ax = ax_cache[bset]
             yd = zeta_fit(xx, bset, "dessart")
@@ -214,7 +214,7 @@ def plot_zeta(models_dic, set_bands, t_cut=4.9,
         ax.legend(prop={'size': 9})
         ax.set_xlim(xlim)
         ax.set_ylim(ylim)
-        ax.set_ylabel(r'$\zeta('+bset+')$')
+        ax.set_ylabel(r'$\zeta(' + bset + ')$')
         if i == len(set_bands):
             ax.set_xlabel(r'$T_{color}$')
         ax.set_title(bset)
@@ -264,7 +264,7 @@ def epsilon(x, freq, mag, bands, radius, dist):
     star = Star("bb", sp)
     star.set_radius_ph(radius)
     star.set_distance(dist)
-    mag_bb = {b: star.flux_to_mag(band.band_by_name(b)) for b in bands}
+    mag_bb = {b: star.flux_to_magAB(band.band_by_name(b)) for b in bands}
     e = 0
     for b in bands:
         e += abs(mag[b] - mag_bb[b])
@@ -317,7 +317,7 @@ def compute_Tnu_w(serial_spec, tt, t_cut=0.):
     return temp_nu, temp_eff, W
 
 
-def compute_tcolor(name, path, bands, t_cut=2.):
+def compute_tcolor(name, path, bands, t_cut=1.):
     model = Stella(name, path=path)
 
     if not model.is_spec_data:
@@ -328,20 +328,21 @@ def compute_tcolor(name, path, bands, t_cut=2.):
         print "No tt-data for: " + str(model)
         return None
 
+    distance = rf.pc_to_cm(10.)  # pc for Absolute magnitude
     # serial_spec = model.read_serial_spectrum(t_diff=0.)
     serial_spec = model.read_serial_spectrum(t_diff=1.05)
+    mags = serial_spec.compute_mags(bands, z=0., dl=distance)
 
-    distance = rf.pc_to_cm(10.)  # pc for Absolute magnitude
-    l = list()
-    for n in bands:
-        b = band.band_by_name(n)
-        l.append(serial_spec.flux_to_mags(b, dl=distance))
-
-    mags = np.array(np.zeros(len(l[0])),
-                    dtype=np.dtype({'names': ['time'] + bands, 'formats': [np.float64] * (len(bands) + 1)}))
-    mags['time'] = serial_spec.times
-    for n in bands:
-        mags[n] = l.pop(0)
+    # l = list()
+    # for n in bands:
+    #     b = band.band_by_name(n)
+    #     l.append(serial_spec.flux_to_mags(b, dl=distance))
+    #
+    # mags = np.array(np.zeros(len(l[0])),
+    #                 dtype=np.dtype({'names': ['time'] + bands, 'formats': [np.float64] * (len(bands) + 1)}))
+    # mags['time'] = serial_spec.times
+    # for n in bands:
+    #     mags[n] = l.pop(0)
     # mags = np.array([serial_spec.times] + l,
     #                 dtype=np.dtype({'names': ['time']+bands, 'formats':  [np.float64] * (len(bands)+1)}))
 
@@ -413,7 +414,7 @@ def usage():
     print "  -h  print usage"
 
 
-def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu = False, is_plot_time_points=False):
+def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, is_plot_time_points=False):
     is_silence = False
     is_fit = False
     is_plot_ubv = False
@@ -479,7 +480,7 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu = False,
             is_fit = True
             continue
         if opt == '-p':
-            path = str(arg)
+            path = os.path.expanduser(str(arg))
             if not (os.path.isdir(path) and os.path.exists(path)):
                 print "No such directory: " + path
                 sys.exit(2)
@@ -519,7 +520,7 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu = False,
             os.system("./ubv.py -i %s -p %s %s & " % (name, path, ubv_args))
         if not is_silence:
             plot_zeta(dic_results, set_bands, t_cut=1.9, is_fit=is_fit,
-                       is_plot_Tnu=is_plot_Tnu, is_time_points=is_plot_time_points)
+                      is_plot_Tnu=is_plot_Tnu, is_time_points=is_plot_time_points)
             # plot_zeta_oneframe(dic_results, set_bands, t_cut=1.9, is_fit=is_fit,
             #                    is_plot_Tnu=is_plot_Tnu, is_time_points=is_plot_time_points)
 

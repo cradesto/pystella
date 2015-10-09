@@ -60,6 +60,9 @@ def plot_dmdt(models_dic, bands, is_time_points=True):
                                 textcoords='offset points', color=bcolor,
                                 arrowprops=dict(arrowstyle='->', shrinkA=0))
 
+            if min(y) < -18.:
+                print " Max: %s in %s band " % (mname, bname)
+
     ax.legend(prop={'size': 8})
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
@@ -73,7 +76,7 @@ def plot_dmdt(models_dic, bands, is_time_points=True):
     plt.show()
 
 
-def compute_mag(name, path, bands, z=0., distance=10., t_cut=0., t_up=400.):
+def compute_mag(name, path, bands, z=0., distance=10., t_cut=0., t_up=400., tdiff=0.):
     """
         Compute magnitude in bands for the 'name' model.
     :param name: the name of a model and data files
@@ -91,33 +94,36 @@ def compute_mag(name, path, bands, z=0., distance=10., t_cut=0., t_up=400.):
 
     # serial_spec = model.read_serial_spectrum(t_diff=0.)
     serial_spec = model.read_serial_spectrum(t_diff=1.05)
+    mags = serial_spec.compute_mags(bands, z=z, dl=rf.pc_to_cm(distance))
 
-    mags = dict((k, None) for k in bands)
-
-    # z, distance = 0, 10.  # pc for Absolute magnitude
-    for n in bands:
-        b = band.band_by_name(n)
-        mags[n] = serial_spec.flux_to_mags(b, z=z, dl=rf.pc_to_cm(distance))
-
-    time = serial_spec.times * (1. + z)
     # t_cut
+    time = mags['time']
     cut = (t_cut < time) & (time < t_up)
     mags['time'] = time[cut]
     for n in bands:
         mags[n] = mags[n][cut]
+
+    time = mags['time']
+    if tdiff > 0.:
+        ts = np.arange(np.min(time), np.max(time), tdiff)
+        for n in bands:
+            tck = interpolate.splrep(time, mags[n])
+            mags[n] = interpolate.splev(ts, tck)
+        mags['time'] = ts
+
     return mags
 
 
 def compute_dmdt(mags, bands, is_spline=True, s=0.):
     dic_dmdt = dict((k, None) for k in bands)
     t = mags['time']
-    dt = np.diff(t)
     for n in bands:
         if is_spline:
             w = np.ones(len(t))
             tck = interpolate.splrep(t, mags[n], w=w, s=s)
             dmdt = interpolate.splev(t, tck, der=1)
         else:
+            dt = np.diff(t)
             dmdt = np.diff(mags[n]) / dt
             dmdt = np.append(dmdt, dmdt[-1])
         dic_dmdt[n] = dmdt
@@ -133,17 +139,19 @@ def usage():
           "     Available: " + '-'.join(sorted(bands))
     print "  -i <model name>.  Example: cat_R450_M15_Ni007_E7"
     print "  -p <model path(directory)>, default: ./"
+    print "  -t  plot time points"
     print "  -w  write magnitudes to file, default 'False'"
     print "  -h  print usage"
 
 
 def main(name='', path='./'):
     model_ext = '.ph'
+    is_time_points = False
     z = 0
     distance = 10.  # pc
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hwp:i:b:")
+        opts, args = getopt.getopt(sys.argv[1:], "hwtp:i:b:")
     except getopt.GetoptError as err:
         print str(err)  # will print something like "option -a not recognized"
         usage()
@@ -159,7 +167,7 @@ def main(name='', path='./'):
                 name = str(arg)
                 break
 
-    bands = ['U']
+    bands = ['UVW1', 'U']
 
     for opt, arg in opts:
         if opt == '-b':
@@ -168,13 +176,13 @@ def main(name='', path='./'):
                 if not band.band_is_exist(b):
                     print 'No such band: ' + b
                     sys.exit(2)
-            continue
-        if opt == '-p':
-            path = str(arg)
+        elif opt == '-p':
+            path = os.path.expanduser(str(arg))
             if not (os.path.isdir(path) and os.path.exists(path)):
                 print "No such directory: " + path
                 sys.exit(2)
-            continue
+        elif opt == '-t':
+            is_time_points = True
         elif opt == '-h':
             usage()
             sys.exit(2)
@@ -192,11 +200,12 @@ def main(name='', path='./'):
         i = 0
         for name in names:
             i += 1
-            mags = compute_mag(name, path, bands, z=z, distance=distance, t_cut=0.1, t_up=10.)
-            dmdt = compute_dmdt(mags, bands, is_spline=True, s=0.)
+            mags = compute_mag(name, path, bands, z=z, distance=distance, t_cut=0.1, t_up=5.,
+                               tdiff=0.5)
+            dmdt = compute_dmdt(mags, bands,  is_spline=True, s=0.)
             dic_results[name] = dict(m=mags, d=dmdt)
             print "Finish: %s [%d/%d]" % (name, i, len(names))
-        plot_dmdt(dic_results, bands)
+        plot_dmdt(dic_results, bands, is_time_points=is_time_points)
 
     else:
         print "There are no models in the directory: %s with extension: %s " % (path, model_ext)

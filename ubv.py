@@ -284,7 +284,7 @@ def main(name='', model_ext='.ph'):
             distance = float(arg)
             continue
         if opt == '-p':
-            path = str(arg)
+            path = os.path.expanduser(str(arg))
             if not (os.path.isdir(path) and os.path.exists(path)):
                 print "No such directory: " + path
                 sys.exit(2)

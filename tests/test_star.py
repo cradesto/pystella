@@ -61,6 +61,18 @@ class TestStar(unittest.TestCase):
                                    msg="For uniform flux=1 it should be mag==AB zero point.\n \
                                         Now mag is %f for band %s. ZP is %f" % (mag, b, phys.ZP_AB))
 
+    def test_check_band_zp_sdss(self):
+        bands = ['UVM2', 'UVW1', 'UVW2']
+        star = Star('test', self.sp)
+        # star.set_radius_ph(self.distance)
+        # star.set_distance(self.distance)
+        for n in bands:
+            b = band.band_by_name(n)
+            mag = star.flux_to_magAB(b)
+            self.assertAlmostEqual(mag, phys.ZP_AB, delta=1.,
+                                   msg="For uniform flux=1 it should be mag==AB zero point.\n \
+                                        Now mag is %f for band %s. ZP is %f" % (mag, b, phys.ZP_AB))
+
     def test_k_cor_uniform(self):
         b_r = band.band_by_name('U')
         b_o = band.band_by_name('U')
