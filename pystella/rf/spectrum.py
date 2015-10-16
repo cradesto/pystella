@@ -1,7 +1,5 @@
 from pystella.rf import band
 from pystella.rf.star import Star
-
-__author__ = 'bakl'
 import math
 import numpy as np
 import matplotlib.pyplot as plt
@@ -10,31 +8,41 @@ import scipy.optimize as opt
 import pystella.util.rf as rf
 from pystella.util.phys_var import phys
 
+__author__ = 'bakl'
+
 
 class Spectrum:
     def __init__(self, name, freq=None, flux=None, is_sort_wl=True):
         """Creates a Spectrum instance.  Required parameters:  name."""
         self.name = name
-        self.freq = np.array(freq, copy=True)  # frequencies of flux [cm]
-        self.flux = np.array(flux, copy=True)  # flux [erg / (cm^2*Hz) ]
+        self._freq = np.array(freq, copy=True)  # frequencies of flux [cm]
+        self._flux = np.array(flux, copy=True)  # flux [erg / (cm^2*Hz) ]
         # if is_sort_wl:
         #    freq, flux = [list(x) for x in zip(*sorted(zip(freq, flux), key=itemgetter(0)))]
         if is_sort_wl:
             sorti = np.argsort(self.Wl)
-            self.freq = self.freq[sorti]
-            self.flux = self.flux[sorti]
+            self._freq = self._freq[sorti]
+            self._flux = self._flux[sorti]
+
+    @property
+    def Freq(self):
+        return self._freq
+
+    @property
+    def Flux(self):
+        return self._flux
 
     @property
     def Flux_wl(self):  # wavelength of flux [cm]
-        return self.flux * self.freq ** 2 / phys.c  # flux [erg/cm^2/cm) ]
+        return self._flux * self._freq ** 2 / phys.c  # flux [erg/cm^2/cm) ]
 
     @property
     def Wl(self):
-        return phys.c / self.freq
+        return phys.c / self._freq
 
     def plot_spec(self, title=''):
-        plt.title('Spectrum: '+title)
-        plt.plot(self.Wl*phys.cm_to_angs,  self.Flux_wl)
+        plt.title('Spectrum: ' + title)
+        plt.plot(self.Wl * phys.cm_to_angs, self.Flux_wl)
         plt.xscale('log')
         plt.yscale('log')
         plt.ylabel('Flux')
@@ -47,13 +55,14 @@ class Spectrum:
         Fitting Spectrum by planck function and find the color temperature
         :return:   color temperature
         """
-        nu = self.freq
+        nu = self._freq
         # Tinit = 1.e4
         Tinit = self.temperature_wien
 
         def func(freq, T):
             return rf.planck(freq, T, inp="Hz", out="freq")
-        popt, pcov = opt.curve_fit(func, nu, self.flux, p0=Tinit)
+
+        popt, pcov = opt.curve_fit(func, nu, self._flux, p0=Tinit)
         return popt
 
     @property
@@ -68,16 +77,22 @@ class Spectrum:
 
         def func(wl):
             return -interpolate.splev(wl, tck, der=0)
-        wl_max = opt.fmin(func, x0=wl[int(len(wl)/2)])
+
+        wl_max = opt.fmin(func, x0=wl[int(len(wl) / 2)])
         Twien = b / wl_max
         return Twien
 
     def compute_flux_nu_bol(self):
-        Hnu = integrate.simps(self.flux * self.freq, self.freq)
+        Hnu = integrate.simps(self._flux * self._freq, self._freq)
         return abs(Hnu)  # due to order freq
 
+    def cut_flux(self, bottom):
+        cut = self._flux >= bottom
+        self._freq = self._freq[cut]
+        self._flux = self._flux[cut]
+
     def compute_flux_bol(self):
-        H = integrate.simps(self.flux, self.freq)
+        H = integrate.simps(self._flux, self._freq)
         return abs(H)  # due to order freq
 
     @staticmethod
@@ -88,7 +103,7 @@ class Spectrum:
         :param dl: luminosity distance [parsec]
         :return: :raise ValueError:
         """
-        return flux / (4*np.pi * dl**2)
+        return flux / (4 * np.pi * dl ** 2)
 
 
 class SpectrumPlanck(Spectrum):
@@ -108,7 +123,7 @@ class SpectrumPlanck(Spectrum):
 
     def correct_zeta(self, zeta):
         self.zeta = zeta
-        self.flux *= zeta**2
+        self._flux *= zeta ** 2
 
 
 class SeriesSpectrum:
@@ -149,6 +164,10 @@ class SeriesSpectrum:
     def get_tspec(self, idx):
         return self.times[idx], self.data[idx]
 
+    def get_spec_by_time(self, time):
+        idx = (np.abs(self.times-time)).argmin()
+        return self.get_spec(idx)
+
     def flux_to_mags(self, b, z=0., dl=0.):
         if b is None:
             return None
@@ -177,4 +196,3 @@ class SeriesSpectrum:
         mags['time'] = self.times * (1. + z)
 
         return mags
-

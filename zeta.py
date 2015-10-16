@@ -6,17 +6,18 @@ import os
 import sys
 import getopt
 from os.path import isfile, join, dirname
-import csv
 import numpy as np
 
 from matplotlib import gridspec
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 
 from pystella.rf import band, spectrum
 from pystella.rf.star import Star
 from pystella.model.stella import Stella
 import pystella.util.rf as rf
 from pystella.util.phys_var import phys
+from pystella.util.string_misc import cache_load, cache_name, cache_save
 
 __author__ = 'bakl'
 
@@ -123,30 +124,36 @@ def plot_zeta(models_dic, set_bands, t_cut=4.9,
               is_plot_Tcolor=True, is_plot_Tnu=True, is_fit=False, is_time_points=False):
     t_points = [1, 2, 3, 4, 5, 10, 30, 80, 150]
 
-    xlim = [0, 32000]
+    xlim = [0, 18000]
     ylim = [0, 3.]
 
     # setup figure
     plt.matplotlib.rcParams.update({'font.size': 14})
     # plt.rc('text', usetex=True)
     # plt.rc('font', family='serif')
-    fig = plt.figure(num=None, figsize=(8, 12), dpi=100, facecolor='w', edgecolor='k')
-    gs1 = gridspec.GridSpec(len(set_bands), 1)
+    fig = plt.figure(num=len(set_bands), figsize=(9, 9), dpi=100, facecolor='w', edgecolor='k')
+    gs1 = gridspec.GridSpec(len(set_bands) / 2 + len(set_bands) % 2, 2)
     # gs1 = gridspec.GridSpec(2, 4, width_ratios=(8, 1, 8, 1))
     gs1.update(wspace=0.3, hspace=0.3, left=0.15, right=0.95)
 
     ax_cache = {}
+    xstart, xend = 0, 20000.
+    xstep = (xend - xstart) / 4.
+    xticks = np.arange(xstart, xend, xstep)
     mi = 0
-    ib = 0
+    i = 0
     for mname, mdic in models_dic.iteritems():
-        mi += 1
-        i = 0
+        mi += 0
+        ib = 0
         for bset in set_bands:
             ib += 1
+            i += 1
             if bset in ax_cache:
                 ax = ax_cache[bset]
             else:
-                ax = fig.add_subplot(gs1[i, 0])
+                icol = (ib - 1) % 2
+                irow = (ib - 1) / 2
+                ax = fig.add_subplot(gs1[irow, icol])
                 ax_cache[bset] = ax
             if is_plot_Tcolor:
                 x = mdic[bset]['Tcol']
@@ -157,8 +164,10 @@ def plot_zeta(models_dic, set_bands, t_cut=4.9,
                 z = z[z > t_cut]
                 # bcolor = "black"
                 bcolor = _colors[ib % (len(_colors) - 1)]
-                ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label='T_mag ' + mname,
+                ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label='Stella ',  # label='T_mag ' + mname,
                         markersize=5, color=bcolor, ls="", linewidth=1.5)
+                ax.xaxis.set_ticks(xticks)
+                ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%d'))
                 if is_time_points:
                     integers = [np.abs(z - t).argmin() for t in t_points]  # set time points
                     for (X, Y, Z) in zip(x[integers], y[integers], z[integers]):
@@ -192,10 +201,9 @@ def plot_zeta(models_dic, set_bands, t_cut=4.9,
                                     textcoords='offset points', color='red',
                                     arrowprops=dict(arrowstyle='->', shrinkA=0))
 
-            i += 1
-
     if is_fit:  # dessart
         xx = np.linspace(max(100, xlim[0]), xlim[1], num=50)
+        ib = 0
         for bset in set_bands:
             ib += 1
             bcolor = "red"  # _colors[ib % (len(_colors) - 1)]
@@ -207,15 +215,15 @@ def plot_zeta(models_dic, set_bands, t_cut=4.9,
             yd = zeta_fit(xx, bset, "eastman")
             if yd is not None:
                 ax.plot(xx, yd, color=bcolor, ls="-.", linewidth=2.5, label='Eastman 96')
-    i = 0
+    ib = 0
     for bset in set_bands:
-        i += 1
+        ib += 1
         ax = ax_cache[bset]
         ax.legend(prop={'size': 9})
         ax.set_xlim(xlim)
         ax.set_ylim(ylim)
         ax.set_ylabel(r'$\zeta(' + bset + ')$')
-        if i == len(set_bands):
+        if ib == len(set_bands):
             ax.set_xlabel(r'$T_{color}$')
         ax.set_title(bset)
     # plt.title('; '.join(set_bands) + ' filter response')
@@ -274,6 +282,7 @@ def epsilon(x, freq, mag, bands, radius, dist):
 def compute_Tcolor_zeta(mags, tt, bands, freq, dist):
     temp = list()
     zeta_radius = list()
+    times = list()
     Rph_spline = interpolate.splrep(tt['time'], tt['Rph'], s=0)
     for nt in range(len(mags['time'])):
         t = mags['time'][nt]
@@ -286,10 +295,11 @@ def compute_Tcolor_zeta(mags, tt, bands, freq, dist):
         tcolor, w = fmin(epsilon, x0=np.array([1.e4, 1]), args=(freq, mag, bands, radius, dist), disp=0)
         temp.append(tcolor)
         zeta_radius.append(w)
-    return temp, zeta_radius
+        times.append(t)
+    return temp, zeta_radius, times
 
 
-def compute_Tnu_w(serial_spec, tt, t_cut=0.):
+def compute_Tnu_w(serial_spec, tt):
     temp_nu = list()
     temp_eff = list()
     W = list()
@@ -297,14 +307,14 @@ def compute_Tnu_w(serial_spec, tt, t_cut=0.):
     x_bb = rf.compute_x_bb()
     for nt in range(len(serial_spec.times)):
         t, spec = serial_spec.get_tspec(nt)
-        if t < min(tt['time']) or t < t_cut:
+        if t < min(tt['time']):
             continue
         if t > max(tt['time']):
             break
         Hnu = spec.compute_flux_nu_bol()
         H = spec.compute_flux_bol()
         nu_bb = Hnu / H
-        radius = interpolate.splev(t, Rph_spline)
+        radius = interpolate.spublev(t, Rph_spline)
         H /= 4. * np.pi * radius ** 2
 
         Tnu = phys.h / phys.k * nu_bb / x_bb
@@ -330,40 +340,24 @@ def compute_tcolor(name, path, bands, t_cut=1.):
 
     distance = rf.pc_to_cm(10.)  # pc for Absolute magnitude
     # serial_spec = model.read_serial_spectrum(t_diff=0.)
-    serial_spec = model.read_serial_spectrum(t_diff=1.05)
+    serial_spec = model.read_serial_spectrum(t_diff=1.05, t_beg=t_cut)
     mags = serial_spec.compute_mags(bands, z=0., dl=distance)
-
-    # l = list()
-    # for n in bands:
-    #     b = band.band_by_name(n)
-    #     l.append(serial_spec.flux_to_mags(b, dl=distance))
-    #
-    # mags = np.array(np.zeros(len(l[0])),
-    #                 dtype=np.dtype({'names': ['time'] + bands, 'formats': [np.float64] * (len(bands) + 1)}))
-    # mags['time'] = serial_spec.times
-    # for n in bands:
-    #     mags[n] = l.pop(0)
-    # mags = np.array([serial_spec.times] + l,
-    #                 dtype=np.dtype({'names': ['time']+bands, 'formats':  [np.float64] * (len(bands)+1)}))
 
     # read R_ph
     tt = model.read_tt_data()
-
-    # time cut  days
-    mags = mags[mags['time'] > t_cut]
-    tt = tt[tt['time'] > t_cut]
+    tt = tt[tt['time'] > t_cut]  # time cut  days
 
     # compute Tnu, W
-    Tnu, Teff, W = compute_Tnu_w(serial_spec, tt=tt, t_cut=t_cut)
+    Tnu, Teff, W = compute_Tnu_w(serial_spec, tt=tt)
 
     # fit mags by B(T_col) and get \zeta\theta & T_col
-    Tcolors, zetaR = compute_Tcolor_zeta(mags, tt=tt, bands=bands, freq=serial_spec.freq, dist=distance)
+    Tcolors, zetaR, times = compute_Tcolor_zeta(mags, tt=tt, bands=bands, freq=serial_spec.freq, dist=distance)
 
     # show results
     res = np.array(np.zeros(len(Tcolors)),
                    dtype=np.dtype({'names': ['time', 'Tcol', 'zeta', 'Tnu', 'Teff', 'W'],
                                    'formats': [np.float64] * 6}))
-    res['time'] = mags['time']
+    res['time'] = times
     res['Tcol'] = Tcolors
     res['zeta'] = zetaR
     res['Tnu'] = Tnu
@@ -373,32 +367,10 @@ def compute_tcolor(name, path, bands, t_cut=1.):
     return res
 
 
-def cache_name(name, path, bands):
-    fname = os.path.join(path, "%s.%s.zeta" % (name, bands))
-    return fname
-
-
-def cache_save(narr, fname):
-    names = narr.dtype.names
-    with open(fname, 'wb') as f:
-        writer = csv.writer(f, delimiter='\t')
-        writer.writerow(['{:^8s}'.format(x) for x in names])
-        for i, (row) in enumerate(zip(*[narr[k] for k in names])):
-            writer.writerow(['{:8.3f}'.format(x) for x in row])
-
-
-def cache_load(fname):
-    header = 'time Tcol zeta Tnu Teff W'
-    names = map(str.strip, header.split())
-    dtype = np.dtype({'names': names, 'formats': [np.float64] * len(names)})
-    block = np.loadtxt(fname, skiprows=1, dtype=dtype)
-    return block
-
-
 def usage():
     bands = band.band_get_names().keys()
     print "Usage:"
-    print "  bbfit.py [params]"
+    print "  zeta.py [params]"
     print "  -b <set_bands>: delimiter '_'. Default: B-V-I_B-V_V-I.\n" \
           "     Available: " + '-'.join(sorted(bands))
     print "  -i <model name>.  Example: cat_R450_M15_Ni007_E7"
@@ -438,7 +410,7 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
                 name = str(arg)
                 break
 
-    set_bands = ['B-V', 'B-V-I', 'V-I']
+    set_bands = ['B-V', 'B-V-I', 'V-I', 'J-H-K']
     # set_bands = ['B-V', 'B-V-I', 'V-I', 'J-H-K']
     # set_bands = ['U-B-V-I', 'U-B-V-R-I', 'U-B', 'V-R', 'B-V-I', 'B-V', 'V-I']
 

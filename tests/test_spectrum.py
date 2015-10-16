@@ -14,7 +14,7 @@ class TestSpectrum(unittest.TestCase):
         freq = rf.val_to_hz(wl, inp="A")
         flux = np.ones(nf)
         sp = spectrum.Spectrum('uniform', freq=freq, flux=flux, is_sort_wl=True)
-        freq = sp.freq
+        freq = sp._freq
         for i in range(len(freq) - 1):
             self.assertTrue(freq[i] > freq[i + 1],
                             "Freq should be ordered, but freq[%d] > freq[%d]." % (i, i + 1))

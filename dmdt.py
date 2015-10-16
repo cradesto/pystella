@@ -134,7 +134,7 @@ def compute_dmdt(mags, bands, is_spline=True, s=0.):
 def usage():
     bands = band.band_get_names().keys()
     print "Usage:"
-    print "  bbfit.py [params]"
+    print "  dmdt.py [params]"
     print "  -b <set_bands>: delimiter '_'. Default: B-V-I_B-V_V-I.\n" \
           "     Available: " + '-'.join(sorted(bands))
     print "  -i <model name>.  Example: cat_R450_M15_Ni007_E7"

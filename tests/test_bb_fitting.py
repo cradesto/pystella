@@ -31,7 +31,7 @@ class TestSpectrumFitting(unittest.TestCase):
 
     def plot(self):
         # plot the input model and synthetic data
-        nu = self.sp.freq
+        nu = self.sp._freq
         flux = self.sp.flux_q
         Tcol = self.sp.fit_t_color()
         ybest = rf.planck(nu, Tcol)
@@ -42,8 +42,8 @@ class TestSpectrumFitting(unittest.TestCase):
         plt.show()
 
     def test_fit_bb(self):
-        nu = self.sp.freq
-        flux = self.sp.flux
+        nu = self.sp._freq
+        flux = self.sp._flux
         Tinit = 1.e4
 
         def func(nu, T):

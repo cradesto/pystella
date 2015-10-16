@@ -8,19 +8,45 @@ __author__ = 'bakl'
 
 
 class Star:
-    def __init__(self, name, spec=None):
+    def __init__(self, name, spec=None, is_flux_eq_luminosity=False):
         """Creates a Spectrum instance.  Required parameters:  name."""
         self.name = name
         self._sp = spec
+        self.is_flux_eq_luminosity = is_flux_eq_luminosity
         self.radius_ph = None
         self.z = None
         self.distance = None
+        self.Tcol = {}
+        self.zeta = {}
 
     def set_radius_ph(self, radius):
         self.radius_ph = radius
 
     def set_distance(self, distance):
+        """
+        Set distance to the star [cm]
+        :param distance:
+        """
         self.distance = distance
+
+    def set_redshift(self, z):  # shift spectrum to rest frame
+        self.z = z
+
+    def set_Tcol(self, Tcol, bset):
+        self.Tcol[bset] = Tcol
+
+    def get_Tcol(self, bset):
+        if bset in self.Tcol:
+            return self.Tcol[bset]
+        return None
+
+    def set_zeta(self, zeta, bset):
+        self.zeta[bset] = zeta
+
+    def get_zeta(self, bset):
+        if bset in self.zeta:
+            return self.zeta[bset]
+        return None
 
     @property
     def IsRedshift(self):
@@ -43,9 +69,9 @@ class Star:
         if self._sp is None:
             raise ValueError("Spectrum has not been defined. ")
         if self.IsRedshift:
-            return self._sp.freq * (1. + self.z)  # redshift the flux
+            return self._sp.Freq * (1. + self.z)  # redshift the flux
         else:
-            return self._sp.freq
+            return self._sp.Freq
 
     @property
     def Wl(self):
@@ -58,9 +84,9 @@ class Star:
         if self._sp is None:
             raise ValueError("Spectrum has not been defined. ")
         if self.IsRedshift:
-            return Star.flux_to_redshift(self._sp.freq, self._sp.flux, self.z)
+            return Star.flux_to_redshift(self._sp.freq, self._sp.Flux, self.z)
         else:
-            return self._sp.flux
+            return self._sp.Flux
 
     @property
     def Flux_wl(self):
@@ -68,6 +94,9 @@ class Star:
 
     @property
     def Luminosity(self):
+        if self.is_flux_eq_luminosity:
+            return self.Flux
+
         if self.radius_ph is None:
             raise ValueError("Photospheric radius has not been defined. ")
 
@@ -85,7 +114,10 @@ class Star:
     @property
     def FluxWlObs(self):
         if self.IsRadiusDist:
-            return self.Flux_wl * (self.radius_ph / self.distance) ** 2
+            if self.is_flux_eq_luminosity:
+                return self.Flux_wl / (4 * np.pi * self.distance ** 2)
+            else:
+                return self.Flux_wl * (self.radius_ph / self.distance) ** 2
         elif self.IsDistance:
             return self.Flux_wl / (4 * np.pi * self.distance ** 2)
         else:
@@ -144,9 +176,6 @@ class Star:
         a = integralfunc(flux_spline * band.resp / nu_b, nu_b)
         b = integralfunc(band.resp / nu_b, nu_b)
         return a / b
-
-    def set_redshift(self, z):  # shift spectrum to rest frame
-        self.z = z
 
     def flux_to_mag_not_checked(self, band):
         conv = self._response_lmb(band)

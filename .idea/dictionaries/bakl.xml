@@ -12,6 +12,7 @@
       <w>bset</w>
       <w>caretright</w>
       <w>caretup</w>
+      <w>conv</w>
       <w>darkseagreen</w>
       <w>darkviolet</w>
       <w>dessart</w>
@@ -20,6 +21,8 @@
       <w>fname</w>
       <w>freqs</w>
       <w>griuz</w>
+      <w>icol</w>
+      <w>irow</w>
       <w>kait</w>
       <w>lims</w>
       <w>lntypes</w>
@@ -32,6 +35,7 @@
       <w>swiftuvot</w>
       <w>tcol</w>
       <w>tcolor</w>
+      <w>tcolors</w>
       <w>tdiff</w>
       <w>teff</w>
       <w>tmin</w>

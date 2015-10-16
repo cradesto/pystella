@@ -52,16 +52,15 @@ class Stella:
         return any(map(os.path.isfile, [os.path.join(self.path, self.name + '.' + e) for e in ext]))
 
     def get_res(self):
-        return StellaRes(self.name,self.path)
+        return StellaRes(self.name, self.path)
 
-    def read_serial_spectrum(self, t_diff=1.05):
+    def read_serial_spectrum(self, t_diff=1.05, t_beg=0.0):
         serial = SeriesSpectrum(self.name)
 
         # read first line with frequencies
         fname = os.path.join(self.path, self.name + '.ph')
         f = open(fname, 'r')
         try:
-            # read NX,NY,NZ
             header1 = f.readline()
         finally:
             f.close()
@@ -77,6 +76,8 @@ class Stella:
         is_times = np.zeros(len(times), dtype=bool)
         k = 1
         for i in range(len(times)):
+            if times[i] < t_beg:
+                continue
             if np.abs(times[i] / times[k]) > t_diff:
                 is_times[k] = True
                 k = i
@@ -114,8 +115,8 @@ class Stella:
         if header != '':
             names = map(str.strip, header.split())
             names = [w.replace('R(tau2/3)', 'Rph') for w in names]
-            dtype = np.dtype({'names': names, 'formats':  [np.float64] * len(names)})
-            block = np.loadtxt(fname, skiprows=num_line_header+1, dtype=dtype)
+            dtype = np.dtype({'names': names, 'formats': [np.float64] * len(names)})
+            block = np.loadtxt(fname, skiprows=num_line_header + 1, dtype=dtype)
             return block
         else:
             return None
