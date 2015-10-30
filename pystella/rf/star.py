@@ -123,6 +123,10 @@ class Star:
         else:
             return self.Flux_wl
 
+    @property
+    def FluxAB(self):
+        return -2.5 * np.log10(self.FluxObs) + phys.ZP_AB
+
     def _response_lmb(self, band, is_b_spline=True):
         """
         Compute response flux using provided spectral band
@@ -194,8 +198,6 @@ class Star:
             mag = -2.5 * np.log10(conv) + phys.ZP_AB - band.zp
             return mag
 
-    def flux_to_AB(self):
-        return -2.5 * np.log10(self.FluxObs) + phys.ZP_AB
 
     def k_cor(self, band_r, band_o, z=0.):
         """

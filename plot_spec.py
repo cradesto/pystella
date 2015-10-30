@@ -42,6 +42,7 @@ markers = markers.keys()
 
 def plot_spec(dic_stars, times, set_bands, is_planck=False, is_filter=False):
     xlim = [1000., 20000]
+    # xlim = [3000., 6000]
     ylim = [0, 3.]
 
     # setup figure
@@ -52,9 +53,6 @@ def plot_spec(dic_stars, times, set_bands, is_planck=False, is_filter=False):
 
     ax_cache = {}
     ax2_cache = {}
-    # xstart, xend = 0, 20000.
-    # xstep = (xend - xstart) / 4.
-    # xticks = np.arange(xstart, xend, xstep)
     ib = 0
     for bset in set_bands:
         ib += 1
@@ -68,20 +66,17 @@ def plot_spec(dic_stars, times, set_bands, is_planck=False, is_filter=False):
         for it in range(len(times)):
             star = dic_stars[it]
             x = star.Wl * phys.cm_to_angs
-            y = star.FluxWlObs
-            # x = np.log10(star.Wl*1e8)
-            # y = np.log10(star.FluxWlObs)
-            # bcolor = "black"
+            y = star.FluxAB
+            # y = star.FluxWlObs
             bcolor = _colors[it % (len(_colors) - 1)]
             ax.plot(x, y, marker=markers[it % (len(markers) - 1)],
                     label='%.0f: %0.2e, %0.2f' % (times[it], star.get_Tcol(bset), star.get_zeta(bset)),
                     markersize=5, color=bcolor, ls="", linewidth=1.5)
-            # ax.xaxis.set_ticks(xticks)
-            # ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%d'))
             if is_planck:
                 star_bb = planck_fit(star, bset)
                 xx = star_bb.Wl * phys.cm_to_angs
-                yy = star_bb.FluxWlObs
+                yy = star_bb.FluxAB
+                # yy = star_bb.FluxWlObs
                 if yy is not None:
                     ax.plot(xx, yy, color=bcolor, ls="-", linewidth=2.5)
                     # ax.plot(xx, yy, color=bcolor, ls="--", linewidth=2.5, label='Planck')
@@ -90,10 +85,12 @@ def plot_spec(dic_stars, times, set_bands, is_planck=False, is_filter=False):
                 ax2 = ax2_cache[bset]
             else:
                 ax2 = fig.add_subplot(gs1[irow, 0], sharex=ax, frameon=False)
+                # ax2.invert_yaxis()
                 ax2_cache[bset] = ax2
             ax2.yaxis.tick_right()
             ax2.yaxis.set_label_position("right")
-            ax2.set_ylabel("Filter Response")
+            ax2.set_ylabel(r'AB Magnitudes')
+            # ax2.set_ylabel("Filter Response")
             bands = bset.split('-')
             for n in bands:
                 b = band.band_by_name(n)
@@ -110,11 +107,13 @@ def plot_spec(dic_stars, times, set_bands, is_planck=False, is_filter=False):
         ax = ax_cache[bset]
         ax.set_xlim(xlim)
         # ax.set_ylim(ylim)
-        ax.set_ylabel(r'$F_\lambda$')
+        ax.invert_yaxis()
+        ax.set_ylabel(r'Absolute AB Magnitude')
+        # ax.set_ylabel(r'$F_\lambda, \, [erg\, s^{-1} cm^2]$')
         ax.set_xscale('log')
-        ax.set_yscale('log')
+        # ax.set_yscale('log')
         if ib == len(set_bands):
-            ax.set_xlabel(r'$\lambda [\AA]$')
+            ax.set_xlabel(r'$\lambda, \, [\AA]$')
         ax.set_title(bset)
         # if is_filter:
         #     ax2 = ax2_cache[bset]
@@ -122,7 +121,7 @@ def plot_spec(dic_stars, times, set_bands, is_planck=False, is_filter=False):
         # else:
         ax.legend(prop={'size': 9}, loc=4, borderaxespad=0.)
     # plt.title('; '.join(set_bands) + ' filter response')
-    # plt.grid()
+    plt.grid()
     plt.show()
 
 
