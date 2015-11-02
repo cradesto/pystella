@@ -34,7 +34,7 @@ markers = {u'D': u'diamond', 6: u'caretup', u's': u'square', u'x': u'x',
 markers = markers.keys()
 
 
-def plot_zeta_oneframe(models_dic, set_bands, t_cut=4.9, is_fit=False,
+def plot_zeta_oneframe(models_dic, set_bands, t_cut=4.9, is_fit=False, is_fit_bakl=False,
                        is_plot_Tcolor=True, is_plot_Tnu=True, is_time_points=False):
     t_points = [1, 2, 3, 4, 5, 10, 20, 40, 80, 150]
 
@@ -121,7 +121,8 @@ def plot_zeta_oneframe(models_dic, set_bands, t_cut=4.9, is_fit=False,
 
 
 def plot_zeta(models_dic, set_bands, t_cut=4.9,
-              is_plot_Tcolor=True, is_plot_Tnu=True, is_fit=False, is_time_points=False):
+              is_plot_Tcolor=True, is_plot_Tnu=True, is_fit=False,
+              is_fit_bakl=False, is_time_points=False):
     t_points = [1, 2, 3, 4, 5, 10, 30, 80, 150]
 
     xlim = [0, 18000]
@@ -164,7 +165,7 @@ def plot_zeta(models_dic, set_bands, t_cut=4.9,
                 z = z[z > t_cut]
                 # bcolor = "black"
                 bcolor = _colors[ib % (len(_colors) - 1)]
-                ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label='Stella ',  # label='T_mag ' + mname,
+                ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label=mname,  # 'Stella ',  # label='T_mag ' + mname,
                         markersize=5, color=bcolor, ls="", linewidth=1.5)
                 ax.xaxis.set_ticks(xticks)
                 ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%d'))
@@ -204,9 +205,9 @@ def plot_zeta(models_dic, set_bands, t_cut=4.9,
     if is_fit:  # dessart
         xx = np.linspace(max(100, xlim[0]), xlim[1], num=50)
         ib = 0
+        bcolor = "red"  # _colors[ib % (len(_colors) - 1)]
         for bset in set_bands:
             ib += 1
-            bcolor = "red"  # _colors[ib % (len(_colors) - 1)]
             # bcolor = _colors[ib % (len(_colors) - 1)]
             ax = ax_cache[bset]
             yd = zeta_fit(xx, bset, "dessart")
@@ -215,11 +216,32 @@ def plot_zeta(models_dic, set_bands, t_cut=4.9,
             yd = zeta_fit(xx, bset, "eastman")
             if yd is not None:
                 ax.plot(xx, yd, color=bcolor, ls="-.", linewidth=2.5, label='Eastman 96')
+
+    # find & plot fit zeta-Tcol for Stella
+    if is_fit_bakl:  # bakl fit
+        # find a_coef
+        a = {}
+        for bset in set_bands:
+            a[bset] = zeta_fit_coef_my(models_dic, bset, t_beg=t_cut, t_end=100.)  # todo check t_end
+            print "Fit zeta-T  %s: %s " % (bset, ' '.join(map(str, a[bset])))
+            # print a[bset]
+
+        # show fit
+        xx = np.linspace(max(100, xlim[0]), xlim[1], num=50)
+        bcolor = "orange"
+        ib = 0
+        for bset in set_bands:
+            ib += 1
+            ax = ax_cache[bset]
+            yd = zeta_fit_rev_temp(xx, a[bset])
+            if yd is not None:
+                ax.plot(xx, yd, color=bcolor, ls="-.", linewidth=2.5, label='Bakl 15')
+
     ib = 0
     for bset in set_bands:
         ib += 1
         ax = ax_cache[bset]
-        ax.legend(prop={'size': 9})
+        ax.legend(prop={'size': 6})
         ax.set_xlim(xlim)
         ax.set_ylim(ylim)
         ax.set_ylabel(r'$\zeta(' + bset + ')$')
@@ -236,6 +258,18 @@ def zeta_fit(Tcol, bset, src="dessart"):
     Zeta fit from Dessart, L., & Hillier, D. J. (2005). doi:10.1051/0004-6361:20053217
     :param Tcol:
     :param bset:
+    :return:
+    """
+    a = zeta_fit_coef(bset, src)
+    if a is not None:
+        zeta = zeta_fit_rev_temp(Tcol, a)
+        return zeta
+    return None
+
+
+def zeta_fit_coef(bset, src="dessart"):
+    """
+    Coefficients for zeta fit from Dessart, L., & Hillier, D. J. (2005). doi:10.1051/0004-6361:20053217
     :return:
     """
     a = {
@@ -256,12 +290,47 @@ def zeta_fit(Tcol, bset, src="dessart"):
         return None
     if bset not in a[src]:
         return None
-    zeta = 0
+    return a[src][bset]
+
+
+def zeta_fit_rev_temp(T, a_coef):
+    z = 0
     i = 0
-    for ai in a[src][bset]:
-        zeta += ai * (1.e4 / Tcol) ** i
+    for ai in a_coef:
+        z += ai * (1.e4 / T) ** i
         i += 1
-    return zeta
+    return z
+
+
+def zeta_fit_coef_my(models_dic, bset, t_beg, t_end=None):
+    """
+    Zeta fit for Stella model data
+    :param Tcol:
+    :param bset:
+    :return:
+    """
+    a_init = zeta_fit_coef(bset)
+    a = fmin(epsilon_fit_zeta, x0=a_init, args=(models_dic, bset, t_beg, t_end), disp=0)
+    return a
+
+
+def epsilon_fit_zeta(x, models_dic, bset, t_beg, t_end=None):
+    e = 0
+    for mname, mdic in models_dic.iteritems():
+        Tcol = mdic[bset]['Tcol']
+        zeta = mdic[bset]['zeta']
+        z = mdic[bset]['time']
+        if t_end is None:
+            cut = z >= t_beg
+        else:
+            cut = (z >= t_beg) & (z <= t_end)
+
+        Tcol = Tcol[cut]
+        zeta = zeta[cut]
+
+        z_fit = zeta_fit_rev_temp(Tcol, x)
+        e += np.sum(abs(zeta - z_fit))
+    return e
 
 
 def epsilon(x, freq, mag, bands, radius, dist):
@@ -314,7 +383,7 @@ def compute_Tnu_w(serial_spec, tt):
         Hnu = spec.compute_flux_nu_bol()
         H = spec.compute_flux_bol()
         nu_bb = Hnu / H
-        radius = interpolate.spublev(t, Rph_spline)
+        radius = interpolate.splev(t, Rph_spline)
         H /= 4. * np.pi * radius ** 2
 
         Tnu = phys.h / phys.k * nu_bb / x_bb
@@ -483,7 +552,7 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
                 else:
                     dic[bset] = compute_tcolor(name, path, bset.split('-'), t_cut=0.9)
                     if is_save:
-                        print "Save Tcolor & Zeta for %s in %s." % (bset, fname)
+                        print "Save Tcolor & Zeta for %s in %s" % (bset, fname)
                         cache_save(dic[bset], fname=fname)
 
             dic_results[name] = dic
@@ -491,7 +560,7 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
         if is_plot_ubv:
             os.system("./ubv.py -i %s -p %s %s & " % (name, path, ubv_args))
         if not is_silence:
-            plot_zeta(dic_results, set_bands, t_cut=1.9, is_fit=is_fit,
+            plot_zeta(dic_results, set_bands, t_cut=1.9, is_fit=is_fit, is_fit_bakl=True,
                       is_plot_Tnu=is_plot_Tnu, is_time_points=is_plot_time_points)
             # plot_zeta_oneframe(dic_results, set_bands, t_cut=1.9, is_fit=is_fit,
             #                    is_plot_Tnu=is_plot_Tnu, is_time_points=is_plot_time_points)

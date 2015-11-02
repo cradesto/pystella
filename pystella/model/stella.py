@@ -77,11 +77,12 @@ class Stella:
         k = 1
         for i in range(len(times)):
             if times[i] < t_beg:
+                k = i
                 continue
             if np.abs(times[i] / times[k]) > t_diff:
                 is_times[k] = True
                 k = i
-        is_times[0] = True
+        is_times[0] = True  # times[0] > 0.
         is_times[-1] = True
         times_thin = times[is_times]
 

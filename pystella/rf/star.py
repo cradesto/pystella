@@ -174,11 +174,16 @@ class Star:
         if is_b_spline:
             tck = interpolate.splrep(nu_s, flux, s=0)
             flux_spline = interpolate.splev(nu_b, tck, der=0)
+            if np.any(flux_spline < 0.):
+                flux_spline = np.interp(nu_b, nu_s, flux, 0, 0)  # One-dimensional linear interpolation.
         else:
             flux_spline = np.interp(nu_b, nu_s, flux, 0, 0)  # One-dimensional linear interpolation.
 
         a = integralfunc(flux_spline * band.resp / nu_b, nu_b)
         b = integralfunc(band.resp / nu_b, nu_b)
+        if a/b < 0:
+            raise ValueError("Spectrum should be more 0: " + str(a/b))
+
         return a / b
 
     def flux_to_mag_not_checked(self, band):
@@ -193,6 +198,8 @@ class Star:
     def flux_to_magAB(self, band):
         conv = self._response_nu(band)
         if conv <= 0:
+            if conv < 0:
+                raise ValueError("Spectrum should be more 0: " + str(conv))
             return None
         else:
             mag = -2.5 * np.log10(conv) + phys.ZP_AB - band.zp
