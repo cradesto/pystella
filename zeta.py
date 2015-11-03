@@ -123,7 +123,8 @@ def plot_zeta_oneframe(models_dic, set_bands, t_cut=4.9, is_fit=False, is_fit_ba
 def plot_zeta(models_dic, set_bands, t_cut=4.9,
               is_plot_Tcolor=True, is_plot_Tnu=True, is_fit=False,
               is_fit_bakl=False, is_time_points=False):
-    t_points = [1, 2, 3, 4, 5, 10, 30, 80, 150]
+    t_points = [5, 10, 30, 80, 150]
+    # t_points = [1, 2, 3, 4, 5, 10, 30, 80, 150]
 
     xlim = [0, 18000]
     ylim = [0, 3.]
@@ -144,7 +145,7 @@ def plot_zeta(models_dic, set_bands, t_cut=4.9,
     mi = 0
     i = 0
     for mname, mdic in models_dic.iteritems():
-        mi += 0
+        mi += 1
         ib = 0
         for bset in set_bands:
             ib += 1
@@ -156,6 +157,7 @@ def plot_zeta(models_dic, set_bands, t_cut=4.9,
                 irow = (ib - 1) / 2
                 ax = fig.add_subplot(gs1[irow, icol])
                 ax_cache[bset] = ax
+
             if is_plot_Tcolor:
                 x = mdic[bset]['Tcol']
                 y = mdic[bset]['zeta']
@@ -165,18 +167,18 @@ def plot_zeta(models_dic, set_bands, t_cut=4.9,
                 z = z[z > t_cut]
                 # bcolor = "black"
                 bcolor = _colors[ib % (len(_colors) - 1)]
-                ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label=mname,  # 'Stella ',  # label='T_mag ' + mname,
+                ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label='', #mname,   # label='T_mag ' + mname,
                         markersize=5, color=bcolor, ls="", linewidth=1.5)
                 ax.xaxis.set_ticks(xticks)
                 ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%d'))
-                if is_time_points:
+                if is_time_points and mi % 10 == 0:
                     integers = [np.abs(z - t).argmin() for t in t_points]  # set time points
                     for (X, Y, Z) in zip(x[integers], y[integers], z[integers]):
                         ax.annotate('{:.0f}'.format(Z), xy=(X, Y), xytext=(-10, 20), ha='right',
                                     textcoords='offset points', color=bcolor,
                                     arrowprops=dict(arrowstyle='->', shrinkA=0))
-                t_min = z[y[x > 5000.].argmin()]
-                print "t_min( %s) = %f" % (bset, t_min)
+                # t_min = z[y[x > 5000.].argmin()]
+                # print "t_min( %s) = %f" % (bset, t_min)
             if is_plot_Tnu:
                 z = mdic[bset]['time']
                 xTnu = mdic[bset]['Tnu']
@@ -204,27 +206,35 @@ def plot_zeta(models_dic, set_bands, t_cut=4.9,
 
     if is_fit:  # dessart
         xx = np.linspace(max(100, xlim[0]), xlim[1], num=50)
-        ib = 0
-        bcolor = "red"  # _colors[ib % (len(_colors) - 1)]
+        # ib = 0
         for bset in set_bands:
-            ib += 1
+            # ib += 1
             # bcolor = _colors[ib % (len(_colors) - 1)]
             ax = ax_cache[bset]
             yd = zeta_fit(xx, bset, "dessart")
+            bcolor = "red"
             if yd is not None:
                 ax.plot(xx, yd, color=bcolor, ls="--", linewidth=2.5, label='Dessart 05')
-            yd = zeta_fit(xx, bset, "eastman")
+            ye = zeta_fit(xx, bset, "eastman")
+            bcolor = "tomato"
             if yd is not None:
-                ax.plot(xx, yd, color=bcolor, ls="-.", linewidth=2.5, label='Eastman 96')
+                ax.plot(xx, ye, color=bcolor, ls="-.", linewidth=2.5, label='Eastman 96')
 
     # find & plot fit zeta-Tcol for Stella
     if is_fit_bakl:  # bakl fit
         # find a_coef
         a = {}
+        # t_beg = t_cut
+        t_beg, t_end = 5., 120.
         for bset in set_bands:
-            a[bset] = zeta_fit_coef_my(models_dic, bset, t_beg=t_cut, t_end=100.)  # todo check t_end
-            print "Fit zeta-T  %s: %s " % (bset, ' '.join(map(str, a[bset])))
-            # print a[bset]
+            a[bset] = zeta_fit_coef_my(models_dic, bset, t_beg=t_beg, t_end=t_end)  # todo check t_end
+
+        # PRINT coef
+        for bset in set_bands:
+            print "Bakl    zeta-T  %s: %s " % (bset, ' '.join([str(round(x, 4)) for x in a[bset]]))
+            print "Dessart zeta-T  %s: %s " % (bset, ' '.join(map(str, zeta_fit_coef(bset, "dessart"))))
+            print "Eastman zeta-T  %s: %s " % (bset, ' '.join(map(str, zeta_fit_coef(bset, "eastman"))))
+            print ""
 
         # show fit
         xx = np.linspace(max(100, xlim[0]), xlim[1], num=50)
@@ -235,7 +245,7 @@ def plot_zeta(models_dic, set_bands, t_cut=4.9,
             ax = ax_cache[bset]
             yd = zeta_fit_rev_temp(xx, a[bset])
             if yd is not None:
-                ax.plot(xx, yd, color=bcolor, ls="-.", linewidth=2.5, label='Bakl 15')
+                ax.plot(xx, yd, color=bcolor, ls="-", linewidth=2., label='Baklanov 15')
 
     ib = 0
     for bset in set_bands:
@@ -253,7 +263,7 @@ def plot_zeta(models_dic, set_bands, t_cut=4.9,
     plt.show()
 
 
-def zeta_fit(Tcol, bset, src="dessart"):
+def zeta_fit(Tcol, bset, src):
     """
     Zeta fit from Dessart, L., & Hillier, D. J. (2005). doi:10.1051/0004-6361:20053217
     :param Tcol:
@@ -305,8 +315,8 @@ def zeta_fit_rev_temp(T, a_coef):
 def zeta_fit_coef_my(models_dic, bset, t_beg, t_end=None):
     """
     Zeta fit for Stella model data
-    :param Tcol:
-    :param bset:
+    :param models_dic:  model dictionary with data
+    :param bset: band set, ex. B-V
     :return:
     """
     a_init = zeta_fit_coef(bset)
