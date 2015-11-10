@@ -26,7 +26,8 @@ ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
 _colors = ["blue", "cyan", "brown", 'darkseagreen', 'tomato', 'olive', 'orange',
            'skyblue', 'darkviolet']
 # colors = {"B-V": "blue", 'B-V-I': "cyan", 'V-I': "brown"}
-lntypes = {"B-V": "-", 'B-V-I': "-.", 'V-I': "--"}
+lntypes = {"B-V": "-", 'B-V-I': "-.", 'V-I': "--",
+           "u-g": "-", 'g-r-i': "-.", 'r-i': "--"}
 markers = {u'D': u'diamond', 6: u'caretup', u's': u'square', u'x': u'x',
            5: u'caretright', u'^': u'triangle_up', u'd': u'thin_diamond', u'h': u'hexagon1',
            u'+': u'plus', u'*': u'star', u'o': u'circle', u'p': u'pentagon', u'3': u'tri_left',
@@ -231,10 +232,12 @@ def plot_zeta(models_dic, set_bands, t_cut=4.9,
 
         # PRINT coef
         for bset in set_bands:
-            print "Bakl    zeta-T  %s: %s " % (bset, ' '.join([str(round(x, 4)) for x in a[bset]]))
-            print "Dessart zeta-T  %s: %s " % (bset, ' '.join(map(str, zeta_fit_coef(bset, "dessart"))))
-            print "Eastman zeta-T  %s: %s " % (bset, ' '.join(map(str, zeta_fit_coef(bset, "eastman"))))
-            print ""
+            print "%s & %s " % (bset, ', '.join([str(round(x, 4)) for x in a[bset]]))
+            # print "Bakl zeta-T  %s: %s " % (bset, ' '.join([str(round(x, 4)) for x in a[bset]]))
+            if is_fit:
+                print "Dessart zeta-T  %s: %s " % (bset, ' '.join(map(str, zeta_fit_coef(bset, "dessart"))))
+                print "Eastman zeta-T  %s: %s " % (bset, ' '.join(map(str, zeta_fit_coef(bset, "eastman"))))
+                print ""
 
         # show fit
         xx = np.linspace(max(100, xlim[0]), xlim[1], num=50)
@@ -260,6 +263,54 @@ def plot_zeta(models_dic, set_bands, t_cut=4.9,
         ax.set_title(bset)
     # plt.title('; '.join(set_bands) + ' filter response')
     # plt.grid()
+    plt.show()
+
+
+def plot_fits(set_bands):
+    xlim = [0, 18000]
+    ylim = [0, 3.]
+
+    plt.matplotlib.rcParams.update({'font.size': 14})
+    fig = plt.figure(num=len(set_bands), figsize=(9, 9), dpi=100, facecolor='w', edgecolor='k')
+    gs1 = gridspec.GridSpec(len(set_bands) / 2 + len(set_bands) % 2, 2)
+    gs1.update(wspace=0.3, hspace=0.3, left=0.15, right=0.95)
+
+    ax_cache = {}
+    xstart, xend = 0, 20000.
+    xstep = (xend - xstart) / 4.
+
+    ib = 0
+    for bset in set_bands:
+        ib += 1
+        icol = (ib - 1) % 2
+        irow = (ib - 1) / 2
+        ax = fig.add_subplot(gs1[irow, icol])
+        ax_cache[bset] = ax
+        xx = np.linspace(max(100, xlim[0]), xlim[1], num=50)
+        yd = zeta_fit(xx, bset, "dessart")
+        bcolor = "red"
+        if yd is not None:
+            ax.plot(xx, yd, color=bcolor, ls="--", linewidth=2.5, label='Dessart 05')
+        ye = zeta_fit(xx, bset, "eastman")
+        bcolor = "tomato"
+        if yd is not None:
+            ax.plot(xx, ye, color=bcolor, ls="-.", linewidth=2.5, label='Eastman 96')
+        ye = zeta_fit(xx, bset, "bakl")
+        bcolor = "orange"
+        if yd is not None:
+            ax.plot(xx, ye, color=bcolor, ls="-", linewidth=2.5, label='Baklanov 15')
+
+    ib = 0
+    for bset in set_bands:
+        ib += 1
+        ax = ax_cache[bset]
+        ax.legend(prop={'size': 6})
+        ax.set_xlim(xlim)
+        ax.set_ylim(ylim)
+        ax.set_ylabel(r'$\zeta(' + bset + ')$')
+        if ib == len(set_bands):
+            ax.set_xlabel(r'$T_{color}$')
+        ax.set_title(bset)
     plt.show()
 
 
@@ -294,6 +345,12 @@ def zeta_fit_coef(bset, src="dessart"):
             'B-V-I': [0.686, -0.577, 0.316],
             'V-I': [0.445, 0.0136, 0.],
             'J-H-K': [1.45, -0.45, 0.]
+        },
+        'bakl': {  # dir /home/bakl/Sn/Release/seb_git/res/tt/tcolor/r500/1
+            'B-V': [0.5948, -0.5891, 0.4784],
+            'B-V-I': [0.6416, -0.3788, 0.2955],
+            'V-I': [0.9819, -0.7699, 0.3919],
+            'J-H-K': [1.331, -0.4201, 0.0891]
         }
     }
     if src not in a:
@@ -320,6 +377,8 @@ def zeta_fit_coef_my(models_dic, bset, t_beg, t_end=None):
     :return:
     """
     a_init = zeta_fit_coef(bset)
+    if a_init is None:
+        a_init = [0.5, 0.5, 0.]
     a = fmin(epsilon_fit_zeta, x0=a_init, args=(models_dic, bset, t_beg, t_end), disp=0)
     return a
 
@@ -458,6 +517,7 @@ def usage():
     print "  -s  silence mode: no info, no plot"
     print "  -f  force mode: rewrite tcolor-files even if it exists"
     print "  -a  plot the Eastman & Dessart fits"
+    print "  -z  fit & plot "
     print "  -n  plot T_nu & W fits"
     print "  -u  plot UBV"
     print "  -t  plot time points"
@@ -469,11 +529,12 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
     is_silence = False
     is_fit = False
     is_plot_ubv = False
+    is_fit_bakl = False
     model_ext = '.tt'
     ubv_args = ''
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "afhnsuwtp:e:i:b:")
+        opts, args = getopt.getopt(sys.argv[1:], "afhnsuwtzp:e:i:b:")
     except getopt.GetoptError as err:
         print str(err)  # will print something like "option -a not recognized"
         usage()
@@ -530,6 +591,9 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
         if opt == '-a':
             is_fit = True
             continue
+        if opt == '-z':
+            is_fit_bakl = True
+            continue
         if opt == '-p':
             path = os.path.expanduser(str(arg))
             if not (os.path.isdir(path) and os.path.exists(path)):
@@ -570,7 +634,7 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
         if is_plot_ubv:
             os.system("./ubv.py -i %s -p %s %s & " % (name, path, ubv_args))
         if not is_silence:
-            plot_zeta(dic_results, set_bands, t_cut=1.9, is_fit=is_fit, is_fit_bakl=True,
+            plot_zeta(dic_results, set_bands, t_cut=1.9, is_fit=is_fit, is_fit_bakl=is_fit_bakl,
                       is_plot_Tnu=is_plot_Tnu, is_time_points=is_plot_time_points)
             # plot_zeta_oneframe(dic_results, set_bands, t_cut=1.9, is_fit=is_fit,
             #                    is_plot_Tnu=is_plot_Tnu, is_time_points=is_plot_time_points)
@@ -581,5 +645,9 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
 
 if __name__ == '__main__':
     main()
+
+    # set_bands = ['B-V', 'B-V-I', 'V-I', 'J-H-K']
+    # plot_fits(set_bands)
+
     # main(name="cat_R1000_M15_Ni007_E15", path="/home/bakl/Sn/Release/seb_git/res/tt",
     #      is_force=False, is_save=True, is_plot_time_points=True)
