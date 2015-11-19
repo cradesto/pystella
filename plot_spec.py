@@ -201,7 +201,8 @@ def main():
 
     # set_bands = ['B-V']
     # set_bands = ['B-V', 'B-V-I']
-    set_bands = ['U-B', 'U-B-V', 'B-V']
+    # set_bands = ['U-B', 'U-B-V', 'B-V']
+    set_bands = ['B-V', 'B-V-I', 'V-I']
     # set_bands = ['B-V', 'B-V-I', 'V-I', 'J-H-K']
     times = [15., 30, 60, 120]
 

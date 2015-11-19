@@ -205,7 +205,7 @@ def plot_zeta(models_dic, set_bands, t_cut=4.9,
                                     textcoords='offset points', color='red',
                                     arrowprops=dict(arrowstyle='->', shrinkA=0))
 
-    if is_fit:  # dessart
+    if is_fit:  # dessart, eastman, hamuy
         xx = np.linspace(max(100, xlim[0]), xlim[1], num=50)
         # ib = 0
         for bset in set_bands:
@@ -213,13 +213,19 @@ def plot_zeta(models_dic, set_bands, t_cut=4.9,
             # bcolor = _colors[ib % (len(_colors) - 1)]
             ax = ax_cache[bset]
             yd = zeta_fit(xx, bset, "dessart")
-            bcolor = "red"
+            bcolor = "darkviolet"
             if yd is not None:
                 ax.plot(xx, yd, color=bcolor, ls="--", linewidth=2.5, label='Dessart 05')
+
             ye = zeta_fit(xx, bset, "eastman")
             bcolor = "tomato"
-            if yd is not None:
+            if ye is not None:
                 ax.plot(xx, ye, color=bcolor, ls="-.", linewidth=2.5, label='Eastman 96')
+
+            yh = zeta_fit(xx, bset, "hamuy")
+            bcolor = "skyblue"
+            if yh is not None:
+                ax.plot(xx, yh, color=bcolor, ls="-.", linewidth=2.5, label='Hamuy 01')
 
     # find & plot fit zeta-Tcol for Stella
     if is_fit_bakl:  # bakl fit
@@ -237,6 +243,7 @@ def plot_zeta(models_dic, set_bands, t_cut=4.9,
             if is_fit:
                 print "Dessart zeta-T  %s: %s " % (bset, ' '.join(map(str, zeta_fit_coef(bset, "dessart"))))
                 print "Eastman zeta-T  %s: %s " % (bset, ' '.join(map(str, zeta_fit_coef(bset, "eastman"))))
+                print "Hamuy01 zeta-T  %s: %s " % (bset, ' '.join(map(str, zeta_fit_coef(bset, "hamuy"))))
                 print ""
 
         # show fit
@@ -246,9 +253,9 @@ def plot_zeta(models_dic, set_bands, t_cut=4.9,
         for bset in set_bands:
             ib += 1
             ax = ax_cache[bset]
-            yd = zeta_fit_rev_temp(xx, a[bset])
-            if yd is not None:
-                ax.plot(xx, yd, color=bcolor, ls="-", linewidth=2., label='Baklanov 15')
+            yb = zeta_fit_rev_temp(xx, a[bset])
+            if yb is not None:
+                ax.plot(xx, yb, color=bcolor, ls="-", linewidth=2., label='Baklanov 15')
 
     ib = 0
     for bset in set_bands:
@@ -275,42 +282,41 @@ def plot_fits(set_bands):
     gs1 = gridspec.GridSpec(len(set_bands) / 2 + len(set_bands) % 2, 2)
     gs1.update(wspace=0.3, hspace=0.3, left=0.15, right=0.95)
 
-    ax_cache = {}
-    xstart, xend = 0, 20000.
-    xstep = (xend - xstart) / 4.
-
     ib = 0
     for bset in set_bands:
         ib += 1
         icol = (ib - 1) % 2
         irow = (ib - 1) / 2
         ax = fig.add_subplot(gs1[irow, icol])
-        ax_cache[bset] = ax
         xx = np.linspace(max(100, xlim[0]), xlim[1], num=50)
+
         yd = zeta_fit(xx, bset, "dessart")
-        bcolor = "red"
+        bcolor = "darkviolet"
         if yd is not None:
-            ax.plot(xx, yd, color=bcolor, ls="--", linewidth=2.5, label='Dessart 05')
+            ax.plot(xx, yd, color=bcolor, ls="-", linewidth=2.5, label='Dessart 05')
+
         ye = zeta_fit(xx, bset, "eastman")
         bcolor = "tomato"
         if yd is not None:
-            ax.plot(xx, ye, color=bcolor, ls="-.", linewidth=2.5, label='Eastman 96')
+            ax.plot(xx, ye, color=bcolor, ls="--", linewidth=2.5, label='Eastman 96')
+
+        yh = zeta_fit(xx, bset, "hamuy")
+        bcolor = "skyblue"
+        if yd is not None:
+            ax.plot(xx, yh, color=bcolor, ls="-.", linewidth=2.5, label='Hamuy 01')
+
         ye = zeta_fit(xx, bset, "bakl")
         bcolor = "orange"
         if yd is not None:
             ax.plot(xx, ye, color=bcolor, ls="-", linewidth=2.5, label='Baklanov 15')
 
-    ib = 0
-    for bset in set_bands:
-        ib += 1
-        ax = ax_cache[bset]
         ax.legend(prop={'size': 6})
         ax.set_xlim(xlim)
         ax.set_ylim(ylim)
         ax.set_ylabel(r'$\zeta(' + bset + ')$')
-        if ib == len(set_bands):
-            ax.set_xlabel(r'$T_{color}$')
+        ax.set_xlabel(r'$T_{color}$')
         ax.set_title(bset)
+
     plt.show()
 
 
@@ -328,29 +334,35 @@ def zeta_fit(Tcol, bset, src):
     return None
 
 
-def zeta_fit_coef(bset, src="dessart"):
+def zeta_fit_coef(bset, src):
     """
     Coefficients for zeta fit from Dessart, L., & Hillier, D. J. (2005). doi:10.1051/0004-6361:20053217
     :return:
     """
     a = {
         'dessart': {
-            'B-V': [0.47188, -0.25399, 0.32630],
+            'B-V':   [0.47188, -0.25399, 0.32630],
             'B-V-I': [0.63241, -0.38375, 0.28425],
-            'V-I': [0.81662, -0.62896, 0.33852],
-            'J-H-K': [0.10786, 1.12374, 0.]
+            'V-I':   [0.81662, -0.62896, 0.33852],
+            'J-H-K': [0.10786,  1.12374, 0.]
         },
         'eastman': {
-            'B-V': [0.674, -0.741, 0.456],
-            'B-V-I': [0.686, -0.577, 0.316],
-            'V-I': [0.445, 0.0136, 0.],
-            'J-H-K': [1.45, -0.45, 0.]
+            'B-V':   [0.674, -0.741,  0.456, 0.11],
+            'B-V-I': [0.686, -0.577,  0.316, 0.05],
+            'V-I':   [0.445,  0.0136, 0.,    0.08],
+            'J-H-K': [1.45,  -0.45,   0.]
+        },
+        'hamuy': {
+            'B-V':   [0.7557, -0.8997, 0.5199, 0.048],
+            'B-V-I': [0.7336, -0.6942, 0.3740, 0.027],
+            'V-I':   [0.7013, -0.5304, 0.2646, 0.029],
+            'J-H-K': [1.4787, -0.4799, 0.,     0.046]
         },
         'bakl': {  # dir /home/bakl/Sn/Release/seb_git/res/tt/tcolor/r500/1
-            'B-V': [0.5948, -0.5891, 0.4784],
+            'B-V':   [0.5948, -0.5891, 0.4784],
             'B-V-I': [0.6416, -0.3788, 0.2955],
-            'V-I': [0.9819, -0.7699, 0.3919],
-            'J-H-K': [1.331, -0.4201, 0.0891]
+            'V-I':   [0.9819, -0.7699, 0.3919],
+            'J-H-K': [1.331,  -0.4201, 0.0891]
         }
     }
     if src not in a:
@@ -376,7 +388,7 @@ def zeta_fit_coef_my(models_dic, bset, t_beg, t_end=None):
     :param bset: band set, ex. B-V
     :return:
     """
-    a_init = zeta_fit_coef(bset)
+    a_init = zeta_fit_coef(bset, src="bakl")
     if a_init is None:
         a_init = [0.5, 0.5, 0.]
     a = fmin(epsilon_fit_zeta, x0=a_init, args=(models_dic, bset, t_beg, t_end), disp=0)
@@ -646,8 +658,8 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
 if __name__ == '__main__':
     main()
 
-    # set_bands = ['B-V', 'B-V-I', 'V-I', 'J-H-K']
-    # plot_fits(set_bands)
+    #set_bands = ['B-V', 'B-V-I', 'V-I', 'J-H-K']
+    #plot_fits(set_bands)
 
     # main(name="cat_R1000_M15_Ni007_E15", path="/home/bakl/Sn/Release/seb_git/res/tt",
     #      is_force=False, is_save=True, is_plot_time_points=True)
