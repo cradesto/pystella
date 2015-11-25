@@ -115,7 +115,7 @@ class SpectrumPlanck(Spectrum):
         flux = math.pi * rf.planck(freq, temperature=temperature)
         Spectrum.__init__(self, name, freq=freq, flux=flux)
         self.T = temperature
-        self.zeta = 0.
+        self.zeta = None
 
     @property
     def Tbb(self):

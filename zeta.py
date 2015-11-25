@@ -7,11 +7,9 @@ import sys
 import getopt
 from os.path import isfile, join, dirname
 import numpy as np
-
 from matplotlib import gridspec
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
-
 from pystella.rf import band, spectrum
 from pystella.rf.star import Star
 from pystella.model.stella import Stella
@@ -124,7 +122,7 @@ def plot_zeta_oneframe(models_dic, set_bands, t_cut=4.9, is_fit=False, is_fit_ba
 def plot_zeta(models_dic, set_bands, t_cut=4.9,
               is_plot_Tcolor=True, is_plot_Tnu=True, is_fit=False,
               is_fit_bakl=False, is_time_points=False):
-    t_points = [5, 10, 30, 80, 150]
+    t_points = [1, 5, 10, 30, 80, 140]
     # t_points = [1, 2, 3, 4, 5, 10, 30, 80, 150]
 
     xlim = [0, 18000]
@@ -137,12 +135,40 @@ def plot_zeta(models_dic, set_bands, t_cut=4.9,
     fig = plt.figure(num=len(set_bands), figsize=(9, 9), dpi=100, facecolor='w', edgecolor='k')
     gs1 = gridspec.GridSpec(len(set_bands) / 2 + len(set_bands) % 2, 2)
     # gs1 = gridspec.GridSpec(2, 4, width_ratios=(8, 1, 8, 1))
-    gs1.update(wspace=0.3, hspace=0.3, left=0.15, right=0.95)
+    gs1.update(wspace=0., hspace=0., left=0.1, right=0.9)
 
     ax_cache = {}
-    xstart, xend = 0, 20000.
-    xstep = (xend - xstart) / 4.
-    xticks = np.arange(xstart, xend, xstep)
+
+    # create the grid of figures
+    ib = 0
+    for bset in set_bands:
+        ib += 1
+        icol = (ib - 1) % 2
+        irow = (ib - 1) / 2
+        ax = fig.add_subplot(gs1[irow, icol])
+        ax_cache[bset] = ax
+        # ax.legend(prop={'size': 6})
+        # x
+        if icol > 0:
+            ax.yaxis.tick_right()
+            ax.yaxis.set_label_position("right")
+        ax.set_ylabel(r'$\zeta$')
+
+        if irow == 1:
+            ax.set_xlabel(r'$T_{color}$')
+
+        ax.set_xlim(xlim)
+        xstart, xend = 0, 20000.
+        ax.xaxis.set_ticks(np.arange(5000, xend, (xend - xstart) / 4.))
+        ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%d'))
+        # y
+        ax.set_ylim(ylim)
+        ax.set_yticks(np.arange(0.5, ylim[1], 0.5))
+        # ax.text(.5, .9, bset, horizontalalignment='center', transform=ax.transAxes)
+        # ax.set_title(bset)
+        ax.set_title(bset, x=0.5, y=0.9)
+
+    # plot data
     mi = 0
     i = 0
     for mname, mdic in models_dic.iteritems():
@@ -168,18 +194,16 @@ def plot_zeta(models_dic, set_bands, t_cut=4.9,
                 z = z[z > t_cut]
                 # bcolor = "black"
                 bcolor = _colors[ib % (len(_colors) - 1)]
-                ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label='', #mname,   # label='T_mag ' + mname,
+                ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label='',  # mname,   # label='T_mag ' + mname,
                         markersize=5, color=bcolor, ls="", linewidth=1.5)
-                ax.xaxis.set_ticks(xticks)
-                ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%d'))
-                if is_time_points and mi % 10 == 0:
+                if is_time_points and mi % 10 == 1:
                     integers = [np.abs(z - t).argmin() for t in t_points]  # set time points
                     for (X, Y, Z) in zip(x[integers], y[integers], z[integers]):
                         ax.annotate('{:.0f}'.format(Z), xy=(X, Y), xytext=(-10, 20), ha='right',
                                     textcoords='offset points', color=bcolor,
                                     arrowprops=dict(arrowstyle='->', shrinkA=0))
-                # t_min = z[y[x > 5000.].argmin()]
-                # print "t_min( %s) = %f" % (bset, t_min)
+                        # t_min = z[y[x > 5000.].argmin()]
+                        # print "t_min( %s) = %f" % (bset, t_min)
             if is_plot_Tnu:
                 z = mdic[bset]['time']
                 xTnu = mdic[bset]['Tnu']
@@ -207,10 +231,7 @@ def plot_zeta(models_dic, set_bands, t_cut=4.9,
 
     if is_fit:  # dessart, eastman, hamuy
         xx = np.linspace(max(100, xlim[0]), xlim[1], num=50)
-        # ib = 0
         for bset in set_bands:
-            # ib += 1
-            # bcolor = _colors[ib % (len(_colors) - 1)]
             ax = ax_cache[bset]
             yd = zeta_fit(xx, bset, "dessart")
             bcolor = "darkviolet"
@@ -227,47 +248,46 @@ def plot_zeta(models_dic, set_bands, t_cut=4.9,
             if yh is not None:
                 ax.plot(xx, yh, color=bcolor, ls="-.", linewidth=2.5, label='Hamuy 01')
 
+            yb = zeta_fit(xx, bset, "bakl")
+            bcolor = "cyan"
+            if yb is not None:
+                ax.plot(xx, yb, color=bcolor, ls="--", linewidth=2.5, label='bakl')
+
     # find & plot fit zeta-Tcol for Stella
     if is_fit_bakl:  # bakl fit
         # find a_coef
         a = {}
+        err = {}
         # t_beg = t_cut
-        t_beg, t_end = 5., 120.
+        t_beg, t_end = 1., 140  # None  # 100.
         for bset in set_bands:
-            a[bset] = zeta_fit_coef_my(models_dic, bset, t_beg=t_beg, t_end=t_end)  # todo check t_end
+            a[bset], err[bset] = zeta_fit_coef_my(models_dic, bset, t_beg=t_beg, t_end=t_end)  # todo check t_end
 
         # PRINT coef
         for bset in set_bands:
-            print "%s & %s " % (bset, ', '.join([str(round(x, 4)) for x in a[bset]]))
-            # print "Bakl zeta-T  %s: %s " % (bset, ' '.join([str(round(x, 4)) for x in a[bset]]))
+            # print "%s & %s " % (bset, ', '.join([str(round(x, 4)) for x in a[bset]]))
+            print " Baklan zeta-T  %s: %s : err %f" % (bset, ' '.join([str(round(x, 4)) for x in a[bset]]), err[bset])
+            # print " Baklan errors  %s: %s " % (bset, ' '.join([str(round(x, 4)) for x in ]))
             if is_fit:
                 print "Dessart zeta-T  %s: %s " % (bset, ' '.join(map(str, zeta_fit_coef(bset, "dessart"))))
                 print "Eastman zeta-T  %s: %s " % (bset, ' '.join(map(str, zeta_fit_coef(bset, "eastman"))))
                 print "Hamuy01 zeta-T  %s: %s " % (bset, ' '.join(map(str, zeta_fit_coef(bset, "hamuy"))))
+                print "Bakl 15 zeta-T  %s: %s " % (bset, ' '.join(map(str, zeta_fit_coef(bset, "bakl"))))
                 print ""
 
         # show fit
         xx = np.linspace(max(100, xlim[0]), xlim[1], num=50)
         bcolor = "orange"
-        ib = 0
         for bset in set_bands:
-            ib += 1
             ax = ax_cache[bset]
             yb = zeta_fit_rev_temp(xx, a[bset])
             if yb is not None:
                 ax.plot(xx, yb, color=bcolor, ls="-", linewidth=2., label='Baklanov 15')
 
-    ib = 0
+    # legend
     for bset in set_bands:
-        ib += 1
-        ax = ax_cache[bset]
-        ax.legend(prop={'size': 6})
-        ax.set_xlim(xlim)
-        ax.set_ylim(ylim)
-        ax.set_ylabel(r'$\zeta(' + bset + ')$')
-        if ib == len(set_bands):
-            ax.set_xlabel(r'$T_{color}$')
-        ax.set_title(bset)
+        ax_cache[bset].legend(prop={'size': 6})
+
     # plt.title('; '.join(set_bands) + ' filter response')
     # plt.grid()
     plt.show()
@@ -325,6 +345,7 @@ def zeta_fit(Tcol, bset, src):
     Zeta fit from Dessart, L., & Hillier, D. J. (2005). doi:10.1051/0004-6361:20053217
     :param Tcol:
     :param bset:
+    :param src:
     :return:
     """
     a = zeta_fit_coef(bset, src)
@@ -341,28 +362,28 @@ def zeta_fit_coef(bset, src):
     """
     a = {
         'dessart': {
-            'B-V':   [0.47188, -0.25399, 0.32630],
+            'B-V': [0.47188, -0.25399, 0.32630],
             'B-V-I': [0.63241, -0.38375, 0.28425],
-            'V-I':   [0.81662, -0.62896, 0.33852],
-            'J-H-K': [0.10786,  1.12374, 0.]
+            'V-I': [0.81662, -0.62896, 0.33852],
+            'J-H-K': [0.10786, 1.12374, 0.]
         },
         'eastman': {
-            'B-V':   [0.674, -0.741,  0.456, 0.11],
-            'B-V-I': [0.686, -0.577,  0.316, 0.05],
-            'V-I':   [0.445,  0.0136, 0.,    0.08],
-            'J-H-K': [1.45,  -0.45,   0.]
+            'B-V': [0.674, -0.741, 0.456, 0.11],
+            'B-V-I': [0.686, -0.577, 0.316, 0.05],
+            'V-I': [0.445, 0.0136, 0., 0.08],
+            'J-H-K': [1.45, -0.45, 0.]
         },
         'hamuy': {
-            'B-V':   [0.7557, -0.8997, 0.5199, 0.048],
+            'B-V': [0.7557, -0.8997, 0.5199, 0.048],
             'B-V-I': [0.7336, -0.6942, 0.3740, 0.027],
-            'V-I':   [0.7013, -0.5304, 0.2646, 0.029],
-            'J-H-K': [1.4787, -0.4799, 0.,     0.046]
+            'V-I': [0.7013, -0.5304, 0.2646, 0.029],
+            'J-H-K': [1.4787, -0.4799, 0., 0.046]
         },
         'bakl': {  # dir /home/bakl/Sn/Release/seb_git/res/tt/tcolor/r500/1
-            'B-V':   [0.5948, -0.5891, 0.4784],
+            'B-V': [0.5948, -0.5891, 0.4784],
             'B-V-I': [0.6416, -0.3788, 0.2955],
-            'V-I':   [0.9819, -0.7699, 0.3919],
-            'J-H-K': [1.331,  -0.4201, 0.0891]
+            'V-I': [0.9819, -0.7699, 0.3919],
+            'J-H-K': [1.331, -0.4201, 0.0891]
         }
     }
     if src not in a:
@@ -386,13 +407,16 @@ def zeta_fit_coef_my(models_dic, bset, t_beg, t_end=None):
     Zeta fit for Stella model data
     :param models_dic:  model dictionary with data
     :param bset: band set, ex. B-V
+    :param t_beg:
+    :param t_end:
     :return:
     """
     a_init = zeta_fit_coef(bset, src="bakl")
     if a_init is None:
         a_init = [0.5, 0.5, 0.]
     a = fmin(epsilon_fit_zeta, x0=a_init, args=(models_dic, bset, t_beg, t_end), disp=0)
-    return a
+    err = epsilon_fit_zeta(a, models_dic, bset, t_beg, t_end)
+    return a, err
 
 
 def epsilon_fit_zeta(x, models_dic, bset, t_beg, t_end=None):
@@ -410,7 +434,8 @@ def epsilon_fit_zeta(x, models_dic, bset, t_beg, t_end=None):
         zeta = zeta[cut]
 
         z_fit = zeta_fit_rev_temp(Tcol, x)
-        e += np.sum(abs(zeta - z_fit))
+        e += np.sum((zeta - z_fit)**2) / len(zeta)
+    print "epsilon: err=%f" % e
     return e
 
 
@@ -425,7 +450,7 @@ def epsilon(x, freq, mag, bands, radius, dist):
     mag_bb = {b: star.flux_to_magAB(band.band_by_name(b)) for b in bands}
     e = 0
     for b in bands:
-        e += abs(mag[b] - mag_bb[b])
+        e += (mag[b] - mag_bb[b])**2
     return e
 
 
@@ -658,8 +683,8 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
 if __name__ == '__main__':
     main()
 
-    #set_bands = ['B-V', 'B-V-I', 'V-I', 'J-H-K']
-    #plot_fits(set_bands)
+    # set_bands = ['B-V', 'B-V-I', 'V-I', 'J-H-K']
+    # plot_fits(set_bands)
 
     # main(name="cat_R1000_M15_Ni007_E15", path="/home/bakl/Sn/Release/seb_git/res/tt",
     #      is_force=False, is_save=True, is_plot_time_points=True)
