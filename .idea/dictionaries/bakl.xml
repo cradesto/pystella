@@ -44,8 +44,10 @@
       <w>tmin</w>
       <w>usno</w>
       <w>wien</w>
+      <w>xend</w>
       <w>xlim</w>
       <w>xlims</w>
+      <w>xstart</w>
       <w>ylim</w>
       <w>ylims</w>
     </words>

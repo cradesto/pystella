@@ -126,7 +126,7 @@ def plot_zeta(models_dic, set_bands, t_cut=4.9,
     # t_points = [1, 2, 3, 4, 5, 10, 30, 80, 150]
 
     xlim = [0, 18000]
-    ylim = [0, 3.]
+    ylim = [0, 2.5]
 
     # setup figure
     plt.matplotlib.rcParams.update({'font.size': 14})
@@ -259,7 +259,7 @@ def plot_zeta(models_dic, set_bands, t_cut=4.9,
         a = {}
         err = {}
         # t_beg = t_cut
-        t_beg, t_end = 1., 140  # None  # 100.
+        t_beg, t_end = 5., 110  # None  # 100.
         for bset in set_bands:
             a[bset], err[bset] = zeta_fit_coef_my(models_dic, bset, t_beg=t_beg, t_end=t_end)  # todo check t_end
 
@@ -293,49 +293,66 @@ def plot_zeta(models_dic, set_bands, t_cut=4.9,
     plt.show()
 
 
-def plot_fits(set_bands):
-    xlim = [0, 18000]
-    ylim = [0, 3.]
+def plot_fits(set_bands, is_grid=True):
+    xlim = [4000, 20000]
+    ylim = [0, 1.5]
 
     plt.matplotlib.rcParams.update({'font.size': 14})
     fig = plt.figure(num=len(set_bands), figsize=(9, 9), dpi=100, facecolor='w', edgecolor='k')
-    gs1 = gridspec.GridSpec(len(set_bands) / 2 + len(set_bands) % 2, 2)
+    if is_grid:
+        gs1 = gridspec.GridSpec(len(set_bands) / 2 + len(set_bands) % 2, 2)
+    else:
+        gs1 = gridspec.GridSpec(1, 1)
     gs1.update(wspace=0.3, hspace=0.3, left=0.15, right=0.95)
 
-    ib = 0
+    ax = fig.add_subplot(gs1[0, 0])
+    ib = 1
     for bset in set_bands:
-        ib += 1
-        icol = (ib - 1) % 2
-        irow = (ib - 1) / 2
-        ax = fig.add_subplot(gs1[irow, icol])
-        xx = np.linspace(max(100, xlim[0]), xlim[1], num=50)
+        bcolor = _colors[ib % (len(_colors) - 1)]
 
-        yd = zeta_fit(xx, bset, "dessart")
-        bcolor = "darkviolet"
-        if yd is not None:
-            ax.plot(xx, yd, color=bcolor, ls="-", linewidth=2.5, label='Dessart 05')
-
-        ye = zeta_fit(xx, bset, "eastman")
-        bcolor = "tomato"
-        if yd is not None:
-            ax.plot(xx, ye, color=bcolor, ls="--", linewidth=2.5, label='Eastman 96')
-
-        yh = zeta_fit(xx, bset, "hamuy")
-        bcolor = "skyblue"
-        if yd is not None:
-            ax.plot(xx, yh, color=bcolor, ls="-.", linewidth=2.5, label='Hamuy 01')
-
-        ye = zeta_fit(xx, bset, "bakl")
-        bcolor = "orange"
-        if yd is not None:
-            ax.plot(xx, ye, color=bcolor, ls="-", linewidth=2.5, label='Baklanov 15')
-
-        ax.legend(prop={'size': 6})
+        # figure parameters
+        xstart, xend = 0, 20000.
+        ax.xaxis.set_ticks(np.arange(5000, xend, (xend - xstart) / 4.))
+        ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%d'))
         ax.set_xlim(xlim)
         ax.set_ylim(ylim)
         ax.set_ylabel(r'$\zeta(' + bset + ')$')
         ax.set_xlabel(r'$T_{color}$')
         ax.set_title(bset)
+
+        # lines
+        xx = np.linspace(max(100, xlim[0]), xlim[1], num=50)
+
+        yd = zeta_fit(xx, bset, "dessart")
+        if yd is not None:
+            if is_grid:
+                bcolor = "darkviolet"
+            ax.plot(xx, yd, color=bcolor, ls="--", linewidth=2.5, label='Dessart 05')
+
+        ye = zeta_fit(xx, bset, "eastman")
+        if ye is not None:
+            if is_grid:
+                bcolor = "tomato"
+            ax.plot(xx, ye, color=bcolor, ls="-.", linewidth=2.5, label='Eastman 96')
+
+        yh = zeta_fit(xx, bset, "hamuy")
+        if yh is not None:
+            if is_grid:
+                bcolor = "skyblue"
+            ax.plot(xx, yh, color=bcolor, ls="-.", linewidth=2.5, label='Hamuy 01')
+
+        yb = zeta_fit(xx, bset, "bakl")
+        if yb is not None:
+            if is_grid:
+                bcolor = "orange"
+            ax.plot(xx, yb, color=bcolor, ls="-", linewidth=2.5, label='Baklanov 15')
+
+        ax.legend(prop={'size': 6})
+        ib += 1
+        if is_grid and ib < len(set_bands):
+            icol = (ib - 1) % 2
+            irow = (ib - 1) / 2
+            ax = fig.add_subplot(gs1[irow, icol])
 
     plt.show()
 
@@ -350,7 +367,7 @@ def zeta_fit(Tcol, bset, src):
     """
     a = zeta_fit_coef(bset, src)
     if a is not None:
-        zeta = zeta_fit_rev_temp(Tcol, a)
+        zeta = zeta_fit_rev_temp(Tcol, a[:3])
         return zeta
     return None
 
@@ -358,6 +375,8 @@ def zeta_fit(Tcol, bset, src):
 def zeta_fit_coef(bset, src):
     """
     Coefficients for zeta fit from Dessart, L., & Hillier, D. J. (2005). doi:10.1051/0004-6361:20053217
+    :param src:
+    :param bset:
     :return:
     """
     a = {
@@ -683,8 +702,9 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
 if __name__ == '__main__':
     main()
 
-    # set_bands = ['B-V', 'B-V-I', 'V-I', 'J-H-K']
-    # plot_fits(set_bands)
+     # set_bands = ['B-V', 'B-V-I', 'V-I']
+     # set_bands = ['B-V', 'B-V-I', 'V-I', 'J-H-K']
+     # plot_fits(set_bands, is_grid=False)
 
     # main(name="cat_R1000_M15_Ni007_E15", path="/home/bakl/Sn/Release/seb_git/res/tt",
     #      is_force=False, is_save=True, is_plot_time_points=True)
