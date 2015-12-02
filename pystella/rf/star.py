@@ -244,7 +244,7 @@ class Star:
             return kcor
 
     @staticmethod
-    def flux_to_redshift(freq, flux, z):
+    def flux_to_redshift(freq, flux, z):  # todo(bakl): check redshift, * F(nu/(1+Z))/F(nu)
         if z <= 0.:
             return flux
         # flux_z = flux * (1.+z)
