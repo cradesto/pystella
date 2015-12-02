@@ -82,7 +82,7 @@ class Band(object):
         """
         print >> out, '-' * 80
         print >> out, "Band: ", self.name
-        print >> out, "wave length = %.3f, %3.f " % (min(self.wl)*1e8, max(self.wl)*1e8)
+        print >> out, "wave length = %.3f, %3.f " % (min(self.wl) * 1e8, max(self.wl) * 1e8)
         print >> out, ""
 
 
@@ -110,6 +110,19 @@ def get_full_path(fname):
     return os.path.join(ROOT_DIRECTORY, fname)
 
 
+def bands_colors():
+    colors = dict(U="blue", B="cyan", V="black", R="red", I="magenta",
+                  J="green", H="cyan", K="black",
+                  UVM2="skyblue", UVW1="orange", UVW2="blue",
+                  g="g", r="red", i="magenta", u="blue", z="chocolate",
+                  y='olive', w='tomato')
+    # for Subaru HCS: colors
+    for b in list('grizy'):
+        colors['HSC' + b] = colors[b]
+
+    return colors
+
+
 def bands_dict_Bessell():
     bands = dict(U="U-bessell.dat", B="B-bessell.dat", V="V-bessell.dat", R="R-bessell.dat", I="I-bessell.dat")
     d = os.path.join(ROOT_DIRECTORY, "data/bands/Bessell")
@@ -117,6 +130,7 @@ def bands_dict_Bessell():
         bands[k] = os.path.join(d, v)
 
     return bands
+
 
 def bands_dict_KAIT():
     bands = dict(U="kait_U.dat", B="kait_B.dat", V="kait_V.dat", R="kait_R.dat", I="kait_I.dat")
@@ -126,6 +140,7 @@ def bands_dict_KAIT():
 
     return bands
 
+
 def bands_dict_Persson():
     bands = dict(J="jfilter", H="hfilter", K="kfilter")
     d = os.path.join(ROOT_DIRECTORY, "data/bands/Persson")
@@ -133,6 +148,7 @@ def bands_dict_Persson():
         bands[k] = os.path.join(d, v)
 
     return bands
+
 
 def bands_dict_USNO():
     # bands = dict(V="usno_g.res", I="usno_i.res", R="usno_r.res", U="usno_u.res", B="usno_z.res") # for comparison
@@ -158,7 +174,7 @@ def bands_dict_PS1():
 
     :return: band-pass filters
     """
-    bands = dict(gps1="ps1_g.dat", ips1="ps1_i.dat", rps1="ps1_r.dat", zps1="ps1_z.dat",
+    bands = dict(PS1g="ps1_g.dat", PS1i="ps1_i.dat", PS1r="ps1_r.dat", PS1z="ps1_z.dat",
                  y="ps1_y.dat", w="ps1_w.dat")
     d = os.path.join(ROOT_DIRECTORY, "data/bands/PS1")
     for k, v in bands.items():
@@ -167,9 +183,18 @@ def bands_dict_PS1():
 
 
 def bands_dict_SWIFT():
-    bands4 = dict(UVM2="photonUVM2.dat", UVW1="photonUVW1.dat", UVW2="photonUVW2.dat", U_UVOT="photonU_UVOT.dat"
-                  , B_UVOT="photonB_UVOT.dat", V_UVOT="photonV_UVOT.dat")
+    bands4 = dict(UVM2="photonUVM2.dat", UVW1="photonUVW1.dat", UVW2="photonUVW2.dat",
+                  UVOTU="photonU_UVOT.dat", UVOTB="photonB_UVOT.dat", UVOTV="photonV_UVOT.dat")
     d = os.path.join(ROOT_DIRECTORY, "data/bands/SWIFTUVOT")
+    for k, v in bands4.items():
+        bands4[k] = os.path.join(d, v)
+    return bands4
+
+
+def bands_dict_SubaruHSC():
+    bands4 = dict(HSCg="HSC-g.txt", HSCr="HSC-r.txt", HSCi="HSC-i.txt",
+                  HSCz="HSC-z.txt", HSCy="HSC-Y.txt")
+    d = os.path.join(ROOT_DIRECTORY, "data/bands/SubaruHSC")
     for k, v in bands4.items():
         bands4[k] = os.path.join(d, v)
     return bands4
@@ -188,7 +213,7 @@ def band_get_names():
     bandsJHK = bands_dict_Persson()
 
     # USNO40
-    bands2 = bands_dict_USNO()
+    # bands2 = bands_dict_USNO()
 
     # SDSS
     bands3 = bands_dict_SDSS()
@@ -199,7 +224,10 @@ def band_get_names():
     # The Pan-STARRS1 Photometric System
     bands5 = bands_dict_PS1()
 
-    return merge_dicts(bands1, bandsJHK, bands3, bands4, bands5)
+    # The HSC filters
+    bands6 = bands_dict_SubaruHSC()
+
+    return merge_dicts(bands1, bandsJHK, bands3, bands4, bands5, bands6)
 
 
 def band_is_exist(name):

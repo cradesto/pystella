@@ -1,0 +1,6 @@
+# see http://www.naoj.org/Observing/Instruments/HSC/sensitivity.html
+HSCg   HSC-g.txt     0.    0.    band from Subaru HSC
+HSCi   HSC-i.txt     0.    0.    band from Subaru HSC
+HSCr   HSC-r.txt     0.    0.    band from Subaru HSC
+HSCy   HSC-Y.txt     0.    0.    band from Subaru HSC
+HSCz   HSC-z.txt     0.    0.    band from Subaru HSC

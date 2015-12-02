@@ -1,7 +1,6 @@
 from scipy import interpolate
 import numpy as np
 from scipy.integrate import simps as integralfunc
-
 from pystella.util.phys_var import phys
 
 __author__ = 'bakl'
@@ -14,7 +13,7 @@ class Star:
         self._sp = spec
         self.is_flux_eq_luminosity = is_flux_eq_luminosity
         self.radius_ph = None
-        self.z = None
+        self._z = None
         self.distance = None
         self.Tcol = {}
         self.zeta = {}
@@ -30,7 +29,7 @@ class Star:
         self.distance = distance
 
     def set_redshift(self, z):  # shift spectrum to rest frame
-        self.z = z
+        self._z = z
 
     def set_Tcol(self, Tcol, bset):
         self.Tcol[bset] = Tcol
@@ -47,6 +46,10 @@ class Star:
         if bset in self.zeta:
             return self.zeta[bset]
         return None
+
+    @property
+    def z(self):
+        return self._z
 
     @property
     def IsRedshift(self):
@@ -69,7 +72,7 @@ class Star:
         if self._sp is None:
             raise ValueError("Spectrum has not been defined. ")
         if self.IsRedshift:
-            return self._sp.Freq * (1. + self.z)  # redshift the flux
+            return self._sp.Freq / (1. + self.z)  # redshift the flux
         else:
             return self._sp.Freq
 
@@ -84,7 +87,7 @@ class Star:
         if self._sp is None:
             raise ValueError("Spectrum has not been defined. ")
         if self.IsRedshift:
-            return Star.flux_to_redshift(self._sp.freq, self._sp.Flux, self.z)
+            return Star.flux_to_redshift(self._sp.Freq, self._sp.Flux, self.z)
         else:
             return self._sp.Flux
 
@@ -108,6 +111,7 @@ class Star:
             return self.Luminosity / (4 * np.pi * self.distance ** 2)
         elif self.IsDistance:
             return self.Flux / (4 * np.pi * self.distance ** 2)
+            # return self.Flux / (4 * np.pi * self.distance ** 2)
         else:
             return self.Flux
 
@@ -181,8 +185,8 @@ class Star:
 
         a = integralfunc(flux_spline * band.resp / nu_b, nu_b)
         b = integralfunc(band.resp / nu_b, nu_b)
-        if a/b < 0:
-            raise ValueError("Spectrum should be more 0: " + str(a/b))
+        if a / b < 0:
+            raise ValueError("Spectrum should be more 0: " + str(a / b))
 
         return a / b
 
@@ -204,7 +208,6 @@ class Star:
         else:
             mag = -2.5 * np.log10(conv) + phys.ZP_AB - band.zp
             return mag
-
 
     def k_cor(self, band_r, band_o, z=0.):
         """
@@ -241,9 +244,11 @@ class Star:
             return kcor
 
     @staticmethod
-    def flux_to_redshift(freq, flux, z):  # todo(bakl): check redshift, * F(nu*(1+Z))/F(nu)
+    def flux_to_redshift(freq, flux, z):  # todo(bakl): check redshift, * F(nu/(1+Z))/F(nu)
         if z <= 0.:
             return flux
-        flux_z = np.interp(freq * (1. + z), freq, flux)
-        flux *= (1. + z) * flux_z / flux
-        return flux
+        # flux_z = flux * (1.+z)
+        flux_z = flux / (1.+z)
+        # flux_z = flux
+        # flux_z = np.interp(freq / (1. + z), freq[::-1], flux[::-1])
+        return flux_z

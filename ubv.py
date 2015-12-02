@@ -9,15 +9,16 @@ from os.path import dirname
 from os.path import isfile, join
 import csv
 import numpy as np
-
+from scipy.integrate import quad
 import matplotlib.pyplot as plt
-
 from pystella.model.stella import Stella
 from pystella.rf import band
 
 __author__ = 'bakl'
 
 ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
+
+colors = band.bands_colors()
 
 markers = {u'D': u'diamond', 6: u'caretup', u's': u'square', u'x': u'x',
            5: u'caretright', u'^': u'triangle_up', u'd': u'thin_diamond', u'h': u'hexagon1',
@@ -26,26 +27,23 @@ markers = {u'D': u'diamond', 6: u'caretup', u's': u'square', u'x': u'x',
 markers = markers.keys()
 
 
+def lbl(b, band_shift):
+    shift = band_shift[b]
+    l = b
+    if shift > 0:
+        l += '+' + str(shift)
+    elif shift < 0:
+        l += '-' + str(abs(shift))
+    return l
+
+
 def plot_all(models_dic, bands, is_time_points=True):
-    colors = dict(U="blue", B="cyan", V="black", R="red", I="magenta",
-                  J="green", H="cyan", K="black",
-                  UVM2="skyblue", UVW1="orange", UVW2="blue",
-                  g="g", r="red", i="magenta", u="blue", z="chocolate",
-                  y='olive', w='tomato')
     band_shift = dict((k, 0) for k, v in colors.items())  # no y-shift
 
     t_points = [0.2, 1, 2, 3, 4, 5, 10, 20, 40, 80, 150]
-    xlim = [-10, 210]
+    xlim = [-10, 410]
     ylim = [-8, -22]
-
-    def lbl(b):
-        shift = band_shift[b]
-        l = b
-        if shift > 0:
-            l += '+' + str(shift)
-        elif shift < 0:
-            l += '-' + str(abs(shift))
-        return l
+    ylim = [40, 23]
 
     # setup figure
     plt.matplotlib.rcParams.update({'font.size': 14})
@@ -64,7 +62,7 @@ def plot_all(models_dic, bands, is_time_points=True):
             x = mdic['time']
             y = mdic[bname]
             bcolor = colors[bname]
-            ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label='%s  %s' % (lbl(bname), mname),
+            ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label='%s  %s' % (lbl(bname, band_shift), mname),
                     markersize=4, color=bcolor, ls="-", linewidth=lw)
             if is_time_points:
                 integers = [np.abs(x - t).argmin() for t in t_points]  # set time points
@@ -73,6 +71,10 @@ def plot_all(models_dic, bands, is_time_points=True):
                                 textcoords='offset points', color=bcolor,
                                 arrowprops=dict(arrowstyle='->', shrinkA=0))
 
+    # add Алешины результаты
+    plot_tolstov(ax, band_shift)
+
+    # finish plot
     ax.legend(prop={'size': 8})
     ax.invert_yaxis()
     ax.set_xlim(xlim)
@@ -83,7 +85,21 @@ def plot_all(models_dic, bands, is_time_points=True):
 
     #     plt.title('; '.join(set_bands) + ' filter response')
     plt.grid()
+
     plt.show()
+
+
+def plot_tolstov(ax, band_shift):
+    lw = 2.
+    fname = "/home/bakl/Desktop/Downloads/2/100z0E60Ni_6.ph.hsc.2"
+    data = np.loadtxt(fname, comments='#')
+    fs = list('grizy')
+    x = data[:, 0]
+    for i in range(len(fs)):
+        y = data[:, i + 1]
+        bcolor = colors[fs[i]]
+        ax.plot(x, y, label='%s Tolstov' % lbl(fs[i], band_shift),
+                color=bcolor, ls="-.", linewidth=lw)
 
 
 def plot_bands(dict_mags, bands, title='', fname='', distance=10., is_time_points=True):
@@ -154,6 +170,16 @@ def plot_bands(dict_mags, bands, title='', fname='', distance=10., is_time_point
         plt.savefig("ubv_%s.png" % fname, format='png')
     plt.show()
     # plt.close()
+
+
+def cosmology_D_by_z(z):
+    Omega_m = 0.31
+    Omega_e = 0.69
+    c = 2.998e5
+    H0 = 67.7
+    D = (1. + z) * c / H0 * \
+        quad(lambda zz: 1 / np.sqrt(Omega_m * (1. + zz) ** 3 + Omega_e), 0, z)[0]
+    return D
 
 
 def compute_mag(name, path, bands, z=0., distance=10., is_show_info=True, is_save=False):
@@ -293,7 +319,7 @@ def main(name='', model_ext='.ph'):
             usage()
             sys.exit(2)
 
-    print "Plot magnitudes on z=%f at distance=%f" % (z, distance)
+    print "Plot magnitudes on z=%f at distance=%e [cosmology D(z)=%s Mpc]" % (z, distance, cosmology_D_by_z(z))
 
     names = []
     if name != '':
