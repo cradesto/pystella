@@ -37,13 +37,12 @@ def lbl(b, band_shift):
     return l
 
 
-def plot_all(models_dic, bands, is_time_points=True):
+def plot_all(models_dic, bands, xlim=None, ylim=None, is_time_points=True):
+    is_x_lim = xlim is None
+    is_y_lim = ylim is None
     band_shift = dict((k, 0) for k, v in colors.items())  # no y-shift
 
     t_points = [0.2, 1, 2, 3, 4, 5, 10, 20, 40, 80, 150]
-    xlim = [-10, 410]
-    ylim = [-8, -22]
-    ylim = [40, 23]
 
     # setup figure
     plt.matplotlib.rcParams.update({'font.size': 14})
@@ -52,9 +51,10 @@ def plot_all(models_dic, bands, is_time_points=True):
     gs1.update(wspace=0.3, hspace=0.3, left=0.1, right=0.95)
     ax = fig.add_subplot(gs1[0, 0])
     lw = 1.
-
     mi = 0
     ib = 0
+    x_max = []
+    y_mid = []
     for mname, mdic in models_dic.iteritems():
         mi += 1
         for bname in bands:
@@ -70,6 +70,15 @@ def plot_all(models_dic, bands, is_time_points=True):
                     ax.annotate('{:.0f}'.format(X), xy=(X, Y), xytext=(-10, 20), ha='right',
                                 textcoords='offset points', color=bcolor,
                                 arrowprops=dict(arrowstyle='->', shrinkA=0))
+            if is_x_lim:
+                x_max.append(np.max(x))
+            if is_y_lim:
+                y_mid.append(np.min(y))
+
+    if is_x_lim:
+        xlim = [-10, np.max(x_max)+10.]
+    if is_y_lim:
+        ylim = [np.min(y_mid)+5., np.min(y_mid)-3.]
 
     # add Алешины результаты
     plot_tolstov(ax, band_shift)
@@ -85,7 +94,6 @@ def plot_all(models_dic, bands, is_time_points=True):
 
     #     plt.title('; '.join(set_bands) + ' filter response')
     plt.grid()
-
     plt.show()
 
 
@@ -342,7 +350,9 @@ def main(name='', model_ext='.ph'):
             if not is_silence:
                 # z, distance = 0.145, 687.7e6  # pc for comparison with Maria
                 plot_bands(mags, bands, title=name, fname='', is_time_points=is_plot_time_points)
-        plot_all(dic_results, bands, is_time_points=is_plot_time_points)
+        # plot_all(dic_results, bands, is_time_points=is_plot_time_points)
+        plot_all(dic_results, bands,  xlim=(-10, 410), is_time_points=is_plot_time_points)
+        # plot_all(dic_results, bands,  ylim=(40, 23),  is_time_points=is_plot_time_points)
     else:
         print "There are no models in the directory: %s with extension: %s " % (path, model_ext)
 
