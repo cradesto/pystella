@@ -8,7 +8,6 @@ import pystella.rf.band as band
 __author__ = 'bakl'
 
 
-
 def plot_griuz():
     plt.title('griuz filter response')
     bands = dict(g='g', i='r+', r='r', u='o', z='*')
@@ -51,7 +50,7 @@ def plot_JHK():
 
 def plot_SWIFT():
     plt.title('SWIFT filter response')
-    bands = dict(UVM2='m', UVW1='r', UVW2='b', U_UVOT='k', B_UVOT='c', V_UVOT='g')
+    bands = dict(UVM2='m', UVW1='r', UVW2='b', UVOTU='k', UVOTB='c', UVOTV='g')
     for k, v in bands.items():
         b = band.band_by_name(k)
         plt.plot(b.wl*phys.cm_to_angs,  b.resp, v, label=k)
@@ -64,11 +63,26 @@ def plot_SWIFT():
 
 def plot_PS1():
     plt.title('The Pan-STARRS1 Photometric  filter responses')
-    bands = dict(gps1='m', ips1='r', rps1='b', zps1='y', y='g', w='p')
+    bands = dict(PS1g='m', PS1i='r', PS1r='b', PS1z='y', y='g', w='p')
+
     for k, v in bands.items():
         b = band.band_by_name(k)
         plt.plot(b.wl*phys.cm_to_angs,  b.resp, v, label=k)
     plt.legend()
+    plt.ylabel('Amplitude Response')
+    plt.xlabel('Wave [A]')
+    plt.grid()
+    plt.show()
+
+
+def plot_HSC():
+    plt.title('The Hyper Suprime-Cam(HSC) Photometric  filter responses')
+
+    bands = dict(HSCg='m', HSCr='b', HSCi='r', HSCz='y', HSCy='g')
+    for k, v in bands.items():
+        b = band.band_by_name(k)
+        plt.plot(b.wl*phys.cm_to_angs,  b.resp, v, label=k)
+    plt.legend(loc=4)
     plt.ylabel('Amplitude Response')
     plt.xlabel('Wave [A]')
     plt.grid()
@@ -81,6 +95,7 @@ def main():
     plot_griuz()
     plot_SWIFT()
     plot_PS1()
+    plot_HSC()
 
 if __name__ == '__main__':
     main()
