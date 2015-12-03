@@ -247,8 +247,8 @@ class Star:
     def flux_to_redshift(freq, flux, z):
         if z <= 0.:
             return flux
-        # flux_z = flux * (1.+z)
-        flux_z = flux / (1.+z)
+        flux_z = flux * (1.+z)
+        # flux_z = flux / (1.+z)
         # flux_z = flux
         # flux_z = np.interp(freq / (1. + z), freq[::-1], flux[::-1])
         return flux_z

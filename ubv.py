@@ -37,7 +37,7 @@ def lbl(b, band_shift):
     return l
 
 
-def plot_all(models_dic, bands, xlim=None, ylim=None, is_time_points=True):
+def plot_all(models_dic, bands, callback=None, xlim=None, ylim=None, is_time_points=True):
     is_x_lim = xlim is None
     is_y_lim = ylim is None
     band_shift = dict((k, 0) for k, v in colors.items())  # no y-shift
@@ -76,38 +76,30 @@ def plot_all(models_dic, bands, xlim=None, ylim=None, is_time_points=True):
                 y_mid.append(np.min(y))
 
     if is_x_lim:
-        xlim = [-10, np.max(x_max)+10.]
+        xlim = [-10, np.max(x_max) + 10.]
     if is_y_lim:
-        ylim = [np.min(y_mid)+5., np.min(y_mid)-3.]
+        ylim = [np.min(y_mid) + 5., np.min(y_mid) - 3.]
 
     # add Алешины результаты
-    plot_tolstov(ax, band_shift)
+    if callback is not None:
+        # callback(ax, band_shift)
+        globals()[callback](ax, band_shift)
+        # plot_tolstov(ax, band_shift)
 
     # finish plot
     ax.legend(prop={'size': 8})
-    ax.invert_yaxis()
+
     ax.set_xlim(xlim)
+    ax.invert_yaxis()
+
     ax.set_ylim(ylim)
+
     plt.ylabel('Magnitude')
     plt.xlabel('Time [days]')
     # ax.set_title(bset)
-
     #     plt.title('; '.join(set_bands) + ' filter response')
     plt.grid()
     plt.show()
-
-
-def plot_tolstov(ax, band_shift):
-    lw = 2.
-    fname = "/home/bakl/Desktop/Downloads/2/100z0E60Ni_6.ph.hsc.2"
-    data = np.loadtxt(fname, comments='#')
-    fs = list('grizy')
-    x = data[:, 0]
-    for i in range(len(fs)):
-        y = data[:, i + 1]
-        bcolor = colors[fs[i]]
-        ax.plot(x, y, label='%s Tolstov' % lbl(fs[i], band_shift),
-                color=bcolor, ls="-.", linewidth=lw)
 
 
 def plot_bands(dict_mags, bands, title='', fname='', distance=10., is_time_points=True):
@@ -242,6 +234,22 @@ def mags_save(dictionary, bands, fname):
             # writer.writerow(['{:3.4e}'.format(x) for x in row])
 
 
+##
+#  Callbacks
+##
+def plot_tolstov(ax, band_shift):
+    lw = 2.
+    fname = "/home/bakl/Desktop/Downloads/2/100z0E60Ni_6.ph.hsc.2"
+    data = np.loadtxt(fname, comments='#')
+    fs = list('grizy')
+    x = data[:, 0]
+    for i in range(len(fs)):
+        y = data[:, i + 1]
+        bcolor = colors[fs[i]]
+        ax.plot(x, y, label='%s Tolstov' % lbl(fs[i], band_shift),
+                color=bcolor, ls="-.", linewidth=lw)
+
+
 def usage():
     bands = band.band_get_names().keys()
     print "Usage:"
@@ -251,6 +259,7 @@ def usage():
     print "  -i <model name>.  Example: cat_R450_M15_Ni007_E7"
     print "  -p <model directory>, default: ./"
     print "  -e <model extension> is used to define model name, default: tt "
+    print "  -c <callback> [plot_tolstov]."
     print "  -d <distance> [pc].  Default: 10 pc"
     print "  -z <redshift>.  Default: 0"
     print "  -s  silence mode: no info, no plot"
@@ -266,9 +275,10 @@ def main(name='', model_ext='.ph'):
     path = ''
     z = 0
     distance = 10.  # pc
+    callback = None
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hswtd:p:e:i:b:z:")
+        opts, args = getopt.getopt(sys.argv[1:], "hswtc:d:p:e:i:b:z:")
     except getopt.GetoptError as err:
         print str(err)  # will print something like "option -a not recognized"
         usage()
@@ -301,6 +311,12 @@ def main(name='', model_ext='.ph'):
                 if not band.band_is_exist(b):
                     print 'No such band: ' + b
                     sys.exit(2)
+            continue
+        if opt == '-c':
+            callback = str(arg)
+            if callback not in globals():
+                print 'No such function for callback: ' + callback
+                sys.exit(2)
             continue
         if opt == '-s':
             is_silence = True
@@ -351,7 +367,8 @@ def main(name='', model_ext='.ph'):
                 # z, distance = 0.145, 687.7e6  # pc for comparison with Maria
                 plot_bands(mags, bands, title=name, fname='', is_time_points=is_plot_time_points)
         # plot_all(dic_results, bands, is_time_points=is_plot_time_points)
-        plot_all(dic_results, bands,  xlim=(-10, 410), is_time_points=is_plot_time_points)
+        # plot_all(dic_results, bands,  xlim=(-10, 410), is_time_points=is_plot_time_points)
+        plot_all(dic_results, bands, xlim=(-10, 410), callback=callback, is_time_points=is_plot_time_points)
         # plot_all(dic_results, bands,  ylim=(40, 23),  is_time_points=is_plot_time_points)
     else:
         print "There are no models in the directory: %s with extension: %s " % (path, model_ext)

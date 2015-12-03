@@ -16,17 +16,21 @@
   ubv.py [params]
 
 -  -b <bands>: string, default: U-B-V-R-I, for example U-B-V-R-I-u-g-i-r-z-UVW1-UVW2.
-     Available: U-B-V-R-I-u-g-i-r-z-UVM2-UVW1-UVW2-U_UVOT-B_UVOT-V_UVOT
+     Available: B-H-HSCg-HSCi-HSCr-HSCy-HSCz-I-J-K-PS1g-PS1i-PS1r-PS1z-R-U-UVM2-UVOTB-UVOTU-UVOTV-UVW1-UVW2-V-g-i-r-u-w-y-z
 -  -i <model name>.  Example: cat_R450_M15_Ni007_E7
--  -p <model path (directory)>, default: ./
+-  -p <model directory>, default: ./
 -  -e <model extension> is used to define model name, default: tt 
+-  -c <callback> [plot_tolstov].
+-  -d <distance> [pc].  Default: 10 pc
+-  -z <redshift>.  Default: 0
 -  -s  silence mode: no info, no plot
+-  -t  plot time points
 -  -w  write magnitudes to file, default 'False'
 -  -h  print usage
 
 
 ```bash
->>>./ubv.py  -i cat_R1000_M15_Ni007_E15  -d ~/Sn/Release/seb_git/res/tt  -b U-B-V
+>>>./ubv.py  -i cat_R1000_M15_Ni007_E15  -d stella/res/tt  -b U-B-V -z 2 -d 16e9
 ```
 
 Run script for all *.ph-files in the DIR:
