@@ -194,12 +194,19 @@ def plot_zeta(models_dic, set_bands, t_cut=4.9,
                 z = z[z > t_cut]
                 # bcolor = "black"
                 bcolor = _colors[ib % (len(_colors) - 1)]
-                ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label='',  # mname,   # label='T_mag ' + mname,
-                        markersize=5, color=bcolor, ls="", linewidth=1.5)
-                if is_time_points and mi % 10 == 1:
+
+                if is_time_points:
                     integers = [np.abs(z - t).argmin() for t in t_points]  # set time points
+                    ax.plot(x[integers], y[integers], marker=markers[mi % (len(markers) - 1)], label='',  # mname,   # label='T_mag ' + mname,
+                            markersize=5, color=bcolor, ls="", linewidth=1.5)
+                else:
+                    ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label='',  # mname,   # label='T_mag ' + mname,
+                            markersize=5, color=bcolor, ls="", linewidth=1.5)
+
+                if is_time_points and mi % 10 == 1:
+                    # integers = [np.abs(z - t).argmin() for t in t_points]  # set time points
                     for (X, Y, Z) in zip(x[integers], y[integers], z[integers]):
-                        ax.annotate('{:.0f}'.format(Z), xy=(X, Y), xytext=(-10, 20), ha='right',
+                        ax.annotate('{:.0f}'.format(Z), xy=(X, Y), xytext=(20, 20), ha='right',
                                     textcoords='offset points', color=bcolor,
                                     arrowprops=dict(arrowstyle='->', shrinkA=0))
                         # t_min = z[y[x > 5000.].argmin()]
@@ -243,15 +250,16 @@ def plot_zeta(models_dic, set_bands, t_cut=4.9,
             if ye is not None:
                 ax.plot(xx, ye, color=bcolor, ls="-.", linewidth=2.5, label='Eastman 96')
 
-            yh = zeta_fit(xx, bset, "hamuy")
-            bcolor = "skyblue"
-            if yh is not None:
-                ax.plot(xx, yh, color=bcolor, ls="-.", linewidth=2.5, label='Hamuy 01')
+            if False:
+                yh = zeta_fit(xx, bset, "hamuy")
+                bcolor = "skyblue"
+                if yh is not None:
+                    ax.plot(xx, yh, color=bcolor, ls="-.", linewidth=2.5, label='Hamuy 01')
 
             yb = zeta_fit(xx, bset, "bakl")
-            bcolor = "cyan"
+            bcolor = "orange"
             if yb is not None:
-                ax.plot(xx, yb, color=bcolor, ls="--", linewidth=2.5, label='bakl')
+                ax.plot(xx, yb, color=bcolor, ls="-", linewidth=2.5, label='Baklanov 15')
 
     # find & plot fit zeta-Tcol for Stella
     if is_fit_bakl:  # bakl fit
@@ -272,7 +280,7 @@ def plot_zeta(models_dic, set_bands, t_cut=4.9,
                 print "Dessart zeta-T  %s: %s " % (bset, ' '.join(map(str, zeta_fit_coef(bset, "dessart"))))
                 print "Eastman zeta-T  %s: %s " % (bset, ' '.join(map(str, zeta_fit_coef(bset, "eastman"))))
                 print "Hamuy01 zeta-T  %s: %s " % (bset, ' '.join(map(str, zeta_fit_coef(bset, "hamuy"))))
-                print "Bakl 15 zeta-T  %s: %s " % (bset, ' '.join(map(str, zeta_fit_coef(bset, "bakl"))))
+                print "Baklanov zeta-T %s: %s " % (bset, ' '.join(map(str, zeta_fit_coef(bset, "bakl"))))
                 print ""
 
         # show fit
@@ -282,7 +290,7 @@ def plot_zeta(models_dic, set_bands, t_cut=4.9,
             ax = ax_cache[bset]
             yb = zeta_fit_rev_temp(xx, a[bset])
             if yb is not None:
-                ax.plot(xx, yb, color=bcolor, ls="-", linewidth=2., label='Baklanov 15')
+                ax.plot(xx, yb, color=bcolor, ls="--", linewidth=2., label='baklan fit')
 
     # legend
     for bset in set_bands:
@@ -335,11 +343,12 @@ def plot_fits(set_bands, is_grid=True):
                 bcolor = "tomato"
             ax.plot(xx, ye, color=bcolor, ls="-.", linewidth=2.5, label='Eastman 96')
 
-        yh = zeta_fit(xx, bset, "hamuy")
-        if yh is not None:
-            if is_grid:
-                bcolor = "skyblue"
-            ax.plot(xx, yh, color=bcolor, ls="-.", linewidth=2.5, label='Hamuy 01')
+        if False:
+            yh = zeta_fit(xx, bset, "hamuy")
+            if yh is not None:
+                if is_grid:
+                    bcolor = "skyblue"
+                ax.plot(xx, yh, color=bcolor, ls="-.", linewidth=2.5, label='Hamuy 01')
 
         yb = zeta_fit(xx, bset, "bakl")
         if yb is not None:
@@ -571,12 +580,9 @@ def usage():
     print "  -p <model path(directory)>, default: ./"
     print "  -e <model extension> is used to define model name, default: tt "
     print "  -s  silence mode: no info, no plot"
-    print "  -f  force mode: rewrite tcolor-files even if it exists"
-    print "  -a  plot the Eastman & Dessart fits"
-    print "  -z  fit & plot "
-    print "  -n  plot T_nu & W fits"
-    print "  -u  plot UBV"
-    print "  -t  plot time points"
+    print "  -f  force mode: rewrite zeta-files even if it exists"
+    # print "  -a  plot the Eastman & Dessart fits"
+    print "  -o  options: <fit;fitb;time;ubv;Tnu>: fit E&D; fit bakl;  show time points; plot UBV"
     print "  -w  write magnitudes to file, default 'False'"
     print "  -h  print usage"
 
@@ -590,7 +596,7 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
     ubv_args = ''
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "afhnsuwtzp:e:i:b:")
+        opts, args = getopt.getopt(sys.argv[1:], "fhswtp:e:i:b:o:")
     except getopt.GetoptError as err:
         print str(err)  # will print something like "option -a not recognized"
         usage()
@@ -626,15 +632,14 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
             is_silence = True
             ubv_args += opt + ' '
             continue
-        if opt == '-u':
-            is_plot_ubv = True
-            continue
-        if opt == '-n':
-            is_plot_Tnu = True
-            continue
-        if opt == '-t':
-            is_plot_time_points = True
-            ubv_args += opt + ' '
+        if opt == '-o':
+            ops = str(arg).split(';')
+            is_plot_ubv = "ubv" in ops
+            is_plot_Tnu = "Tnu" in ops
+            is_plot_time_points = "time" in ops
+            is_fit = "fit" in ops
+            is_fit_bakl = "fitb" in ops
+            ubv_args += " %s %s ".format(opt, arg)
             continue
         if opt == '-w':
             is_save = True
@@ -643,12 +648,6 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
         if opt == '-f':
             is_force = True
             is_save = True
-            continue
-        if opt == '-a':
-            is_fit = True
-            continue
-        if opt == '-z':
-            is_fit_bakl = True
             continue
         if opt == '-p':
             path = os.path.expanduser(str(arg))
@@ -680,16 +679,18 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
                 if not is_force and os.path.exists(fname):
                     dic[bset] = cache_load(fname)
                 else:
-                    dic[bset] = compute_tcolor(name, path, bset.split('-'), t_cut=0.9)
-                    if is_save:
-                        print "Save Tcolor & Zeta for %s in %s" % (bset, fname)
-                        cache_save(dic[bset], fname=fname)
+                    res = compute_tcolor(name, path, bset.split('-'), t_cut=0.9)
+                    if res is not None:
+                        dic[bset] = res
+                        if is_save:
+                            print "Save Tcolor & Zeta for %s in %s" % (bset, fname)
+                            cache_save(dic[bset], fname=fname)
 
             dic_results[name] = dic
             print "Finish: %s" % name
         if is_plot_ubv:
             os.system("./ubv.py -i %s -p %s %s & " % (name, path, ubv_args))
-        if not is_silence:
+        if not is_silence and len(dic_results) > 0:
             plot_zeta(dic_results, set_bands, t_cut=1.9, is_fit=is_fit, is_fit_bakl=is_fit_bakl,
                       is_plot_Tnu=is_plot_Tnu, is_time_points=is_plot_time_points)
             # plot_zeta_oneframe(dic_results, set_bands, t_cut=1.9, is_fit=is_fit,
