@@ -89,6 +89,20 @@ def plot_HSC():
     plt.show()
 
 
+def plot_HST():
+    plt.title('The Hubble Space Telescope  filter responses')
+
+    bands = dict(F125W='m', F160W='r')
+    for k, v in bands.items():
+        b = band.band_by_name(k)
+        plt.plot(b.wl*phys.cm_to_angs,  b.resp, v, label=k)
+    plt.legend(loc=4)
+    plt.ylabel('Amplitude Response')
+    plt.xlabel('Wave [A]')
+    plt.grid()
+    plt.show()
+
+
 def main():
     plot_UBVRI()
     plot_JHK()
@@ -96,6 +110,7 @@ def main():
     plot_SWIFT()
     plot_PS1()
     plot_HSC()
+    plot_HST()
 
 if __name__ == '__main__':
     main()

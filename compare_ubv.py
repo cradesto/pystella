@@ -100,7 +100,7 @@ def cache_load(fname, colnames, skiprows=1):
 def usage():
     bands = band.band_get_names().keys()
     print "Usage:"
-    print "  ubv_compare.py [params]"
+    print "  compare_ubv.py [params]"
     print "  -b <set_bands>: delimiter '_'. Default: u-g-r-i.\n" \
           "     Available: " + '-'.join(sorted(bands))
     print "  -i <model name>.  Example: cat_R450_M15_Ni007_E7"

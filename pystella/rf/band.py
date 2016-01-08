@@ -114,6 +114,7 @@ def bands_colors():
     colors = dict(U="blue", B="cyan", V="black", R="red", I="magenta",
                   J="green", H="cyan", K="black",
                   UVM2="skyblue", UVW1="orange", UVW2="blue",
+                  F125W="g", F160W="r",
                   g="g", r="red", i="magenta", u="blue", z="chocolate",
                   y='olive', w='tomato')
     # for Subaru HCS: colors
@@ -162,6 +163,14 @@ def bands_dict_USNO():
 def bands_dict_SDSS():
     bands = dict(g="sdss_g.dat", i="sdss_i.dat", r="sdss_r.dat", u="sdss_u.dat", z="sdss_z.dat")
     d = os.path.join(ROOT_DIRECTORY, "data/bands/SDSS")
+    for k, v in bands.items():
+        bands[k] = os.path.join(d, v)
+    return bands
+
+
+def bands_dict_HST():
+    bands = dict(F125W="hst_wfc3_ir_f125w.dat", F160W="hst_wfc3_ir_f160w.dat")
+    d = os.path.join(ROOT_DIRECTORY, "data/bands/HST")
     for k, v in bands.items():
         bands[k] = os.path.join(d, v)
     return bands
@@ -227,7 +236,10 @@ def band_get_names():
     # The HSC filters
     bands6 = bands_dict_SubaruHSC()
 
-    return merge_dicts(bands1, bandsJHK, bands3, bands4, bands5, bands6)
+    # The HSC filters
+    bands7 = bands_dict_HST()
+
+    return merge_dicts(bands1, bandsJHK, bands3, bands4, bands5, bands6, bands7)
 
 
 def band_is_exist(name):

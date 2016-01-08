@@ -62,8 +62,9 @@ def plot_all(models_dic, bands, callback=None, xlim=None, ylim=None, is_time_poi
             x = mdic['time']
             y = mdic[bname]
             bcolor = colors[bname]
-            ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label='%s  %s' % (lbl(bname, band_shift), mname),
-                    markersize=4, color=bcolor, ls="-", linewidth=lw)
+            ax.plot(x, y, label='%s  %s' % (lbl(bname, band_shift), mname), color=bcolor, ls="-", linewidth=lw)
+            # ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label='%s  %s' % (lbl(bname, band_shift), mname),
+            #         markersize=4, color=bcolor, ls="-", linewidth=lw)
             if is_time_points:
                 integers = [np.abs(x - t).argmin() for t in t_points]  # set time points
                 for (X, Y) in zip(x[integers], y[integers]):
@@ -75,10 +76,6 @@ def plot_all(models_dic, bands, callback=None, xlim=None, ylim=None, is_time_poi
             if is_y_lim:
                 y_mid.append(np.min(y))
 
-    if is_x_lim:
-        xlim = [-10, np.max(x_max) + 10.]
-    if is_y_lim:
-        ylim = [np.min(y_mid) + 5., np.min(y_mid) - 3.]
 
     # add Алешины результаты
     if callback is not None:
@@ -87,12 +84,17 @@ def plot_all(models_dic, bands, callback=None, xlim=None, ylim=None, is_time_poi
         # plot_tolstov(ax, band_shift)
 
     # finish plot
-    ax.legend(prop={'size': 8})
+    ax.legend(prop={'size': 8}, loc=4)
 
-    ax.set_xlim(xlim)
+    if is_x_lim:
+        xlim = [-10, np.max(x_max) + 10.]
+        ax.set_xlim(xlim)
+
     ax.invert_yaxis()
+    if is_y_lim:
+        ylim = [np.min(y_mid) + 5., np.min(y_mid) - 3.]
+        ax.set_ylim(ylim)
 
-    ax.set_ylim(ylim)
 
     plt.ylabel('Magnitude')
     plt.xlabel('Time [days]')
@@ -105,17 +107,19 @@ def plot_all(models_dic, bands, callback=None, xlim=None, ylim=None, is_time_poi
 def plot_bands(dict_mags, bands, title='', fname='', distance=10., is_time_points=True):
     plt.title(''.join(bands) + ' filter response')
 
-    colors = dict(U="blue", B="cyan", V="black", R="red", I="magenta",
-                  J="blue", H="cyan", K="black",
-                  UVM2="green", UVW1="red", UVW2="blue",
-                  g="black", r="red", i="magenta", u="blue", z="magenta")
+    colors = band.bands_colors()
+    # colors = dict(U="blue", B="cyan", V="black", R="red", I="magenta",
+    #               J="blue", H="cyan", K="black",
+    #               UVM2="green", UVW1="red", UVW2="blue",
+    #               g="black", r="red", i="magenta", u="blue", z="magenta")
     lntypes = dict(U="-", B="-", V="-", R="-", I="-",
                    UVM2="-.", UVW1="-.", UVW2="-.",
+                   F125W="--", F160W="-.",
                    u="--", g="--", r="--", i="--", z="--")
     band_shift = dict(U=6.9, B=3.7, V=0, R=-2.4, I=-4.7,
                       UVM2=11.3, UVW1=10, UVW2=13.6,
                       u=3.5, g=2.5, r=-1.2, i=-3.7, z=-4.2)
-    band_shift = dict((k, 0) for k, v in band_shift.items())  # no y-shift
+    band_shift = dict((k, 0) for k, v in colors.items())  # no y-shift
 
     t_points = [2, 5, 10, 20, 40, 80, 150]
 
@@ -182,9 +186,10 @@ def cosmology_D_by_z(z):
     return D
 
 
-def compute_mag(name, path, bands, z=0., distance=10., is_show_info=True, is_save=False):
+def compute_mag(name, path, bands, ebv=None, z=0., distance=10., is_show_info=True, is_save=False):
     """
         Compute magnitude in bands for the 'name' model.
+    :type ebv: extinction
     :param name: the name of a model and data files
     :param path: the directory with data-files
     :param bands: photometric bands
@@ -221,6 +226,11 @@ def compute_mag(name, path, bands, z=0., distance=10., is_show_info=True, is_sav
             t_min = t[t > tmin][mags[n][t > tmin].argmin()]
             print "t_max(%s) = %f" % (n, t_min)
 
+    if ebv is not None:
+        # add extinction
+        for n in bands:
+            mags[n] = mags[n] + ebv[n]
+
     return mags
 
 
@@ -250,6 +260,21 @@ def plot_tolstov(ax, band_shift):
                 color=bcolor, ls="-.", linewidth=lw)
 
 
+def plot_snrefsdal(ax, band_shift):
+    print "Plot Sn Refsdal"
+    d = '/home/bakl/Sn/my/papers/2016/snrefsdal/data/'
+    fs = {'F125W': d+'snrefsdal_F125W_S2.csv', 'F160W': d+'snrefsdal_F160W_S2.csv'}
+    lw = 2.
+    jd_shift = 56950
+
+    for b, fname in fs.items():
+        data = np.loadtxt(fname, comments='#')
+        x = data[:, 0] - jd_shift
+        y = data[:, 1]
+        bcolor = colors[b]
+        ax.plot(x, y, label='%s Sn Refsdal' % lbl(b, band_shift), ls="-.", color=bcolor, markersize=8, marker="o")
+
+
 def usage():
     bands = band.band_get_names().keys()
     print "Usage:"
@@ -258,8 +283,8 @@ def usage():
           "     Available: " + '-'.join(sorted(bands))
     print "  -i <model name>.  Example: cat_R450_M15_Ni007_E7"
     print "  -p <model directory>, default: ./"
-    print "  -e <model extension> is used to define model name, default: tt "
-    print "  -c <callback> [plot_tolstov]."
+    print "  -e <extinction, E(B-V)> is used to define A_nu, default: 0 "
+    print "  -c <callback> [plot_tolstov, plot_snrefsdal]."
     print "  -d <distance> [pc].  Default: 10 pc"
     print "  -z <redshift>.  Default: 0"
     print "  -s  silence mode: no info, no plot"
@@ -272,8 +297,10 @@ def main(name='', model_ext='.ph'):
     is_silence = False
     is_save_mags = False
     is_plot_time_points = False
+    is_extinction = False
     path = ''
     z = 0
+    e = 0.
     distance = 10.  # pc
     callback = None
 
@@ -303,7 +330,8 @@ def main(name='', model_ext='.ph'):
 
     for opt, arg in opts:
         if opt == '-e':
-            model_ext = '.' + arg
+            e = float(arg)
+            is_extinction = True
             continue
         if opt == '-b':
             bands = str(arg).split('-')
@@ -353,12 +381,17 @@ def main(name='', model_ext='.ph'):
         for f in files:
             names.append(os.path.splitext(f)[0])
 
+    if is_extinction:
+        extinction = band.extinction_law(e, bands)
+    else:
+        extinction = None
+
     if len(names) > 0:
         dic_results = {}  # dict((k, None) for k in names)
         i = 0
         for name in names:
             i += 1
-            mags = compute_mag(name, path, bands, z=z, distance=distance,
+            mags = compute_mag(name, path, bands, ebv=extinction, z=z, distance=distance,
                                is_show_info=not is_silence, is_save=is_save_mags)
             dic_results[name] = mags
             print "Finish: %s [%d/%d]" % (name, i, len(names))
@@ -366,9 +399,9 @@ def main(name='', model_ext='.ph'):
             if not is_silence:
                 # z, distance = 0.145, 687.7e6  # pc for comparison with Maria
                 plot_bands(mags, bands, title=name, fname='', is_time_points=is_plot_time_points)
-        # plot_all(dic_results, bands, is_time_points=is_plot_time_points)
+        plot_all(dic_results, bands, callback=callback, is_time_points=is_plot_time_points)
         # plot_all(dic_results, bands,  xlim=(-10, 410), is_time_points=is_plot_time_points)
-        plot_all(dic_results, bands, xlim=(-10, 410), callback=callback, is_time_points=is_plot_time_points)
+        # plot_all(dic_results, bands, xlim=(-10, 410), callback=callback, is_time_points=is_plot_time_points)
         # plot_all(dic_results, bands,  ylim=(40, 23),  is_time_points=is_plot_time_points)
     else:
         print "There are no models in the directory: %s with extension: %s " % (path, model_ext)
