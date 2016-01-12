@@ -81,7 +81,7 @@ def plot_HSC():
     bands = dict(HSCg='m', HSCr='b', HSCi='r', HSCz='y', HSCy='g')
     for k, v in bands.items():
         b = band.band_by_name(k)
-        plt.plot(b.wl*phys.cm_to_angs,  b.resp, v, label=k)
+        plt.plot(b.wl*phys.cm_to_angs,  b.resp, v, label=k, linewidth=2)
     plt.legend(loc=4)
     plt.ylabel('Amplitude Response')
     plt.xlabel('Wave [A]')
@@ -92,10 +92,10 @@ def plot_HSC():
 def plot_HST():
     plt.title('The Hubble Space Telescope  filter responses')
 
-    bands = dict(F125W='m', F160W='r')
+    bands = dict(F105W="blue",  F125W="g", F435W="skyblue",  F140W="orange", F160W="r", F606W="cyan", F814W="magenta")
     for k, v in bands.items():
         b = band.band_by_name(k)
-        plt.plot(b.wl*phys.cm_to_angs,  b.resp, v, label=k)
+        plt.plot(b.wl*phys.cm_to_angs,  b.resp, v, label=k, linewidth=2)
     plt.legend(loc=4)
     plt.ylabel('Amplitude Response')
     plt.xlabel('Wave [A]')

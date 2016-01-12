@@ -168,7 +168,7 @@ class SeriesSpectrum:
         idx = (np.abs(self.times-time)).argmin()
         return self.get_spec(idx)
 
-    def flux_to_mags(self, b, z=0., dl=0.):
+    def flux_to_mags(self, b, z=0., dl=0., magnification=1.):
         if b is None:
             return None
         if not self.is_time():
@@ -179,6 +179,7 @@ class SeriesSpectrum:
             star = Star(k, self.get_spec(k))
             star.set_distance(dl)
             star.set_redshift(z)
+            star.set_magnification(magnification)
             # mag = star.flux_to_mag(b)
             mag = star.flux_to_magAB(b)
             mags[k] = mag
@@ -187,11 +188,11 @@ class SeriesSpectrum:
 
         return mags
 
-    def compute_mags(self, bands, z=0., dl=rf.pc_to_cm(10.)):
+    def compute_mags(self, bands, z=0., dl=rf.pc_to_cm(10.), magnification=1.):
         mags = dict((k, None) for k in bands)
         for n in bands:
             b = band.band_by_name(n)
-            mags[n] = self.flux_to_mags(b, z=z, dl=dl)
+            mags[n] = self.flux_to_mags(b, z=z, dl=dl, magnification=magnification)
 
         mags['time'] = self.times * (1. + z)
 

@@ -41,4 +41,5 @@ also the same could be done with key '-d' without model's name.
 
 
 Acknowledgments:
-    Some of the data of bands was taken from  SNPY, see http://csp.obs.carnegiescience.edu/data/snpy/
+    Some of the data of bands was taken from  SNPY (see http://csp.obs.carnegiescience.edu/data/snpy/) and
+    SnCosmost (see https://github.com/srodney/sncosmost)

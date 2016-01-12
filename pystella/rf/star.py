@@ -14,6 +14,7 @@ class Star:
         self.is_flux_eq_luminosity = is_flux_eq_luminosity
         self.radius_ph = None
         self._z = None
+        self._magnification = 1.
         self.distance = None
         self.Tcol = {}
         self.zeta = {}
@@ -30,6 +31,9 @@ class Star:
 
     def set_redshift(self, z):  # shift spectrum to rest frame
         self._z = z
+
+    def set_magnification(self, m):  # shift spectrum to rest frame
+        self._magnification = m
 
     def set_Tcol(self, Tcol, bset):
         self.Tcol[bset] = Tcol
@@ -86,10 +90,11 @@ class Star:
     def Flux(self):
         if self._sp is None:
             raise ValueError("Spectrum has not been defined. ")
+        flux = self._sp.Flux * self._magnification
         if self.IsRedshift:
-            return Star.flux_to_redshift(self._sp.Freq, self._sp.Flux, self.z)
+            return Star.flux_to_redshift(self._sp.Freq, flux, self.z)
         else:
-            return self._sp.Flux
+            return flux
 
     @property
     def Flux_wl(self):

@@ -1,2 +1,7 @@
+F105W hst_wfc3_ir_f105w.dat  0.  0  https://github.com/sncosmo/sncosmo/tree/master/sncosmo/data/bandpasses/hst
 F125W hst_wfc3_ir_f125w.dat  0.  0  http://www.stsci.edu/hst/wfc3/documents/handbooks/currentIHB/c07_ir06.html
+F140W hst_wfc3_ir_f140w.dat  0.  0  https://github.com/sncosmo/sncosmo/tree/master/sncosmo/data/bandpasses/hst
 F160W hst_wfc3_ir_f160w.dat  0.  0  http://www.stsci.edu/hst/wfc3/documents/handbooks/currentIHB/c07_ir06.html
+F435W hst_acs_wfc_f435w.dat  0.  0  https://github.com/sncosmo/sncosmo/tree/master/sncosmo/data/bandpasses/hst
+F606W hst_acs_wfc_f606w.dat  0.  0  https://github.com/sncosmo/sncosmo/tree/master/sncosmo/data/bandpasses/hst
+F814W hst_acs_wfc_f814w.dat  0.  0  https://github.com/sncosmo/sncosmo/tree/master/sncosmo/data/bandpasses/hst

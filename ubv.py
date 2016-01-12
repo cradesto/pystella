@@ -13,6 +13,7 @@ from scipy.integrate import quad
 import matplotlib.pyplot as plt
 from pystella.model.stella import Stella
 from pystella.rf import band
+from pystella.rf import extinction
 
 __author__ = 'bakl'
 
@@ -77,7 +78,7 @@ def plot_all(models_dic, bands, callback=None, xlim=None, ylim=None, is_time_poi
                 y_mid.append(np.min(y))
 
 
-    # add Алешины результаты
+    # plot callback
     if callback is not None:
         # callback(ax, band_shift)
         globals()[callback](ax, band_shift)
@@ -92,9 +93,8 @@ def plot_all(models_dic, bands, callback=None, xlim=None, ylim=None, is_time_poi
 
     ax.invert_yaxis()
     if is_y_lim:
-        ylim = [np.min(y_mid) + 5., np.min(y_mid) - 3.]
+        ylim = [np.min(y_mid) + 7., np.min(y_mid) - 2.]
         ax.set_ylim(ylim)
-
 
     plt.ylabel('Magnitude')
     plt.xlabel('Time [days]')
@@ -186,10 +186,10 @@ def cosmology_D_by_z(z):
     return D
 
 
-def compute_mag(name, path, bands, ebv=None, z=0., distance=10., is_show_info=True, is_save=False):
+def compute_mag(name, path, bands, ext=None, z=0., distance=10., magnification=1., is_show_info=True, is_save=False):
     """
         Compute magnitude in bands for the 'name' model.
-    :type ebv: extinction
+    :type ext: extinction
     :param name: the name of a model and data files
     :param path: the directory with data-files
     :param bands: photometric bands
@@ -210,7 +210,7 @@ def compute_mag(name, path, bands, ebv=None, z=0., distance=10., is_show_info=Tr
 
     # serial_spec = model.read_serial_spectrum(t_diff=0.)
     serial_spec = model.read_serial_spectrum(t_diff=1.05)
-    mags = serial_spec.compute_mags(bands, z=z, dl=rf.pc_to_cm(distance))
+    mags = serial_spec.compute_mags(bands, z=z, dl=rf.pc_to_cm(distance),magnification=magnification)
 
     if mags is not None:
         fname = os.path.join(path, name + '.ubv')
@@ -226,10 +226,10 @@ def compute_mag(name, path, bands, ebv=None, z=0., distance=10., is_show_info=Tr
             t_min = t[t > tmin][mags[n][t > tmin].argmin()]
             print "t_max(%s) = %f" % (n, t_min)
 
-    if ebv is not None:
+    if ext is not None:
         # add extinction
         for n in bands:
-            mags[n] = mags[n] + ebv[n]
+            mags[n] = mags[n] + ext[n]
 
     return mags
 
@@ -261,18 +261,37 @@ def plot_tolstov(ax, band_shift):
 
 
 def plot_snrefsdal(ax, band_shift):
-    print "Plot Sn Refsdal"
+    print "Plot Sn Refsdal, "
     d = '/home/bakl/Sn/my/papers/2016/snrefsdal/data/'
-    fs = {'F125W': d+'snrefsdal_F125W_S2.csv', 'F160W': d+'snrefsdal_F160W_S2.csv'}
-    lw = 2.
-    jd_shift = 56950
+    jd_shift = 56970
+    # kelly's data from plot
+    if False:
+        fs = {'F125W': d + 'snrefsdal_F125W_S2.csv', 'F160W': d + 'snrefsdal_F160W_S2.csv'}
+        lw = 2.
 
-    for b, fname in fs.items():
-        data = np.loadtxt(fname, comments='#')
-        x = data[:, 0] - jd_shift
-        y = data[:, 1]
-        bcolor = colors[b]
-        ax.plot(x, y, label='%s Sn Refsdal' % lbl(b, band_shift), ls="-.", color=bcolor, markersize=8, marker="o")
+        for b, fname in fs.items():
+            data = np.loadtxt(fname, comments='#')
+            x = data[:, 0] - jd_shift
+            y = data[:, 1]
+            bcolor = colors[b]
+            ax.plot(x, y, label='%s Sn, Kelly' % lbl(b, band_shift), ls=".", color=bcolor, markersize=8, marker="o")
+
+    # from Rodney_tbl4
+    rodney = np.loadtxt(d + 'rodney_all.csv', comments='#', skiprows=3)
+    bands = np.unique(rodney[:, 0])
+    colS = 4  #
+    for b in bands:
+        bn = 'F%sW' % int(b)
+        data = rodney[rodney[:, 0] == b, ]
+#        data = np.extract(rodney[:, 0] == b, rodney)
+#         data = data[data[:, colS+1] > 0, ]  # exclude limit data
+
+        x = data[:, 1] - jd_shift
+        y = data[:, colS]
+        yerr = data[:, colS+1]
+        bcolor = colors[bn]
+       # ax.plot(x, y, label='%s Sn, Rodney' % lbl(bn, band_shift), ls="-.", color=bcolor, markersize=8, marker="*")
+        ax.errorbar(x, y, yerr=yerr, fmt='o', color=bcolor, label='%s Sn, Rodney' % lbl(bn, band_shift))
 
 
 def usage():
@@ -286,6 +305,7 @@ def usage():
     print "  -e <extinction, E(B-V)> is used to define A_nu, default: 0 "
     print "  -c <callback> [plot_tolstov, plot_snrefsdal]."
     print "  -d <distance> [pc].  Default: 10 pc"
+    print "  -m <magnification>.  Default: None, used for grav lens"
     print "  -z <redshift>.  Default: 0"
     print "  -s  silence mode: no info, no plot"
     print "  -t  plot time points"
@@ -301,11 +321,12 @@ def main(name='', model_ext='.ph'):
     path = ''
     z = 0
     e = 0.
+    magnification = 1.
     distance = 10.  # pc
     callback = None
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hswtc:d:p:e:i:b:z:")
+        opts, args = getopt.getopt(sys.argv[1:], "hswtc:d:p:e:i:b:m:z:")
     except getopt.GetoptError as err:
         print str(err)  # will print something like "option -a not recognized"
         usage()
@@ -355,6 +376,9 @@ def main(name='', model_ext='.ph'):
         if opt == '-t':
             is_plot_time_points = True
             continue
+        if opt == '-m':
+            magnification = float(arg)
+            continue
         if opt == '-z':
             z = float(arg)
             continue
@@ -382,16 +406,16 @@ def main(name='', model_ext='.ph'):
             names.append(os.path.splitext(f)[0])
 
     if is_extinction:
-        extinction = band.extinction_law(e, bands)
+        ext = extinction.extinction_law(ebv=e, bands=bands)
     else:
-        extinction = None
+        ext = None
 
     if len(names) > 0:
         dic_results = {}  # dict((k, None) for k in names)
         i = 0
         for name in names:
             i += 1
-            mags = compute_mag(name, path, bands, ebv=extinction, z=z, distance=distance,
+            mags = compute_mag(name, path, bands, ext=ext, z=z, distance=distance, magnification=magnification,
                                is_show_info=not is_silence, is_save=is_save_mags)
             dic_results[name] = mags
             print "Finish: %s [%d/%d]" % (name, i, len(names))

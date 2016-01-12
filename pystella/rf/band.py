@@ -114,8 +114,8 @@ def bands_colors():
     colors = dict(U="blue", B="cyan", V="black", R="red", I="magenta",
                   J="green", H="cyan", K="black",
                   UVM2="skyblue", UVW1="orange", UVW2="blue",
-                  F125W="g", F160W="r",
-                  g="g", r="red", i="magenta", u="blue", z="chocolate",
+                  F105W="blue", F435W="skyblue",  F606W="cyan", F125W="g", F140W="orange", F160W="r", F814W="magenta",
+                  g="blue", r="red", i="magenta", u="blue", z="chocolate",
                   y='olive', w='tomato')
     # for Subaru HCS: colors
     for b in list('grizy'):
@@ -169,10 +169,14 @@ def bands_dict_SDSS():
 
 
 def bands_dict_HST():
-    bands = dict(F125W="hst_wfc3_ir_f125w.dat", F160W="hst_wfc3_ir_f160w.dat")
     d = os.path.join(ROOT_DIRECTORY, "data/bands/HST")
-    for k, v in bands.items():
-        bands[k] = os.path.join(d, v)
+    # bands = dict(F125W="hst_wfc3_ir_f125w.dat", F160W="hst_wfc3_ir_f160w.dat")
+    fname = os.path.join(d, 'filters.dat')
+    bands = {}
+    with open(fname, "r") as f:
+        for line in f:
+            names = map(str.strip, line.split())
+            bands[names[0]] = os.path.join(d, names[1])
     return bands
 
 
