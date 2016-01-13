@@ -38,7 +38,7 @@ def lbl(b, band_shift):
     return l
 
 
-def plot_all(models_dic, bands, callback=None, xlim=None, ylim=None, is_time_points=True):
+def plot_all(models_dic, bands, callback=None, xlim=None, ylim=None, is_time_points=True, title=''):
     is_x_lim = xlim is None
     is_y_lim = ylim is None
     band_shift = dict((k, 0) for k, v in colors.items())  # no y-shift
@@ -101,7 +101,8 @@ def plot_all(models_dic, bands, callback=None, xlim=None, ylim=None, is_time_poi
     plt.ylabel('Magnitude')
     plt.xlabel('Time [days]')
     # ax.set_title(bset)
-    #     plt.title('; '.join(set_bands) + ' filter response')
+    if title:
+        plt.title(title)
     plt.grid()
     plt.show()
 
@@ -432,7 +433,8 @@ def main(name='', model_ext='.ph'):
             if not is_silence:
                 # z, distance = 0.145, 687.7e6  # pc for comparison with Maria
                 plot_bands(mags, bands, title=name, fname='', is_time_points=is_plot_time_points)
-        plot_all(dic_results, bands, callback=callback, is_time_points=is_plot_time_points)
+        t = "%s, z=%4.2f D=%6.2e ebv=%5.2f" % (callback, z, distance, e)
+        plot_all(dic_results, bands, callback=callback, is_time_points=is_plot_time_points, title=t)
         # plot_all(dic_results, bands,  xlim=(-10, 410), is_time_points=is_plot_time_points)
         # plot_all(dic_results, bands, xlim=(-10, 410), callback=callback, is_time_points=is_plot_time_points)
         # plot_all(dic_results, bands,  ylim=(40, 23),  is_time_points=is_plot_time_points)
