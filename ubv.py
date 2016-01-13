@@ -406,7 +406,10 @@ def main(name='', model_ext='.ph'):
             names.append(os.path.splitext(f)[0])
 
     if is_extinction:
-        ext = extinction.extinction_law(ebv=e, bands=bands)
+        if z > 1:
+            ext = extinction.extinction_law_z(ebv=e, bands=bands, z=z)
+        else:
+            ext = extinction.extinction_law(ebv=e, bands=bands)
     else:
         ext = None
 
