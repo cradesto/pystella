@@ -24,7 +24,7 @@ def ext_read_data():
 def extinction_law(ebv, bands):
     # see http://iopscience.iop.org/article/10.1088/0004-637X/737/2/103/meta
 
-    # ext_all = dict((k, 0) for k, v in colors.items())   # todo it's just mock
+    # ext_all = dict((k, 0) for k, v in colors.items())   # it's just mock
     ext_all = ext_read_data()
     ext_dic = dict(zip(ext_all['band'], ext_all['Rv3.1']))
 
@@ -37,7 +37,7 @@ def extinction_law(ebv, bands):
 def extinction_law_z(ebv, bands, z):
     # see http://iopscience.iop.org/article/10.1088/0004-637X/737/2/103/meta
 
-    # ext_all = dict((k, 0) for k, v in colors.items())   # todo it's just mock
+    # ext_all = dict((k, 0) for k, v in colors.items())   # it's just mock
     ext_all = ext_read_data()
     lmb_dic = dict(zip(ext_all['band'], ext_all['lambdaeff']))
     # ext_dic = dict(zip(ext_all['band'], ext_all['Rv3.1']))

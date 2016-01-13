@@ -80,9 +80,11 @@ def plot_all(models_dic, bands, callback=None, xlim=None, ylim=None, is_time_poi
 
     # plot callback
     if callback is not None:
-        # callback(ax, band_shift)
-        globals()[callback](ax, band_shift)
-        # plot_tolstov(ax, band_shift)
+        if ':' in callback:  # callback with arguments
+            a = callback.split(':', 1)
+            globals()[a[0]](ax, band_shift, a[1])
+        else:
+            globals()[callback](ax, band_shift)
 
     # finish plot
     ax.legend(prop={'size': 8}, loc=4)
@@ -114,7 +116,7 @@ def plot_bands(dict_mags, bands, title='', fname='', distance=10., is_time_point
     #               g="black", r="red", i="magenta", u="blue", z="magenta")
     lntypes = dict(U="-", B="-", V="-", R="-", I="-",
                    UVM2="-.", UVW1="-.", UVW2="-.",
-                   F125W="--", F160W="-.",
+                   F125W="--", F160W="-.", F140W="--", F105W="-.", F435W="--", F606W="-.", F814W="--",
                    u="--", g="--", r="--", i="--", z="--")
     band_shift = dict(U=6.9, B=3.7, V=0, R=-2.4, I=-4.7,
                       UVM2=11.3, UVW1=10, UVW2=13.6,
@@ -260,10 +262,14 @@ def plot_tolstov(ax, band_shift):
                 color=bcolor, ls="-.", linewidth=lw)
 
 
-def plot_snrefsdal(ax, band_shift):
+def plot_snrefsdal(ax, band_shift, arg=''):
     print "Plot Sn Refsdal, "
     d = '/home/bakl/Sn/my/papers/2016/snrefsdal/data/'
-    jd_shift = 56970
+    if not arg:
+        jd_shift = 56970
+    else:
+        jd_shift = float(arg)
+
     # kelly's data from plot
     if False:
         fs = {'F125W': d + 'snrefsdal_F125W_S2.csv', 'F160W': d + 'snrefsdal_F160W_S2.csv'}
@@ -363,7 +369,7 @@ def main(name='', model_ext='.ph'):
             continue
         if opt == '-c':
             callback = str(arg)
-            if callback not in globals():
+            if callback.split(':', 1)[0] not in globals():
                 print 'No such function for callback: ' + callback
                 sys.exit(2)
             continue
