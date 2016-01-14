@@ -39,18 +39,41 @@ def lbl(b, band_shift):
 
 
 def plot_all(models_dic, bands, callback=None, xlim=None, ylim=None, is_time_points=True, title=''):
-    is_x_lim = xlim is None
-    is_y_lim = ylim is None
     band_shift = dict((k, 0) for k, v in colors.items())  # no y-shift
-
-    t_points = [0.2, 1, 2, 3, 4, 5, 10, 20, 40, 80, 150]
-
     # setup figure
     plt.matplotlib.rcParams.update({'font.size': 14})
     fig = plt.figure(num=None, figsize=(7, 7), dpi=100, facecolor='w', edgecolor='k')
     gs1 = gridspec.GridSpec(1, 1)
     gs1.update(wspace=0.3, hspace=0.3, left=0.1, right=0.95)
     ax = fig.add_subplot(gs1[0, 0])
+
+    # plot the light curves
+    plot_ubv_models(ax, models_dic, bands, band_shift=band_shift, xlim=xlim, ylim=ylim, is_time_points=is_time_points)
+
+    # plot callback
+    if callback is not None:
+        if ':' in callback:  # callback with arguments
+            a = callback.split(':', 1)
+            globals()[a[0]](ax, band_shift, a[1])
+        else:
+            globals()[callback](ax, band_shift)
+
+    # finish plot
+    ax.legend(prop={'size': 8}, loc=4)
+
+    # ax.set_title(bset)
+    if title:
+        plt.title(title)
+    plt.grid()
+    plt.show()
+
+
+def plot_ubv_models(ax, models_dic, bands,band_shift, xlim=None, ylim=None, is_time_points=True):
+    is_x_lim = xlim is None
+    is_y_lim = ylim is None
+
+    t_points = [0.2, 1, 2, 3, 4, 5, 10, 20, 40, 80, 150]
+
     lw = 1.
     mi = 0
     ib = 0
@@ -78,16 +101,7 @@ def plot_all(models_dic, bands, callback=None, xlim=None, ylim=None, is_time_poi
                 y_mid.append(np.min(y))
 
 
-    # plot callback
-    if callback is not None:
-        if ':' in callback:  # callback with arguments
-            a = callback.split(':', 1)
-            globals()[a[0]](ax, band_shift, a[1])
-        else:
-            globals()[callback](ax, band_shift)
 
-    # finish plot
-    ax.legend(prop={'size': 8}, loc=4)
 
     if is_x_lim:
         xlim = [-10, np.max(x_max) + 10.]
@@ -98,13 +112,9 @@ def plot_all(models_dic, bands, callback=None, xlim=None, ylim=None, is_time_poi
         ylim = [np.min(y_mid) + 7., np.min(y_mid) - 2.]
         ax.set_ylim(ylim)
 
-    plt.ylabel('Magnitude')
-    plt.xlabel('Time [days]')
-    # ax.set_title(bset)
-    if title:
-        plt.title(title)
-    plt.grid()
-    plt.show()
+    ax.set_ylabel('Magnitude')
+    ax.set_xlabel('Time [days]')
+
 
 
 def plot_bands(dict_mags, bands, title='', fname='', distance=10., is_time_points=True):
