@@ -582,7 +582,7 @@ def usage():
     print "  -s  silence mode: no info, no plot"
     print "  -f  force mode: rewrite zeta-files even if it exists"
     # print "  -a  plot the Eastman & Dessart fits"
-    print "  -o  options: <fit;fitb;time;ubv;Tnu>: fit E&D; fit bakl;  show time points; plot UBV"
+    print "  -o  options: <fit:fitb:time:ubv:Tnu> - fit E&D: fit bakl:  show time points: plot UBV"
     print "  -w  write magnitudes to file, default 'False'"
     print "  -h  print usage"
 
@@ -633,7 +633,7 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
             ubv_args += opt + ' '
             continue
         if opt == '-o':
-            ops = str(arg).split(';')
+            ops = str(arg).split(':')
             is_plot_ubv = "ubv" in ops
             is_plot_Tnu = "Tnu" in ops
             is_plot_time_points = "time" in ops

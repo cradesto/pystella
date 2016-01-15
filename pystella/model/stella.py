@@ -111,8 +111,10 @@ class Stella:
                     continue
                 if line.lstrip().startswith("time"):
                     header = line
+                    num_line_header = i
                     break
         # time Tbb rbb Teff Rlast_sc R(tau2/3) Mbol MU MB MV MI MR Mbolavg  gdepos
+        # time Tbb rbb Teff Rlast_sc R(tau2/3) Mbol MU MB MV MI MR   Mbolavg  gdepos
         if header != '':
             names = map(str.strip, header.split())
             names = [w.replace('R(tau2/3)', 'Rph') for w in names]

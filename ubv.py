@@ -1,5 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+from scipy import interpolate
+
 from matplotlib import gridspec
 from pystella.util import rf
 import os
@@ -38,37 +40,93 @@ def lbl(b, band_shift):
     return l
 
 
-def plot_all(models_dic, bands, callback=None, xlim=None, ylim=None, is_time_points=True, title=''):
+def plot_all(models_vels, models_dic, bands, callback=None, xlim=None, ylim=None, is_time_points=False, title=''):
     band_shift = dict((k, 0) for k, v in colors.items())  # no y-shift
+    is_vel = models_vels is not None
+
     # setup figure
     plt.matplotlib.rcParams.update({'font.size': 14})
-    fig = plt.figure(num=None, figsize=(7, 7), dpi=100, facecolor='w', edgecolor='k')
-    gs1 = gridspec.GridSpec(1, 1)
+    fig = plt.figure(num=None, figsize=(7, 11), dpi=100, facecolor='w', edgecolor='k')
+
+    if is_vel:
+        gs1 = gridspec.GridSpec(4, 1)
+        axUbv = fig.add_subplot(gs1[:-1, 0])
+        axVel = fig.add_subplot(gs1[3, 0])
+    else:
+        gs1 = gridspec.GridSpec(1, 1)
+        axUbv = fig.add_subplot(gs1[0, 0])
+        axVel = None
     gs1.update(wspace=0.3, hspace=0.3, left=0.1, right=0.95)
-    ax = fig.add_subplot(gs1[0, 0])
 
     # plot the light curves
-    plot_ubv_models(ax, models_dic, bands, band_shift=band_shift, xlim=xlim, ylim=ylim, is_time_points=is_time_points)
+    plot_ubv_models(axUbv, models_dic, bands, band_shift=band_shift, xlim=xlim, ylim=ylim,
+                    is_time_points=is_time_points)
 
     # plot callback
     if callback is not None:
         if ':' in callback:  # callback with arguments
             a = callback.split(':', 1)
-            globals()[a[0]](ax, band_shift, a[1])
+            opt = a[1:]
+            if is_vel:
+                opt.append(axVel)
+            globals()[a[0]](axUbv, band_shift, opt)
         else:
-            globals()[callback](ax, band_shift)
+            globals()[callback](axUbv, band_shift)
 
     # finish plot
-    ax.legend(prop={'size': 8}, loc=4)
-
+    axUbv.legend(prop={'size': 8}, loc=4)
     # ax.set_title(bset)
     if title:
-        plt.title(title)
+        axUbv.set_title(title)
+
+    # plot velocities
+    if is_vel:
+        plot_vels_models(axVel, models_vels, is_time_points=is_time_points)
+
     plt.grid()
     plt.show()
 
 
-def plot_ubv_models(ax, models_dic, bands,band_shift, xlim=None, ylim=None, is_time_points=True):
+def plot_vels_models(ax, models_dic, xlim=None, ylim=None, is_time_points=True):
+    is_x_lim = xlim is None
+    is_y_lim = ylim is None
+
+    t_points = [0.2, 1, 2, 3, 4, 5, 10, 20, 40, 80, 150]
+
+    lw = 1.
+    mi = 0
+    x_max = []
+    y_mid = []
+    for mname, mdic in models_dic.iteritems():
+        mi += 1
+        x = mdic['time']
+        y = mdic['vel'] / 1e8
+        ax.plot(x, y, label='Vel  %s' % mname, color='blue', ls="-", linewidth=lw)
+        if is_time_points:
+            integers = [np.abs(x - t).argmin() for t in t_points]  # set time points
+            for (X, Y) in zip(x[integers], y[integers]):
+                ax.annotate('{:.0f}'.format(X), xy=(X, Y), xytext=(-10, 20), ha='right',
+                            textcoords='offset points', color='blue',
+                            arrowprops=dict(arrowstyle='->', shrinkA=0))
+        if is_x_lim:
+            x_max.append(np.max(x))
+        if is_y_lim:
+            y_mid.append(np.max(y))
+
+    if is_x_lim:
+        xlim = [-10, np.max(x_max) + 10.]
+        ax.set_xlim(xlim)
+
+    if is_y_lim:
+        ylim = [1e-1, np.max(y_mid)+5]
+        # ylim = [np.min(y_mid) + 7., np.min(y_mid) - 2.]
+        ax.set_ylim(ylim)
+
+    ax.set_ylabel('Velocity')
+    ax.set_xlabel('Time [days]')
+
+
+def plot_ubv_models(ax, models_dic, bands, band_shift, xlim=None, ylim=None, is_time_points=True):
     is_x_lim = xlim is None
     is_y_lim = ylim is None
 
@@ -100,9 +158,6 @@ def plot_ubv_models(ax, models_dic, bands,band_shift, xlim=None, ylim=None, is_t
             if is_y_lim:
                 y_mid.append(np.min(y))
 
-
-
-
     if is_x_lim:
         xlim = [-10, np.max(x_max) + 10.]
         ax.set_xlim(xlim)
@@ -114,7 +169,6 @@ def plot_ubv_models(ax, models_dic, bands,band_shift, xlim=None, ylim=None, is_t
 
     ax.set_ylabel('Magnitude')
     ax.set_xlabel('Time [days]')
-
 
 
 def plot_bands(dict_mags, bands, title='', fname='', distance=10., is_time_points=True):
@@ -199,6 +253,45 @@ def cosmology_D_by_z(z):
     return D
 
 
+def compute_vel(name, path, z=0., t_beg=1., t_diff=1.15):
+    model = Stella(name, path=path)
+    if not model.is_res_data or not model.is_tt_data:
+        if not model.is_res_data:
+            print "There are no res-file for %s in the directory: %s " % (name, path)
+        if not model.is_tt_data:
+            print "There are no tt-file for %s in the directory: %s " % (name, path)
+        return None
+
+    res = model.get_res()
+    tt = model.read_tt_data()
+    tt = tt[tt['time'] >= t_beg]  # time cut  days
+
+    radiuses = list()
+    vels = list()
+    times = list()
+    Rph_spline = interpolate.splrep(tt['time'], tt['Rph'], s=0)
+    for nt in range(len(tt['time'])):
+        t = tt['time'][nt]
+        if t < t_beg or np.abs(t / t_beg < t_diff):
+            continue
+        t_beg = t
+        radius = interpolate.splev(t, Rph_spline)
+        block = res.read_at_time(time=t)
+        idx = np.abs(block['R14'] - radius / 1e14).argmin()
+        radiuses.append(block['R14'][idx] * 1e14)
+        vels.append(block['V8'][idx] * 1e8)
+        times.append(t * (1. + z))  # redshifted time
+
+    # show results
+    res = np.array(np.zeros(len(vels)),
+                   dtype=np.dtype({'names': ['time', 'vel', 'r'],
+                                   'formats': [np.float64] * 3}))
+    res['time'] = times
+    res['vel'] = vels
+    res['r'] = radiuses
+    return res
+
+
 def compute_mag(name, path, bands, ext=None, z=0., distance=10., magnification=1., is_show_info=True, is_save=False):
     """
         Compute magnitude in bands for the 'name' model.
@@ -223,7 +316,7 @@ def compute_mag(name, path, bands, ext=None, z=0., distance=10., magnification=1
 
     # serial_spec = model.read_serial_spectrum(t_diff=0.)
     serial_spec = model.read_serial_spectrum(t_diff=1.05)
-    mags = serial_spec.compute_mags(bands, z=z, dl=rf.pc_to_cm(distance),magnification=magnification)
+    mags = serial_spec.compute_mags(bands, z=z, dl=rf.pc_to_cm(distance), magnification=magnification)
 
     if mags is not None:
         fname = os.path.join(path, name + '.ubv')
@@ -273,42 +366,56 @@ def plot_tolstov(ax, band_shift):
                 color=bcolor, ls="-.", linewidth=lw)
 
 
-def plot_snrefsdal(ax, band_shift, arg=''):
+def plot_snrefsdal(ax, band_shift, arg=None):
     print "Plot Sn Refsdal, "
-    d = '/home/bakl/Sn/my/papers/2016/snrefsdal/data/'
-    if not arg:
-        jd_shift = 56970
+    d = '/home/bakl/Sn/my/papers/2016/snrefsdal/data'
+    if arg is None:
+        jd_shift = -57000
     else:
-        jd_shift = float(arg)
+        jd_shift = float(arg[0])
 
     # kelly's data from plot
     if False:
-        fs = {'F125W': d + 'snrefsdal_F125W_S2.csv', 'F160W': d + 'snrefsdal_F160W_S2.csv'}
+        fs = {'F125W': os.path.join(d, 'snrefsdal_F125W_S2.csv'), 'F160W': d + 'snrefsdal_F160W_S2.csv'}
         lw = 2.
 
         for b, fname in fs.items():
             data = np.loadtxt(fname, comments='#')
-            x = data[:, 0] - jd_shift
+            x = data[:, 0] + jd_shift
             y = data[:, 1]
             bcolor = colors[b]
             ax.plot(x, y, label='%s Sn, Kelly' % lbl(b, band_shift), ls=".", color=bcolor, markersize=8, marker="o")
 
     # from Rodney_tbl4
-    rodney = np.loadtxt(d + 'rodney_all.csv', comments='#', skiprows=3)
+    rodney = np.loadtxt(os.path.join(d, 'rodney_all.csv'), comments='#', skiprows=3)
     bands = np.unique(rodney[:, 0])
-    colS = 4  #
+    colS = 4  #  S4 - 8 col
     for b in bands:
         bn = 'F%sW' % int(b)
-        data = rodney[rodney[:, 0] == b, ]
-#        data = np.extract(rodney[:, 0] == b, rodney)
-#         data = data[data[:, colS+1] > 0, ]  # exclude limit data
-
-        x = data[:, 1] - jd_shift
+        data = rodney[rodney[:, 0] == b,]
+        x = data[:, 1] + jd_shift
         y = data[:, colS]
-        yerr = data[:, colS+1]
+        yerr = data[:, colS + 1]
         bcolor = colors[bn]
-       # ax.plot(x, y, label='%s Sn, Rodney' % lbl(bn, band_shift), ls="-.", color=bcolor, markersize=8, marker="*")
+        # ax.plot(x, y, label='%s Sn, Rodney' % lbl(bn, band_shift), ls="-.", color=bcolor, markersize=8, marker="*")
         ax.errorbar(x, y, yerr=yerr, fmt='o', color=bcolor, label='%s Sn, Rodney' % lbl(bn, band_shift))
+        # print max
+        t_min = data[np.argmin(y), 1]
+        print "t_max( %s) = %8.1f, shifted=%8.1f" % (bn, t_min, t_min+jd_shift)
+
+    #
+    if len(arg) > 1 is not None:
+        band_max = 'F160W'
+        data = rodney[rodney[:, 0] == int(band_max[1:4]), ]  # extract maximum for F160W
+        t_min = data[np.argmin(data[:, colS]), 1]
+        print "Plot Sn Refsdal velocities: t_max( %s) = %8.1f" % (band_max, t_min)
+        axVel = arg[-1]
+        data = np.loadtxt(os.path.join(d, 'kelly_vel_halpha.txt'), comments='#', skiprows=2)
+        x = data[:, 0] + t_min + jd_shift
+        y = data[:, 1]
+        yerr = data[:, 2]
+        bcolor = 'red'
+        axVel.errorbar(x, y, yerr=yerr, fmt='o', color=bcolor, label='r$H_{\alpha}$, Kelly')
 
 
 def usage():
@@ -320,12 +427,13 @@ def usage():
     print "  -i <model name>.  Example: cat_R450_M15_Ni007_E7"
     print "  -p <model directory>, default: ./"
     print "  -e <extinction, E(B-V)> is used to define A_nu, default: 0 "
-    print "  -c <callback> [plot_tolstov, plot_snrefsdal]."
+    print "  -c <callback> [plot_tolstov, plot_snrefsdal]. You can add parameters in format func:params"
     print "  -d <distance> [pc].  Default: 10 pc"
     print "  -m <magnification>.  Default: None, used for grav lens"
     print "  -z <redshift>.  Default: 0"
     print "  -s  silence mode: no info, no plot"
     print "  -t  plot time points"
+    print "  -v  plot model velocities."
     print "  -w  write magnitudes to file, default 'False'"
     print "  -h  print usage"
 
@@ -335,6 +443,7 @@ def main(name='', model_ext='.ph'):
     is_save_mags = False
     is_plot_time_points = False
     is_extinction = False
+    is_vel = False
     path = ''
     z = 0
     e = 0.
@@ -343,7 +452,7 @@ def main(name='', model_ext='.ph'):
     callback = None
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hswtc:d:p:e:i:b:m:z:")
+        opts, args = getopt.getopt(sys.argv[1:], "hswtc:d:p:e:i:b:m:vz:")
     except getopt.GetoptError as err:
         print str(err)  # will print something like "option -a not recognized"
         usage()
@@ -393,6 +502,9 @@ def main(name='', model_ext='.ph'):
         if opt == '-t':
             is_plot_time_points = True
             continue
+        if opt == '-v':
+            is_vel = True
+            continue
         if opt == '-m':
             magnification = float(arg)
             continue
@@ -431,20 +543,31 @@ def main(name='', model_ext='.ph'):
         ext = None
 
     if len(names) > 0:
-        dic_results = {}  # dict((k, None) for k in names)
+        models_mags = {}  # dict((k, None) for k in names)
+        models_vels = {}  # dict((k, None) for k in names)
         i = 0
         for name in names:
             i += 1
             mags = compute_mag(name, path, bands, ext=ext, z=z, distance=distance, magnification=magnification,
                                is_show_info=not is_silence, is_save=is_save_mags)
-            dic_results[name] = mags
-            print "Finish: %s [%d/%d]" % (name, i, len(names))
+            models_mags[name] = mags
 
             if not is_silence:
                 # z, distance = 0.145, 687.7e6  # pc for comparison with Maria
                 plot_bands(mags, bands, title=name, fname='', is_time_points=is_plot_time_points)
+
+            if is_vel:
+                vels = compute_vel(name, path, z=z)
+                if vels is None:
+                    sys.exit("No data for: %s in %s" % (name, path))
+                models_vels[name] = vels
+                print "Finish velocity: %s [%d/%d]" % (name, i, len(names))
+            else:
+                models_vels = None
+                print "Finish mags: %s [%d/%d]" % (name, i, len(names))
+
         t = "%s, z=%4.2f D=%6.2e ebv=%5.2f" % (callback, z, distance, e)
-        plot_all(dic_results, bands, callback=callback, is_time_points=is_plot_time_points, title=t)
+        plot_all(models_vels, models_mags, bands, callback=callback, is_time_points=is_plot_time_points, title=t)
         # plot_all(dic_results, bands,  xlim=(-10, 410), is_time_points=is_plot_time_points)
         # plot_all(dic_results, bands, xlim=(-10, 410), callback=callback, is_time_points=is_plot_time_points)
         # plot_all(dic_results, bands,  ylim=(40, 23),  is_time_points=is_plot_time_points)
