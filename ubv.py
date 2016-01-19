@@ -81,13 +81,15 @@ def plot_all(models_vels, models_dic, bands, callback=None, xlim=None, ylim=None
 
     # plot velocities
     if is_vel:
-        plot_vels_models(axVel, models_vels, is_time_points=is_time_points)
+        plot_vels_models(axVel, models_vels, xlim=axUbv.get_xlim())
+        plot_vels_sn87a(axVel, z=1.49)
+        axVel.legend(prop={'size': 8}, loc=4)
 
     plt.grid()
     plt.show()
 
 
-def plot_vels_models(ax, models_dic, xlim=None, ylim=None, is_time_points=True):
+def plot_vels_models(ax, models_dic, xlim=None, ylim=None):
     is_x_lim = xlim is None
     is_y_lim = ylim is None
 
@@ -102,12 +104,6 @@ def plot_vels_models(ax, models_dic, xlim=None, ylim=None, is_time_points=True):
         x = mdic['time']
         y = mdic['vel'] / 1e8
         ax.plot(x, y, label='Vel  %s' % mname, color='blue', ls="-", linewidth=lw)
-        if is_time_points:
-            integers = [np.abs(x - t).argmin() for t in t_points]  # set time points
-            for (X, Y) in zip(x[integers], y[integers]):
-                ax.annotate('{:.0f}'.format(X), xy=(X, Y), xytext=(-10, 20), ha='right',
-                            textcoords='offset points', color='blue',
-                            arrowprops=dict(arrowstyle='->', shrinkA=0))
         if is_x_lim:
             x_max.append(np.max(x))
         if is_y_lim:
@@ -115,12 +111,12 @@ def plot_vels_models(ax, models_dic, xlim=None, ylim=None, is_time_points=True):
 
     if is_x_lim:
         xlim = [-10, np.max(x_max) + 10.]
-        ax.set_xlim(xlim)
+    ax.set_xlim(xlim)
 
     if is_y_lim:
-        ylim = [1e-1, np.max(y_mid)+5]
+        ylim = [1e-1, np.max(y_mid) + 5]
         # ylim = [np.min(y_mid) + 7., np.min(y_mid) - 2.]
-        ax.set_ylim(ylim)
+    ax.set_ylim(ylim)
 
     ax.set_ylabel('Velocity')
     ax.set_xlabel('Time [days]')
@@ -253,7 +249,7 @@ def cosmology_D_by_z(z):
     return D
 
 
-def compute_vel(name, path, z=0., t_beg=1., t_diff=1.15):
+def compute_vel(name, path, z=0., t_beg=1., t_diff=1.05):
     model = Stella(name, path=path)
     if not model.is_res_data or not model.is_tt_data:
         if not model.is_res_data:
@@ -276,6 +272,8 @@ def compute_vel(name, path, z=0., t_beg=1., t_diff=1.15):
             continue
         t_beg = t
         radius = interpolate.splev(t, Rph_spline)
+        if np.isnan(radius):
+            radius = np.interp(t, tt['time'], tt['Rph'], 0, 0)  # One-dimensional linear interpolation.
         block = res.read_at_time(time=t)
         idx = np.abs(block['R14'] - radius / 1e14).argmin()
         radiuses.append(block['R14'][idx] * 1e14)
@@ -355,7 +353,7 @@ def mags_save(dictionary, bands, fname):
 ##
 def plot_tolstov(ax, band_shift):
     lw = 2.
-    fname = "/home/bakl/Desktop/Downloads/2/100z0E60Ni_6.ph.hsc.2"
+    fname = "~/Desktop/Downloads/2/100z0E60Ni_6.ph.hsc.2"
     data = np.loadtxt(fname, comments='#')
     fs = list('grizy')
     x = data[:, 0]
@@ -366,9 +364,32 @@ def plot_tolstov(ax, band_shift):
                 color=bcolor, ls="-.", linewidth=lw)
 
 
+def plot_vels_sn87a(ax, z=0):
+    print "Plot the velocities of Sn 87A "
+    d = os.path.expanduser('~/Sn/Release/svn_kepler/stella/branches/lucy/run/res/sncurve/sn1987a')
+
+    jd_shift = 2446850  # moment of explosion SN 1987A, Hamuy 1988, doi:10.1086/114613
+
+    # Blanco's data from plot
+    fs = {'Halpha': os.path.join(d, 'Halpha_blanco.csv'), 'Hbeta': os.path.join(d, 'Hbeta_blanco.csv'),
+          'Hgamma': os.path.join(d, 'Hgamma_blanco.csv'), 'NaID': os.path.join(d, 'NaID_blanco.csv'),
+          'FeII5018': os.path.join(d, 'FeII5018_blanco.csv'), 'FeII5169': os.path.join(d, 'FeII5169_blanco.csv')
+          }
+    elcolors = {'Halpha': "black", 'Hbeta': "cyan", 'Hgamma': "orange", 'NaID': "red", 'FeII5018': "orange",
+                'FeII5169': "magenta"}
+    elmarkers = {'Halpha': u's', 'Hbeta': u'x', 'Hgamma': u'd', 'NaID': u'+', 'FeII5018': u'D', 'FeII5169': u'o'}
+
+    for el, fname in fs.items():
+        data = np.loadtxt(fname, comments='#')
+        x = data[:, 0] - jd_shift
+        x *= 1. + z  # redshift
+        y = data[:, 1]
+        ax.plot(x, y, label='%s, SN 87A' % el, ls=".", color=elcolors[el], markersize=6, marker=elmarkers[el])
+
+
 def plot_snrefsdal(ax, band_shift, arg=None):
     print "Plot Sn Refsdal, "
-    d = '/home/bakl/Sn/my/papers/2016/snrefsdal/data'
+    d = os.path.expanduser('~/Sn/my/papers/2016/snrefsdal/data')
     if arg is None:
         jd_shift = -57000
     else:
@@ -389,7 +410,7 @@ def plot_snrefsdal(ax, band_shift, arg=None):
     # from Rodney_tbl4
     rodney = np.loadtxt(os.path.join(d, 'rodney_all.csv'), comments='#', skiprows=3)
     bands = np.unique(rodney[:, 0])
-    colS = 4  #  S4 - 8 col
+    colS = 4  # S4 - 8 col
     for b in bands:
         bn = 'F%sW' % int(b)
         data = rodney[rodney[:, 0] == b,]
@@ -401,12 +422,12 @@ def plot_snrefsdal(ax, band_shift, arg=None):
         ax.errorbar(x, y, yerr=yerr, fmt='o', color=bcolor, label='%s Sn, Rodney' % lbl(bn, band_shift))
         # print max
         t_min = data[np.argmin(y), 1]
-        print "t_max( %s) = %8.1f, shifted=%8.1f" % (bn, t_min, t_min+jd_shift)
+        print "t_max( %s) = %8.1f, shifted=%8.1f" % (bn, t_min, t_min + jd_shift)
 
     #
     if len(arg) > 1 is not None:
         band_max = 'F160W'
-        data = rodney[rodney[:, 0] == int(band_max[1:4]), ]  # extract maximum for F160W
+        data = rodney[rodney[:, 0] == int(band_max[1:4]),]  # extract maximum for F160W
         t_min = data[np.argmin(data[:, colS]), 1]
         print "Plot Sn Refsdal velocities: t_max( %s) = %8.1f" % (band_max, t_min)
         axVel = arg[-1]
@@ -415,7 +436,7 @@ def plot_snrefsdal(ax, band_shift, arg=None):
         y = data[:, 1]
         yerr = data[:, 2]
         bcolor = 'red'
-        axVel.errorbar(x, y, yerr=yerr, fmt='o', color=bcolor, label='r$H_{\alpha}$, Kelly')
+        axVel.errorbar(x, y, yerr=yerr, fmt='o', color=bcolor, label=r'$H_{\alpha}$, Kelly')
 
 
 def usage():

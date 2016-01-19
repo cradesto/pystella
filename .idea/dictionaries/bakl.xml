@@ -8,6 +8,7 @@
       <w>bcolor</w>
       <w>bessell</w>
       <w>blackbody</w>
+      <w>blanco</w>
       <w>bname</w>
       <w>bolometric</w>
       <w>boltzman</w>
@@ -24,7 +25,10 @@
       <w>fname</w>
       <w>freqs</w>
       <w>griuz</w>
+      <w>halpha</w>
       <w>hamuy</w>
+      <w>hbeta</w>
+      <w>hgamma</w>
       <w>icol</w>
       <w>irow</w>
       <w>kait</w>
