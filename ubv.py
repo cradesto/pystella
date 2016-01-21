@@ -83,7 +83,7 @@ def plot_all(models_vels, models_dic, bands, callback=None, xlim=None, ylim=None
     # plot velocities
     if is_vel:
         vel.plot_vels_models(axVel, models_vels, xlim=axUbv.get_xlim())
-        vel.plot_vels_sn87a(axVel, z=1.49)
+       # vel.plot_vels_sn87a(axVel, z=1.49)
         axVel.legend(prop={'size': 8}, loc=4)
 
     plt.grid()
@@ -243,9 +243,14 @@ def compute_vel(name, path, z=0., t_beg=1., t_diff=1.05):
         if np.isnan(radius):
             radius = np.interp(t, tt['time'], tt['Rph'], 0, 0)  # One-dimensional linear interpolation.
         block = res.read_at_time(time=t)
-        idx = np.abs(block['R14'] - radius / 1e14).argmin()
-        radiuses.append(block['R14'][idx] * 1e14)
-        vels.append(block['V8'][idx] * 1e8)
+        if True:
+            vel = np.interp(radius, block['R14']*1e14, block['V8'], 0, 0)  # One-dimensional linear interpolation.
+            vels.append(vel * 1e8)
+        else:
+            idx = np.abs(block['R14'] - radius / 1e14).argmin()
+            vels.append(block['V8'][idx] * 1e8)
+
+        radiuses.append(radius)
         times.append(t * (1. + z))  # redshifted time
 
     # show results
@@ -355,7 +360,7 @@ def plot_snrefsdal(ax, band_shift, arg=None):
     # from Rodney_tbl4
     rodney = np.loadtxt(os.path.join(d, 'rodney_all.csv'), comments='#', skiprows=3)
     bands = np.unique(rodney[:, 0])
-    colS = 4  # S4 - 8 col
+    colS = 2  #  S1 - 2 col  S4 - 8 col
     for b in bands:
         bn = 'F%sW' % int(b)
         data = rodney[rodney[:, 0] == b,]
@@ -532,7 +537,7 @@ def main(name='', model_ext='.ph'):
                 models_vels = None
                 print "Finish mags: %s [%d/%d]" % (name, i, len(names))
 
-        t = "%s, z=%4.2f D=%6.2e ebv=%5.2f" % (callback, z, distance, e)
+        t = "ts=%s z=%4.2f D=%6.2e mu=%3.1f ebv=%4.2f" % (callback.split(':', 1)[1], z, distance, magnification, e)
         plot_all(models_vels, models_mags, bands, callback=callback, is_time_points=is_plot_time_points, title=t)
         # plot_all(dic_results, bands,  xlim=(-10, 410), is_time_points=is_plot_time_points)
         # plot_all(dic_results, bands, xlim=(-10, 410), callback=callback, is_time_points=is_plot_time_points)
