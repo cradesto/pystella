@@ -4,6 +4,9 @@
 import numpy as np
 import os
 from os.path import dirname
+from scipy import interpolate
+
+from pystella.model.stella import Stella
 
 __author__ = 'bakl'
 
@@ -64,3 +67,49 @@ def plot_vels_models(ax, models_dic, xlim=None, ylim=None):
 
     ax.set_ylabel('Velocity')
     ax.set_xlabel('Time [days]')
+
+
+def compute_vel(name, path, z=0., t_beg=1., t_diff=1.05):
+    model = Stella(name, path=path)
+    if not model.is_res_data or not model.is_tt_data:
+        if not model.is_res_data:
+            print "There are no res-file for %s in the directory: %s " % (name, path)
+        if not model.is_tt_data:
+            print "There are no tt-file for %s in the directory: %s " % (name, path)
+        return None
+
+    res = model.get_res()
+    tt = model.read_tt_data()
+    tt = tt[tt['time'] >= t_beg]  # time cut  days
+
+    radiuses = list()
+    vels = list()
+    times = list()
+    Rph_spline = interpolate.splrep(tt['time'], tt['Rph'], s=0)
+    for nt in range(len(tt['time'])):
+        t = tt['time'][nt]
+        if t < t_beg or np.abs(t / t_beg < t_diff):
+            continue
+        t_beg = t
+        radius = interpolate.splev(t, Rph_spline)
+        if np.isnan(radius):
+            radius = np.interp(t, tt['time'], tt['Rph'], 0, 0)  # One-dimensional linear interpolation.
+        block = res.read_at_time(time=t)
+        if True:
+            vel = np.interp(radius, block['R14']*1e14, block['V8'], 0, 0)  # One-dimensional linear interpolation.
+            vels.append(vel * 1e8)
+        else:
+            idx = np.abs(block['R14'] - radius / 1e14).argmin()
+            vels.append(block['V8'][idx] * 1e8)
+
+        radiuses.append(radius)
+        times.append(t * (1. + z))  # redshifted time
+
+    # show results
+    res = np.array(np.zeros(len(vels)),
+                   dtype=np.dtype({'names': ['time', 'vel', 'r'],
+                                   'formats': [np.float64] * 3}))
+    res['time'] = times
+    res['vel'] = vels
+    res['r'] = radiuses
+    return res
