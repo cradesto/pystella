@@ -114,16 +114,37 @@ class SpectrumPlanck(Spectrum):
     def __init__(self, freq, temperature, name='bb'):
         flux = math.pi * rf.planck(freq, temperature=temperature)
         Spectrum.__init__(self, name, freq=freq, flux=flux)
-        self.T = temperature
+        self._T = temperature
         self.zeta = None
 
     @property
-    def Tbb(self):
-        return self.T
+    def T(self):
+        return self._T
 
     def correct_zeta(self, zeta):
         self.zeta = zeta
         self._flux *= zeta ** 2
+
+
+class SpectrumDilutePlanck(Spectrum):
+    """
+        Diluted Planck Spectrum
+    """
+
+    def __init__(self, freq, temperature, W, name='wbb'):
+        flux = math.pi * W * rf.planck(freq, temperature=temperature)
+        Spectrum.__init__(self, name, freq=freq, flux=flux)
+        self._W = W
+        self._T = temperature
+
+    @property
+    def T(self):
+        return self._T
+
+    @property
+    def W(self):
+        return self._W
+
 
 
 class SeriesSpectrum:

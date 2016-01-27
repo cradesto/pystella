@@ -49,7 +49,7 @@ def plot_all(models_vels, models_dic, bands, cb=None, xlim=None, ylim=None, is_t
 
     # plot callback
     if cb is not None:
-        cb.plot(axUbv)
+        cb.plot(axUbv, axVel)
 
     # finish plot
     axUbv.legend(prop={'size': 8}, loc=4)

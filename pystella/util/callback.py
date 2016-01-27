@@ -62,8 +62,14 @@ class CallBack(object):
 
         return method
 
-    def plot(self, ax):
-        self._func(ax, self._args)
+    def plot(self, ax, *args):
+        a = []
+        if self._args is not None:
+            a.extend(self._args)
+        if len(args) > 0:
+            a.extend(args)
+        # a.append(args)
+        self._func(ax, a)
 
     def run(self):
         self._func(self._args)
