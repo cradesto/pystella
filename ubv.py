@@ -24,7 +24,7 @@ __author__ = 'bakl'
 ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
 
 
-def plot_all(models_vels, models_dic, bands, cb=None, xlim=None, ylim=None, is_time_points=False, title=''):
+def plot_all(models_vels, models_dic, bands, cb=None, xlim=None, ylim=None, is_time_points=False, title='', fsave=None):
     colors = band.bands_colors()
     band_shift = dict((k, 0) for k, v in colors.items())  # no y-shift
     is_vel = models_vels is not None
@@ -64,7 +64,14 @@ def plot_all(models_vels, models_dic, bands, cb=None, xlim=None, ylim=None, is_t
         axVel.legend(prop={'size': 8}, loc=4)
 
     plt.grid()
+
     plt.show()
+
+    if fsave is not None:
+        print "Save plot to %s " % fsave
+        fig.savefig(fsave, bbox_inches='tight')
+        # plt.savefig(fsave, format='pdf')
+
 
 
 def compute_mag(name, path, bands, ext=None, z=0., distance=10., magnification=1., is_show_info=True, is_save=False):
@@ -139,8 +146,9 @@ def usage():
     print "  -d <distance> [pc].  Default: 10 pc"
     print "  -m <magnification>.  Default: None, used for grav lens"
     print "  -z <redshift>.  Default: 0"
-    print "  -s  silence mode: no info, no plot"
+    print "  -q  quiet mode: no info, no plot"
     print "  -t  plot time points"
+    print "  -s  save plot to pdf-file."
     print "  -v  plot model velocities."
     print "  -w  write magnitudes to file, default 'False'"
     print "  -h  print usage"
@@ -156,8 +164,9 @@ def lc_wrapper(param):
 
 
 def main(name='', model_ext='.ph'):
-    is_silence = False
+    is_quiet = False
     is_save_mags = False
+    is_save_plot = False
     is_plot_time_points = False
     is_extinction = False
     is_vel = False
@@ -169,7 +178,7 @@ def main(name='', model_ext='.ph'):
     callback = None
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hswtc:d:p:e:i:b:m:vz:")
+        opts, args = getopt.getopt(sys.argv[1:], "hqswtc:d:p:e:i:b:m:vz:")
     except getopt.GetoptError as err:
         print str(err)  # will print something like "option -a not recognized"
         usage()
@@ -207,8 +216,11 @@ def main(name='', model_ext='.ph'):
         if opt == '-c':
             callback = lc_wrapper(str(arg))
             continue
+        if opt == '-q':
+            is_quiet = True
+            continue
         if opt == '-s':
-            is_silence = True
+            is_save_plot = True
             continue
         if opt == '-w':
             is_save_mags = True
@@ -263,10 +275,10 @@ def main(name='', model_ext='.ph'):
         for name in names:
             i += 1
             mags = compute_mag(name, path, bands, ext=ext, z=z, distance=distance, magnification=magnification,
-                               is_show_info=not is_silence, is_save=is_save_mags)
+                               is_show_info=not is_quiet, is_save=is_save_mags)
             models_mags[name] = mags
 
-            if not is_silence:
+            if not is_quiet:
                 # z, distance = 0.145, 687.7e6  # pc for comparison with Maria
                 lc.plot_bands(mags, bands, title=name, fname='', is_time_points=is_plot_time_points)
 
@@ -286,7 +298,21 @@ def main(name='', model_ext='.ph'):
         else:
             t = "z=%4.2f D=%6.2e mu=%3.1f ebv=%4.2f" % (z, distance, magnification, e)
 
-        plot_all(models_vels, models_mags, bands, cb=callback, is_time_points=is_plot_time_points, title=t)
+        fsave = None
+        if is_save_plot:
+            if is_vel:
+                fsave = "ubv_vel_%s" % name
+            else:
+                fsave = "ubv_%s" % name
+
+            if is_extinction and e > 0:
+                fsave = "%s_e0%2d" % (fsave, int(e*100))  # bad formula for name
+
+            d = os.path.expanduser('~/')
+            # d = '/home/bakl/Sn/my/conf/2016/snrefsdal/img'
+            fsave = os.path.join(d, fsave) + '.pdf'
+
+        plot_all(models_vels, models_mags, bands, cb=callback, is_time_points=is_plot_time_points, title=t, fsave=fsave)
         # plot_all(dic_results, bands,  xlim=(-10, 410), is_time_points=is_plot_time_points)
         # plot_all(dic_results, bands, xlim=(-10, 410), callback=callback, is_time_points=is_plot_time_points)
         # plot_all(dic_results, bands,  ylim=(40, 23),  is_time_points=is_plot_time_points)
