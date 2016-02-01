@@ -33,7 +33,7 @@ def plot(ax, arg):
     # from Rodney_tbl4
     rodney = np.loadtxt(os.path.join(d, 'rodney_all.csv'), comments='#', skiprows=3)
     bands = np.unique(rodney[:, 0])
-    colS = 2  # S1 - 2, col  S2 - 4, S3 - 6, S4 - 8 col
+    colS = 4  # S1 - 2, col  S2 - 4, S3 - 6, S4 - 8 col
     for b in bands:
         bn = 'F%sW' % int(b)
         data = rodney[rodney[:, 0] == b, ]
