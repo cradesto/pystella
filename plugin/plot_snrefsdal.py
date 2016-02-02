@@ -6,22 +6,33 @@ from pystella.rf import band
 
 
 def plot(ax, arg):
-    #     plot_snrefsdal(ax=ax,  arg=arg)
-    #
-    #
-    # def plot_snrefsdal(ax, arg=None):
-    print "Plot Sn Refsdal, "
     d = os.path.expanduser('~/Sn/my/papers/2016/snrefsdal/data')
-    if arg is None:
-        jd_shift = -57000
-    else:
-        jd_shift = float(arg[0])
+    band_max = 'F160W'
+    print "Plot Sn Refsdal, path: %s, band_max=%s " % (d, band_max)
 
+    z = 0.
+
+    if arg is None:
+        jd_shift = -56950
+    else:
+        jd_shift = float(arg.pop(0))
+
+    t_min = plot_ubv(ax=ax, path=d, jd_shift=jd_shift, band_max=band_max)
+
+    if len(arg) > 0 is not None:
+        axVel = arg[-1]
+        if len(arg) > 0:
+            z = float(arg.pop(0))
+        print "Plot Sn Refsdal velocities: jd_shift=%8.1f t_max( %s) = %8.1f" % (jd_shift, band_max, t_min)
+        plot_vel(ax=axVel, path=d, jd_shift=jd_shift+t_min, z=z)
+
+
+def plot_ubv(ax, path, jd_shift, band_max):
     colors = band.bands_colors()
 
     # kelly's data from plot
     if False:
-        fs = {'F125W': os.path.join(d, 'snrefsdal_F125W_S2.csv'), 'F160W': d + 'snrefsdal_F160W_S2.csv'}
+        fs = {'F125W': os.path.join(path, 'snrefsdal_F125W_S2.csv'), 'F160W': path + 'snrefsdal_F160W_S2.csv'}
 
         for b, fname in fs.items():
             data = np.loadtxt(fname, comments='#')
@@ -31,7 +42,7 @@ def plot(ax, arg):
             ax.plot(x, y, label='%s Sn, Kelly' % b, ls=".", color=bcolor, markersize=8, marker="o")
 
     # from Rodney_tbl4
-    rodney = np.loadtxt(os.path.join(d, 'rodney_all.csv'), comments='#', skiprows=3)
+    rodney = np.loadtxt(os.path.join(path, 'rodney_all.csv'), comments='#', skiprows=3)
     bands = np.unique(rodney[:, 0])
     colS = 4  # S1 - 2, col  S2 - 4, S3 - 6, S4 - 8 col
     for b in bands:
@@ -47,16 +58,15 @@ def plot(ax, arg):
         t_min = data[np.argmin(y), 1]
         print "t_max( %s) = %8.1f, shifted=%8.1f" % (bn, t_min, t_min + jd_shift)
 
-    #
-    if len(arg) > 1 is not None:
-        band_max = 'F160W'
-        data = rodney[rodney[:, 0] == int(band_max[1:4]), ]  # extract maximum for F160W
-        t_min = data[np.argmin(data[:, colS]), 1]
-        print "Plot Sn Refsdal velocities: t_max( %s) = %8.1f" % (band_max, t_min)
-        axVel = arg[-1]
-        data = np.loadtxt(os.path.join(d, 'kelly_vel_halpha.txt'), comments='#', skiprows=2)
-        x = data[:, 0] + t_min + jd_shift
+    data = rodney[rodney[:, 0] == int(band_max[1:4]), ]  # extract maximum for F160W
+    t_min = data[np.argmin(data[:, colS]), 1]
+    return t_min
+
+
+def plot_vel(ax, path, jd_shift, z=0.):
+        data = np.loadtxt(os.path.join(path, 'kelly_vel_halpha.txt'), comments='#', skiprows=2)
+        x = data[:, 0]*(1.+z) + jd_shift
         y = data[:, 1]
         yerr = data[:, 2]
         bcolor = 'red'
-        axVel.errorbar(x, y, yerr=yerr, fmt='o', color=bcolor, label=r'$H_{\alpha}$, Kelly')
+        ax.errorbar(x, y, yerr=yerr, fmt='o', color=bcolor, label=r'$H_{\alpha}$, Kelly')

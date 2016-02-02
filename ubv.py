@@ -73,7 +73,6 @@ def plot_all(models_vels, models_dic, bands, cb=None, xlim=None, ylim=None, is_t
         # plt.savefig(fsave, format='pdf')
 
 
-
 def compute_mag(name, path, bands, ext=None, z=0., distance=10., magnification=1., is_show_info=True, is_save=False):
     """
         Compute magnitude in bands for the 'name' model.
@@ -306,7 +305,7 @@ def main(name='', model_ext='.ph'):
                 fsave = "ubv_%s" % name
 
             if is_extinction and e > 0:
-                fsave = "%s_e0%2d" % (fsave, int(e*100))  # bad formula for name
+                fsave = "%s_e0%2d" % (fsave, int(e * 100))  # bad formula for name
 
             d = os.path.expanduser('~/')
             # d = '/home/bakl/Sn/my/conf/2016/snrefsdal/img'
