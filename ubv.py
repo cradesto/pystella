@@ -1,22 +1,21 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import csv
+
 import getopt
 import os
 import sys
 from os.path import dirname
 from os.path import isfile, join
-from matplotlib import gridspec
-import matplotlib.pyplot as plt
 
-import pystella.util.callback  as cb
-from pystella import light_curve as lc
+import matplotlib.pyplot as plt
+from matplotlib import gridspec
+
+import pystella.util.callback as cb
+from pystella.rf import light_curve as lc
 from pystella import velocity as vel
-from pystella.model.stella import Stella
 from pystella.rf import band
 from pystella.rf import extinction
-from pystella.util import rf
 from pystella.util.phys_var import cosmology_D_by_z
 
 __author__ = 'bakl'
@@ -24,7 +23,8 @@ __author__ = 'bakl'
 ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
 
 
-def plot_all(models_vels, models_dic, bands, cb=None, xlim=None, ylim=None, is_time_points=False, title='', fsave=None):
+def plot_all(models_vels, models_dic, bands, call=None, xlim=None, ylim=None,
+             is_time_points=False, title='', fsave=None):
     colors = band.bands_colors()
     band_shift = dict((k, 0) for k, v in colors.items())  # no y-shift
     is_vel = models_vels is not None
@@ -48,10 +48,13 @@ def plot_all(models_vels, models_dic, bands, cb=None, xlim=None, ylim=None, is_t
                        is_time_points=is_time_points)
 
     # plot callback
-    if cb is not None:
-        cb.plot(axUbv, axVel)
+    if call is not None:
+        call.plot(axUbv, {'ax2': axVel})
 
     # finish plot
+    axUbv.set_ylabel('Magnitude')
+    axUbv.set_xlabel('Time [days]')
+
     axUbv.legend(prop={'size': 8}, loc=4)
     # ax.set_title(bset)
     if title:
@@ -71,65 +74,6 @@ def plot_all(models_vels, models_dic, bands, cb=None, xlim=None, ylim=None, is_t
         print "Save plot to %s " % fsave
         fig.savefig(fsave, bbox_inches='tight')
         # plt.savefig(fsave, format='pdf')
-
-
-def compute_mag(name, path, bands, ext=None, z=0., distance=10., magnification=1., is_show_info=True, is_save=False):
-    """
-        Compute magnitude in bands for the 'name' model.
-    :type ext: extinction
-    :param name: the name of a model and data files
-    :param path: the directory with data-files
-    :param bands: photometric bands
-    :param z: redshift, default 0
-    :param distance: distance to star in parsec, default 10 pc
-    :param magnification: gravitational lensing magnification
-    :param is_show_info: flag to write some information, default True
-    :param is_save: flag to save result in file, default False
-    :return: dictionary with keys = bands, value = star's magnitudes
-    """
-    model = Stella(name, path=path)
-    if is_show_info:
-        print ''
-        model.show_info()
-
-    if not model.is_spec_data:
-        print "No data for: " + str(model)
-        return None
-
-    # serial_spec = model.read_serial_spectrum(t_diff=0.)
-    serial_spec = model.read_serial_spectrum(t_diff=1.05)
-    mags = serial_spec.compute_mags(bands, z=z, dl=rf.pc_to_cm(distance), magnification=magnification)
-
-    if mags is not None:
-        fname = os.path.join(path, name + '.ubv')
-        if is_save:
-            mags_save(mags, bands, fname)
-            print "Magnitudes have been saved to " + fname
-
-    if is_show_info:
-        # print the time of maximum LC
-        tmin = 2.0
-        t = mags['time']
-        for n in bands:
-            t_min = t[t > tmin][mags[n][t > tmin].argmin()]
-            print "t_max(%s) = %f" % (n, t_min)
-
-    if ext is not None:
-        # add extinction
-        for n in bands:
-            mags[n] = mags[n] + ext[n]
-
-    return mags
-
-
-def mags_save(dictionary, bands, fname):
-    with open(fname, 'wb') as f:
-        writer = csv.writer(f, delimiter='\t')
-        writer.writerow(['{:^8s}'.format(x) for x in ['time'] + bands])
-        for i, (row) in enumerate(zip(*[dictionary[k] for k in 'time'.split() + bands])):
-            # row = row[-1:] + row[:-1]  # make time first column
-            writer.writerow(['{:8.3f}'.format(x) for x in row])
-            # writer.writerow(['{:3.4e}'.format(x) for x in row])
 
 
 def usage():
@@ -156,9 +100,7 @@ def usage():
 def lc_wrapper(param):
     a = param.split(':')
     func = a.pop(0)
-    c = cb.CallBack(func, path=cb.plugin_path, load=1, a=a)
-    # if len(a) > 0:
-    #     c.add_args(a)
+    c = cb.CallBack(func, path=cb.plugin_path, args=a, load=1)
     return c
 
 
@@ -273,7 +215,7 @@ def main(name='', model_ext='.ph'):
         i = 0
         for name in names:
             i += 1
-            mags = compute_mag(name, path, bands, ext=ext, z=z, distance=distance, magnification=magnification,
+            mags = lc.compute_mag(name, path, bands, ext=ext, z=z, distance=distance, magnification=magnification,
                                is_show_info=not is_quiet, is_save=is_save_mags)
             models_mags[name] = mags
 
@@ -311,7 +253,7 @@ def main(name='', model_ext='.ph'):
             # d = '/home/bakl/Sn/my/conf/2016/snrefsdal/img'
             fsave = os.path.join(d, fsave) + '.pdf'
 
-        plot_all(models_vels, models_mags, bands, cb=callback, is_time_points=is_plot_time_points, title=t, fsave=fsave)
+        plot_all(models_vels, models_mags, bands, call=callback, is_time_points=is_plot_time_points, title=t, fsave=fsave)
         # plot_all(dic_results, bands,  xlim=(-10, 410), is_time_points=is_plot_time_points)
         # plot_all(dic_results, bands, xlim=(-10, 410), callback=callback, is_time_points=is_plot_time_points)
         # plot_all(dic_results, bands,  ylim=(40, 23),  is_time_points=is_plot_time_points)

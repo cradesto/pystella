@@ -8,8 +8,8 @@ import sys
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 
-from pystella.rf import spectrum
-from pystella.util import rf
+from pystella.rf import spectrum, rad_func
+from pystella.util import rad_func
 from pystella.util.phys_var import phys
 
 
@@ -18,7 +18,7 @@ def plot_bb(Trad, Tcol, W1, W2, wl_lim=[100, 1e5, 100.]):
     # freq
     # nf, start, end = 100, 10., 1e5
     wl = np.exp(np.linspace(np.log(wl_lim[1]), np.log(wl_lim[0]), wl_lim[2]))
-    freq = rf.val_to_hz(wl, inp="A")
+    freq = rad_func.val_to_hz(wl, inp="A")
 
     sp_1 = spectrum.SpectrumDilutePlanck(freq, Trad, W1)
     sp_2 = spectrum.SpectrumDilutePlanck(freq, Tcol, W2)

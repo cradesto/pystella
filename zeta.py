@@ -1,19 +1,21 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-from scipy.optimize import fmin
-from scipy import interpolate
+import getopt
+import numpy as np
 import os
 import sys
-import getopt
 from os.path import isfile, join, dirname
-import numpy as np
-from matplotlib import gridspec
+from scipy import interpolate
+from scipy.optimize import fmin
+
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+from matplotlib import gridspec
+
+import pystella.rf.rad_func as rf
+from pystella.model.stella import Stella
 from pystella.rf import band, spectrum
 from pystella.rf.star import Star
-from pystella.model.stella import Stella
-import pystella.util.rf as rf
 from pystella.util.phys_var import phys
 from pystella.util.string_misc import cache_load, cache_name, cache_save
 

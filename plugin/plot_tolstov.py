@@ -2,8 +2,8 @@
 #  Callbacks
 ##
 import numpy as np
-import pystella.light_curve as lc
 
+import pystella.rf.light_curve as lc
 from pystella.rf import band
 
 

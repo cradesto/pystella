@@ -9,11 +9,11 @@ plugin_path = os.path.join(ROOT_DIRECTORY, 'plugin')
 
 
 class CallBack(object):
-    def __init__(self, func, path='./', load=1, a=None):
-        self._path = path
+    def __init__(self, func, path='./', args=None, load=1):
         self._func = None
+        self._path = path
         self._funcName = func
-        self._args = a
+        self._args = args
         if func is not None and load == 1:
             self._func = self.find_func
 
@@ -62,14 +62,17 @@ class CallBack(object):
 
         return method
 
-    def plot(self, ax, *args):
-        a = []
+    def plot(self, ax, dic=None):
+
+        if dic is None:
+            dic = {}
+
         if self._args is not None:
-            a.extend(self._args)
-        if len(args) > 0:
-            a.extend(args)
+            dic['args'] = self._args[:]
+        # if len(args) > 0:
+        #     dic..extend(args)
         # a.append(args)
-        self._func(ax, a)
+        self._func(ax, dic)
 
     def run(self):
         self._func(self._args)

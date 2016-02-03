@@ -8,7 +8,7 @@ __author__ = 'bakl'
 
 class Star:
     def __init__(self, name, spec=None, is_flux_eq_luminosity=False):
-        """Creates a Spectrum instance.  Required parameters:  name."""
+        """Creates a Star with Spectrum instance.  Required parameters:  name."""
         self.name = name
         self._sp = spec
         self.is_flux_eq_luminosity = is_flux_eq_luminosity

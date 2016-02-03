@@ -1,22 +1,14 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-from scipy.optimize import fmin
-from scipy import interpolate
+import getopt
 import os
 import sys
-import getopt
-from os.path import isfile, join, dirname
-import csv
-import numpy as np
+from os.path import dirname
 
-from matplotlib import gridspec
 import matplotlib.pyplot as plt
 
-from pystella.rf import band, spectrum
-from pystella.rf.star import Star
 from pystella.model.stella import Stella
-import pystella.util.rf as rf
-from pystella.util.phys_var import phys
+from pystella.rf import band
 
 __author__ = 'bakl'
 

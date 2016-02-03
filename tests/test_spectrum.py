@@ -1,8 +1,8 @@
-import unittest
 import numpy as np
+import unittest
 
+import pystella.rf.rad_func as rf
 import pystella.rf.spectrum as spectrum
-import pystella.util.rf as rf
 
 __author__ = 'bakl'
 

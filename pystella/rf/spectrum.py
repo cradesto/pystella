@@ -1,11 +1,13 @@
-from pystella.rf import band
-from pystella.rf.star import Star
 import math
 import numpy as np
-import matplotlib.pyplot as plt
-from scipy import interpolate, integrate
 import scipy.optimize as opt
-import pystella.util.rf as rf
+from scipy import interpolate, integrate
+
+import matplotlib.pyplot as plt
+
+import pystella.rf.rad_func as rf
+from pystella.rf import band
+from pystella.rf.star import Star
 from pystella.util.phys_var import phys
 
 __author__ = 'bakl'

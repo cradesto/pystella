@@ -11,7 +11,7 @@ from scipy.optimize import fmin
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 
-import pystella.util.rf as rf
+import pystella.rf.rad_func as rf
 from pystella.model.stella import Stella
 from pystella.rf import band, spectrum
 from pystella.rf.star import Star

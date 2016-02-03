@@ -22,6 +22,7 @@
       <w>dessart</w>
       <w>dmdt</w>
       <w>dtype</w>
+      <w>facecolor</w>
       <w>fname</w>
       <w>freqs</w>
       <w>fsave</w>
@@ -36,8 +37,10 @@
       <w>lambdaeff</w>
       <w>lims</w>
       <w>lntypes</w>
+      <w>masamune</w>
       <w>mdic</w>
       <w>mname</w>
+      <w>oguri</w>
       <w>pystella</w>
       <w>refsdal</w>
       <w>schlafly</w>

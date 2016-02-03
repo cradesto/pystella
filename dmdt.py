@@ -1,18 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-import os
-from scipy import interpolate
-import sys
 import getopt
-from os.path import isfile, join, dirname
 import numpy as np
+import os
+import sys
+from os.path import isfile, join, dirname
+from scipy import interpolate
 
-from matplotlib import gridspec
 import matplotlib.pyplot as plt
+from matplotlib import gridspec
 
-from pystella.rf import band
+import pystella.rf.rad_func as rf
 from pystella.model.stella import Stella
-import pystella.util.rf as rf
+from pystella.rf import band
 
 __author__ = 'bakl'
 

@@ -1,10 +1,11 @@
-import unittest
 import numpy as np
-import pylab as plt
+import unittest
 from scipy.optimize import curve_fit
 
+import pylab as plt
+
+import pystella.rf.rad_func as rf
 import pystella.rf.spectrum as spectrum
-import pystella.util.rf as rf
 
 __author__ = 'bakl'
 

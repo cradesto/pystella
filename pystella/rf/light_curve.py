@@ -1,8 +1,14 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+import csv
 import numpy as np
+import os
+
 import matplotlib.pyplot as plt
+
+import pystella.rf.rad_func as rf
+from pystella.model.stella import Stella
 from pystella.rf import band
 
 __author__ = 'bakl'
@@ -33,9 +39,9 @@ def lbl(b, band_shift):
     return l
 
 
-def plot_ubv_models(ax, models_dic, bands, band_shift, xlim=None, ylim=None, is_time_points=True):
-    is_x_lim = xlim is None
-    is_y_lim = ylim is None
+def plot_ubv_models(ax, models_dic, bands, band_shift, xlim=None, ylim=None, is_time_points=False):
+    is_x_lim = xlim is not None
+    is_y_lim = ylim is not None
 
     t_points = [0.2, 1, 2, 3, 4, 5, 10, 20, 40, 80, 150]
 
@@ -60,22 +66,21 @@ def plot_ubv_models(ax, models_dic, bands, band_shift, xlim=None, ylim=None, is_
                     ax.annotate('{:.0f}'.format(X), xy=(X, Y), xytext=(-10, 20), ha='right',
                                 textcoords='offset points', color=bcolor,
                                 arrowprops=dict(arrowstyle='->', shrinkA=0))
-            if is_x_lim:
+            if not is_x_lim:
                 x_max.append(np.max(x))
-            if is_y_lim:
+            if not is_y_lim:
                 y_mid.append(np.min(y))
 
-    if is_x_lim:
+    if not is_x_lim:
         xlim = [-10, np.max(x_max) + 10.]
-        ax.set_xlim(xlim)
+    if not is_y_lim:
+        ylim = [np.min(y_mid) + 7., np.min(y_mid) - 2.]
 
     ax.invert_yaxis()
-    if is_y_lim:
-        ylim = [np.min(y_mid) + 7., np.min(y_mid) - 2.]
-        ax.set_ylim(ylim)
-
-    ax.set_ylabel('Magnitude')
-    ax.set_xlabel('Time [days]')
+    # if is_x_lim:
+    ax.set_xlim(xlim)
+    # if is_y_lim:
+    ax.set_ylim(ylim)
 
 
 def plot_bands(dict_mags, bands, title='', fname='', distance=10., is_time_points=True):
@@ -144,3 +149,64 @@ def plot_bands(dict_mags, bands, title='', fname='', distance=10., is_time_point
         plt.savefig("ubv_%s.png" % fname, format='png')
     plt.show()
     # plt.close()
+
+
+
+
+def compute_mag(name, path, bands, ext=None, z=0., distance=10., magnification=1., is_show_info=True, is_save=False):
+    """
+        Compute magnitude in bands for the 'name' model.
+    :type ext: extinction
+    :param name: the name of a model and data files
+    :param path: the directory with data-files
+    :param bands: photometric bands
+    :param z: redshift, default 0
+    :param distance: distance to star in parsec, default 10 pc
+    :param magnification: gravitational lensing magnification
+    :param is_show_info: flag to write some information, default True
+    :param is_save: flag to save result in file, default False
+    :return: dictionary with keys = bands, value = star's magnitudes
+    """
+    model = Stella(name, path=path)
+    if is_show_info:
+        print ''
+        model.show_info()
+
+    if not model.is_spec_data:
+        print "No data for: " + str(model)
+        return None
+
+    # serial_spec = model.read_serial_spectrum(t_diff=0.)
+    serial_spec = model.read_serial_spectrum(t_diff=1.05)
+    mags = serial_spec.compute_mags(bands, z=z, dl=rf.pc_to_cm(distance), magnification=magnification)
+
+    if mags is not None:
+        fname = os.path.join(path, name + '.ubv')
+        if is_save:
+            mags_save(mags, bands, fname)
+            print "Magnitudes have been saved to " + fname
+
+    if is_show_info:
+        # print the time of maximum LC
+        tmin = 2.0
+        t = mags['time']
+        for n in bands:
+            t_min = t[t > tmin][mags[n][t > tmin].argmin()]
+            print "t_max(%s) = %f" % (n, t_min)
+
+    if ext is not None:
+        # add extinction
+        for n in bands:
+            mags[n] = mags[n] + ext[n]
+
+    return mags
+
+
+def mags_save(dictionary, bands, fname):
+    with open(fname, 'wb') as f:
+        writer = csv.writer(f, delimiter='\t')
+        writer.writerow(['{:^8s}'.format(x) for x in ['time'] + bands])
+        for i, (row) in enumerate(zip(*[dictionary[k] for k in 'time'.split() + bands])):
+            # row = row[-1:] + row[:-1]  # make time first column
+            writer.writerow(['{:8.3f}'.format(x) for x in row])
+            # writer.writerow(['{:3.4e}'.format(x) for x in row])

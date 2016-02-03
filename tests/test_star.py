@@ -1,10 +1,11 @@
-import unittest
-import pystella.rf.band as band
-import pystella.rf.spectrum as spectrum
 import numpy as np
+import unittest
+
+import pystella.rf.band as band
+import pystella.rf.rad_func as rf
+import pystella.rf.spectrum as spectrum
 from pystella.rf.star import Star
 from pystella.util.phys_var import phys
-import pystella.util.rf as rf
 
 __author__ = 'bakl'
 
