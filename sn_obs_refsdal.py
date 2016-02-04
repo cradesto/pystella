@@ -249,7 +249,7 @@ def main(name='', model_ext='.ph'):
 
     if is_vel:
         run_ubv_vel(name, path, bands, e, z, distance, magnification, callback,
-                    is_show_info=not is_quiet, is_save=is_save)
+                    is_vel=is_vel, is_show_info=not is_quiet, is_save=is_save)
     else:
         run_S4(name, path, bands, e, z, distance, magnification, callback
                , is_save=is_save)
@@ -300,8 +300,16 @@ def run_S4(name, path, bands, e, z, distance, magnification, callback, is_save):
         print "There are no sn images"
 
 
-def run_ubv_vel(name, path, bands, ext, z, distance, magnification, callback,
+def run_ubv_vel(name, path, bands, e, z, distance, magnification, callback,
                 is_vel, is_show_info, is_save):
+    if e > 0:
+        if z > 1:
+            ext = extinction.extinction_law_z(ebv=e, bands=bands, z=z)
+        else:
+            ext = extinction.extinction_law(ebv=e, bands=bands)
+    else:
+        ext = None
+
     models_mags = {}
     models_vels = {}
 

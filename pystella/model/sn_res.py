@@ -48,8 +48,8 @@ class StellaRes:
         # dt = np.dtype(','.join(tmp))
         # dt = np.dtype({'names': cols, 'formats': [np.float64] * len(cols)})
         with open(fname) as f_in:
-            b = np.genfromtxt(itertools.islice(f_in, start-1, end)
-                                  , names=cols, dtype=dt, delimiter=delimiter)
+            b = np.genfromtxt(itertools.islice(f_in, start-1, end),
+                                  names=cols, dtype=dt, delimiter=delimiter)
 
         # cols = ["z", "m", "r", "rho", "v", "T", "Trad"]
         # dt = np.dtype({'names': cols, 'formats': [np.float64] * len(cols)})
