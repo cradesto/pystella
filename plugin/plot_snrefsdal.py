@@ -44,8 +44,15 @@ def plot(ax, dic=None):
         axVel = dic['ax2']
         if len(arg) > 0:
             z = float(arg.pop(0))
-        print "Plot Sn Refsdal velocities: jd_shift=%8.1f t_max( %s) = %8.1f" % (jd_shift, band_max, t_min)
+        print "Plot Sn Refsdal velocities: jd_shift=%8.1f t_max( %s) = %8.1f dt_exp = %8.1f"\
+              % (jd_shift, band_max, t_min, t_min+jd_shift)
         plot_vel(ax=axVel, path=d, jd_shift=jd_shift + t_min, z=z)
+
+        # show spectral obs.
+        dt = 1
+        ts_obs = np.array([57033, 57158])
+        for t in ts_obs+jd_shift:
+             axVel.axvspan(t-dt, t+dt, facecolor='r', alpha=0.5)
 
 
 def plot_ubv(ax, path, jd_shift, band_max, image='S1'):
@@ -111,7 +118,13 @@ def plot_ubv(ax, path, jd_shift, band_max, image='S1'):
 def plot_vel(ax, path, jd_shift, z=0.):
     data = np.loadtxt(os.path.join(path, 'kelly_vel_halpha.txt'), comments='#', skiprows=2)
     x = data[:, 0] * (1. + z) + jd_shift
-    y = data[:, 1]
-    yerr = data[:, 2]
+    xerr = data[:, 1] * (1. + z)
+    y = data[:, 2]
+    yerr = data[:, 3]
     bcolor = 'red'
-    ax.errorbar(x, y, yerr=yerr, fmt='o', color=bcolor, label=r'$H_{\alpha}$, Kelly')
+    ax.errorbar(x, y, xerr=xerr, yerr=yerr, fmt='o', color=bcolor, label=r'$H_{\alpha}$, Kelly')
+
+    # for xlim in zip(x-xerr, x+xerr):
+    #     ax.axvspan(xlim[0], xlim[1], facecolor='g', alpha=0.5)
+    # # ylim = ax.get_ylim()
+    # fb = ax.fill_between([x-errx, x+errx], ylim[0], ylim[1], facecolor='blue', alpha=0.2, label='Visible')

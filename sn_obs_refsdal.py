@@ -8,6 +8,7 @@ import sys
 from os.path import dirname
 
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib import gridspec
 
 import plugin.plot_snrefsdal as sn_obs
@@ -98,8 +99,19 @@ def plot_all(models_vels, models_dic, bands, call=None, xlim=None, ylim=None,
     gs1.update(wspace=0.3, hspace=0.3, left=0.1, right=0.95)
 
     # plot the light curves
-    lc.plot_ubv_models(axUbv, models_dic, bands, band_shift=band_shift, xlim=xlim, ylim=ylim,
+    lc_min = lc.plot_ubv_models(axUbv, models_dic, bands, band_shift=band_shift, xlim=xlim, ylim=ylim,
                        is_time_points=is_time_points)
+
+    # show  times of spectral observations
+    dt = 1.
+    z = 1.49
+    ts = np.array([-47, 16])  # see spectral dates in Kelly, 1512.09093
+    ts *= 1. + z
+    for bname, v in lc_min.items():
+        if bname == 'F160W':
+            for t in ts:
+                axVel.axvspan(v[0]+t-dt, v[0]+t+dt, facecolor='g', alpha=0.5)
+                print "Spectral obs: t=%8.1f, tmax=%8.1f" % (v[0]+t, v[0])
 
     # plot callback
     if call is not None:
@@ -119,6 +131,8 @@ def plot_all(models_vels, models_dic, bands, call=None, xlim=None, ylim=None,
         vel.plot_vels_models(axVel, models_vels, xlim=axUbv.get_xlim())
         # vel.plot_vels_sn87a(axVel, z=1.49)
         axVel.legend(prop={'size': 8}, loc=4)
+        # for xlim in zip(x-xerr, x+xerr):
+        #     axVel.axvspan(xlim[0], xlim[1], facecolor='g', alpha=0.5)
 
     plt.grid()
 
@@ -193,7 +207,8 @@ def main(name='', model_ext='.ph'):
                 #     print 'Error: you should specify the name of model.'
                 #     sys.exit(2)
 
-    bands = ['U', 'B', 'V', 'R', "I"]
+    bands = 'F105W-F125W-F140W-F160W-F435W-F606W-F814W'.split('-')
+    # bands = ['U', 'B', 'V', 'R', "I"]
     # bands = ['U', 'B', 'V', 'R', "I", 'UVM2', "UVW1", "UVW2", 'g', "r", "i"]
 
     for opt, arg in opts:
@@ -331,9 +346,9 @@ def run_ubv_vel(name, path, bands, e, z, distance, magnification, callback,
         print "Finish mags: %s " % name
 
     if callback is not None:
-        t = "ts=%s z=%4.2f D=%6.2e mu=%3.1f ebv=%4.2f" % (callback.arg_totext(0), z, distance, magnification, ext)
+        t = "ts=%s z=%4.2f D=%6.2e mu=%3.1f ebv=%4.2f" % (callback.arg_totext(0), z, distance, magnification, e)
     else:
-        t = "z=%4.2f D=%6.2e mu=%3.1f ebv=%4.2f" % (z, distance, magnification, ext)
+        t = "z=%4.2f D=%6.2e mu=%3.1f ebv=%4.2f" % (z, distance, magnification, e)
 
     fsave = None
     if is_save:
@@ -350,11 +365,6 @@ def run_ubv_vel(name, path, bands, e, z, distance, magnification, callback,
         fsave = os.path.join(d, fsave) + '.pdf'
 
     plot_all(models_vels, models_mags, bands, call=callback, is_time_points=False, title=t, fsave=fsave)
-    # else:
-    #     plot_S4(models_mags, bands, call=callback, title=t, fsave=fsave)
-    # plot_all(dic_results, bands,  xlim=(-10, 410), is_time_points=is_plot_time_points)
-    # plot_all(dic_results, bands, xlim=(-10, 410), callback=callback, is_time_points=is_plot_time_points)
-    # plot_all(dic_results, bands,  ylim=(40, 23),  is_time_points=is_plot_time_points)
 
 
 if __name__ == '__main__':

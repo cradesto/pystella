@@ -49,7 +49,9 @@ def plot_ubv_models(ax, models_dic, bands, band_shift, xlim=None, ylim=None, is_
     mi = 0
     ib = 0
     x_max = []
+    y_min = {}
     y_mid = []
+    lc_min = {}
     for mname, mdic in models_dic.iteritems():
         mi += 1
         for bname in bands:
@@ -60,12 +62,15 @@ def plot_ubv_models(ax, models_dic, bands, band_shift, xlim=None, ylim=None, is_
             ax.plot(x, y, label='%s  %s' % (lbl(bname, band_shift), mname), color=bcolor, ls="-", linewidth=lw)
             # ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label='%s  %s' % (lbl(bname, band_shift), mname),
             #         markersize=4, color=bcolor, ls="-", linewidth=lw)
+
             if is_time_points:
                 integers = [np.abs(x - t).argmin() for t in t_points]  # set time points
                 for (X, Y) in zip(x[integers], y[integers]):
                     ax.annotate('{:.0f}'.format(X), xy=(X, Y), xytext=(-10, 20), ha='right',
                                 textcoords='offset points', color=bcolor,
                                 arrowprops=dict(arrowstyle='->', shrinkA=0))
+            idx = np.argmin(y)
+            lc_min[bname] = [x[idx], y[idx]]
             if not is_x_lim:
                 x_max.append(np.max(x))
             if not is_y_lim:
@@ -82,6 +87,7 @@ def plot_ubv_models(ax, models_dic, bands, band_shift, xlim=None, ylim=None, is_
     # if is_y_lim:
     ax.set_ylim(ylim)
 
+    return lc_min
 
 def plot_bands(dict_mags, bands, title='', fname='', distance=10., is_time_points=True):
     plt.title(''.join(bands) + ' filter response')
