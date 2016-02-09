@@ -33,12 +33,18 @@ class CallBack(object):
     def FuncFileFull(self):
         return os.path.join(self.path, self.FuncFile)
 
-    def arg_totext(self, idx):
+    def get_arg(self, idx):
         if self._args is None:
-            return ''
+            return None
         if len(self._args) > idx:
             return self._args[idx]
-        return ''
+        return None
+
+    def arg_totext(self, idx):
+        res = self.get_arg(idx)
+        if res is None:
+            return ''
+        return res
 
     def add_args(self, *args):
         self._args = args

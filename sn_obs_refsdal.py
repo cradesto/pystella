@@ -24,7 +24,7 @@ __author__ = 'bakl'
 ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
 
 
-def plot_S4(models_dic, bands, call=None, xlim=None, ylim=None, title='', fsave=None):
+def plot_S4(models_dic, bands, glens, call=None, xlim=None, ylim=None, title='', fsave=None):
     set_images = ['S1', 'S2', 'S3', 'S4']
     colors = band.bands_colors()
     band_shift = dict((k, 0) for k, v in colors.items())  # no y-shift
@@ -62,9 +62,9 @@ def plot_S4(models_dic, bands, call=None, xlim=None, ylim=None, title='', fsave=
         lc.plot_ubv_models(ax, {im: models_dic[im]}, bands, band_shift=band_shift, xlim=xlim, ylim=ylim)
         # plot callback
         if call is not None:
-            call.plot(ax, {'image': im})
+            call.plot(ax, {'glens': glens, 'image': im})
 
-        ax.text(15, 23.5, im, bbox={'facecolor': 'blue', 'alpha': 0.2, 'pad': 10})
+        ax.text(15, 23.5, '%s: %s' % (im, glens), bbox={'facecolor': 'blue', 'alpha': 0.2, 'pad': 10})
 
     # plt.legend(prop={'size': 8}, bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
     ax_cache[2].legend(prop={'size': 8}, loc='upper center', bbox_to_anchor=(0.02, 1.2),
@@ -146,7 +146,8 @@ def plot_all(models_vels, models_dic, bands, call=None, xlim=None, ylim=None,
 
 def usage():
     bands = band.band_get_names().keys()
-    print "Usage:"
+    print "Usage: lens: "
+    print "      grav. lens: ogu-a sha-a die-a "
     print "  ubv.py [params]"
     print "  -b <bands>: string, default: U-B-V-R-I, for example U-B-V-R-I-u-g-i-r-z-UVW1-UVW2.\n" \
           "     Available: " + '-'.join(sorted(bands))
@@ -279,7 +280,11 @@ def run_S4(name, path, bands, e, z, distance, magnification, callback, is_save):
     else:
         ext = None
 
-    sn_images = sn_obs.coef_magnification('oguri')
+    glens = callback.get_arg(2)
+    if glens is None:
+        glens = sn_obs.grav_lens_def
+
+    sn_images = sn_obs.coef_magnification(glens)
     if len(sn_images) > 0:
         models_mags = {}  # dict((k, None) for k in names)
         i = 0
@@ -310,7 +315,7 @@ def run_S4(name, path, bands, e, z, distance, magnification, callback, is_save):
             # d = '/home/bakl/Sn/my/conf/2016/snrefsdal/img'
             fsave = os.path.join(d, fsave) + '.pdf'
 
-        plot_S4(models_mags, bands, call=callback, title=t, fsave=fsave)
+        plot_S4(models_mags, bands, glens=glens, call=callback, title=t, fsave=fsave)
     else:
         print "There are no sn images"
 

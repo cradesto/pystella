@@ -4,17 +4,27 @@ import numpy as np
 
 from pystella.rf import band
 
+grav_lens_def = 'ogu-a'
 
-def coef_time_delay(model):
-    a = {'oguri':
-             {'S1': 0, 'S2': 9.4, 'S3': 5.6, 'S4': 20.9, 'SX': 335.6}
+
+def coef_time_delay(model):  # see http://arxiv.org/abs/1510.05750
+    a = {'ogu-a':
+             {'S1': 0, 'S2': 9.4, 'S3': 5.6, 'S4': 20.9, 'SX': 335.6},
+         'sha-a':
+             {'S1': 0, 'S2': 8., 'S3': 5., 'S4': 17., 'SX': 233.},
+         'die-a':
+             {'S1': 0, 'S2': -17., 'S3': -4., 'S4': 74., 'SX': 262.}
          }
     return a[model]
 
 
 def coef_magnification(model):
-    a = {'oguri':  # Masamune Oguri
-              {'S1': 1., 'S2': 17.7 / 15.4, 'S3': 18.3 / 15.4, 'S4': 9.8 / 15.4, 'SX': 4.2 / 15.4}
+    a = {'ogu-a':  # Masamune Oguri
+             {'S1': 1., 'S2': 17.7 / 15.4, 'S3': 18.3 / 15.4, 'S4': 9.8 / 15.4, 'SX': 4.2 / 15.4},
+         'sha-a':  # Sharon & Johnson (2015)
+             {'S1': 1., 'S2': 0.8, 'S3': 1.46, 'S4': 0.44, 'SX': 0.19},
+         'die-a':  # Diego et al. (2015)
+             {'S1': 1., 'S2': 1.89, 'S3': 0.64, 'S4': 0.35, 'SX': 0.31}
          }
     return a[model]
 
@@ -22,14 +32,16 @@ def coef_magnification(model):
 def plot(ax, dic=None):
     d = os.path.expanduser('~/Sn/my/papers/2016/snrefsdal/data')
     band_max = 'F160W'
-    print "Plot Sn Refsdal, path: %s, band_max=%s " % (d, band_max)
 
     z = 0.
     arg = None
     im = 'S1'
+    glens = grav_lens_def
 
     if 'args' in dic:
         arg = dic['args']
+    if 'glens' in dic:
+        glens = dic['glens']
     if 'image' in dic:
         im = dic['image']
 
@@ -38,24 +50,26 @@ def plot(ax, dic=None):
     else:
         jd_shift = float(arg.pop(0))
 
-    t_min = plot_ubv(ax=ax, path=d, jd_shift=jd_shift, band_max=band_max, image=im)
+    print "Plot Sn Refsdal glens: %s, path: %s, band_max=%s " % (glens, d, band_max)
+
+    t_min = plot_ubv(ax=ax, path=d, jd_shift=jd_shift, band_max=band_max, glens=glens, image=im)
 
     if 'ax2' in dic and dic['ax2'] is not None:
         axVel = dic['ax2']
         if len(arg) > 0:
             z = float(arg.pop(0))
-        print "Plot Sn Refsdal velocities: jd_shift=%8.1f t_max( %s) = %8.1f dt_exp = %8.1f"\
-              % (jd_shift, band_max, t_min, t_min+jd_shift)
+        print "Plot Sn Refsdal velocities: jd_shift=%8.1f t_max( %s) = %8.1f dt_exp = %8.1f" \
+              % (jd_shift, band_max, t_min, t_min + jd_shift)
         plot_vel(ax=axVel, path=d, jd_shift=jd_shift + t_min, z=z)
 
         # show spectral obs.
         dt = 1
         ts_obs = np.array([57033, 57158])
-        for t in ts_obs+jd_shift:
-             axVel.axvspan(t-dt, t+dt, facecolor='r', alpha=0.5)
+        for t in ts_obs + jd_shift:
+            axVel.axvspan(t - dt, t + dt, facecolor='r', alpha=0.5)
 
 
-def plot_ubv(ax, path, jd_shift, band_max, image='S1'):
+def plot_ubv(ax, path, jd_shift, band_max, glens, image):
     colors = band.bands_colors()
 
     # kelly's data from plot
@@ -74,7 +88,7 @@ def plot_ubv(ax, path, jd_shift, band_max, image='S1'):
     bands = np.unique(rodney[:, 0])
     sn_images = {'S1': 2, 'S2': 4, 'S3': 6, 'S4': 8}
 
-    time_delay = coef_time_delay('oguri')
+    time_delay = coef_time_delay(glens)
 
     colS = sn_images[image]  # S1 - 2, col  S2 - 4, S3 - 6, S4 - 8 col
 
@@ -100,15 +114,15 @@ def plot_ubv(ax, path, jd_shift, band_max, image='S1'):
         xxx = x[lowerlimits]
         if len(xx) > 0:
             yyy = y[lowerlimits]
-            yerr = [-0.5*np.ones(xxx.shape), np.zeros(xxx.shape)]
+            yerr = [-0.5 * np.ones(xxx.shape), np.zeros(xxx.shape)]
             # print '%s: xxx=%s & yyy=%s lowerlimits=%s' % (bn, xxx.shape, yyy.shape, lowerlimits.shape)
             ax.errorbar(xxx, yyy, yerr=yerr, lolims=True, fmt='kv', color=bcolor, lw=1.2)
 
         # ax.errorbar(x, y, yerr=yerr, lolims=lowerlimits, fmt='o', color=bcolor, label='%s Sn, Rodney' % bn)
 
         # print max
-        t_min = data[np.argmin(y), 1]
-        print "t_max( %s) = %8.1f, shifted=%8.1f" % (bn, t_min, t_min + jd_shift)
+        # t_min = data[np.argmin(y), 1]
+        # print "t_max( %s) = %8.1f, shifted=%8.1f" % (bn, t_min, t_min + jd_shift)
 
     data = rodney[rodney[:, 0] == int(band_max[1:4]),]  # extract maximum for F160W
     t_min = data[np.argmin(data[:, colS]), 1]
