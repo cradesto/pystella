@@ -49,7 +49,7 @@ def main(name=''):
         for opt, arg in opts:
             if opt == '-i':
                 path = ROOT_DIRECTORY
-                name = str(arg)
+                name = os.path.basename(str(arg))
                 break
 
     # elements = sneve.eve_elements
