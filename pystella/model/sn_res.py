@@ -2,7 +2,6 @@ import os
 import numpy as np
 import itertools
 import re
-from reportlab.graphics.charts.axes import _AxisG
 
 __author__ = 'bakl'
 
