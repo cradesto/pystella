@@ -52,7 +52,9 @@ def main(name=''):
                 name = str(arg)
                 break
 
-    elements = sneve.eve_elements
+    # elements = sneve.eve_elements
+    elements = ['H', 'He', 'C', 'O', 'Si', 'Fe', 'Ni', 'Ni56']
+
     for opt, arg in opts:
         if opt == '-b':
             elements = str(arg).split('-')

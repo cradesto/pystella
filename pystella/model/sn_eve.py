@@ -11,11 +11,16 @@ logger.setLevel(logging.INFO)
 __author__ = 'bakl'
 
 eve_elements = map(str.strip, "Ni56 H He C N O Ne Na  Mg  Al  Si  S  Ar  Ca  Fe  Ni".split())
-eve_colors = dict(Ni56="black", H="blue", He="magenta", C="indigo", N="red",
+eve_colors = dict(Ni56="black", H="blue", He="magenta", C="coral", N="red",
                   O="cyan", Ne="green", Na="sandybrown",
-                  Mg="skyblue", Si="fuchsia", Al="lime",
-                  S="coral", Ar="olive", Ca="purple",
-                  Fe='orange', Ni='dimgray')
+                  Mg="skyblue", Si="violet", Al="lime",
+                  S="indigo", Ar="olive", Ca="purple",
+                  Fe='maroon', Ni='steelblue')
+eve_lntypes = dict((k, '-') for k, v in eve_colors.items())  # no y-shift
+eve_lntypes['O'] = '--'
+eve_lntypes['Ni'] = '--'
+eve_lntypes['Si'] = '--'
+eve_lntypes['Fe'] = '--'
 
 
 class StellaEve:
@@ -88,7 +93,7 @@ class StellaEve:
         is_x_lim = xlim is not None
         is_y_lim = ylim is not None
 
-        lw = 1.
+        lw = 2.
         ib = 0
         x_max = []
         y_mid = []
@@ -96,8 +101,7 @@ class StellaEve:
         for el in elements:
             ib += 1
             y = self._data[el]
-            bcolor = eve_colors[el]
-            ax.plot(x, y, label='%s' % el, color=bcolor, ls="-", linewidth=lw, )
+            ax.plot(x, y, label='%s' % el, color=eve_colors[el], ls=eve_lntypes[el], linewidth=lw)
 
             if not is_x_lim:
                 x_max.append(np.max(x))
