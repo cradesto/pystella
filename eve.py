@@ -15,6 +15,9 @@ __author__ = 'bakl'
 ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
 logging.basicConfig()
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
 
 def usage():
     elements = sneve.eve_elements
@@ -49,7 +52,7 @@ def main(name=''):
         for opt, arg in opts:
             if opt == '-i':
                 path = ROOT_DIRECTORY
-                name = os.path.basename(str(arg))
+                name = os.path.splitext(os.path.basename(str(arg)))[0]
                 break
 
     # elements = sneve.eve_elements
@@ -60,7 +63,7 @@ def main(name=''):
             elements = str(arg).split('-')
             for e in elements:
                 if not sneve.eve_elements(e):
-                    print 'No such element: ' + e
+                    logger.error('No such element: ' + e)
                     sys.exit(2)
             continue
         if opt == '-s':
@@ -69,19 +72,22 @@ def main(name=''):
         if opt == '-p':
             path = os.path.expanduser(str(arg))
             if not (os.path.isdir(path) and os.path.exists(path)):
-                print "No such directory: " + path
+                logger.error("No such directory: " + path)
                 sys.exit(2)
             continue
         elif opt == '-h':
             usage()
             sys.exit(2)
 
-    print "Plot chemical : %s %s" % (path, name)
+    print "Run eve-model %s in %s" % (name, path)
 
     eve = sneve.StellaEve(name, path=path)
     if eve.is_rho_data:
         eve.rho_load()
         eve.plot_chem(elements=elements, ylim=[-6, 0.], is_save=is_save_plot)
+    else:
+        eve.show_info()
+        logger.error("No chemical data for " + eve.rho_file)
 
     # sneve.StellaEve(name=name, path=path).rho_load().plot_chem(ylim=[-6, 0.])
 

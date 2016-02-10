@@ -65,9 +65,9 @@ class StellaEve:
 
     def rho_load(self):
         if not self.is_rho_data:
-            logger.error('No rho-data for: %s' % self.rho_file)
+            logger.error(' No rho-data for %s' % self.rho_file)
             return None
-        logger.info('Load rho-data from: %s' % self.rho_file)
+        logger.info(' Load rho-data from  %s' % self.rho_file)
         col_names = "zone mass lgR lgTp lgRho lgDm Ni56 H He C N O Ne Na  Mg  Al  Si  S  Ar  Ca  Fe  Ni"
         dt = np.dtype({'names': map(str.strip, col_names.split()), 'formats': np.repeat('f8', len(col_names))})
         # dt = np.dtype({'names': map(str.strip, col_names.split()), 'formats': ['i4']+np.repeat('f8', len(col_names))})
@@ -126,7 +126,7 @@ class StellaEve:
         if is_save:
             d = os.path.expanduser('~/')
             fsave = os.path.join(d, 'chem_%s.pdf' % self.name)
-            logger.info("Save plot to %s " % fsave)
+            logger.info(" Save plot to %s " % fsave)
             fig.savefig(fsave, bbox_inches='tight', format='pdf')
 
         return fig
