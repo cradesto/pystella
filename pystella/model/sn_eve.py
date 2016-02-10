@@ -11,11 +11,11 @@ logger.setLevel(logging.INFO)
 __author__ = 'bakl'
 
 eve_elements = map(str.strip, "Ni56 H He C N O Ne Na  Mg  Al  Si  S  Ar  Ca  Fe  Ni".split())
-eve_colors = dict(Ni56="black", H="blue", He="magenta", C="cyan", N="red",
-                  O="cyan", Ne="green", Na="olive",
-                  Mg="skyblue", Si="orange", Al="blue",
-                  S="blue", Ar="olive", Ca="cyan",
-                  Fe='orange', Ni='tomato')
+eve_colors = dict(Ni56="black", H="blue", He="magenta", C="indigo", N="red",
+                  O="cyan", Ne="green", Na="sandybrown",
+                  Mg="skyblue", Si="fuchsia", Al="lime",
+                  S="coral", Ar="olive", Ca="purple",
+                  Fe='orange', Ni='dimgray')
 
 
 class StellaEve:
@@ -41,8 +41,13 @@ class StellaEve:
 
     @property
     def mass(self):
-        """logarithmic density"""
+        """Mass"""
         return self._data['mass']
+
+    @property
+    def data(self):
+        """Full data"""
+        return self._data
 
     @property
     def rho_file(self):
@@ -57,6 +62,7 @@ class StellaEve:
         if not self.is_rho_data:
             logger.error('No rho-data for: %s' % self.rho_file)
             return None
+        logger.info('Load rho-data from: %s' % self.rho_file)
         col_names = "zone mass lgR lgTp lgRho lgDm Ni56 H He C N O Ne Na  Mg  Al  Si  S  Ar  Ca  Fe  Ni"
         dt = np.dtype({'names': map(str.strip, col_names.split()), 'formats': np.repeat('f8', len(col_names))})
         # dt = np.dtype({'names': map(str.strip, col_names.split()), 'formats': ['i4']+np.repeat('f8', len(col_names))})
@@ -64,18 +70,19 @@ class StellaEve:
         data = np.loadtxt(self.rho_file, comments='#', skiprows=2, dtype=dt)
 
         self._data = data
-        return self._data
+        return self
+        # return self._data
 
-    def plot_chem(self, elements=None, xlim=None, ylim=None):
+    def plot_chem(self, elements=None, xlim=None, ylim=None, is_save=False):
         if elements is None:
             elements = eve_elements
 
         # setup figure
         plt.matplotlib.rcParams.update({'font.size': 14})
-        fig = plt.figure(num=None, figsize=(7, 11), dpi=100, facecolor='w', edgecolor='k')
+        fig = plt.figure(num=None, figsize=(7, 7), dpi=100, facecolor='w', edgecolor='k')
 
         gs1 = gridspec.GridSpec(1, 1)
-        gs1.update(wspace=0.3, hspace=0.3, left=0.1, right=0.95)
+        gs1.update(wspace=0.1, hspace=0.1, top=None, left=0.1, right=0.98)
         ax = fig.add_subplot(gs1[0, 0])
 
         is_x_lim = xlim is not None
@@ -104,9 +111,18 @@ class StellaEve:
 
         ax.set_xlim(xlim)
         ax.set_ylim(ylim)
-        # ax.set_xscale('log')
-        # ax.set_yscale('log')
+        ax.set_ylabel(r'$log10(X_i)$')
+        ax.set_xlabel(r'M [$M_\odot$]')
 
-        ax.legend(prop={'size': 8}, loc=4)
+        ax.legend(prop={'size': 9}, loc=3,
+                  ncol=4, fancybox=True, shadow=True)
         plt.grid()
         plt.show()
+
+        if is_save:
+            d = os.path.expanduser('~/')
+            fsave = os.path.join(d, 'chem_%s.pdf' % self.name)
+            logger.info("Save plot to %s " % fsave)
+            fig.savefig(fsave, bbox_inches='tight', format='pdf')
+
+        return fig
