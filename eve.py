@@ -23,7 +23,7 @@ def usage():
     elements = sneve.eve_elements
     print "Usage:"
     print "  eve.py [params]"
-    print "  -b <elements>: string, default: U-B-V-R-I, for example U-B-V-R-I-u-g-i-r-z-UVW1-UVW2.\n" \
+    print "  -b <elements>: string, default: 'H-He-C-O-Si-Fe-Ni-Ni56'.\n" \
           "     Available: " + '-'.join(elements)
     print "  -i <model name>.  Example: cat_R450_M15_Ni007"
     print "  -p <model directory>, default: ./"
@@ -62,7 +62,7 @@ def main(name=''):
         if opt == '-b':
             elements = str(arg).split('-')
             for e in elements:
-                if not sneve.eve_elements(e):
+                if e not in sneve.eve_elements:
                     logger.error('No such element: ' + e)
                     sys.exit(2)
             continue

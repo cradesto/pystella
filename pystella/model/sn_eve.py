@@ -109,7 +109,7 @@ class StellaEve:
                 y_mid.append(np.min(y))
 
         if not is_x_lim:
-            xlim = [0, np.max(x_max)]
+            xlim = [1.5, np.max(x_max)]
         if not is_y_lim:
             ylim = [np.min(y_mid), 0.]
 
@@ -118,8 +118,8 @@ class StellaEve:
         ax.set_ylabel(r'$log10(X_i)$')
         ax.set_xlabel(r'M [$M_\odot$]')
 
-        ax.legend(prop={'size': 9}, loc=3,
-                  ncol=4, fancybox=True, shadow=True)
+        ax.legend(prop={'size': 9}, loc=3, ncol=4, fancybox=False, frameon=True)
+        # ax.legend(prop={'size': 9}, loc=3, ncol=4, fancybox=True, shadow=True)
         plt.grid()
         plt.show()
 
