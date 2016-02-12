@@ -133,7 +133,7 @@ def main(name='', model_ext='.ph'):
         for opt, arg in opts:
             if opt == '-i':
                 path = ROOT_DIRECTORY
-                name = str(arg)
+                name = os.path.splitext(os.path.basename(str(arg)))[0]
                 break
                 # if name == '':
                 #     print 'Error: you should specify the name of model.'

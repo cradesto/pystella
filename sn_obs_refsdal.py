@@ -71,6 +71,7 @@ def plot_S4(models_dic, bands, glens, call=None, xlim=None, ylim=None, title='',
                        ncol=4, fancybox=True, shadow=True)
 
     # plt.grid()
+    plt.title(title)
     plt.show()
 
     if fsave is not None:
@@ -100,7 +101,7 @@ def plot_all(models_vels, models_dic, bands, call=None, xlim=None, ylim=None,
 
     # plot the light curves
     lc_min = lc.plot_ubv_models(axUbv, models_dic, bands, band_shift=band_shift, xlim=xlim, ylim=ylim,
-                       is_time_points=is_time_points)
+                                is_time_points=is_time_points)
 
     # show  times of spectral observations
     dt = 1.
@@ -110,8 +111,8 @@ def plot_all(models_vels, models_dic, bands, call=None, xlim=None, ylim=None,
     for bname, v in lc_min.items():
         if bname == 'F160W':
             for t in ts:
-                axVel.axvspan(v[0]+t-dt, v[0]+t+dt, facecolor='g', alpha=0.5)
-                print "Spectral obs: t=%8.1f, tmax=%8.1f" % (v[0]+t, v[0])
+                axVel.axvspan(v[0] + t - dt, v[0] + t + dt, facecolor='g', alpha=0.5)
+                print "Spectral obs: t=%8.1f, tmax=%8.1f" % (v[0] + t, v[0])
 
     # plot callback
     if call is not None:
@@ -121,7 +122,7 @@ def plot_all(models_vels, models_dic, bands, call=None, xlim=None, ylim=None,
     axUbv.set_ylabel('Magnitude')
     axUbv.set_xlabel('Time [days]')
 
-    axUbv.legend(prop={'size': 8}, loc=4)
+    axUbv.legend(prop={'size': 8}, loc=4, ncol=2)
     # ax.set_title(bset)
     if title:
         axUbv.set_title(title)
@@ -154,11 +155,10 @@ def usage():
     print "  -i <model name>.  Example: cat_R450_M15_Ni007_E7"
     print "  -p <model directory>, default: ./"
     print "  -e <extinction, E(B-V)> is used to define A_nu, default: 0 "
-    print "  -c <callback> [plot_tolstov, plot_snrefsdal]. You can add parameters in format func:params"
-    print "  -d <distance> [pc].  Default: 10 pc"
-    print "  -m <magnification>.  Default: None, used for grav lens"
-    print "  -z <redshift>.  Default: 0"
-    print "  -q  quiet mode: no info, no plot"
+    print "  -c <callback> [plot_snrefsdal:-56950:1.49:ogu-a (die-a, sha-a)]."
+    print "  -d <distance> [pc].  Default: 11e9 pc"
+    print "  -m <magnification>.  Default: 15.4, used for grav lens"
+    print "  -z <redshift>.  Default: 1.49"
     print "  -t  plot time points"
     print "  -s  save plot to pdf-file."
     print "  -v  plot model velocities."
@@ -173,24 +173,23 @@ def lc_wrapper(param):
     return c
 
 
-def main(name='', model_ext='.ph'):
-    is_quiet = False
+def main(name=''):
     is_save = False
-    is_save_plot = False
-    is_plot_time_points = False
-    is_extinction = False
     is_vel = False
     path = ''
-    z = 0
+    z = 1.49
     e = 0.
-    magnification = 1.
-    distance = 10.  # pc
-    callback = None
+    gl = 'ogu-a'
+    magnification = 15.4
+    distance = 11e9  # pc
+    jd_shift = -56950
+    # callback = None
+    callback = lc_wrapper('plot_snrefsdal:%s:%s:%s' % (jd_shift, z, gl))
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hqswtc:d:p:e:i:b:m:vz:")
+        opts, args = getopt.getopt(sys.argv[1:], "hsc:d:p:e:i:b:m:vz:")
     except getopt.GetoptError as err:
-        print str(err)  # will print something like "option -a not recognized"
+        print str(err)
         usage()
         sys.exit(2)
 
@@ -202,7 +201,7 @@ def main(name='', model_ext='.ph'):
         for opt, arg in opts:
             if opt == '-i':
                 path = ROOT_DIRECTORY
-                name = str(arg)
+                name = os.path.splitext(os.path.basename(str(arg)))[0]
                 break
                 # if name == '':
                 #     print 'Error: you should specify the name of model.'
@@ -228,7 +227,6 @@ def main(name='', model_ext='.ph'):
             continue
         if opt == '-e':
             e = float(arg)
-            is_extinction = True
             continue
         if opt == '-h':
             usage()
@@ -242,20 +240,11 @@ def main(name='', model_ext='.ph'):
                 print "No such directory: " + path
                 sys.exit(2)
             continue
-        if opt == '-q':
-            is_quiet = True
-            continue
         if opt == '-s':
-            is_save_plot = True
-            continue
-        if opt == '-t':
-            is_plot_time_points = True
+            is_save = True
             continue
         if opt == '-v':
             is_vel = True
-            continue
-        if opt == '-w':
-            is_save = True
             continue
         if opt == '-z':
             z = float(arg)
@@ -265,10 +254,10 @@ def main(name='', model_ext='.ph'):
 
     if is_vel:
         run_ubv_vel(name, path, bands, e, z, distance, magnification, callback,
-                    is_vel=is_vel, is_show_info=not is_quiet, is_save=is_save)
+                    is_vel=is_vel, is_save=is_save)
     else:
-        run_S4(name, path, bands, e, z, distance, magnification, callback
-               , is_save=is_save)
+        run_S4(name, path, bands, e, z, distance, magnification, callback,
+               is_save=is_save)
 
 
 def run_S4(name, path, bands, e, z, distance, magnification, callback, is_save):
@@ -321,7 +310,7 @@ def run_S4(name, path, bands, e, z, distance, magnification, callback, is_save):
 
 
 def run_ubv_vel(name, path, bands, e, z, distance, magnification, callback,
-                is_vel, is_show_info, is_save):
+                is_vel, is_save):
     if e > 0:
         if z > 1:
             ext = extinction.extinction_law_z(ebv=e, bands=bands, z=z)
@@ -334,11 +323,8 @@ def run_ubv_vel(name, path, bands, e, z, distance, magnification, callback,
     models_vels = {}
 
     mags = lc.compute_mag(name, path, bands, ext=ext, z=z, distance=distance, magnification=magnification,
-                          is_show_info=is_show_info, is_save=is_save)
+                          is_show_info=False, is_save=is_save)
     models_mags[name] = mags
-
-    if is_show_info:
-        lc.plot_bands(mags, bands, title=name)
 
     if is_vel:
         vels = vel.compute_vel(name, path, z=z)
