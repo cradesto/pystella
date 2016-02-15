@@ -13,8 +13,6 @@ from pystella.rf import band
 
 __author__ = 'bakl'
 
-# ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
-
 colors = band.bands_colors()
 
 lntypes = dict(U="-", B="-", V="-", R="-", I="-",
@@ -40,8 +38,8 @@ def lbl(b, band_shift):
 
 
 def plot_ubv_models(ax, models_dic, bands, band_shift, xlim=None, ylim=None, is_time_points=False):
-    is_x_lim = xlim is not None
-    is_y_lim = ylim is not None
+    is_compute_x_lim = xlim is None
+    is_compute_y_lim = ylim is None
 
     t_points = [0.2, 1, 2, 3, 4, 5, 10, 20, 40, 80, 150]
 
@@ -49,7 +47,6 @@ def plot_ubv_models(ax, models_dic, bands, band_shift, xlim=None, ylim=None, is_
     mi = 0
     ib = 0
     x_max = []
-    y_min = {}
     y_mid = []
     lc_min = {}
     for mname, mdic in models_dic.iteritems():
@@ -71,14 +68,14 @@ def plot_ubv_models(ax, models_dic, bands, band_shift, xlim=None, ylim=None, is_
                                 arrowprops=dict(arrowstyle='->', shrinkA=0))
             idx = np.argmin(y)
             lc_min[bname] = [x[idx], y[idx]]
-            if not is_x_lim:
+            if is_compute_x_lim:
                 x_max.append(np.max(x))
-            if not is_y_lim:
+            if is_compute_y_lim:
                 y_mid.append(np.min(y))
 
-    if not is_x_lim:
+    if is_compute_x_lim:
         xlim = [-10, np.max(x_max) + 10.]
-    if not is_y_lim:
+    if is_compute_y_lim:
         ylim = [np.min(y_mid) + 7., np.min(y_mid) - 2.]
 
     ax.invert_yaxis()
@@ -88,6 +85,7 @@ def plot_ubv_models(ax, models_dic, bands, band_shift, xlim=None, ylim=None, is_
     ax.set_ylim(ylim)
 
     return lc_min
+
 
 def plot_bands(dict_mags, bands, title='', fname='', distance=10., is_time_points=True):
     plt.title(''.join(bands) + ' filter response')
@@ -155,8 +153,6 @@ def plot_bands(dict_mags, bands, title='', fname='', distance=10., is_time_point
         plt.savefig("ubv_%s.png" % fname, format='png')
     plt.show()
     # plt.close()
-
-
 
 
 def compute_mag(name, path, bands, ext=None, z=0., distance=10., magnification=1., is_show_info=True, is_save=False):

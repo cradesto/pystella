@@ -24,7 +24,65 @@ __author__ = 'bakl'
 ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
 
 
+def plot_SX(models_dic, bands, call=None, xlim=None, ylim=None, title='', fsave=None):
+    glens_models = sn_obs.coef_glens().keys()
+    colors = band.bands_colors()
+    band_shift = dict((k, 0) for k, v in colors.items())  # no y-shift
+
+    # setup figure
+    plt.matplotlib.rcParams.update({'font.size': 14})
+    fig = plt.figure(num=len(glens_models), figsize=(12, 4), dpi=100, facecolor='w', edgecolor='k')
+    gs1 = gridspec.GridSpec(1, len(glens_models))
+    gs1.update(wspace=0., hspace=0., left=0.1, right=0.9)
+
+    ax_cache = {}
+
+    # create the grid of figures
+    ib = 0
+    im = 'SX'
+    irow = 0
+    for model in glens_models:
+        ib += 1
+        icol = ib - 1
+        ax = fig.add_subplot(gs1[irow, icol])
+        ax_cache[ib] = ax
+
+        # set axis
+        if icol == 0:
+            # ax.yaxis.tick_right()
+            # ax.yaxis.set_label_position("right")
+            ax.set_ylabel('Obs. Magnitude (AB)')
+        else:
+            ax.set_yticklabels([])
+
+        # if irow == 1:
+        ax.set_xlabel('Time [days]')
+
+        if ib > 1:
+            xlim = ax_cache[1].get_xlim()
+            ylim = ax_cache[1].get_ylim()
+
+        lc.plot_ubv_models(ax, {im: models_dic[im]}, bands, band_shift=band_shift, xlim=xlim, ylim=ylim)
+        # plot callback
+        if call is not None:
+            call.plot(ax, {'glens': model, 'image': im})
+
+        ax.text(15, 24.7, '%s: %s' % (im, model), bbox={'facecolor': 'blue', 'alpha': 0.2, 'pad': 10})
+        ax.grid()
+
+    # plt.legend(prop={'size': 8}, bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
+    ax_cache[2].legend(prop={'size': 8}, loc='upper center', bbox_to_anchor=(0.02, 1.2), ncol=4)
+
+    # plt.title(title)
+    plt.show()
+
+    if fsave is not None:
+        print "Save plot to %s " % fsave
+        fig.savefig(fsave, bbox_inches='tight')
+
+
 def plot_S4(models_dic, bands, glens, call=None, xlim=None, ylim=None, title='', fsave=None):
+    # set_images = ['S1', 'S2', 'S3', 'SX']
     set_images = ['S1', 'S2', 'S3', 'S4']
     colors = band.bands_colors()
     band_shift = dict((k, 0) for k, v in colors.items())  # no y-shift
@@ -112,7 +170,7 @@ def plot_all(models_vels, models_dic, bands, call=None, xlim=None, ylim=None,
         if bname == 'F160W':
             for t in ts:
                 axVel.axvspan(v[0] + t - dt, v[0] + t + dt, facecolor='g', alpha=0.5)
-                print "Spectral obs: t=%8.1f, tmax=%8.1f" % (v[0] + t, v[0])
+                print "Spectral obs: t=%8.1f, tmax=%8.1f" % (v[0] + t, v[0], )
 
     # plot callback
     if call is not None:
@@ -122,7 +180,7 @@ def plot_all(models_vels, models_dic, bands, call=None, xlim=None, ylim=None,
     axUbv.set_ylabel('Magnitude')
     axUbv.set_xlabel('Time [days]')
 
-    axUbv.legend(prop={'size': 8}, loc=4, ncol=2)
+    axUbv.legend(prop={'size': 8}, loc=2, ncol=4)
     # ax.set_title(bset)
     if title:
         axUbv.set_title(title)
@@ -131,7 +189,7 @@ def plot_all(models_vels, models_dic, bands, call=None, xlim=None, ylim=None,
     if is_vel:
         vel.plot_vels_models(axVel, models_vels, xlim=axUbv.get_xlim())
         # vel.plot_vels_sn87a(axVel, z=1.49)
-        axVel.legend(prop={'size': 8}, loc=4)
+        axVel.legend(prop={'size': 8}, loc=1)
         # for xlim in zip(x-xerr, x+xerr):
         #     axVel.axvspan(xlim[0], xlim[1], facecolor='g', alpha=0.5)
 
@@ -162,6 +220,7 @@ def usage():
     print "  -t  plot time points"
     print "  -s  save plot to pdf-file."
     print "  -v  plot model velocities."
+    print "  -x  plot SX with grav.lens, default 'False'"
     print "  -w  write magnitudes to file, default 'False'"
     print "  -h  print usage"
 
@@ -176,10 +235,12 @@ def lc_wrapper(param):
 def main(name=''):
     is_save = False
     is_vel = False
+    is_glens = False
     path = ''
     z = 1.49
     e = 0.
     gl = 'ogu-a'
+    xlim = [0., 450.]
     magnification = 15.4
     distance = 11e9  # pc
     jd_shift = -56950
@@ -187,7 +248,7 @@ def main(name=''):
     callback = lc_wrapper('plot_snrefsdal:%s:%s:%s' % (jd_shift, z, gl))
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hsc:d:p:e:i:b:m:vz:")
+        opts, args = getopt.getopt(sys.argv[1:], "hsc:d:p:e:i:b:m:vxz:")
     except getopt.GetoptError as err:
         print str(err)
         usage()
@@ -246,6 +307,10 @@ def main(name=''):
         if opt == '-v':
             is_vel = True
             continue
+        if opt == '-x':
+            is_glens = True
+            bands = str('F125W-F160W').split('-')
+            continue
         if opt == '-z':
             z = float(arg)
             continue
@@ -253,14 +318,14 @@ def main(name=''):
     print "Plot magnitudes on z=%f at distance=%e [cosmology D(z)=%s Mpc]" % (z, distance, cosmology_D_by_z(z))
 
     if is_vel:
-        run_ubv_vel(name, path, bands, e, z, distance, magnification, callback,
+        run_ubv_vel(name, path, bands, e, z, distance, magnification, callback, xlim=xlim,
                     is_vel=is_vel, is_save=is_save)
     else:
-        run_S4(name, path, bands, e, z, distance, magnification, callback,
-               is_save=is_save)
+        run_S4(name, path, bands, e, z, distance, magnification, callback, xlim=xlim,
+               is_save=is_save, is_glens=is_glens)
 
 
-def run_S4(name, path, bands, e, z, distance, magnification, callback, is_save):
+def run_S4(name, path, bands, e, z, distance, magnification, callback, xlim, is_save, is_glens):
     if e > 0:
         if z > 1:
             ext = extinction.extinction_law_z(ebv=e, bands=bands, z=z)
@@ -278,8 +343,8 @@ def run_S4(name, path, bands, e, z, distance, magnification, callback, is_save):
         models_mags = {}  # dict((k, None) for k in names)
         i = 0
         for im, mgf in sn_images.items():
-            if im == 'SX':  # pass image
-                continue
+            # if im == 'SX':  # pass image
+            #     continue
             i += 1
             mgf *= magnification
             mags = lc.compute_mag(name, path, bands, ext=ext, z=z, distance=distance, magnification=mgf,
@@ -304,12 +369,15 @@ def run_S4(name, path, bands, e, z, distance, magnification, callback, is_save):
             # d = '/home/bakl/Sn/my/conf/2016/snrefsdal/img'
             fsave = os.path.join(d, fsave) + '.pdf'
 
-        plot_S4(models_mags, bands, glens=glens, call=callback, title=t, fsave=fsave)
+        if is_glens:
+            plot_SX(models_mags, bands, call=callback, xlim=xlim, title=t, fsave=fsave)
+        else:
+            plot_S4(models_mags, bands, glens=glens, call=callback, xlim=xlim, title=t, fsave=fsave)
     else:
         print "There are no sn images"
 
 
-def run_ubv_vel(name, path, bands, e, z, distance, magnification, callback,
+def run_ubv_vel(name, path, bands, e, z, distance, magnification, callback, xlim,
                 is_vel, is_save):
     if e > 0:
         if z > 1:
@@ -355,7 +423,8 @@ def run_ubv_vel(name, path, bands, e, z, distance, magnification, callback,
         # d = '/home/bakl/Sn/my/conf/2016/snrefsdal/img'
         fsave = os.path.join(d, fsave) + '.pdf'
 
-    plot_all(models_vels, models_mags, bands, call=callback, is_time_points=False, title=t, fsave=fsave)
+    plot_all(models_vels, models_mags, bands, call=callback, xlim=xlim,
+             is_time_points=False, title=t, fsave=fsave)
 
 
 if __name__ == '__main__':

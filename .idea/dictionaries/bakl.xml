@@ -68,9 +68,11 @@
       <w>xlim</w>
       <w>xlims</w>
       <w>xstart</w>
+      <w>yaxis</w>
       <w>yerr</w>
       <w>ylim</w>
       <w>ylims</w>
+      <w>yyerr</w>
     </words>
   </dictionary>
 </component>
