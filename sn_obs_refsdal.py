@@ -67,6 +67,8 @@ def plot_SX(models_dic, bands, call=None, xlim=None, ylim=None, title='', fsave=
         if call is not None:
             call.plot(ax, {'glens': model, 'image': im})
 
+        start, end = ax.get_xlim()
+        ax.xaxis.set_ticks(np.arange(start, end, 100))
         ax.text(15, 24.7, '%s: %s' % (im, model), bbox={'facecolor': 'blue', 'alpha': 0.2, 'pad': 10})
         ax.grid()
 
@@ -178,7 +180,7 @@ def plot_all(models_vels, models_dic, bands, call=None, xlim=None, ylim=None,
 
     # finish plot
     axUbv.set_ylabel('Magnitude')
-    axUbv.set_xlabel('Time [days]')
+    # axUbv.set_xlabel('Time [days]')
 
     axUbv.legend(prop={'size': 8}, loc=2, ncol=4)
     # ax.set_title(bset)
@@ -213,7 +215,7 @@ def usage():
     print "  -i <model name>.  Example: cat_R450_M15_Ni007_E7"
     print "  -p <model directory>, default: ./"
     print "  -e <extinction, E(B-V)> is used to define A_nu, default: 0 "
-    print "  -c <callback> [plot_snrefsdal:-56950:1.49:ogu-a (die-a, sha-a)]."
+    print "  -c <callback> [plot_snrefsdal:-56950:1.49:ogu-a (ogu-g, die-a, sha-a, gri-g)]."
     print "  -d <distance> [pc].  Default: 11e9 pc"
     print "  -m <magnification>.  Default: 15.4, used for grav lens"
     print "  -z <redshift>.  Default: 1.49"
@@ -240,7 +242,7 @@ def main(name=''):
     z = 1.49
     e = 0.
     gl = 'ogu-a'
-    xlim = [0., 450.]
+    xlim = [-10., 450.]
     magnification = 15.4
     distance = 11e9  # pc
     jd_shift = -56950
