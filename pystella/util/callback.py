@@ -40,6 +40,23 @@ class CallBack(object):
             return self._args[idx]
         return None
 
+    def set_arg(self, idx, val):
+        if idx < 0:
+            raise Exception("Index should be more 0 [idx = %d]" % idx)
+        if self._args is None and idx > 0:
+            raise Exception("Index should be 0, if self._args is None [idx = %d]" % idx)
+        if len(self._args) > idx:
+            raise Exception("Index should be less then len(self._args)=%d [idx = %d]" % (len(self._args), idx))
+
+        if self._args is None and idx == 0:
+            self._args = []
+            self._args[idx] = val
+        if len(self._args) < idx:
+            self._args[idx] = val
+        if len(self._args) == idx:
+            self._args.append(val)
+        return self
+
     def arg_totext(self, idx):
         res = self.get_arg(idx)
         if res is None:
