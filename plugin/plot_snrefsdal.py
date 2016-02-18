@@ -1,7 +1,7 @@
 import os
 
 import numpy as np
-from scipy import interpolate
+from scipy import interpolate, integrate
 
 from pystella.rf import band
 
@@ -89,6 +89,10 @@ def get_xy(d, b, colS):
     return x[is_good], y[is_good]
 
 
+def get_band_num(name):
+    return float(name[1:4])
+
+
 def plot_BV(ax, path, jd_shift, glens, image):
     colors = band.bands_colors()
 
@@ -115,14 +119,15 @@ def plot_BV(ax, path, jd_shift, glens, image):
 
             lc_data = np.vstack([lc_data, r])
 
-    bands = np.unique(lc_data[:, 0])
+    # bands = np.unique(lc_data[:, 0])
+    bands = str('F814W-F105W-F125W-F160W').split('-')
     time_delay = coef_time_delay(glens)
 
     colS = sn_images[image]  # S1 - 2, col  S2 - 4, S3 - 6, S4 - 8 col
 
-    for b1, b2 in zip(bands[:-1], bands[1:]):
-        bn1 = 'F%sW' % int(b1)
-        bn2 = 'F%sW' % int(b2)
+    for bn1, bn2 in zip(bands[:-1], bands[1:]):
+        b1 = get_band_num(bn1)
+        b2 = get_band_num(bn2)
         x1, y1, = get_xy(lc_data, b1, colS)
         x1 = x1 + jd_shift - time_delay[image]
         if np.all(y1 <= 0):
@@ -133,17 +138,23 @@ def plot_BV(ax, path, jd_shift, glens, image):
             continue
 
         if x1[-1] > x2[-1]:
-            y_spline = interpolate.splrep(x1, y1, s=0)
             xx = x2
-            yy1 = interpolate.splev(xx, y_spline)
+            if len(x1) > 4:
+                y_spline = interpolate.splrep(x1, y1, s=0)
+                yy1 = interpolate.splev(xx, y_spline)
+            else:
+                yy1 = np.interp(xx, x1, y1, 0, 0)
             bv = yy1 - y2
         else:
-            y_spline = interpolate.splrep(x2, y2, s=0)
             xx = x1
-            yy2 = interpolate.splev(xx, y_spline)
+            if len(x2) > 4:
+                y_spline = interpolate.splrep(x2, y2, k=min(len(x2)-1, 3), s=0.)
+                yy2 = interpolate.splev(xx, y_spline)
+            else:
+                yy2 = np.interp(xx, x2, y2, 0, 0)
             bv = y1 - yy2
 
-        ax.plot(xx, bv,  color=colors[bn1], label='%s-%s .' % (bn1, bn2))
+        ax.plot(xx, bv,  color=colors[bn1], label='%s-%s .' % (bn1, bn2), marker='o', markersize=9, lw=1.5, ls='')
 
 
 def plot_ubv(ax, path, jd_shift, band_max, glens, image):
@@ -161,7 +172,7 @@ def plot_ubv(ax, path, jd_shift, band_max, glens, image):
     fs = dict((k, os.path.join(path, v)) for k, v in fs.items())
     for bn, fname in fs.items():
         # bn = 'F%sW' % int(b)
-        b = int(bn[1:4])
+        b = get_band_num(bn)
         data = np.loadtxt(os.path.join(path, fname), comments='#')
         for row in data:
             r = np.zeros(np.shape(lc_data)[1])

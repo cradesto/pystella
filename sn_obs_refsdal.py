@@ -83,11 +83,11 @@ def plot_SX(models_dic, bands, call=None, xlim=None, ylim=None, title='', fsave=
         fig.savefig(fsave, bbox_inches='tight')
 
 
-def plot_BV(models_dic, bands, glens, call=None, xlim=None, ylim=None, title='', fsave=None):
+def plot_BV(models_dic, bands, glens, call=None, xlim=None, title='', fsave=None):
     set_images = ['S1', 'S2', 'S3', 'S4']
     colors = band.bands_colors()
     band_shift = dict((k, 0) for k, v in colors.items())  # no y-shift
-
+    ylim = [-5, 5]
     # setup figure
     plt.matplotlib.rcParams.update({'font.size': 14})
     fig = plt.figure(num=len(set_images), figsize=(9, 9), dpi=100, facecolor='w', edgecolor='k')
@@ -124,10 +124,12 @@ def plot_BV(models_dic, bands, glens, call=None, xlim=None, ylim=None, title='',
         if call is not None:
             call.plot(ax, {'bv': True, 'glens': glens, 'image': im})
 
-        ax.text(15, 23.5, '%s: %s' % (im, glens), bbox={'facecolor': 'blue', 'alpha': 0.2, 'pad': 10})
+        ax.text(400, 3.5, '%s' % im, bbox={'facecolor': 'blue', 'alpha': 0.2, 'pad': 10})
+        ax.set_xlim(xlim)
+        ax.set_ylim(ylim)
 
     # plt.legend(prop={'size': 8}, bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
-    ax_cache[2].legend(prop={'size': 8}, loc='upper center', bbox_to_anchor=(0.02, 1.2),
+    ax_cache[2].legend(prop={'size': 8}, loc='upper center', bbox_to_anchor=(0.02, 1.1),
                        ncol=4, fancybox=True, shadow=True)
 
     # ax_cache[2].text(15, 23.5, title, bbox={'facecolor': 'blue', 'alpha': 0.2, 'pad': 10})
@@ -421,7 +423,7 @@ def usage():
     print "  -z <redshift>.  Default: 1.49"
     print "  -t  plot time points"
     print "  -s  save plot to pdf-file."
-    print "  -o  options: [vel, gl]  - plot model velocities,  plot SX with grav.lens"
+    print "  -o  options: [vel, gl, bv]  - plot model velocities,  plot SX with grav.lens, colors [B-V, ...]"
     print "  -w  write magnitudes to file, default 'False'"
     print "  -h  print usage"
 
@@ -501,6 +503,8 @@ def main(name=''):
             ops = str(arg).split(':')
             is_vel = "vel" in ops
             is_BV = "bv" in ops
+            if is_BV:
+                bands = str('F814W-F105W-F125W-F160W').split('-')
             is_glens = "gl" in ops
             if is_glens:
                 bands = str('F125W-F160W').split('-')
@@ -521,8 +525,7 @@ def main(name=''):
     print "Plot magnitudes on z=%f at distance=%e [cosmology D(z)=%s Mpc]" % (z, distance, cosmology_D_by_z(z))
 
     if is_BV:
-        run_BV(name, path, bands, e, z, distance, magnification, callback, xlim=xlim,
-               is_save=is_save)
+        run_BV(name, path, bands, e, z, distance, magnification, callback, xlim=xlim, is_save=is_save)
     elif is_vel:
         run_ubv_vel(name, path, bands, e, z, distance, magnification, callback, xlim=xlim,
                     is_vel=is_vel, is_save=is_save)
