@@ -340,7 +340,7 @@ def run_S4(name, path, bands, e, z, distance, magnification, callback, xlim, is_
 
         fsave = None
         if is_save:
-            fsave = "ubv_%s" % name
+            fsave = "ubv_%s_%s" % (glens, name)
 
             if ext is not None and ext > 0:
                 fsave = "%s_e0%2d" % (fsave, int(e * 100))  # bad formula for name
@@ -352,7 +352,11 @@ def run_S4(name, path, bands, e, z, distance, magnification, callback, xlim, is_
         if is_glens:
             plot_SX(models_mags, bands, call=callback, xlim=xlim, title=t, fsave=fsave)
         else:
-            plot_S4(models_mags, bands, glens=glens, call=callback, xlim=xlim, title=t, fsave=fsave)
+            if is_save:  # Don't save subtitle
+                print t
+                plot_S4(models_mags, bands, glens=glens, call=callback, xlim=xlim, fsave=fsave)
+            else:
+                plot_S4(models_mags, bands, glens=glens, call=callback, xlim=xlim, title=t, fsave=fsave)
     else:
         print "There are no sn images"
 
