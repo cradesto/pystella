@@ -421,7 +421,7 @@ def usage():
     print "  -i <model name>.  Example: cat_R450_M15_Ni007_E7"
     print "  -p <model directory>, default: ./"
     print "  -e <extinction, E(B-V)> is used to define A_nu, default: 0 "
-    print "  -c <callback> [plot_snrefsdal:-56950:1.49:ogu-a (ogu-g, die-a, sha-a, gri-g)]."
+    print "  -c <callback> [plot_snrefsdal:-56950:1.49:ogu-a (%s)]." % ', '.join(sn_obs.coef_glens().keys())
     print "  -d <distance> [pc].  Default: 11e9 pc"
     print "  -m <magnification>.  Default: 15.4, used for grav lens"
     print "  -z <redshift>.  Default: 1.49"

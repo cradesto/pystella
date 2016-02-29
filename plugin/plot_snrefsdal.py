@@ -20,7 +20,13 @@ def coef_glens():  # see http://arxiv.org/abs/1510.05750
          'sha-a': {'time': {'S1': 0,  'S2': 8.,   'S3': 5., 'S4': 17., 'SX': 233.},
                    'mag':  {'S1': 1., 'S2': 0.84,  'S3': 1.46, 'S4': 0.44, 'SX': 0.19}},
          'die-a': {'time': {'S1': 0,  'S2': -17., 'S3': -4., 'S4': 74., 'SX': 262.},
-                   'mag':  {'S1': 1., 'S2': 1.89, 'S3': 0.64, 'S4': 0.35, 'SX': 0.31}}
+                   'mag':  {'S1': 1., 'S2': 1.89, 'S3': 0.64, 'S4': 0.35, 'SX': 0.31}},
+         'obs-tmp': {'time': {'S1': 0,  'S2': -2.1, 'S3': 5.6, 'S4': 22., 'SX': 0},
+                      'mag':  {'S1': 1., 'S2': 1.09, 'S3': 1.04, 'S4': 0.35, 'SX': 0}},
+         'obs-sn87a': {'time': {'S1': 0,  'S2': -0.8, 'S3': -0.9, 'S4': 14.9, 'SX': 0},
+                       'mag':  {'S1': 1., 'S2': 1.13, 'S3': 1.03, 'S4': 0.34, 'SX': 0}},
+         'obs-pol': {'time': {'S1': 0,  'S2': 8., 'S3': -0.4, 'S4': 30.7, 'SX': 0},
+                     'mag':  {'S1': 1., 'S2': 1.17, 'S3': 1.01, 'S4': 0.38, 'SX': 0}}
          }
     return a
 
@@ -79,6 +85,10 @@ def plot(ax, dic=None):
         ts_obs = np.array([57021, 57178])  # see Kelly ?
         for t in ts_obs + jd_shift:
             axVel.axvspan(t - dt, t + dt, facecolor='r', alpha=0.5)
+
+    if False:
+        for a, l in coef_glens().items():
+            print '\hline %s  & %s  & %s  & %s  & %s  \\ ' % (a, l['mag']['S1'], l['mag']['S2'], l['mag']['S3'], l['mag']['S4'])
 
 
 def get_xy(d, b, colS):
