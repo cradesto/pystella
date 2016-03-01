@@ -109,7 +109,7 @@ def plot_BV(models_dic, bands, glens, call=None, xlim=None, title='', fsave=None
         if icol > 0:
             ax.yaxis.tick_right()
             ax.yaxis.set_label_position("right")
-        ax.set_ylabel('Obs. Magnitude (AB)')
+        ax.set_ylabel('Color Index')
 
         if irow == 1:
             ax.set_xlabel('Time [days]')
