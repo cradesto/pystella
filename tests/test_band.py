@@ -1,8 +1,7 @@
-__author__ = 'bakl'
-
 import unittest
-
 import pystella.rf.band as band
+
+__author__ = 'bakl'
 
 
 class BandTests(unittest.TestCase):
