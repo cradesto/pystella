@@ -8,6 +8,8 @@ from pystella.util.arr_dict import merge_dicts
 
 __author__ = 'bakl'
 
+# see bands: http://svo2.cab.inta-csic.es/theory/fps3/index.php?mode=browse&gname=GALEX
+
 
 class Band(object):
     Cache = dict()

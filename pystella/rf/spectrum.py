@@ -148,7 +148,6 @@ class SpectrumDilutePlanck(Spectrum):
         return self._W
 
 
-
 class SeriesSpectrum:
     def __init__(self, name):
         """Creates a Series of Spectrum instance."""

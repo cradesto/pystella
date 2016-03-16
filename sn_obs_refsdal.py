@@ -187,9 +187,8 @@ def plot_S4(models_dic, bands, glens, call=None, xlim=None, ylim=None, title='',
 
         ax.text(15, 23.5, '%s: %s' % (im, glens), bbox={'facecolor': 'blue', 'alpha': 0.2, 'pad': 10})
 
-    # plt.legend(prop={'size': 8}, bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
-    ax_cache[2].legend(prop={'size': 8}, loc='upper center', bbox_to_anchor=(0.02, 1.2),
-                       ncol=4, fancybox=True, shadow=True)
+    # plt.legend(prop={'size': 8}, bbox_to_anchor=(0., 1.02, 1., .102), loc=3, , fancybox=True, shadow=True
+    ax_cache[2].legend(prop={'size': 8}, loc='upper center', bbox_to_anchor=(0.02, 1.13), ncol=4)
 
     # ax_cache[2].text(15, 23.5, title, bbox={'facecolor': 'blue', 'alpha': 0.2, 'pad': 10})
 
@@ -476,7 +475,8 @@ def main(name=''):
                 #     print 'Error: you should specify the name of model.'
                 #     sys.exit(2)
 
-    bands = 'F105W-F125W-F140W-F160W-F606W-F814W'.split('-')
+    bands = 'F125W-F160W'.split('-')
+    # bands = 'F105W-F125W-F140W-F160W-F606W-F814W'.split('-')
     # bands = ['U', 'B', 'V', 'R', "I"]
     # bands = ['U', 'B', 'V', 'R', "I", 'UVM2', "UVW1", "UVW2", 'g', "r", "i"]
 
