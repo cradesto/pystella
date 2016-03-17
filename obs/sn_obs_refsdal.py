@@ -1,23 +1,22 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-
 import getopt
 import os
 import sys
 from os.path import dirname
 
 import matplotlib.pyplot as plt
-import numpy as np
 from matplotlib import gridspec
+import numpy as np
 
-import plugin.plot_snrefsdal as sn_obs
-import pystella.util.callback as cb
-from pystella import velocity as vel
 from pystella.rf import band
 from pystella.rf import extinction
 from pystella.rf import light_curve as lc
+from pystella import velocity as vel
+import pystella.util.callback as cb
 from pystella.util.phys_var import cosmology_D_by_z
+import plugin.plot_snrefsdal as sn_obs
 
 __author__ = 'bakl'
 
@@ -360,8 +359,8 @@ def run_S4(name, path, bands, e, z, distance, magnification, callback, xlim, is_
         print "There are no sn images"
 
 
-def run_ubv_vel(name, path, bands, e, z, distance, magnification, callback, xlim,
-                is_vel, is_save):
+def run_ubv_vel(name, path, bands, e, z, distance, magnification, xlim, callback=None,
+                is_vel=False, is_save=False):
     if e > 0:
         if z > 1:
             ext = extinction.extinction_law_z(ebv=e, bands=bands, z=z)
@@ -531,7 +530,7 @@ def main(name=''):
     if is_BV:
         run_BV(name, path, bands, e, z, distance, magnification, callback, xlim=xlim, is_save=is_save)
     elif is_vel:
-        run_ubv_vel(name, path, bands, e, z, distance, magnification, callback, xlim=xlim,
+        run_ubv_vel(name, path, bands, e, z, distance, magnification, xlim=xlim, callback=callback,
                     is_vel=is_vel, is_save=is_save)
     else:
         run_S4(name, path, bands, e, z, distance, magnification, callback, xlim=xlim,

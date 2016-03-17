@@ -175,7 +175,8 @@ def compute_mag(name, path, bands, ext=None, z=0., distance=10., magnification=1
         model.show_info()
 
     if not model.is_spec_data:
-        print "No data for: " + str(model)
+        model.show_info()
+        print "Error: No data for: " + str(model)
         return None
 
     # serial_spec = model.read_serial_spectrum(t_diff=0.)
