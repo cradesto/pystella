@@ -8,6 +8,13 @@ ROOT_DIRECTORY = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath
 plugin_path = os.path.join(ROOT_DIRECTORY, 'plugin')
 
 
+def lc_wrapper(param, path=plugin_path):
+    a = param.split(':')
+    func = a.pop(0)
+    c = CallBack(func, path=path, args=a, load=1)
+    return c
+
+
 class CallBack(object):
     def __init__(self, func, path='./', args=None, load=1):
         self._func = None

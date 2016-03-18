@@ -429,12 +429,12 @@ def usage():
     print "  -w  write magnitudes to file, default 'False'"
     print "  -h  print usage"
 
-
-def lc_wrapper(param):
-    a = param.split(':')
-    func = a.pop(0)
-    c = cb.CallBack(func, path=cb.plugin_path, args=a, load=1)
-    return c
+#
+# def lc_wrapper(param):
+#     a = param.split(':')
+#     func = a.pop(0)
+#     c = cb.CallBack(func, path=cb.plugin_path, args=a, load=1)
+#     return c
 
 
 def main(name=''):
@@ -451,7 +451,7 @@ def main(name=''):
     distance = 11e9  # pc
     jd_shift = -56950
     # callback = None
-    callback = lc_wrapper('plot_snrefsdal:%s:%s:%s' % (jd_shift, z, gl))
+    callback = cb.lc_wrapper('plot_snrefsdal:%s:%s:%s' % (jd_shift, z, gl))
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hsc:d:o:p:e:i:b:m:z:")
@@ -474,8 +474,8 @@ def main(name=''):
                 #     print 'Error: you should specify the name of model.'
                 #     sys.exit(2)
 
-    bands = 'F125W-F160W'.split('-')
-    # bands = 'F105W-F125W-F140W-F160W-F606W-F814W'.split('-')
+    # bands = 'F125W-F160W'.split('-')
+    bands = 'F105W-F125W-F140W-F160W-F606W-F814W'.split('-')
     # bands = ['U', 'B', 'V', 'R', "I"]
     # bands = ['U', 'B', 'V', 'R', "I", 'UVM2', "UVW1", "UVW2", 'g', "r", "i"]
 
@@ -488,7 +488,7 @@ def main(name=''):
                     sys.exit(2)
             continue
         if opt == '-c':
-            callback = lc_wrapper(str(arg))
+            callback = cb.lc_wrapper(str(arg))
             continue
         if opt == '-d':
             distance = float(arg)
