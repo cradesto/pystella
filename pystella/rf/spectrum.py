@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 
 import pystella.rf.rad_func as rf
 from pystella.rf import band
+from pystella.rf.lc import SetLightCurve, LightCurve
 from pystella.rf.star import Star
 from pystella.util.phys_var import phys
 
@@ -219,3 +220,4 @@ class SeriesSpectrum:
         mags['time'] = self.times * (1. + z)
 
         return mags
+

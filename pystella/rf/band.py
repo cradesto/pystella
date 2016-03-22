@@ -34,6 +34,10 @@ class Band(object):
     def wl(self):
         return self.__wl
 
+    @property
+    def Name(self):
+        return self.name
+
     @wl.setter
     def wl(self, wl):
         self.__wl = wl

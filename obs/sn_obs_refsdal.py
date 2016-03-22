@@ -12,7 +12,7 @@ import numpy as np
 
 from pystella.rf import band
 from pystella.rf import extinction
-from pystella.rf import light_curve as lc
+from pystella.rf import light_curve_func as lc
 from pystella import velocity as vel
 import pystella.util.callback as cb
 from pystella.util.phys_var import cosmology_D_by_z
@@ -143,7 +143,7 @@ def plot_BV(models_dic, bands, glens, call=None, xlim=None, title='', fsave=None
         fig.savefig(fsave, bbox_inches='tight')
 
 
-def plot_S4(models_dic, bands, glens, call=None, xlim=None, ylim=None, title='', fsave=None):
+def old_plot_S4(models_dic, bands, glens, call=None, xlim=None, ylim=None, title='', fsave=None):
     # set_images = ['S1', 'S2', 'S3', 'SX']
     set_images = ['S1', 'S2', 'S3', 'S4']
     colors = band.bands_colors()
@@ -180,6 +180,64 @@ def plot_S4(models_dic, bands, glens, call=None, xlim=None, ylim=None, title='',
             ylim = ax_cache[1].get_ylim()
 
         lc.plot_ubv_models(ax, {im: models_dic[im]}, bands, band_shift=band_shift, xlim=xlim, ylim=ylim)
+        # plot callback
+        if call is not None:
+            call.plot(ax, {'glens': glens, 'image': im})
+
+        ax.text(15, 23.5, '%s: %s' % (im, glens), bbox={'facecolor': 'blue', 'alpha': 0.2, 'pad': 10})
+
+    # plt.legend(prop={'size': 8}, bbox_to_anchor=(0., 1.02, 1., .102), loc=3, , fancybox=True, shadow=True
+    ax_cache[2].legend(prop={'size': 8}, loc='upper center', bbox_to_anchor=(0.02, 1.13), ncol=4)
+
+    # ax_cache[2].text(15, 23.5, title, bbox={'facecolor': 'blue', 'alpha': 0.2, 'pad': 10})
+
+    # plt.grid()
+    # plt.title(title)
+    fig.suptitle(title, fontsize=11)
+    plt.show()
+
+    if fsave is not None:
+        print "Save plot to %s " % fsave
+        fig.savefig(fsave, bbox_inches='tight')
+
+def plot_S4_curves(models_curves, bands, glens, call=None, xlim=None, ylim=None, title='', fsave=None):
+    # set_images = ['S1', 'S2', 'S3', 'SX']
+    # set_images = models_curves.keys()
+    set_images = ['S1', 'S2', 'S3', 'S4']
+    colors = band.bands_colors()
+    band_shift = dict((k, 0) for k, v in colors.items())  # no y-shift
+
+    # setup figure
+    plt.matplotlib.rcParams.update({'font.size': 14})
+    fig = plt.figure(num=len(set_images), figsize=(9, 9), dpi=100, facecolor='w', edgecolor='k')
+    gs1 = gridspec.GridSpec(len(set_images) / 2 + len(set_images) % 2, 2)
+    gs1.update(wspace=0., hspace=0., left=0.1, right=0.9)
+
+    ax_cache = {}
+
+    # create the grid of figures
+    ib = 0
+    for im in set_images:
+        ib += 1
+        icol = (ib - 1) % 2
+        irow = (ib - 1) / 2
+        ax = fig.add_subplot(gs1[irow, icol])
+        ax_cache[ib] = ax
+
+        # set axis
+        if icol > 0:
+            ax.yaxis.tick_right()
+            ax.yaxis.set_label_position("right")
+        ax.set_ylabel('Obs. Magnitude (AB)')
+
+        if irow == 1:
+            ax.set_xlabel('Time [days]')
+
+        if ib > 1:
+            xlim = ax_cache[1].get_xlim()
+            ylim = ax_cache[1].get_ylim()
+
+        lc.plot_models_curves(ax, {im: models_curves[im]}, bands, band_shift=band_shift, xlim=xlim, ylim=ylim)
         # plot callback
         if call is not None:
             call.plot(ax, {'glens': glens, 'image': im})
@@ -303,7 +361,7 @@ def run_BV(name, path, bands, e, z, distance, magnification, callback, xlim, is_
     plot_BV(models_mags, bands, glens, call=callback, xlim=xlim, title=t, fsave=fsave)
 
 
-def run_S4(name, path, bands, e, z, distance, magnification, callback, xlim, is_save, is_glens):
+def old_run_S4(name, path, bands, e, z, distance, magnification, callback, xlim, is_save, is_glens):
     if e > 0:
         if z > 1:
             ext = extinction.extinction_law_z(ebv=e, bands=bands, z=z)
@@ -352,9 +410,65 @@ def run_S4(name, path, bands, e, z, distance, magnification, callback, xlim, is_
         else:
             if is_save:  # Don't save subtitle
                 print t
-                plot_S4(models_mags, bands, glens=glens, call=callback, xlim=xlim, fsave=fsave)
+                old_plot_S4(models_mags, bands, glens=glens, call=callback, xlim=xlim, fsave=fsave)
             else:
-                plot_S4(models_mags, bands, glens=glens, call=callback, xlim=xlim, title=t, fsave=fsave)
+                old_plot_S4(models_mags, bands, glens=glens, call=callback, xlim=xlim, title=t, fsave=fsave)
+    else:
+        print "There are no sn images"
+
+
+def run_S4_curves(name, path, bands, e, z, distance, magnification, callback, xlim, is_save, is_glens):
+    if e > 0:
+        if z > 1:
+            ext = extinction.extinction_law_z(ebv=e, bands=bands, z=z)
+        else:
+            ext = extinction.extinction_law(ebv=e, bands=bands)
+    else:
+        ext = None
+
+    glens = callback.get_arg(2)
+    if glens is None:
+        glens = sn_obs.grav_lens_def
+
+    sn_images = sn_obs.coef_magnification(glens)
+    if len(sn_images) > 0:
+        models_curves = {}  # dict((k, None) for k in names)
+        i = 0
+        for im, mgf in sn_images.items():
+            # if im == 'SX':  # pass image
+            #     continue
+            i += 1
+            mgf *= magnification
+            curves = lc.compute_curves(name, path, bands, ext=ext, z=z, distance=distance, magnification=mgf,
+                                       is_show_info=False, is_save=is_save)
+            models_curves[im] = curves
+            print "Finish image: %s [%d/%d]" % (im, i, len(sn_images))
+
+        mgf = sn_images['S1'] * magnification
+        if callback is not None:
+            t = "ts=%s z=%4.2f D=%6.2e mu=%3.1f ebv=%4.2f" % (callback.arg_totext(0), z, distance, mgf, e)
+        else:
+            t = "z=%4.2f D=%6.2e mu=%3.1f ebv=%4.2f" % (z, distance, mgf, e)
+
+        fsave = None
+        if is_save:
+            fsave = "ubv_%s_%s" % (glens, name)
+
+            if ext is not None and ext > 0:
+                fsave = "%s_e0%2d" % (fsave, int(e * 100))  # bad formula for name
+
+            d = os.path.expanduser('~/')
+            # d = '/home/bakl/Sn/my/conf/2016/snrefsdal/img'
+            fsave = os.path.join(d, fsave) + '.pdf'
+
+        if is_glens:
+            plot_SX(models_curves, bands, call=callback, xlim=xlim, title=t, fsave=fsave)
+        else:
+            if is_save:  # Don't save subtitle
+                print t
+                plot_S4_curves(models_curves, bands, glens=glens, call=callback, xlim=xlim, fsave=fsave)
+            else:
+                plot_S4_curves(models_curves, bands, glens=glens, call=callback, xlim=xlim, title=t, fsave=fsave)
     else:
         print "There are no sn images"
 
@@ -533,8 +647,8 @@ def main(name=''):
         run_ubv_vel(name, path, bands, e, z, distance, magnification, xlim=xlim, callback=callback,
                     is_vel=is_vel, is_save=is_save)
     else:
-        run_S4(name, path, bands, e, z, distance, magnification, callback, xlim=xlim,
-               is_save=is_save, is_glens=is_glens)
+        run_S4_curves(name, path, bands, e, z, distance, magnification, callback, xlim=xlim,
+                      is_save=is_save, is_glens=is_glens)
 
 
 if __name__ == '__main__':

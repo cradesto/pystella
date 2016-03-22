@@ -3,7 +3,7 @@
 ##
 import numpy as np
 
-import pystella.rf.light_curve as lc
+import pystella.rf.light_curve_func as lc
 from pystella.rf import band
 
 

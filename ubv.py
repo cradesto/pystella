@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 from matplotlib import gridspec
 
 import pystella.util.callback as cb
-from pystella.rf import light_curve as lc
+from pystella.rf import light_curve_func as lc
 from pystella import velocity as vel
 from pystella.rf import band
 from pystella.rf import extinction
