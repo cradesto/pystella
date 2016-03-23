@@ -200,6 +200,7 @@ def old_plot_S4(models_dic, bands, glens, call=None, xlim=None, ylim=None, title
         print "Save plot to %s " % fsave
         fig.savefig(fsave, bbox_inches='tight')
 
+
 def plot_S4_curves(models_curves, bands, glens, call=None, xlim=None, ylim=None, title='', fsave=None):
     # set_images = ['S1', 'S2', 'S3', 'SX']
     # set_images = models_curves.keys()
@@ -417,7 +418,7 @@ def old_run_S4(name, path, bands, e, z, distance, magnification, callback, xlim,
         print "There are no sn images"
 
 
-def run_S4_curves(name, path, bands, e, z, distance, magnification, callback, xlim, is_save, is_glens):
+def run_S4_curves(name, path, bands, e, z, distance, magnification, callback, xlim, is_save, is_SX):
     if e > 0:
         if z > 1:
             ext = extinction.extinction_law_z(ebv=e, bands=bands, z=z)
@@ -461,7 +462,7 @@ def run_S4_curves(name, path, bands, e, z, distance, magnification, callback, xl
             # d = '/home/bakl/Sn/my/conf/2016/snrefsdal/img'
             fsave = os.path.join(d, fsave) + '.pdf'
 
-        if is_glens:
+        if is_SX:
             plot_SX(models_curves, bands, call=callback, xlim=xlim, title=t, fsave=fsave)
         else:
             if is_save:  # Don't save subtitle
@@ -542,6 +543,7 @@ def usage():
     print "  -o  options: [vel, gl, bv]  - plot model velocities,  plot SX with grav.lens, colors [B-V, ...]"
     print "  -w  write magnitudes to file, default 'False'"
     print "  -h  print usage"
+
 
 #
 # def lc_wrapper(param):
@@ -648,7 +650,7 @@ def main(name=''):
                     is_vel=is_vel, is_save=is_save)
     else:
         run_S4_curves(name, path, bands, e, z, distance, magnification, callback, xlim=xlim,
-                      is_save=is_save, is_glens=is_glens)
+                      is_save=is_save, is_SX=is_glens)
 
 
 if __name__ == '__main__':

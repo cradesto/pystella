@@ -92,11 +92,11 @@ def plot(ax, dic=None):
     if False:
         for a, l in coef_glens().items():
             print '\hline %s  & %s  & %s  & %s  & %s  \\ ' % (
-            a, l['mag']['S1'], l['mag']['S2'], l['mag']['S3'], l['mag']['S4'])
+                a, l['mag']['S1'], l['mag']['S2'], l['mag']['S3'], l['mag']['S4'])
 
 
 def get_xy(d, b, colS):
-    d2 = d[d[:, 0] == b,]
+    d2 = d[d[:, 0] == b, ]
     x = d2[:, 1]
     y = d2[:, colS]
     is_good = y != 0
@@ -218,14 +218,14 @@ def plot_ubv(ax, path, jd_shift, band_max, glens, image):
 
 def read_lc(path):
     # from Rodney_tbl4
-    sn_images = {'S1': 2, 'S2': 4, 'S3': 6, 'S4': 8, 'SX': 10}
-    # if image in sn_images.keys():
     lc_data = np.loadtxt(os.path.join(path, 'rodney_all.csv'), comments='#', skiprows=3)
+
     # Kelly for SX
     z = np.zeros((np.shape(lc_data)[0], 2))
     lc_data = np.append(lc_data, z, axis=1)
     fs = {'F125W': 'kelly_F125W_SX.csv', 'F160W': 'kelly_F160W_SX.csv'}
     fs = dict((k, os.path.join(path, v)) for k, v in fs.items())
+    col_pos = {'S1': 2, 'S2': 4, 'S3': 6, 'S4': 8, 'SX': 10}
     for bn, fname in fs.items():
         # bn = 'F%sW' % int(b)
         b = get_band_num(bn)
@@ -234,11 +234,11 @@ def read_lc(path):
             r = np.zeros(np.shape(lc_data)[1])
             r[0] = int(b)
             r[1] = row[0]
-            r[sn_images['SX']] = row[1]
-            r[sn_images['SX'] + 1] = row[2]
+            r[col_pos['SX']] = row[1]
+            r[col_pos['SX'] + 1] = row[2]
 
             lc_data = np.vstack([lc_data, r])
-    return lc_data, sn_images
+    return lc_data, col_pos
 
 
 def plot_vel(ax, path, jd_shift, z=0.):

@@ -14,6 +14,7 @@ class Stella:
         self.path = path  # path to model files
         if info:
             self.show_info()
+        self._serial_spec = None
 
     def __str__(self):
         return "%s, path: %s" % (self.name, self.path)
@@ -51,11 +52,18 @@ class Stella:
         ext = ['tt']
         return any(map(os.path.isfile, [os.path.join(self.path, self.name + '.' + e) for e in ext]))
 
+    @property
+    def series_spec(self):
+        return self._serial_spec
+
+    def set_series_spec(self, ss):
+        self._serial_spec = ss
+
     def get_res(self):
         return StellaRes(self.name, self.path)
 
     def read_serial_spectrum(self, t_diff=1.05, t_beg=0.0):
-        serial = SeriesSpectrum(self.name)
+        series = SeriesSpectrum(self.name)
 
         # read first line with frequencies
         fname = os.path.join(self.path, self.name + '.ph')
@@ -68,7 +76,7 @@ class Stella:
         freqs = [map(float, header1.split())]
         freqs = np.array(freqs).reshape(-1)
         freqs = np.exp(math.log(10) * freqs)
-        serial.set_freq(freqs)
+        series.set_freq(freqs)
 
         data = np.loadtxt(fname, comments='!', skiprows=1)
 
@@ -92,12 +100,13 @@ class Stella:
                 fl = np.array(data[i, 3:])
                 fl[fl < 0] = 0.
                 fl = np.exp(math.log(10) * fl)
-                s = Spectrum(self.name, freq=serial.freq, flux=fl, is_sort_wl=True)
+                s = Spectrum(self.name, freq=series.freq, flux=fl, is_sort_wl=True)
                 sdata.append(s)
 
-        serial.set_data(sdata)
-        serial.set_times(times_thin)
-        return serial
+        series.set_data(sdata)
+        series.set_times(times_thin)
+        self.set_series_spec(series)
+        return series
 
     def read_tt_data(self):
         num_line_header = 87

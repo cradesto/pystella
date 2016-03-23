@@ -76,28 +76,22 @@ def plot_ubv_models(ax, models_dic, bands, band_shift, xlim=None, ylim=None, is_
     if is_compute_y_lim:
         ylim = [np.min(y_mid) + 7., np.min(y_mid) - 2.]
 
-    ax.invert_yaxis()
-    # if is_x_lim:
     ax.set_xlim(xlim)
-    # if is_y_lim:
+    ax.invert_yaxis()
     ax.set_ylim(ylim)
 
     return lc_min
 
 
-def plot_models_curves(ax, models_dic, bands, band_shift, xlim=None, ylim=None, is_time_points=False):
+def plot_models_curves(ax, models_curves, bands, band_shift, xlim=None, ylim=None):
     is_compute_x_lim = xlim is None
     is_compute_y_lim = ylim is None
 
-    t_points = [0.2, 1, 2, 3, 4, 5, 10, 20, 40, 80, 150]
-
     lw = 1.
-    mi = 0
-    ib = 0
+    mi, ib = 0, 0
     x_max = []
     y_mid = []
-    lc_min = {}
-    for mname, curves in models_dic.iteritems():
+    for mname, curves in models_curves.iteritems():
         mi += 1
         for bname in bands:
             ib += 1
@@ -105,17 +99,6 @@ def plot_models_curves(ax, models_dic, bands, band_shift, xlim=None, ylim=None, 
             y = curves[bname].Mag
             bcolor = colors[bname]
             ax.plot(x, y, label='%s  %s' % (lbl(bname, band_shift), mname), color=bcolor, ls="-", linewidth=lw)
-            # ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label='%s  %s' % (lbl(bname, band_shift), mname),
-            #         markersize=4, color=bcolor, ls="-", linewidth=lw)
-
-            if is_time_points:
-                integers = [np.abs(x - t).argmin() for t in t_points]  # set time points
-                for (X, Y) in zip(x[integers], y[integers]):
-                    ax.annotate('{:.0f}'.format(X), xy=(X, Y), xytext=(-10, 20), ha='right',
-                                textcoords='offset points', color=bcolor,
-                                arrowprops=dict(arrowstyle='->', shrinkA=0))
-            idx = np.argmin(y)
-            lc_min[bname] = [x[idx], y[idx]]
             if is_compute_x_lim:
                 x_max.append(np.max(x))
             if is_compute_y_lim:
@@ -126,13 +109,9 @@ def plot_models_curves(ax, models_dic, bands, band_shift, xlim=None, ylim=None, 
     if is_compute_y_lim:
         ylim = [np.min(y_mid) + 7., np.min(y_mid) - 2.]
 
-    ax.invert_yaxis()
-    # if is_x_lim:
     ax.set_xlim(xlim)
-    # if is_y_lim:
+    ax.invert_yaxis()
     ax.set_ylim(ylim)
-
-    return lc_min
 
 
 def plot_bands(dict_mags, bands, title='', fname='', distance=10., is_time_points=True):
@@ -259,16 +238,16 @@ def compute_curves(name, path, bands, ext=None, z=0., distance=10., magnificatio
     :return: dictionary with keys = bands, value = star's magnitudes
     """
     if len(bands) == 0:
-        raise ValueError("Error: No data for: " + str(name))
+        raise ValueError("You have not set any bands for model: " + str(name))
 
     model = Stella(name, path=path)
+    if not model.is_spec_data:
+        model.show_info()
+        raise ValueError("Error: No spectral data for: " + str(model))
+
     if is_show_info:
         print ''
         model.show_info()
-
-    if not model.is_spec_data:
-        model.show_info()
-        raise ValueError("Error: No data for: " + str(model))
 
     # serial_spec = model.read_serial_spectrum(t_diff=0.)
     serial_spec = model.read_serial_spectrum(t_diff=1.05)
