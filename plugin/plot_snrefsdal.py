@@ -216,6 +216,21 @@ def plot_ubv(ax, path, jd_shift, band_max, glens, image):
     return t_min
 
 
+def plot_vel(ax, path, jd_shift, z=0.):
+    data = np.loadtxt(os.path.join(path, 'kelly_vel_halpha.txt'), comments='#', skiprows=2)
+    x = data[:, 0] * (1. + z) + jd_shift
+    xerr = data[:, 1] * (1. + z)
+    y = data[:, 2]
+    yerr = data[:, 3]
+    bcolor = 'red'
+    ax.errorbar(x, y, xerr=xerr, yerr=yerr, fmt='o', color=bcolor, label=r'$H_{\alpha}$, Kelly')
+
+    # for xlim in zip(x-xerr, x+xerr):
+    #     ax.axvspan(xlim[0], xlim[1], facecolor='g', alpha=0.5)
+    # # ylim = ax.get_ylim()
+    # fb = ax.fill_between([x-errx, x+errx], ylim[0], ylim[1], facecolor='blue', alpha=0.2, label='Visible')
+
+
 def read_lc(path):
     # from Rodney_tbl4
     lc_data = np.loadtxt(os.path.join(path, 'rodney_all.csv'), comments='#', skiprows=3)
@@ -239,18 +254,3 @@ def read_lc(path):
 
             lc_data = np.vstack([lc_data, r])
     return lc_data, col_pos
-
-
-def plot_vel(ax, path, jd_shift, z=0.):
-    data = np.loadtxt(os.path.join(path, 'kelly_vel_halpha.txt'), comments='#', skiprows=2)
-    x = data[:, 0] * (1. + z) + jd_shift
-    xerr = data[:, 1] * (1. + z)
-    y = data[:, 2]
-    yerr = data[:, 3]
-    bcolor = 'red'
-    ax.errorbar(x, y, xerr=xerr, yerr=yerr, fmt='o', color=bcolor, label=r'$H_{\alpha}$, Kelly')
-
-    # for xlim in zip(x-xerr, x+xerr):
-    #     ax.axvspan(xlim[0], xlim[1], facecolor='g', alpha=0.5)
-    # # ylim = ax.get_ylim()
-    # fb = ax.fill_between([x-errx, x+errx], ylim[0], ylim[1], facecolor='blue', alpha=0.2, label='Visible')

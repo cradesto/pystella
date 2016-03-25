@@ -23,6 +23,7 @@
       <w>dmdt</w>
       <w>dtype</w>
       <w>errorbar</w>
+      <w>etot</w>
       <w>facecolor</w>
       <w>fname</w>
       <w>freqs</w>
@@ -37,6 +38,7 @@
       <w>irow</w>
       <w>kait</w>
       <w>lambdaeff</w>
+      <w>lbol</w>
       <w>lims</w>
       <w>lntypes</w>
       <w>masamune</w>
@@ -44,6 +46,7 @@
       <w>mname</w>
       <w>mshift</w>
       <w>oguri</w>
+      <w>popov</w>
       <w>pystella</w>
       <w>refsdal</w>
       <w>schlafly</w>
@@ -60,6 +63,7 @@
       <w>tcolors</w>
       <w>tdiff</w>
       <w>teff</w>
+      <w>tion</w>
       <w>tmin</w>
       <w>tolstov</w>
       <w>totext</w>

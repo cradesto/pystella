@@ -6,10 +6,10 @@ from pystella.rf.lc import SetLightCurve, LightCurve
 __author__ = 'bakl'
 
 
-def lc_create(band):
+def lc_create(band, m=-19, dt=0.):
     n = 10
-    time = np.linspace(0., 200., n)
-    mags = -19. * np.ones(n)
+    time = np.linspace(0.+dt, 200.+dt, n)
+    mags = m * np.ones(n)
     return LightCurve(band, time, mags)
 
 
@@ -26,6 +26,16 @@ class TestLightCurve(unittest.TestCase):
         curves = SetLightCurve()
         for b in bands:
             curves.add(lc_create(b))
+
+        self.assertItemsEqual(bands, curves.BandNames,
+                              msg="Error for band names.\n \
+                Now band is %s but  lc.Band.Name is  %s." % (' '.join(bands), ' '.join(curves.BandNames)))
+
+
+    def test_lc_leastsq(self):
+        dt_init = 10.
+        lc1 = lc_create('U', dt=0.)
+        lc2 = lc_create('U', dt=0.)
 
         self.assertItemsEqual(bands, curves.BandNames,
                               msg="Error for band names.\n \

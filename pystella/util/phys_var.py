@@ -21,6 +21,7 @@ class phys:
     # units
     AU = 1.4959787066e13  # cm
     pc = 206265 * AU
+    R_sun = 6.957e10  # cm
     M_sun = 1.99e33  # g
     L_sun = 3.9e33  # ergs
 

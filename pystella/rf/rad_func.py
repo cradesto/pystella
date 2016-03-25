@@ -1,7 +1,7 @@
 # origin:  https://github.com/iancze/Pysplotter/blob/master/photometry.py
 
 import numpy as np
-from pystella.util.phys_var import phys as p
+from pystella.util.phys_var import phys as p, phys
 from scipy import integrate
 
 
@@ -34,6 +34,7 @@ def val_to_hz(val, inp="Hz"):
 
 def val_to_wl(val, inp="Hz"):
     """Takes value and converts it to wavelength in cm
+    :param inp:
     :param val:
     """
     if inp == "Hz":
@@ -115,3 +116,10 @@ def compute_x_bb():
     a, err1 = integrate.quad(lambda x: x ** 4 * np.exp(-x) / (1. - np.exp(-x)), 0, np.inf)
     b, err2 = integrate.quad(lambda x: x ** 3 * np.exp(-x) / (1. - np.exp(-x)), 0, np.inf)
     return a / b
+
+
+def Lum2MagBol(l):
+    """Convert bolometric luminosity to abs. magnitude"""
+    Msun = 4.74
+    mag = -2.5 * np.log10(l / phys.L_sun) + Msun
+    return mag
