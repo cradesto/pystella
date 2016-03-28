@@ -9,7 +9,7 @@ __author__ = 'bakl'
 
 
 class LightCurve:
-    def __init__(self, b, time, mags, tshift=0):
+    def __init__(self, b, time, mags, errs=None, tshift=0):
         """Creates a Light Curve instance.  Required parameters:  b (band), time, mags."""
         if isinstance(b, basestring):  # convert band-name to band instance
             self._b = band.band_by_name(b)
@@ -17,6 +17,10 @@ class LightCurve:
             self._b = b
         self._t = np.array(time, copy=True)  # [days]
         self._m = np.array(mags, copy=True)  # magnitudes
+
+        self._e = None
+        if errs is not None:
+            self._e = np.array(errs, copy=True)  # magnitudes
         self._tshift = tshift
         self._mshift = 0
 
@@ -31,6 +35,14 @@ class LightCurve:
     @property
     def Mag(self):
         return self._m + self._mshift
+
+    @property
+    def IsErr(self):
+        return self._e is not None
+
+    @property
+    def MagErr(self):
+        return self._e
 
     @property
     def Band(self):
@@ -58,6 +70,7 @@ class SetLightCurve:
         """Creates a Set of Light Curves."""
         self._name = name
         self._set = {}
+        self._loop = 0
 
     @property
     def Name(self):
@@ -90,6 +103,19 @@ class SetLightCurve:
     def TimeDef(self):
         b = self.BandNames[0]
         return self.Set[b].Time
+
+    # for cycle
+    def __iter__(self):
+        self._loop = 0
+        return self
+
+    def next(self):
+        idx = self._loop
+        if idx >= self.Length:
+            raise StopIteration
+        b = self.BandNames[idx]
+        self._loop += 1
+        return self.Set[b]
 
     def add(self, lc):
         self._set[lc.Band.Name] = lc

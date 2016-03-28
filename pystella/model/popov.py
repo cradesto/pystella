@@ -108,64 +108,112 @@ class Popov:
     @property
     def t_max(self):
         """The time of the maximum of the bolometric luminocity"""
-        t = 4.**(1./3.) * self.t_max
+        t = 0.75 * self.t_i * self.t_a ** 2 + 0.25 * self.t_i ** 3
+        t **= 1. / 3.
         return t
 
     @property
     def t_p(self):
         """The time of the duration of the plateau"""
-        t = 0.75*self.t_i*self.t_a**2 + 0.25*self.t_i**3
-        t **= 1. / 3.
+        t = 4. ** (1. / 3.) * self.t_max
         return t
 
-    def R(self, t):
+    def R(self, time):
+        t = time * phys.d2s
         return self._R0 + self.v_sc * t
 
     def v(self, x):
         return self.v_sc * x
 
-    def rho(self, t):
-        return self._rho0 * (self._R0/self.R(t))**3
+    def rho(self, time):
+        return self._rho0 * (self._R0/self.R(time))**3
 
-    def Rph(self, t):
+    def Rph(self, time):
+        t = time * phys.d2s
         tmp = 1./3.*self.v_sc**2 * (self.t_i*t*(3.+(self.t_i/self.t_a)**2) - (t**2/self.t_a)**2)
         return np.sqrt(tmp)
 
-    def Lbol(self, t):
-        L = np.array(map(self.lum_bol, t))
-        # L = [self.lum_bol(time) for time in t]
+    def Lbol(self, time):
+        L = np.array(map(self.lum_bol, time))
         return L
 
-    def lum_bol(self, t):
+    def lum_bol(self, time, is_ni=False):
+        """Return bolometric luminosity.
+        Parameters: t [day]"""
+        t = time * phys.d2s
+
         if t < self.t_i:
-            L = self.Eth0/self.t_d*np.exp(-(t/self.t_a)**2)
-        elif t < self.t_p:
-            L = 8. * np.pi * phys.sigma_SB * self.Tion ** 4 * self.Rph(t) ** 2
+            lum = self.Eth0 / self.t_d * np.exp(-(t / self.t_a) ** 2)
+            return lum
+
+        if t > self.t_p:
+            lum = self.e_rate_ni(time)
+            return lum
+
+        lumWCR = 8. * np.pi * phys.sigma_SB * self.Tion ** 4 * self.Rph(time) ** 2
+        if t < self.t_max:
+            return lumWCR
+
+        if is_ni:
+            lumNiCo = self.e_rate_ni(time)
+            lum = np.max((lumWCR, lumNiCo))
         else:
-            L = self.e_rate_ni(t)
-        return L
+            lum = lumWCR
+        return lum
 
     #  Ni & Co
-    def e_rate_ni(self, t):
+    def e_rate_ni(self, time):
         """The total rate energy production [erg/s], see Nadyozhin D.K., 1994
-         http://adsabs.harvard.edu/abs/1994ApJS...92..527N"""
-        td = t / 86400.  # time in days
-        e = (6.45e43*np.exp(-td/8.8) + 1.45e43*np.exp(-td/111.3)) * self.Mni / phys.M_sun  #
+         http://adsabs.harvard.edu/abs/1994ApJS...92..527N
+         Parameters: time [day]"""
+        e = (6.45e43*np.exp(-time/8.8) + 1.45e43*np.exp(-time/111.3)) * self.Mni / phys.M_sun  #
         return e
 
-    def MagBol(self, t):
-        mag = Lum2MagBol(self.Lbol(t))
+    def MagBol(self, time):
+        mag = Lum2MagBol(self.Lbol(time))
         return mag
 
-    def plot_Lbol(self, t):
-        mags = self.MagBol(t)
-        mags_ni = Lum2MagBol(self.e_rate_ni(t))
+    def plot_Lbol(self, t, is_plot_Lum=False):
+        """t [day]"""
+        # lum
+        if is_plot_Lum:
+            mags = self.Lbol(t)
+            mags_ni = self.e_rate_ni(t)
+        else:  # mag
+            mags = self.MagBol(t)
+            mags_ni = Lum2MagBol(self.e_rate_ni(t))
 
-        plt.plot(t, mags, color='blue', label='L bol')
-        plt.plot(t, mags_ni, color='red', label='Eni rate')
-        plt.gca().invert_yaxis()
-        plt.xlabel('Time [day]')
-        plt.ylabel('Absolute Magnitude')
-        plt.legend()
-        plt.show()
+        fig = plt.figure()
+        ax = fig.add_axes((0.1, 0.3, 0.8, 0.65))
 
+        ax.plot(t, mags, color='blue', label='L bol', lw=2.5)
+        ax.plot(t, mags_ni, color='red', ls='-.', label='Decay of Ni56 & Co', lw=2.)
+
+        times = {'Diffusion time': self.t_d,
+                 'Expansion time': self.t_e,
+                 'T surf > Tion': self.t_i,
+                 'Max bol time': self.t_max,
+                 'Plateau duration time': self.t_p}
+
+        for k, v in times.items():
+            if is_plot_Lum:
+                xy = (v / phys.d2s, self.lum_bol(v))
+            else:
+                xy = (v / phys.d2s, Lum2MagBol(self.lum_bol(v)))
+            ax.annotate(k, xy=xy, xytext=(-10, 20), ha='left',
+                        textcoords='offset points',
+                        arrowprops=dict(arrowstyle='->', shrinkA=0))
+
+        if not is_plot_Lum:
+            ax.invert_yaxis()
+        ax.set_xlabel('Time [day]')
+        ax.set_ylabel('Absolute Magnitude')
+
+        ax.legend()
+        txt = '{0:10} {1:.4e} R_sun\n'.format('R:', self.R0 / phys.R_sun) + \
+              '{0:10} {1:.4e} M_sun\n'.format('Mtot:', self.Mtot / phys.M_sun) + \
+              '{0:10} {1:.4e} M_sun\n'.format('Mni:', self.Mni / phys.M_sun) + \
+              '{0:10} {1} ergs'.format('Etot:', self.Etot)
+        fig.text(0.17, 0.07, txt, family='monospace')
+        # plt.title('R=%5.1f Mtot=%4.2f Mni=%f Etot=%e ' % (self.R0, self.Mtot, self.Mni, self.Etot))
+        return ax

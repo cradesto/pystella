@@ -6,13 +6,14 @@ import numpy as np
 import os
 
 from pystella.rf import band
+from pystella.rf.lc import SetLightCurve, LightCurve
+
+sn_path = os.path.expanduser('~/Sn/Release/svn_kepler/stella/branches/lucy/run/res/sncurve/sn1987a')
 
 
 def plot(ax, dic=None):
-    d = os.path.expanduser('~/Sn/Release/svn_kepler/stella/branches/lucy/run/res/sncurve/sn1987a')
-
-    arg = None
-    if 'args' in dic:
+    arg = []
+    if dic is not None and 'args' in dic:
         arg = dic['args']
 
     if len(arg) > 0:
@@ -20,8 +21,8 @@ def plot(ax, dic=None):
     else:
         jd_shift = -2446850.
 
-    print "Plot Sn Refsdal  jd_shift=%f  path: %s" % (jd_shift, d)
-    plot_ubv(ax=ax, path=d, jd_shift=jd_shift)
+    print "Plot Sn 1987A  jd_shift=%f  path: %s" % (jd_shift, sn_path)
+    plot_ubv(ax=ax, path=sn_path, jd_shift=jd_shift)
 
 
 def plot_vels_sn87a(ax, path, z=0):
@@ -47,14 +48,28 @@ def plot_vels_sn87a(ax, path, z=0):
         ax.plot(x, y, label='%s, SN 87A' % el, ls=".", color=elcolors[el], markersize=6, marker=elmarkers[el])
 
 
-def plot_ubv(ax, path, jd_shift):
+def plot_ubv(ax, path, jd_shift=0., mshift=0.):
     colors = band.bands_colors()
-    fs = {'U': 'pav_U.csv', 'B': 'pav_B.csv', 'V': 'pav_V.csv', 'R': 'pav_R.csv', 'I': 'pav_I.csv', }
+    curves = read(path)
+    for lc in curves:
+        x = lc.Time + jd_shift
+        y = lc.Mag + mshift
+        bcolor = colors[lc.Band.Name]
+        ax.plot(x, y, label='%s SN 1987A' % lc.Band.Name,
+                ls=".", color=bcolor, markersize=8, marker="o")
+
+
+def read(path=sn_path):
+    fs = {'U': 'pav_U.csv', 'B': 'pav_B.csv', 'V': 'pav_V.csv', 'R': 'pav_R.csv', 'I': 'pav_I.csv'}
     fs = dict((k, os.path.join(path, v)) for k, v in fs.items())
 
-    for b, fname in fs.items():
+    curves = SetLightCurve('Sn87A')
+    for n, fname in fs.items():
         data = np.loadtxt(fname, comments='#', skiprows=1, delimiter="\t", usecols=(0, 1))
-        x = data[:, 0] + jd_shift
-        y = data[:, 1]
-        bcolor = colors[b]
-        ax.plot(x, y, label='%s Sn87A, ' % b, ls=".", color=bcolor, markersize=8, marker="o")
+        b = band.band_by_name(n)
+        t = data[:, 0]
+        mags = data[:, 1]
+        lc = LightCurve(b, t, mags)
+        curves.add(lc)
+
+    return curves

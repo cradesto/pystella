@@ -4,45 +4,42 @@ import matplotlib.pyplot as plt
 
 
 from pystella.model.popov import Popov
-from pystella.rf.lc import SetLightCurve, LightCurve
-from pystella.rf.rad_func import Lum2MagBol
-from pystella.util.phys_var import phys
+from plugin import sn87a
+from plugin import sn1999em
 
 __author__ = 'bakl'
 
 
-def lc_create(band, m=-19, dt=0.):
-    n = 10
-    time = np.linspace(0.+dt, 200.+dt, n)
-    mags = m * np.ones(n)
-    return LightCurve(band, time, mags)
-
-
 class TestPopovModel(unittest.TestCase):
     def test_plot_lc(self):
-        is_plot_Lum = False
         n = 100
         start, end = 0.1, 200.
-        # time = np.linspace(start, end, n)
         time = np.exp(np.linspace(np.log(start), np.log(end), n))
 
-        popov = Popov('test', R=900., M=15., Mni=0.04, E=1.e51)
-
-        # lum
-        if is_plot_Lum:
-            mags = popov.Lbol(time*86400)
-            mags_ni = popov.e_rate_ni(time*86400)
-        else:  # mag
-            mags = popov.MagBol(time*86400)
-            mags_ni = Lum2MagBol(popov.e_rate_ni(time*86400))
-
-        plt.plot(time, mags, color='blue', label='L bol')
-        plt.plot(time, mags_ni, color='red', ls='-.', label='Eni rate')
-        if not is_plot_Lum:
-            plt.gca().invert_yaxis()
-        plt.xlabel('Time [day]')
-        plt.ylabel('Absolute Magnitude')
-        plt.legend()
+        popov = Popov('test', R=400., M=15., Mni=0.04, E=1.e51)
+        popov.plot_Lbol(time)
         plt.show()
 
+    def test_popov_SN87A(self):
+        n = 100
+        start, end = 0.1, 200.
+        jd_shift = -2446850.  # moment of explosion SN 1987A, Hamuy 1988, doi:10.1086/114613
+        dm = -18.6  # D = 7.5e6 pc
+        time = np.exp(np.linspace(np.log(start), np.log(end), n))
 
+        popov = Popov('test', R=50., M=15., Mni=0.07, E=1.e51)
+        ax = popov.plot_Lbol(time)
+        sn87a.plot_ubv(ax, path=sn87a.sn_path, jd_shift=jd_shift, mshift=dm)
+        plt.show()
+
+    def test_popov_SN1999em(self):
+        n = 100
+        start, end = 0.1, 200.
+        jd_shift = 20.
+        dm = -29.38  # D = 7.5e6 pc
+        # dm = -30.4  # D = 12.e6 pc
+        time = np.exp(np.linspace(np.log(start), np.log(end), n))
+        popov = Popov('test', R=450., M=15., Mni=0.07, E=0.7e51)
+        ax = popov.plot_Lbol(time)
+        sn1999em.plot_ubv(ax, path=sn1999em.sn_path, jd_shift=jd_shift, mshift=dm)
+        plt.show()

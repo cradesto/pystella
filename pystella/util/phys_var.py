@@ -25,6 +25,8 @@ class phys:
     M_sun = 1.99e33  # g
     L_sun = 3.9e33  # ergs
 
+    d2s = 24.*60.*60.  # convert days to seconds
+
 
 def cosmology_D_by_z(z):
     Omega_m = 0.31

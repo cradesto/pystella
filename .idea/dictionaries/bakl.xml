@@ -22,6 +22,7 @@
       <w>dessart</w>
       <w>dmdt</w>
       <w>dtype</w>
+      <w>emubvir</w>
       <w>errorbar</w>
       <w>etot</w>
       <w>facecolor</w>
@@ -44,7 +45,9 @@
       <w>masamune</w>
       <w>mdic</w>
       <w>mname</w>
+      <w>monospace</w>
       <w>mshift</w>
+      <w>mtot</w>
       <w>oguri</w>
       <w>popov</w>
       <w>pystella</w>
@@ -52,6 +55,7 @@
       <w>schlafly</w>
       <w>sdss</w>
       <w>skyblue</w>
+      <w>sncurve</w>
       <w>sneve</w>
       <w>snpy</w>
       <w>snrefsdal</w>
