@@ -66,6 +66,7 @@ class LightCurve:
 
 
 class SetLightCurve:
+    """Set of the Light Curves"""
     def __init__(self, name=''):
         """Creates a Set of Light Curves."""
         self._name = name

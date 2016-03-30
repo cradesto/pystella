@@ -145,8 +145,8 @@ def compare_ttVSubv(mname, path, bands=['U', 'B', 'V', 'R', 'I'], t_cut=1., is_p
     dic_results['tt'] = mags
 
     # ubv
-    serial_spec = model.read_serial_spectrum(t_diff=1.05)
-    mags = serial_spec.compute_mags(bands)
+    serial_spec = model.read_series_spectrum(t_diff=1.05)
+    mags = serial_spec.old_compute_mags(bands)
     dic_results['ubv'] = mags
 
     plot_all(dic_results, bands, title=mname, is_time_points=is_plot_time_points)

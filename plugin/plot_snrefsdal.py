@@ -60,10 +60,11 @@ def plot(ax, dic=None):
         jd_shift = dic['jd_shift']
 
     if jd_shift is None:
-        if arg is None:
-            jd_shift = -56950
-        else:
-            jd_shift = float(arg.pop(0))
+        jd_shift = float(arg.pop(0)) if arg is not None else -56950
+        # if arg is None:
+        #     jd_shift = -56950
+        # else:
+        #     jd_shift = float(arg.pop(0))
 
     print "Plot Sn Refsdal %s, glens: %s, path: %s, band_max=%s " % (im, glens, d, band_max)
 

@@ -15,7 +15,7 @@ __author__ = 'bakl'
 
 
 class Spectrum:
-    def __init__(self, name, freq=None, flux=None, is_sort_wl=True):
+    def __init__(self, name, freq, flux, is_sort_wl=True):
         """Creates a Spectrum instance.  Required parameters:  name."""
         self.name = name
         self._freq = np.array(freq, copy=True)  # frequencies of flux [cm]
@@ -41,7 +41,7 @@ class Spectrum:
 
     @property
     def Wl(self):
-        return phys.c / self._freq
+        return phys.c / self.Freq
 
     def plot_spec(self, title=''):
         plt.title('Spectrum: ' + title)
@@ -53,50 +53,73 @@ class Spectrum:
         plt.grid()
         plt.show()
 
-    def fit_t_color(self):
+    @property
+    def temp_color(self):
         """
         Fitting Spectrum by planck function and find the color temperature
         :return:   color temperature
         """
-        nu = self._freq
+        wl = self.Wl
         # Tinit = 1.e4
-        Tinit = self.temperature_wien
+        Tinit = self.temp_wien
 
-        def func(freq, T):
-            return rf.planck(freq, T, inp="Hz", out="freq")
+        def func(w, T):
+            return rf.planck(w, T, inp="cm", out="wave")
 
-        popt, pcov = opt.curve_fit(func, nu, self._flux, p0=Tinit)
+        popt, pcov = opt.curve_fit(func, wl, self.Flux_wl, p0=Tinit)
         return popt
 
     @property
-    def temperature_wien(self):
+    def temp_wien_interp(self):
         """
-        Find temperature of Spectrum as Wien's law
-        :return: temperature
+        Find temperature of Spectrum as Wien's law by interpolation
+        :return: Wien's temperature
         """
         b = 0.28977721  # [cm]
         wl = self.Wl
         tck = interpolate.splrep(wl, self.Flux_wl)
 
-        def func(wl):
-            return -interpolate.splev(wl, tck, der=0)
+        def func(w):
+            return -interpolate.splev(w, tck, der=0)
 
         wl_max = opt.fmin(func, x0=wl[int(len(wl) / 2)])
         Twien = b / wl_max
         return Twien
 
+    @property
+    def temp_wien(self):
+        """
+        Find temperature of Spectrum as Wien's law
+        :return: Wien's temperature
+        """
+        b = 0.28977721  # [cm]
+
+        idx = np.argmax(self.Flux_wl)
+        wl_max = self.Wl[idx]
+        Twien = b / wl_max
+        return Twien
+
+    @property
+    def freq_mean(self):
+        """
+        Find mean frequencies of Spectrum
+        :return: mean frequencies
+        """
+        mean = self.compute_flux_nu_bol() / self.compute_flux_bol()
+        return mean
+
     def compute_flux_nu_bol(self):
         Hnu = integrate.simps(self._flux * self._freq, self._freq)
         return abs(Hnu)  # due to order freq
+
+    def compute_flux_bol(self):
+        H = integrate.simps(self.Flux, self.Freq)
+        return abs(H)  # due to order freq
 
     def cut_flux(self, bottom):
         cut = self._flux >= bottom
         self._freq = self._freq[cut]
         self._flux = self._flux[cut]
-
-    def compute_flux_bol(self):
-        H = integrate.simps(self._flux, self._freq)
-        return abs(H)  # due to order freq
 
     @staticmethod
     def flux_to_distance(flux, dl):
@@ -153,52 +176,80 @@ class SeriesSpectrum:
     def __init__(self, name):
         """Creates a Series of Spectrum instance."""
         self.name = name
-        self.times = None
-        self.nfreq = None
-        self.wl = None  # waves
-        self.freq = None
-        self.data = None  # array where index -> Spectrum at the times[index]
+        self._nfreq = None
+        # self._wl = None  # waves
+        self._freq = None
+        self._times = []
+        self._data = []  # array where index -> Spectrum at the times[index]
 
-    def set_times(self, times):
-        if times is None or len(times) == 0:
-            raise ValueError("times must be array with len > 0.")
-        self.times = times
-
+    @property
     def is_time(self):
-        return self.times is not None and len(self.times) > 0
+        return len(self._times) > 0
+
+    @property
+    def nfreq(self):
+        return self._nfreq
+
+    @property
+    def Time(self):
+        return np.array(self._times)
+
+    @property
+    def IdxMax(self):
+        return len(self.Time)
+
+    @property
+    def Freq(self):
+        return self._freq
+
+    @property
+    def Wl(self):
+        return phys.c / self._freq
+
+    @property
+    def Data(self):
+        return self._data
+
+    # def set_times(self, times):
+    #     if times is None or len(times) == 0:
+    #         raise ValueError("times must be array with len > 0.")
+    #     self._times = times
 
     def set_freq(self, freqs):
         if freqs is None or len(freqs) == 0:
             raise ValueError("freqs must be array with len > 0.")
         if np.all(freqs == 0.):
             raise ValueError("No freqs item equals 0.")
-        self.freq = freqs
-        self.wl = phys.c / self.freq
-        self.nfreq = len(self.freq)
+        self._freq = freqs
+        # self._wl = phys.c / self._freq
+        self._nfreq = len(self._freq)
 
-    def set_data(self, sdata):
-        if sdata is None or len(sdata) == 0:
-            raise ValueError("data must be array with len > 0.")
-        self.data = sdata
+    def add(self, t, spec):
+        self._times.append(t)
+        self._data.append(spec)
+    # def set_data(self, data):
+    #     if data is None or len(data) == 0:
+    #         raise ValueError("data must be array with len > 0.")
+    #     self._data = data
 
     def get_spec(self, idx):
-        return self.data[idx]
+        return self._data[idx]
 
     def get_tspec(self, idx):
-        return self.times[idx], self.data[idx]
+        return self._times[idx], self._data[idx]
 
     def get_spec_by_time(self, time):
-        idx = (np.abs(self.times-time)).argmin()
+        idx = (np.abs(self.Time - time)).argmin()
         return self.get_spec(idx)
 
     def flux_to_mags(self, b, z=0., dl=0., magnification=1.):
         if b is None:
             return None
-        if not self.is_time():
+        if not self.is_time:
             return None
 
-        mags = np.zeros(len(self.data))
-        for k in range(len(self.data)):
+        mags = np.zeros(len(self.Time))
+        for k in range(len(self.Time)):
             star = Star(k, self.get_spec(k))
             star.set_distance(dl)
             star.set_redshift(z)
@@ -211,13 +262,32 @@ class SeriesSpectrum:
 
         return mags
 
-    def compute_mags(self, bands, z=0., dl=rf.pc_to_cm(10.), magnification=1.):
+    def flux_to_curve(self, b, z=0., dl=0., magnification=1.):
+        if b is None:
+            raise ValueError("Band must be defined.")
+        if not self.is_time:
+            return ValueError("No spectral time points.")
+
+        mags = np.zeros(len(self.Time))
+        for k in range(len(self.Time)):
+            star = Star(k, self.get_spec(k))
+            star.set_distance(dl)
+            star.set_redshift(z)
+            star.set_magnification(magnification)
+            # mag = star.flux_to_mag(b)
+            mag = star.flux_to_magAB(b)
+            mags[k] = mag
+
+        time = self.Time * (1. + z)
+        lc = LightCurve(b, time, mags)
+        return lc
+
+    def old_compute_mags(self, bands, z=0., dl=rf.pc_to_cm(10.), magnification=1.):
         mags = dict((k, None) for k in bands)
         for n in bands:
             b = band.band_by_name(n)
             mags[n] = self.flux_to_mags(b, z=z, dl=dl, magnification=magnification)
 
-        mags['time'] = self.times * (1. + z)
-
+        mags['time'] = self.Time * (1. + z)
         return mags
 

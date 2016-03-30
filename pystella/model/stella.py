@@ -38,9 +38,9 @@ class Stella:
         return any(map(os.path.isfile, [os.path.join(self.path, self.name + '.' + e) for e in ext]))
 
     @property
-    def is_spec_data(self):
-        ext = ['ph']
-        return any(map(os.path.isfile, [os.path.join(self.path, self.name + '.' + e) for e in ext]))
+    def is_ph_data(self):
+        fname = os.path.join(self.path, self.name + '.ph')
+        return os.path.isfile(fname)
 
     @property
     def is_res_data(self):
@@ -62,8 +62,7 @@ class Stella:
     def get_res(self):
         return StellaRes(self.name, self.path)
 
-    def read_serial_spectrum(self, t_diff=1.05, t_beg=0.0):
-        series = SeriesSpectrum(self.name)
+    def read_series_spectrum(self, t_diff=1.05, t_beg=0.0):
 
         # read first line with frequencies
         fname = os.path.join(self.path, self.name + '.ph')
@@ -76,7 +75,6 @@ class Stella:
         freqs = [map(float, header1.split())]
         freqs = np.array(freqs).reshape(-1)
         freqs = np.exp(math.log(10) * freqs)
-        series.set_freq(freqs)
 
         data = np.loadtxt(fname, comments='!', skiprows=1)
 
@@ -94,17 +92,19 @@ class Stella:
         is_times[-1] = True
         times_thin = times[is_times]
 
-        sdata = []
+        series = SeriesSpectrum(self.name)
         for i in range(len(times)):
             if is_times[i]:
+                t = times[i]
                 fl = np.array(data[i, 3:])
                 fl[fl < 0] = 0.
                 fl = np.exp(math.log(10) * fl)
-                s = Spectrum(self.name, freq=series.freq, flux=fl, is_sort_wl=True)
-                sdata.append(s)
+                s = Spectrum(self.name, freq=freqs, flux=fl, is_sort_wl=True)
+                series.add(t, s)
 
-        series.set_data(sdata)
-        series.set_times(times_thin)
+        series.set_freq(freqs)
+        # series.set_times(times_thin)
+
         self.set_series_spec(series)
         return series
 

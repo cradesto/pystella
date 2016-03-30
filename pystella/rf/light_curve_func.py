@@ -192,14 +192,14 @@ def compute_mag(name, path, bands, ext=None, z=0., distance=10., magnification=1
         print ''
         model.show_info()
 
-    if not model.is_spec_data:
+    if not model.is_ph_data:
         model.show_info()
         print "Error: No data for: " + str(model)
         return None
 
     # serial_spec = model.read_serial_spectrum(t_diff=0.)
-    serial_spec = model.read_serial_spectrum(t_diff=1.05)
-    mags = serial_spec.compute_mags(bands, z=z, dl=rf.pc_to_cm(distance), magnification=magnification)
+    serial_spec = model.read_series_spectrum(t_diff=1.05)
+    mags = serial_spec.old_compute_mags(bands, z=z, dl=rf.pc_to_cm(distance), magnification=magnification)
 
     if mags is not None:
         fname = os.path.join(path, name + '.ubv')
@@ -241,7 +241,7 @@ def compute_curves(name, path, bands, ext=None, z=0., distance=10., magnificatio
         raise ValueError("You have not set any bands for model: " + str(name))
 
     model = Stella(name, path=path)
-    if not model.is_spec_data:
+    if not model.is_ph_data:
         model.show_info()
         raise ValueError("Error: No spectral data for: " + str(model))
 
@@ -250,13 +250,13 @@ def compute_curves(name, path, bands, ext=None, z=0., distance=10., magnificatio
         model.show_info()
 
     # serial_spec = model.read_serial_spectrum(t_diff=0.)
-    serial_spec = model.read_serial_spectrum(t_diff=1.05)
+    serial_spec = model.read_series_spectrum(t_diff=1.05)
     curves = SetLightCurve(name)
     for n in bands:
         b = band.band_by_name(n)
-        mags = serial_spec.flux_to_mags(b, z=z, dl=rf.pc_to_cm(distance), magnification=magnification)
-        time = serial_spec.times * (1. + z)
-        lc = LightCurve(b, time, mags)
+        lc = serial_spec.flux_to_curve(b, z=z, dl=rf.pc_to_cm(distance), magnification=magnification)
+        # time = serial_spec.times * (1. + z)
+        # lc = LightCurve(b, time, mags)
         curves.add(lc)
 
     if is_save:

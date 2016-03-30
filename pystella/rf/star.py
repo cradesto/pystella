@@ -92,7 +92,7 @@ class Star:
             raise ValueError("Spectrum has not been defined. ")
         flux = self._sp.Flux * self._magnification
         if self.IsRedshift:
-            return Star.flux_to_redshift(self._sp.Freq, flux, self.z)
+            return Star.flux_to_redshift(flux, self.z)
         else:
             return flux
 
@@ -249,7 +249,13 @@ class Star:
             return kcor
 
     @staticmethod
-    def flux_to_redshift(freq, flux, z):
+    def flux2AB(flux):
+        """Convert flux to AB magnitude"""
+        mag = -2.5 * np.log10(flux) + phys.ZP_AB
+        return mag
+
+    @staticmethod
+    def flux_to_redshift(flux, z):
         if z <= 0.:
             return flux
         flux_z = flux * (1.+z)

@@ -535,7 +535,7 @@ def compute_Tnu_w(serial_spec, tt):
 def compute_tcolor(name, path, bands, t_cut=1.):
     model = Stella(name, path=path)
 
-    if not model.is_spec_data:
+    if not model.is_ph_data:
         print "No ph-data for: " + str(model)
         return None
 
@@ -545,8 +545,8 @@ def compute_tcolor(name, path, bands, t_cut=1.):
 
     distance = rf.pc_to_cm(10.)  # pc for Absolute magnitude
     # serial_spec = model.read_serial_spectrum(t_diff=0.)
-    serial_spec = model.read_serial_spectrum(t_diff=1.05, t_beg=t_cut)
-    mags = serial_spec.compute_mags(bands, z=0., dl=distance)
+    serial_spec = model.read_series_spectrum(t_diff=1.05, t_beg=t_cut)
+    mags = serial_spec.old_compute_mags(bands, z=0., dl=distance)
 
     # read R_ph
     tt = model.read_tt_data()
