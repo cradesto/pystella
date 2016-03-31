@@ -62,7 +62,7 @@ class Stella:
     def get_res(self):
         return StellaRes(self.name, self.path)
 
-    def read_series_spectrum(self, t_diff=1.05, t_beg=0.0):
+    def read_series_spectrum(self, t_diff=1.05, t_beg=0.0, is_nfrus=True):
 
         # read first line with frequencies
         fname = os.path.join(self.path, self.name + '.ph')
@@ -96,7 +96,12 @@ class Stella:
         for i in range(len(times)):
             if is_times[i]:
                 t = times[i]
-                fl = np.array(data[i, 3:])
+                if is_nfrus:
+                    nfrus = data[i, 1]  # exact number of used (saved) freqs
+                    freqs = freqs[:nfrus]
+                    fl = np.array(data[i, 3:nfrus+3])
+                else:
+                    fl = np.array(data[i, 3:])
                 fl[fl < 0] = 0.
                 fl = np.exp(math.log(10) * fl)
                 s = Spectrum(self.name, freq=freqs, flux=fl, is_sort_wl=True)
