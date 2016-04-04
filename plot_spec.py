@@ -47,7 +47,6 @@ markers = markers.keys()
 def plot_spec(dic_stars, times, set_bands, is_planck=False, is_filter=False):
     xlim = [1000., 20000]
     # xlim = [3000., 6000]
-    ylim = [0, 3.]
 
     # setup figure
     plt.matplotlib.rcParams.update({'font.size': 14})
@@ -189,7 +188,7 @@ def color_map_temp():
     # return UWR
 
 
-def plot_spec_poly(series, moments=None, fcut=1.e-20):
+def plot_spec_poly(series, moments=None, fcut=1.e-20, is_info=False):
     # moments = moments or (1., 3., 5, 10., 15., 25., 35., 50., 70., 100., 120., 150., 200.)
     # moments = moments or np.arange(0., 200., 3)
     moments = moments or np.exp(np.linspace(np.log(0.5), np.log(400.), 40))
@@ -200,17 +199,16 @@ def plot_spec_poly(series, moments=None, fcut=1.e-20):
 
     pos = 0
     t_data = []
-    for i in range(len(series.Time)):
-        t = series.Time[i]
+    for i, t in enumerate(series.Time):
         if t > moments[pos]:
             t_data.append(t)
             pos += 1
 
     verts = []
-    T_wiens = []
+    T_cols = []
     x_lim = [float("inf"), float("-inf")]
     z_lim = [float("inf"), float("-inf")]
-    for i in range(len(t_data)):
+    for i, t in enumerate(t_data):
         spec = series.get_spec_by_time(t_data[i])
         spec.cut_flux(fcut * max(spec.Flux))  # cut flux
         ys = spec.Flux
@@ -224,54 +222,29 @@ def plot_spec_poly(series, moments=None, fcut=1.e-20):
         z_lim[0] = min(z_lim[0], np.min(ys))
         z_lim[1] = max(z_lim[1], np.max(ys))
 
-        T_wiens.append(spec.temp_wien)
-        print "time: %f  T_wien=%f" % (t_data[i], spec.temp_wien)
+        T_cols.append(spec.T_color)
+        if is_info:
+            print "time: %f  T_color=%f" % (t, spec.T_color)
+            # print "time: %f  T_wien=%f wl_max=%f" % (t_data[i], spec.temp_wien, spec.wl_flux_max)
 
-    T_wiens_lg = np.log10(T_wiens)
-    # cc = lambda arg: colorConverter.to_rgba(arg, alpha=0.6)
-    # facecolors = [cm.jet(np.sqrt(x)/10.) for x in t_data]
-    # facecolors = UWR(heatmap)
-
-    T_wiens_c = T_wiens_lg - np.min(T_wiens_lg)
-
-    Tmap = T_wiens_c/np.max(T_wiens_c)
+    Tmap = np.log(T_cols / np.min(T_cols))
     color_map = color_map_temp()
-    # cm.register_cmap(name='UWR', cmap=color_map)
-    # UWR = cm.get_cmap('UWR')
-    # Create a variable for the colorbar
     m = cm.ScalarMappable(cmap=color_map)
     m.set_array(Tmap)
-    # m.set_array([min(T_wiens_lg), max(T_wiens_lg)])
-    # m.set_clim(vmin=min(T_wiens), vmax=max(T_wiens))
-    # m.set_array(T_wiens)
-    facecolors = m.to_rgba(Tmap*1.e-4)
-    # facecolors = color_map(Tmap)
-    # facecolors = color_map(T_wiens_c)
-    # facecolors = color_map(5e3/T_wiens)
-
+    facecolors = m.to_rgba(Tmap * 1.e-4)
     poly = PolyCollection(verts, facecolors=facecolors, linewidths=1.5)  # np.ones(len(t_data)))
     poly.set_alpha(0.5)
     ax.add_collection3d(poly, zs=t_data, zdir='y')
 
     # Create a color bar with 11 ticks
-    cbar = plt.colorbar(m, ticks=LinearLocator(10), shrink=0.85)
-    cbar.ax.yaxis.set_label_text("Wien temperature [K]")
-    ticks = np.round(np.exp(np.linspace(np.log(1e3), np.log(max(T_wiens)), 10)), -2)
-    # ticks = np.round(np.exp(np.linspace(np.log(min(T_wiens)), np.log(max(T_wiens)), 5)), -2)
-    cbar.ax.set_yticklabels(ticks)
+    cbar = plt.colorbar(m, shrink=0.85)
+    ticks = np.linspace(min(Tmap), max(Tmap), 10)
+    ticks_lbl = np.round(np.exp(ticks) * np.min(T_cols), -2)
+    cbar.ax.set_yticklabels(ticks_lbl)
+    cbar.ax.yaxis.set_label_text("Color temperature [K]")
 
-    # cbar = plt.colorbar(m, ticks=LinearLocator(11), shrink=0.85)
-    # Make the tick label go from 0 to 1 in steps of 0.1
-    # cbar.ax.set_yticklabels(arange(0, 1.01, 0.1))
-
-    # ax.set_xlabel('Wave')
     ax.set_xlim3d(x_lim)
-    # ax.set_xlim3d(min(wl), max(wl))
-
-    # ax.set_ylabel('Time')
     ax.set_ylim3d(min(t_data), max(t_data))
-
-    # ax.set_zlabel('Flux')
     ax.set_zlim3d(z_lim)
 
     # ax.set_xscale('log')
@@ -281,6 +254,7 @@ def plot_spec_poly(series, moments=None, fcut=1.e-20):
     ax.yaxis.set_label_text('Time [days]')
     ax.zaxis.set_label_text('Flux')
 
+    plt.grid()
     plt.show()
 
 
@@ -291,8 +265,7 @@ def plot_spec_t(series, wl_lim=None, moments=None):
     pos = 0
     t_data = []
     spec_array = []
-    for i in range(len(series.Time)):
-        t = series.Time[i]
+    for i, t in enumerate(series.Time):
         if t > moments[pos]:
             t_data.append(t)
             spec_array.append(series.get_spec(i).Flux)
@@ -307,11 +280,8 @@ def plot_spec_t(series, wl_lim=None, moments=None):
     y = y_data.flatten()
     z = spec_array.flatten()
 
-    ## filters
-    # z
-    zlim = np.max(z) * 1.e-20
-    is_z = z > zlim
-    # y
+    # filters
+    is_z = z > np.max(z)*1.e-20
     is_y = (y > wl_lim[0]) & (y < wl_lim[1])
 
     is_good = is_y & is_z
@@ -421,12 +391,13 @@ def usage():
     print "  plot_spec.py [params]"
     print "  -b <set_bands>: delimiter '_'. Default: B-V.\n" \
           "     Available: " + '-'.join(sorted(bands))
+    print "  -f  force mode: rewrite tcolor-files even if it exists"
     print "  -i <model name>.  Example: cat_R450_M15_Ni007_E7"
     print "  -o  options: [fit] - plot spectral fit in bands"
     print "  -p <model path(directory)>, default: ./"
     print "  -s  silence mode: no info, no plot"
-    print "  -f  force mode: rewrite tcolor-files even if it exists"
-    print "  -w  write magnitudes to file, default 'False'"
+    print "  -t  time interval [day]. Example: 5.:75."
+    print "  -w  wave length interval [A]. Example: 1.:25e3"
     print "  -h  print usage"
 
 
@@ -435,7 +406,7 @@ def main():
     is_fit = False
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "fhsuwp:i:b:o:")
+        opts, args = getopt.getopt(sys.argv[1:], "fhsup:i:b:o:t:w:")
     except getopt.GetoptError as err:
         print str(err)  # will print something like "option -a not recognized"
         usage()
@@ -458,6 +429,8 @@ def main():
     # set_bands = ['B-V']
     # set_bands = ['B-V', 'B-V-I']
     # set_bands = ['U-B', 'U-B-V', 'B-V']
+    t_ab = None
+    wl_ab = None
     set_bands = ['B-V', 'B-V-I', 'V-I']
     # set_bands = ['B-V', 'B-V-I', 'V-I', 'J-H-K']
     times = [15., 30., 60., 120.]
@@ -475,11 +448,11 @@ def main():
             is_silence = True
             continue
         if opt == '-w':
-            is_save = True
+            wl_ab = map(np.float, str(arg).split(':'))
+            # wl_ab = [np.float(s) for s in (str(arg).split(':'))]
             continue
-        if opt == '-f':
-            is_force = True
-            is_save = True
+        if opt == '-t':
+            t_ab = map(np.float, str(arg).split(':'))
             continue
         if opt == '-o':
             ops = str(arg).split(':')
@@ -506,9 +479,11 @@ def main():
         return None
 
     series_spec = model.read_series_spectrum(t_diff=1.05)
+    # series = series_spec  #.copy(t_ab=(0., 25e3), wl_ab=(1., 25e3))
+    series = series_spec.copy(t_ab=t_ab, wl_ab=wl_ab)
 
     if not is_fit:
-        plot_spec_poly(series_spec)
+        plot_spec_poly(series)
         # plot_spec_t(series_spec)
         print "Plot spectral F(t,nu): " + str(model)
         sys.exit(2)
@@ -527,7 +502,7 @@ def main():
     it = 0
     for time in times:
         print "\nRun: %s t=%f [%d/%d]" % (name, time, it, len(times))
-        spec = series_spec.get_spec_by_time(time)
+        spec = series.get_spec_by_time(time)
         spec.cut_flux(max(spec.Flux) * .1e-5)  # cut flux
 
         star = Star("%s: %f" % (name, time), spec=spec, is_flux_eq_luminosity=True)

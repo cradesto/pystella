@@ -118,6 +118,16 @@ def compute_x_bb():
     return a / b
 
 
+def temp_wien(wl):
+    """
+    Find temperature of Spectrum as Wien's law
+    :return: Wien's temperature
+    """
+    b = 0.28977721  # [cm]
+    Twien = b / wl
+    return Twien
+
+
 def Lum2MagBol(l):
     """Convert bolometric luminosity to abs. magnitude"""
     Msun = 4.74

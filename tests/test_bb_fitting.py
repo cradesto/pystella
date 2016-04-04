@@ -17,15 +17,16 @@ class TestSpectrumFitting(unittest.TestCase):
         wl = np.exp(np.linspace(np.log(start), np.log(end), nf))
         nu = rf.val_to_hz(wl, inp="A")
         T = 5500
-        self.sp = spectrum.SpectrumPlanck(nu, T)
+        s = spectrum.SpectrumPlanck(nu, T)
+        self.sp = s
 
     def test_fit_t_color(self):
-        Tcol = self.sp.temp_color
+        Tcol = self.sp.T_color
         self.assertAlmostEqual(Tcol, self.sp.T,
                                msg="For planck  Tcolor [%f] should be equal Tbb [%f]." % (Tcol, self.sp.T))
 
     def test_t_wien(self):
-        Twien = self.sp.temp_wien
+        Twien = self.sp.T_wien
         self.assertAlmostEqual(Twien, self.sp.T,
                                msg="For planck  Twien [%f] should be equal Tbb [%f]." % (Twien, self.sp.T)
                                , delta=Twien*0.05)  # ACCURACY 5 %
@@ -34,7 +35,7 @@ class TestSpectrumFitting(unittest.TestCase):
         # plot the input model and synthetic data
         nu = self.sp._freq
         flux = self.sp.flux_q
-        Tcol = self.sp.temp_color()
+        Tcol = self.sp.T_color
         ybest = rf.planck(nu, Tcol)
         # plot the solution
         plt.plot(nu, flux, 'b*', nu, ybest, 'r-', label='Tinit=%f, Tcol=%f'%(self.sp.Tbb, Tcol))
@@ -43,14 +44,16 @@ class TestSpectrumFitting(unittest.TestCase):
         plt.show()
 
     def test_fit_bb(self):
-        nu = self.sp.Freq
+        def func(nu, T):
+            return np.pi * rf.planck(nu, T, inp="Hz", out="freq")
+
+        self.sp.cut_flux(max(self.sp.Flux) * 1e-5)
+
+        freq = self.sp.Freq
         flux = self.sp.Flux
         Tinit = 1.e4
 
-        def func(nu, T):
-            return rf.planck(nu, T, inp="Hz", out="freq")
-
-        popt, pcov = curve_fit(func, nu, flux, p0=Tinit)
+        popt, pcov = curve_fit(func, freq, flux, p0=Tinit)
         Tbest = popt
         # bestT, pcov = curve_fit(rf.fit_planck(nu, inp='Hz'), nu, flux, p0=Tinit, sigma=sigma)
         sigmaT = np.sqrt(np.diag(pcov))
@@ -62,14 +65,15 @@ class TestSpectrumFitting(unittest.TestCase):
         print '  T = %.2f +/- %.2f K' % (Tbest, sigmaT)
 
         # Tcol = self.sp.temp_color
-        ybest = rf.planck(nu, Tbest, inp="Hz", out="freq")
+        ybest = np.pi * rf.planck(freq, Tbest, inp="Hz", out="freq")
         # plot the solution
-        plt.plot(nu, flux, 'b*', label='Spectral T: %f' % self.sp.T)
-        plt.plot(nu, ybest, 'r-', label='Best Tcol: %f' % Tbest)
+        plt.plot(freq, flux, 'b*', label='Spectral T: %f' % self.sp.T)
+        plt.plot(freq, ybest, 'r-', label='Best Tcol: %f' % Tbest)
         plt.xscale('log')
         plt.yscale('log')
-        plt.legend()
+        plt.legend(loc=3)
         plt.show()
 
-        self.assertAlmostEqual(Tbest, Tinit,
-                               msg="For planck  Tcolor [%f] should be equal sp.T [%f]." % (Tbest, self.sp.T))
+        self.assertAlmostEqual(Tbest, self.sp.T,
+                               msg="For planck  Tcolor [%f] should be equal sp.T [%f]." % (Tbest, self.sp.T),
+                               delta=Tbest*0.01)

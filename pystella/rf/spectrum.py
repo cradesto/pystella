@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 import pystella.rf.rad_func as rf
 from pystella.rf import band
-from pystella.rf.lc import SetLightCurve, LightCurve
+from pystella.rf.lc import LightCurve
 from pystella.rf.star import Star
 from pystella.util.phys_var import phys
 
@@ -17,7 +17,7 @@ __author__ = 'bakl'
 class Spectrum:
     def __init__(self, name, freq, flux, is_sort_wl=True):
         """Creates a Spectrum instance.  Required parameters:  name."""
-        self.name = name
+        self._name = name
         self._freq = np.array(freq, copy=True)  # frequencies of flux [cm]
         self._flux = np.array(flux, copy=True)  # flux [erg / (cm^2*Hz) ]
         # if is_sort_wl:
@@ -26,6 +26,10 @@ class Spectrum:
             sorti = np.argsort(self.Wl)
             self._freq = self._freq[sorti]
             self._flux = self._flux[sorti]
+
+    @property
+    def Name(self):
+        return self._name
 
     @property
     def Freq(self):
@@ -37,14 +41,14 @@ class Spectrum:
 
     @property
     def Flux_wl(self):  # wavelength of flux [cm]
-        return self._flux * self._freq ** 2 / phys.c  # flux [erg/cm^2/cm) ]
+        return self.Flux * self.Freq**2 / phys.c  # flux [erg/cm^2/cm) ]
 
     @property
     def Wl(self):
         return phys.c / self.Freq
 
-    def plot_spec(self, title=''):
-        plt.title('Spectrum: ' + title)
+    def plot_spec(self):
+        plt.title('Spectrum: ' % self.Name)
         plt.plot(self.Wl * phys.cm_to_angs, self.Flux_wl)
         plt.xscale('log')
         plt.yscale('log')
@@ -54,28 +58,29 @@ class Spectrum:
         plt.show()
 
     @property
-    def temp_color(self):
+    def T_color(self):
         """
         Fitting Spectrum by planck function and find the color temperature
         :return:   color temperature
         """
-        wl = self.Wl
-        # Tinit = 1.e4
-        Tinit = self.temp_wien
+        def func(nu, T):
+            return np.pi * rf.planck(nu, T, inp="Hz", out="freq")
 
-        def func(w, T):
-            return rf.planck(w, T, inp="cm", out="wave")
-
-        popt, pcov = opt.curve_fit(func, wl, self.Flux_wl, p0=Tinit)
-        return popt
+        Tinit = self.T_wien
+        popt, pcov = opt.curve_fit(func, self.Freq, self.Flux, p0=Tinit)
+        return popt[0]
 
     @property
     def temp_wien_interp(self):
+        return rf.temp_wien(self.wl_flux_max_interp)
+
+
+    @property
+    def wl_flux_max_interp(self):
         """
         Find temperature of Spectrum as Wien's law by interpolation
         :return: Wien's temperature
         """
-        b = 0.28977721  # [cm]
         wl = self.Wl
         tck = interpolate.splrep(wl, self.Flux_wl)
 
@@ -83,21 +88,25 @@ class Spectrum:
             return -interpolate.splev(w, tck, der=0)
 
         wl_max = opt.fmin(func, x0=wl[int(len(wl) / 2)])
-        Twien = b / wl_max
-        return Twien
+        return wl_max
 
     @property
-    def temp_wien(self):
+    def wl_flux_max(self):
+        """
+        Find max wave length of Spectrum
+        :return: the wave length of the spectrum maximum
+        """
+        idx = np.argmax(self.Flux_wl)
+        wl_max = self.Wl[idx]
+        return wl_max
+
+    @property
+    def T_wien(self):
         """
         Find temperature of Spectrum as Wien's law
         :return: Wien's temperature
         """
-        b = 0.28977721  # [cm]
-
-        idx = np.argmax(self.Flux_wl)
-        wl_max = self.Wl[idx]
-        Twien = b / wl_max
-        return Twien
+        return rf.temp_wien(self.wl_flux_max)
 
     @property
     def freq_mean(self):
@@ -179,8 +188,12 @@ class SeriesSpectrum:
         self._nfreq = None
         # self._wl = None  # waves
         self._freq = None
-        self._times = []
+        self._times = []  # [day]
         self._data = []  # array where index -> Spectrum at the times[index]
+
+
+    def get_spec(self, idx):
+        return self._data[idx]
 
     @property
     def is_time(self):
@@ -203,8 +216,32 @@ class SeriesSpectrum:
         return self._freq
 
     @property
+    def Freq_min(self):
+        res = float("inf")
+        for k, t in enumerate(self.Time):
+            s = self.get_spec(k)
+            res = min(res, np.min(s.Freq))
+        return res
+
+    @property
+    def Freq_max(self):
+        res = float("-inf")
+        for k, t in enumerate(self.Time):
+            s = self.get_spec(k)
+            res = max(res, np.max(s.Freq))
+        return res
+
+    @property
     def Wl(self):
-        return phys.c / self._freq
+        return phys.c / self.Freq
+
+    @property
+    def Wl_min(self):
+        return phys.c / self.Freq_max
+
+    @property
+    def Wl_max(self):
+        return phys.c / self.Freq_min
 
     @property
     def Data(self):
@@ -232,11 +269,33 @@ class SeriesSpectrum:
     #         raise ValueError("data must be array with len > 0.")
     #     self._data = data
 
-    def get_spec(self, idx):
-        return self._data[idx]
+    def copy(self, nm=None, t_ab=None, wl_ab=None):
+        """Copy SeriesSpectrum with times and wave lengths lying inside time and wave intervals.
+        t_ab  - time interval [day],
+        wl_ab - wave length interval [A]"""
+        name = self.name if nm is None else nm
+        if t_ab is None:
+            t_ab = (float("-inf"), float("inf"))
+        if wl_ab is None:
+            wl_ab = (0., float("inf"))
+
+        times = self.Time
+        res = SeriesSpectrum(name)
+        for k, t in enumerate(times):
+            if t_ab[0] <= t <= t_ab[1]:
+                s = self.get_spec(k)
+                freq = s.Freq
+                flux = s.Flux
+                f_l = phys.c / (wl_ab[1]*phys.angs_to_cm)
+                f_h = float("inf") if wl_ab[0] <= 0. else phys.c / (wl_ab[0]*phys.angs_to_cm)
+                is_freq = (freq > f_l) & (freq < f_h)
+                ss = Spectrum(s.Name, freq[is_freq], flux=flux[is_freq])
+                res.add(t, ss)
+
+        return res
 
     def get_tspec(self, idx):
-        return self._times[idx], self._data[idx]
+        return self.Time[idx], self.get_spec[idx]
 
     def get_spec_by_time(self, time):
         idx = (np.abs(self.Time - time)).argmin()
