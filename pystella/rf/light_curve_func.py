@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import pystella.rf.rad_func as rf
 from pystella.model.stella import Stella
 from pystella.rf import band
-from pystella.rf.lc import SetLightCurve, LightCurve
+from pystella.rf.lc import SetLightCurve
 
 __author__ = 'bakl'
 
@@ -83,9 +83,12 @@ def plot_ubv_models(ax, models_dic, bands, band_shift, xlim=None, ylim=None, is_
     return lc_min
 
 
-def plot_models_curves(ax, models_curves, bands, band_shift, xlim=None, ylim=None):
+def plot_models_curves(ax, models_curves, bands, band_shift=None, xlim=None, ylim=None):
     is_compute_x_lim = xlim is None
     is_compute_y_lim = ylim is None
+
+    if band_shift is None:
+        band_shift = dict((bname, 0) for bname in bands)  # no y-shift
 
     lw = 1.
     mi, ib = 0, 0

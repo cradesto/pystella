@@ -3,19 +3,27 @@ import os
 from scipy import interpolate
 
 from pystella.rf import band
+from pystella.rf.lc import SetLightCurve, LightCurve
 
 path_data = os.path.expanduser('~/Sn/my/papers/2016/snrefsdal/data')
-grav_lens_def = 'ogu-a'
-marker_glens = {'ogu-g': 'o', 'ogu-a': 's', 'gri-g': '+', 'sha-a': '*', 'die-a': 'd'}
+grav_lens_def = 'ogu-g'
+marker_glens = {'ogu-g': 'o', 'ogu-a': 's', 'gri-g': '+', 'sha-g': '*', 'sha-a': '*', 'die-a': 'd'}
+
+
+colors = {'ogu-g': 'blue', 'gri-g': 'magenta', 'sha-g': 'orange',
+          'ogu-a': 'skyblue', 'sha-a': 'red', 'die-a': 'olive',
+          'obs-tmp': 'chocolate', 'obs-sn87a': 'brown', 'obs-pol': 'black'}
 
 
 def coef_glens():  # see http://arxiv.org/abs/1510.05750
     a = {'ogu-g': {'time': {'S1': 0, 'S2': 8.7, 'S3': 5.1, 'S4': 18.8, 'SX': 311.},
                    'mag': {'S1': 1., 'S2': 1.14, 'S3': 1.22, 'S4': 0.67, 'SX': 0.27}},
-         'ogu-a': {'time': {'S1': 0, 'S2': 9.4, 'S3': 5.6, 'S4': 20.9, 'SX': 335.6},
-                   'mag': {'S1': 1., 'S2': 17.7 / 15.4, 'S3': 18.3 / 15.4, 'S4': 9.8 / 15.4, 'SX': 4.2 / 15.4}},
          'gri-g': {'time': {'S1': 0, 'S2': 10.6, 'S3': 4.8, 'S4': 25.9, 'SX': 361.},
                    'mag': {'S1': 1., 'S2': 0.92, 'S3': 0.99, 'S4': 0.42, 'SX': 0.36}},
+         'sha-g': {'time': {'S1': 0, 'S2': 6., 'S3': -1., 'S4': 12., 'SX': 277.},
+                   'mag': {'S1': 1., 'S2': 0.84, 'S3': 1.68, 'S4': 0.57, 'SX': 0.25}},
+         'ogu-a': {'time': {'S1': 0, 'S2': 9.4, 'S3': 5.6, 'S4': 20.9, 'SX': 335.6},
+                   'mag': {'S1': 1., 'S2': 17.7 / 15.4, 'S3': 18.3 / 15.4, 'S4': 9.8 / 15.4, 'SX': 4.2 / 15.4}},
          'sha-a': {'time': {'S1': 0, 'S2': 8., 'S3': 5., 'S4': 17., 'SX': 233.},
                    'mag': {'S1': 1., 'S2': 0.84, 'S3': 1.46, 'S4': 0.44, 'SX': 0.19}},
          'die-a': {'time': {'S1': 0, 'S2': -17., 'S3': -4., 'S4': 74., 'SX': 262.},
@@ -30,14 +38,22 @@ def coef_glens():  # see http://arxiv.org/abs/1510.05750
     return a
 
 
-def coef_time_delay(model):  # see http://arxiv.org/abs/1510.05750
+def coef_time_delay(model, img=None):  # see http://arxiv.org/abs/1510.05750
     a = coef_glens()
-    return a[model]['time']
+    if img is None:
+        return a[model]['time']
+    return a[model]['time'][img]
 
 
-def coef_magnification(model):
+def coef_magnification(model, img=None):
     a = coef_glens()
-    return a[model]['mag']
+    if img is None:
+        return a[model]['mag']
+    return a[model]['mag'][img]
+
+
+def coef_time_mag(model, img=None):
+    return coef_time_delay(model, img), coef_magnification(model, img)
 
 
 def plot(ax, dic=None):
@@ -255,3 +271,24 @@ def read_lc(path):
 
             lc_data = np.vstack([lc_data, r])
     return lc_data, col_pos
+
+
+def read_curves(path, image):
+    curves = SetLightCurve("SN Refsdal")
+
+    lc_data, sn_images = read_lc(path)
+    bands = np.unique(lc_data[:, 0])
+    colS = sn_images[image]  # S1 - 2, col  S2 - 4, S3 - 6, S4 - 8 col
+
+    for ib in bands:
+        bname = 'F%sW' % int(ib)
+        data = lc_data[lc_data[:, 0] == ib,]
+        time = data[:, 1]
+        mags = data[:, colS]
+        yerr = data[:, colS + 1]
+        if np.all(mags <= 0):
+            continue
+        b = band.band_by_name(bname)
+        lc = LightCurve(b, time, mags, errs=yerr)
+        curves.add(lc)
+    return curves

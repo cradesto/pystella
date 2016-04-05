@@ -8,11 +8,12 @@ from os.path import dirname
 
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
+from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 import numpy as np
 
 from pystella.rf import band
 from pystella.rf import extinction
-from pystella.rf import light_curve_func as lc
+from pystella.rf import light_curve_func as lcf
 from pystella import velocity as vel
 import pystella.util.callback as cb
 from pystella.util.phys_var import cosmology_D_by_z
@@ -61,7 +62,7 @@ def plot_SX(models_dic, bands, call=None, xlim=None, ylim=None, title='', fsave=
             xlim = ax_cache[1].get_xlim()
             ylim = ax_cache[1].get_ylim()
 
-        lc.plot_ubv_models(ax, {im: models_dic[im]}, bands, band_shift=band_shift, xlim=xlim, ylim=ylim)
+        lcf.plot_ubv_models(ax, {im: models_dic[im]}, bands, band_shift=band_shift, xlim=xlim, ylim=ylim)
         # plot callback
         if call is not None:
             call.plot(ax, {'glens': model, 'image': im})
@@ -179,7 +180,7 @@ def old_plot_S4(models_dic, bands, glens, call=None, xlim=None, ylim=None, title
             xlim = ax_cache[1].get_xlim()
             ylim = ax_cache[1].get_ylim()
 
-        lc.plot_ubv_models(ax, {im: models_dic[im]}, bands, band_shift=band_shift, xlim=xlim, ylim=ylim)
+        lcf.plot_ubv_models(ax, {im: models_dic[im]}, bands, band_shift=band_shift, xlim=xlim, ylim=ylim)
         # plot callback
         if call is not None:
             call.plot(ax, {'glens': glens, 'image': im})
@@ -238,7 +239,7 @@ def plot_S4_curves(models_curves, bands, glens, call=None, xlim=None, ylim=None,
             xlim = ax_cache[1].get_xlim()
             ylim = ax_cache[1].get_ylim()
 
-        lc.plot_models_curves(ax, {im: models_curves[im]}, bands, band_shift=band_shift, xlim=xlim, ylim=ylim)
+        lcf.plot_models_curves(ax, {im: models_curves[im]}, bands, band_shift=band_shift, xlim=xlim, ylim=ylim)
         # plot callback
         if call is not None:
             call.plot(ax, {'glens': glens, 'image': im})
@@ -253,6 +254,101 @@ def plot_S4_curves(models_curves, bands, glens, call=None, xlim=None, ylim=None,
     # plt.grid()
     # plt.title(title)
     fig.suptitle(title, fontsize=11)
+    plt.show()
+
+    if fsave is not None:
+        print "Save plot to %s " % fsave
+        fig.savefig(fsave, bbox_inches='tight')
+
+
+def plot_grid_curves(curves_model, curves_obs, t0=0., xlim=None, ylim=None, fsave=None):
+    print "Plotting grid: t0=%4.2f" % t0
+
+    set_images = curves_obs.viewkeys()
+    colors = band.bands_colors()
+    lntypes = lcf.lntypes
+    if xlim is None:
+        xlim = (-10., 400.)
+    if ylim is None:
+        ylim = (28., 24.)
+
+    # setup figure
+    # plt.clf()
+    plt.matplotlib.rcParams.update({'font.size': 12})
+    fig = plt.figure(num=len(set_images), figsize=(12, 12), dpi=100, facecolor='w', edgecolor='k')
+    gs1 = gridspec.GridSpec(curves_model.Length, len(set_images))
+    gs1.update(wspace=0., hspace=0., left=0.1, right=0.9)
+
+    x_majorLocator = MultipleLocator(100)
+    # x_majorLocator = MultipleLocator(np.round((xlim[1]-xlim[0])/5, 2))
+    y_majorLocator = MultipleLocator(np.round((np.abs(ylim[1]-ylim[0]))/4, 1))
+    majorFormatter = FormatStrFormatter('%d')
+    # minorLocator = MultipleLocator(1)
+    lw = 1.5
+
+    # create the grid of figures
+    irow = 0
+    igrid = 0
+    for lc in curves_model:
+        igrid += 1
+        icol = 0
+        for img, obs in curves_obs.items():
+            ax = fig.add_subplot(gs1[irow, icol])
+            # ax.text(15, 23.5, '%s: %s' % (im, lc.Band.Name), bbox={'facecolor': 'blue', 'alpha': 0.2, 'pad': 10})
+
+            # set axis
+            ax.yaxis.set_major_locator(y_majorLocator)
+            ax.yaxis.set_major_formatter(majorFormatter)
+            ax.xaxis.set_major_locator(x_majorLocator)
+            ax.xaxis.set_major_formatter(majorFormatter)
+            if icol == 0:
+                ax.set_ylabel('%s' % lc.Band.Name)
+            elif icol == len(set_images)-1:
+                ax.yaxis.tick_right()
+                ax.yaxis.set_label_position("right")
+            else:
+                ax.yaxis.set_visible(False)
+            if irow == 0:
+                ax.set_title(img)
+            elif irow == curves_model.Length-1:
+                ax.set_xlabel('Time [day]')
+                # ax.xaxis.set_minor_locator(minorLocator)
+
+            # if igrid > 1:
+            #     xlim = ax_cache[1].get_xlim()
+            #     ylim = ax_cache[1].get_ylim()
+
+            # Plot grav lens model
+            # gl_colors = {'ogu-g': 'brown', 'gri-g': 'magenta', 'sha-g': 'orange', 'obs-pol': 'red'}
+            gl_colors = {'ogu-g': 'black', 'gri-g': 'magenta', 'sha-g': 'orange', 'obs-sn87a': 'red'}
+            for gl_name, bcolor in gl_colors.items():
+                # bcolor = sn_obs.colors[gl_name]
+                tshift, mgf = sn_obs.coef_time_mag(gl_name, img)
+                lc.tshift = tshift
+                lc.mshift = -2.5*np.log10(mgf)  # magnification
+                x = lc.Time
+                y = lc.Mag
+                ax.plot(x, y, label=gl_name, color=bcolor, ls="-", linewidth=lw)
+
+            # Plot obs
+            lc_o = obs[lc.Band.Name]
+            lc_o.tshift = -lc_o.tmin + t0
+            x = lc_o.Time
+            y = lc_o.Mag
+            ax.plot(x, y, label='Obs', color='blue', linewidth=1.0, marker='o', markersize=4, ls='')
+
+            ax.set_xlim(xlim)
+            ax.invert_yaxis()
+            ax.set_ylim(ylim)
+
+            icol += 1
+        irow += 1
+
+    plt.legend(prop={'size': 8}, loc='upper center', ncol=5)
+    # plt.legend(prop={'size': 8}, loc='upper center', bbox_to_anchor=(0.02, 1.2), ncol=4)
+    # plt.grid()
+    # plt.title(title)
+    # fig.suptitle(title, fontsize=11)
     plt.show()
 
     if fsave is not None:
@@ -281,8 +377,8 @@ def plot_all(models_vels, models_dic, bands, call=None, xlim=None, ylim=None,
     gs1.update(wspace=0.3, hspace=0.3, left=0.1, right=0.95)
 
     # plot the light curves
-    lc_min = lc.plot_ubv_models(axUbv, models_dic, bands, band_shift=band_shift, xlim=xlim, ylim=ylim,
-                                is_time_points=is_time_points)
+    lc_min = lcf.plot_ubv_models(axUbv, models_dic, bands, band_shift=band_shift, xlim=xlim, ylim=ylim,
+                                 is_time_points=is_time_points)
 
     # show  times of spectral observations
     dt = 1.
@@ -339,8 +435,8 @@ def run_BV(name, path, bands, e, z, distance, magnification, callback, xlim, is_
     if glens is None:
         glens = sn_obs.grav_lens_def
 
-    mags = lc.compute_mag(name, path, bands, ext=ext, z=z, distance=distance, magnification=magnification,
-                          is_show_info=False, is_save=is_save)
+    mags = lcf.compute_mag(name, path, bands, ext=ext, z=z, distance=distance, magnification=magnification,
+                           is_show_info=False, is_save=is_save)
     models_mags = {name: mags}
 
     if callback is not None:
@@ -384,8 +480,8 @@ def old_run_S4(name, path, bands, e, z, distance, magnification, callback, xlim,
             #     continue
             i += 1
             mgf *= magnification
-            mags = lc.compute_mag(name, path, bands, ext=ext, z=z, distance=distance, magnification=mgf,
-                                  is_show_info=False, is_save=is_save)
+            mags = lcf.compute_mag(name, path, bands, ext=ext, z=z, distance=distance, magnification=mgf,
+                                   is_show_info=False, is_save=is_save)
             models_mags[im] = mags
             print "Finish image: %s [%d/%d]" % (im, i, len(sn_images))
 
@@ -440,8 +536,8 @@ def run_S4_curves(name, path, bands, e, z, distance, magnification, callback, xl
             #     continue
             i += 1
             mgf *= magnification
-            curves = lc.compute_curves(name, path, bands, ext=ext, z=z, distance=distance, magnification=mgf,
-                                       is_show_info=False, is_save=is_save)
+            curves = lcf.compute_curves(name, path, bands, ext=ext, z=z, distance=distance, magnification=mgf,
+                                        is_show_info=False, is_save=is_save)
             models_curves[im] = curves
             print "Finish image: %s [%d/%d]" % (im, i, len(sn_images))
 
@@ -474,6 +570,32 @@ def run_S4_curves(name, path, bands, e, z, distance, magnification, callback, xl
         print "There are no sn images"
 
 
+def run_curves_grid(name, path, bands, e, z, distance, mgf, xlim, is_save):
+    if e > 0:
+        if z > 1:
+            ext = extinction.extinction_law_z(ebv=e, bands=bands, z=z)
+        else:
+            ext = extinction.extinction_law(ebv=e, bands=bands)
+    else:
+        ext = None
+
+    curves_model = lcf.compute_curves(name, path, bands, ext=ext, z=z, distance=distance, magnification=mgf,
+                                      is_show_info=False, is_save=is_save)
+
+    print "Read model: %s. z=%4.2f D=%6.2e mu=%3.1f ebv=%4.2f" % (name, z, distance, mgf, e)
+
+    sn_images = ["S1", "S2", "S3", "S4"]
+    curves_obs = {}  # dict((k, None) for k in names)
+    i = 0
+    for img in sn_images:
+        i += 1
+        curves = sn_obs.read_curves(sn_obs.path_data, img)
+        curves_obs[img] = curves
+        print "Read obs image: %s [%d/%d]" % (img, i, len(sn_images))
+
+    plot_grid_curves(curves_model, curves_obs, xlim=xlim)
+
+
 def run_ubv_vel(name, path, bands, e, z, distance, magnification, xlim, callback=None,
                 is_vel=False, is_save=False):
     if e > 0:
@@ -487,8 +609,8 @@ def run_ubv_vel(name, path, bands, e, z, distance, magnification, xlim, callback
     models_mags = {}
     models_vels = {}
 
-    mags = lc.compute_mag(name, path, bands, ext=ext, z=z, distance=distance, magnification=magnification,
-                          is_show_info=False, is_save=is_save)
+    mags = lcf.compute_mag(name, path, bands, ext=ext, z=z, distance=distance, magnification=magnification,
+                           is_show_info=False, is_save=is_save)
     models_mags[name] = mags
 
     if is_vel:
@@ -540,7 +662,8 @@ def usage():
     print "  -z <redshift>.  Default: 1.49"
     print "  -t  plot time points"
     print "  -s  save plot to pdf-file."
-    print "  -o  options: [vel, gl, bv]  - plot model velocities,  plot SX with grav.lens, colors [B-V, ...]"
+    print "  -o  options: [vel, gl, bv, grid]  - plot model velocities,  plot SX with grav.lens," \
+          " colors [B-V, ...], grid S? x Bands"
     print "  -w  write magnitudes to file, default 'False'"
     print "  -h  print usage"
 
@@ -558,6 +681,7 @@ def main(name=''):
     is_vel = False
     is_glens = False
     is_BV = False
+    is_grid = False
     path = ''
     z = 1.49
     e = 0.
@@ -622,6 +746,7 @@ def main(name=''):
             ops = str(arg).split(':')
             is_vel = "vel" in ops
             is_BV = "bv" in ops
+            is_grid = "grid" in ops
             if is_BV:
                 bands = str('F814W-F105W-F125W-F160W').split('-')
             is_glens = "gl" in ops
@@ -648,6 +773,8 @@ def main(name=''):
     elif is_vel:
         run_ubv_vel(name, path, bands, e, z, distance, magnification, xlim=xlim, callback=callback,
                     is_vel=is_vel, is_save=is_save)
+    elif is_grid:
+        run_curves_grid(name, path, bands, e, z, distance, magnification, xlim=xlim, is_save=is_save)
     else:
         run_S4_curves(name, path, bands, e, z, distance, magnification, callback, xlim=xlim,
                       is_save=is_save, is_SX=is_glens)

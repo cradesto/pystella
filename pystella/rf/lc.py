@@ -8,7 +8,7 @@ from pystella.rf import band
 __author__ = 'bakl'
 
 
-class LightCurve:
+class LightCurve(object):
     def __init__(self, b, time, mags, errs=None, tshift=0):
         """Creates a Light Curve instance.  Required parameters:  b (band), time, mags."""
         if isinstance(b, basestring):  # convert band-name to band instance
@@ -52,6 +52,10 @@ class LightCurve:
     def tshift(self):
         return self._tshift
 
+    @property
+    def tmin(self):
+        return np.min(self.Time)
+
     @tshift.setter
     def tshift(self, shift):
         self._tshift = shift
@@ -65,7 +69,7 @@ class LightCurve:
         self._mshift = shift
 
 
-class SetLightCurve:
+class SetLightCurve(object):
     """Set of the Light Curves"""
     def __init__(self, name=''):
         """Creates a Set of Light Curves."""

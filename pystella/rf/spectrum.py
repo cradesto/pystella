@@ -14,7 +14,7 @@ from pystella.util.phys_var import phys
 __author__ = 'bakl'
 
 
-class Spectrum:
+class Spectrum(object):
     def __init__(self, name, freq, flux, is_sort_wl=True):
         """Creates a Spectrum instance.  Required parameters:  name."""
         self._name = name
@@ -181,7 +181,7 @@ class SpectrumDilutePlanck(Spectrum):
         return self._W
 
 
-class SeriesSpectrum:
+class SeriesSpectrum(object):
     def __init__(self, name):
         """Creates a Series of Spectrum instance."""
         self.name = name
@@ -190,7 +190,6 @@ class SeriesSpectrum:
         self._freq = None
         self._times = []  # [day]
         self._data = []  # array where index -> Spectrum at the times[index]
-
 
     def get_spec(self, idx):
         return self._data[idx]
