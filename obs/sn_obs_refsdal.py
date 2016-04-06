@@ -261,9 +261,7 @@ def plot_S4_curves(models_curves, bands, glens, call=None, xlim=None, ylim=None,
         fig.savefig(fsave, bbox_inches='tight')
 
 
-def plot_grid_curves(curves_model, curves_obs, t0=0., xlim=None, ylim=None, fsave=None):
-    print "Plotting grid: t0=%4.2f" % t0
-
+def plot_grid_curves(curves_model, curves_obs, t0=0., magnification=1., xlim=None, ylim=None, fsave=None):
     set_images = curves_obs.viewkeys()
     colors = band.bands_colors()
     lntypes = lcf.lntypes
@@ -286,16 +284,21 @@ def plot_grid_curves(curves_model, curves_obs, t0=0., xlim=None, ylim=None, fsav
     # minorLocator = MultipleLocator(1)
     lw = 1.5
 
+    # find time minimum
+    time_min = float('inf')
+    for img, lc_obs in curves_obs.items():
+        time_min = min(time_min, lc_obs.tmin)
+
+    print "Plotting grid: t0=%4.2f time_min=%4.2f" % (t0, time_min)
+
     # create the grid of figures
     irow = 0
     igrid = 0
     for lc in curves_model:
         igrid += 1
         icol = 0
-        for img, obs in curves_obs.items():
+        for img, lc_obs in curves_obs.items():
             ax = fig.add_subplot(gs1[irow, icol])
-            # ax.text(15, 23.5, '%s: %s' % (im, lc.Band.Name), bbox={'facecolor': 'blue', 'alpha': 0.2, 'pad': 10})
-
             # set axis
             ax.yaxis.set_major_locator(y_majorLocator)
             ax.yaxis.set_major_formatter(majorFormatter)
@@ -314,6 +317,7 @@ def plot_grid_curves(curves_model, curves_obs, t0=0., xlim=None, ylim=None, fsav
                 ax.set_xlabel('Time [day]')
                 # ax.xaxis.set_minor_locator(minorLocator)
 
+            # ax.text(15, 23.5, '%s: %s' % (im, lc.Band.Name), bbox={'facecolor': 'blue', 'alpha': 0.2, 'pad': 10})
             # if igrid > 1:
             #     xlim = ax_cache[1].get_xlim()
             #     ylim = ax_cache[1].get_ylim()
@@ -325,17 +329,20 @@ def plot_grid_curves(curves_model, curves_obs, t0=0., xlim=None, ylim=None, fsav
                 # bcolor = sn_obs.colors[gl_name]
                 tshift, mgf = sn_obs.coef_time_mag(gl_name, img)
                 lc.tshift = tshift
-                lc.mshift = -2.5*np.log10(mgf)  # magnification
+
+                lc.mshift = -2.5*np.log10(magnification*mgf)  # magnification
                 x = lc.Time
                 y = lc.Mag
                 ax.plot(x, y, label=gl_name, color=bcolor, ls="-", linewidth=lw)
 
             # Plot obs
-            lc_o = obs[lc.Band.Name]
-            lc_o.tshift = -lc_o.tmin + t0
+            lc_o = lc_obs[lc.Band.Name]
+            lc_o.tshift = -time_min + t0
+            # lc_o.tshift = -lc_o.tmin + t0
             x = lc_o.Time
             y = lc_o.Mag
             ax.plot(x, y, label='Obs', color='blue', linewidth=1.0, marker='o', markersize=4, ls='')
+            # print "Obs tshift: t0=%4.2f" % lc_o.tshift
 
             ax.set_xlim(xlim)
             ax.invert_yaxis()
@@ -579,7 +586,7 @@ def run_curves_grid(name, path, bands, e, z, distance, mgf, xlim, is_save):
     else:
         ext = None
 
-    curves_model = lcf.compute_curves(name, path, bands, ext=ext, z=z, distance=distance, magnification=mgf,
+    curves_model = lcf.compute_curves(name, path, bands, ext=ext, z=z, distance=distance,
                                       is_show_info=False, is_save=is_save)
 
     print "Read model: %s. z=%4.2f D=%6.2e mu=%3.1f ebv=%4.2f" % (name, z, distance, mgf, e)
@@ -593,7 +600,7 @@ def run_curves_grid(name, path, bands, e, z, distance, mgf, xlim, is_save):
         curves_obs[img] = curves
         print "Read obs image: %s [%d/%d]" % (img, i, len(sn_images))
 
-    plot_grid_curves(curves_model, curves_obs, xlim=xlim)
+    plot_grid_curves(curves_model, curves_obs, magnification=mgf, xlim=xlim)
 
 
 def run_ubv_vel(name, path, bands, e, z, distance, magnification, xlim, callback=None,

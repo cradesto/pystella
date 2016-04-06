@@ -54,7 +54,7 @@ class LightCurve(object):
 
     @property
     def tmin(self):
-        return np.min(self.Time)
+        return np.min(self._t)
 
     @tshift.setter
     def tshift(self, shift):
@@ -109,6 +109,11 @@ class SetLightCurve(object):
         b = self.BandNames[0]
         return self.Set[b].Time
 
+    @property
+    def tmin(self):
+        res = map(np.min, [lc.Time for name, lc in self.Set.items()])
+        return min(res)
+
     # for cycle
     def __iter__(self):
         self._loop = 0
@@ -121,6 +126,9 @@ class SetLightCurve(object):
         b = self.BandNames[idx]
         self._loop += 1
         return self.Set[b]
+
+    def __len__(self):
+        return len(self.Set)
 
     def add(self, lc):
         self._set[lc.Band.Name] = lc
