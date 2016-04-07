@@ -8,7 +8,7 @@ from os.path import dirname
 
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
-from matplotlib.ticker import MultipleLocator, FormatStrFormatter
+from matplotlib.ticker import MultipleLocator, FormatStrFormatter, AutoLocator
 import numpy as np
 
 from pystella.rf import band
@@ -262,7 +262,8 @@ def plot_S4_curves(models_curves, bands, glens, call=None, xlim=None, ylim=None,
 
 
 def plot_grid_curves(curves_model, curves_obs, t0=0., magnification=1., xlim=None, ylim=None, fsave=None):
-    set_images = curves_obs.viewkeys()
+    # set_images = curves_obs.viewkeys()
+    set_images = sorted(curves_obs, key=curves_obs.get)
     colors = band.bands_colors()
     lntypes = lcf.lntypes
     if xlim is None:
@@ -277,11 +278,7 @@ def plot_grid_curves(curves_model, curves_obs, t0=0., magnification=1., xlim=Non
     gs1 = gridspec.GridSpec(curves_model.Length, len(set_images))
     gs1.update(wspace=0., hspace=0., left=0.1, right=0.9)
 
-    x_majorLocator = MultipleLocator(100)
-    # x_majorLocator = MultipleLocator(np.round((xlim[1]-xlim[0])/5, 2))
-    y_majorLocator = MultipleLocator(np.round((np.abs(ylim[1]-ylim[0]))/4, 1))
-    majorFormatter = FormatStrFormatter('%d')
-    # minorLocator = MultipleLocator(1)
+    y_majorLocator = MultipleLocator(np.round((np.abs(ylim[1]-ylim[0]))/3, 1))
     lw = 1.5
 
     # find time minimum
@@ -289,7 +286,7 @@ def plot_grid_curves(curves_model, curves_obs, t0=0., magnification=1., xlim=Non
     for img, lc_obs in curves_obs.items():
         time_min = min(time_min, lc_obs.tmin)
 
-    print "Plotting grid: t0=%4.2f time_min=%4.2f" % (t0, time_min)
+    print "Plotting grid: t0=%4.2f time_min=%4.2f time_exp=%4.2f" % (t0, time_min, time_min+t0)
 
     # create the grid of figures
     irow = 0
@@ -297,24 +294,26 @@ def plot_grid_curves(curves_model, curves_obs, t0=0., magnification=1., xlim=Non
     for lc in curves_model:
         igrid += 1
         icol = 0
-        for img, lc_obs in curves_obs.items():
+        for img in set_images:
+            lc_obs = curves_obs[img]
             ax = fig.add_subplot(gs1[irow, icol])
             # set axis
             ax.yaxis.set_major_locator(y_majorLocator)
-            ax.yaxis.set_major_formatter(majorFormatter)
-            ax.xaxis.set_major_locator(x_majorLocator)
-            ax.xaxis.set_major_formatter(majorFormatter)
-            if icol == 0:
+            ax.yaxis.set_major_formatter(FormatStrFormatter('%d'))
+            # ax.xaxis.set_major_locator(MultipleLocator(100))
+            ax.xaxis.set_major_locator(AutoLocator())
+            ax.xaxis.set_major_formatter(FormatStrFormatter('%d'))
+            if ax.is_first_col():
                 ax.set_ylabel('%s' % lc.Band.Name)
-            elif icol == len(set_images)-1:
+            elif ax.is_last_col():
                 ax.yaxis.tick_right()
                 ax.yaxis.set_label_position("right")
             else:
                 ax.yaxis.set_visible(False)
-            if irow == 0:
+            if ax.is_first_row():
                 ax.set_title(img)
-            elif irow == curves_model.Length-1:
-                ax.set_xlabel('Time [day]')
+            elif ax.is_last_row():
+                ax.set_xlabel('Time [day]', fontsize=10)
                 # ax.xaxis.set_minor_locator(minorLocator)
 
             # ax.text(15, 23.5, '%s: %s' % (im, lc.Band.Name), bbox={'facecolor': 'blue', 'alpha': 0.2, 'pad': 10})
@@ -356,6 +355,7 @@ def plot_grid_curves(curves_model, curves_obs, t0=0., magnification=1., xlim=Non
     # plt.grid()
     # plt.title(title)
     # fig.suptitle(title, fontsize=11)
+    # plt.tight_layout()
     plt.show()
 
     if fsave is not None:
