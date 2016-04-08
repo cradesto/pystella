@@ -286,7 +286,7 @@ def plot_grid_curves(curves_model, curves_obs, t0=0., magnification=1., xlim=Non
     for img, lc_obs in curves_obs.items():
         time_min = min(time_min, lc_obs.tmin)
 
-    print "Plotting grid: t0=%4.2f time_min=%4.2f time_exp=%4.2f" % (t0, time_min, time_min+t0)
+    print "Plotting grid: t0=%4.2f time_min=%4.2f time_exp=%4.2f" % (t0, time_min, time_min-t0)
 
     # create the grid of figures
     irow = 0
@@ -350,7 +350,7 @@ def plot_grid_curves(curves_model, curves_obs, t0=0., magnification=1., xlim=Non
             icol += 1
         irow += 1
 
-    plt.legend(prop={'size': 8}, loc='upper center', ncol=5)
+    plt.legend(prop={'size': 8}, loc='upper center', ncol=5, bbox_to_anchor=(-1, 4.3))
     # plt.legend(prop={'size': 8}, loc='upper center', bbox_to_anchor=(0.02, 1.2), ncol=4)
     # plt.grid()
     # plt.title(title)
