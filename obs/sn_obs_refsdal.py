@@ -261,15 +261,18 @@ def plot_S4_curves(models_curves, bands, glens, call=None, xlim=None, ylim=None,
         fig.savefig(fsave, bbox_inches='tight')
 
 
-def plot_grid_curves(curves_model, curves_obs, t0=0., magnification=1., xlim=None, ylim=None, fsave=None):
-    # set_images = curves_obs.viewkeys()
+def plot_grid_curves(curves_model, curves_obs, t0=0., magnification=1., gl_colors=None,
+                     xlim=None, ylim=None, fsave=None):
     set_images = sorted(curves_obs, key=curves_obs.get)
-    colors = band.bands_colors()
-    lntypes = lcf.lntypes
     if xlim is None:
         xlim = (-10., 400.)
     if ylim is None:
         ylim = (28., 24.)
+
+    if gl_colors is None:
+        # gl_colors = {'ogu-g': 'brown', 'gri-g': 'magenta', 'sha-g': 'orange', 'obs-pol': 'red'}
+        gl_colors = {'ogu-g': 'black', 'gri-g': 'magenta', 'sha-g': 'orange', 'obs-tmp': 'red'}
+        # gl_colors = {'obs-tmp': 'magenta', 'obs-pol': 'orange', 'obs-sn87a': 'red'}  # obs
 
     # setup figure
     # plt.clf()
@@ -286,12 +289,24 @@ def plot_grid_curves(curves_model, curves_obs, t0=0., magnification=1., xlim=Non
     for img, lc_obs in curves_obs.items():
         time_min = min(time_min, lc_obs.tmin)
 
-    print "Plotting grid: t0=%4.2f time_min=%4.2f time_exp=%4.2f" % (t0, time_min, time_min-t0)
+    time_max = float('-inf')
+    b_max  = 'F160W'
+    lc = curves_model.get(b_max)
+    if lc is not None:
+        time_max = lc.t_lcmax
+
+    print "Plotting grid: t0=%4.2f time_min=%4.2f time_exp=%4.2f " % (t0, time_min, time_min-t0)
+    print "Data:  time_max(%s)=%4.2f abs.time max=%4.2f" % (b_max, time_max, time_min-t0+time_max)
 
     # create the grid of figures
     irow = 0
     igrid = 0
-    for lc in curves_model:
+
+    bands = str('F160W-F125W-F105W-F814W').split('-')
+
+    for bn in bands:
+    # for lc in curves_model:
+        lc = curves_model[bn]
         igrid += 1
         icol = 0
         for img in set_images:
@@ -304,7 +319,7 @@ def plot_grid_curves(curves_model, curves_obs, t0=0., magnification=1., xlim=Non
             ax.xaxis.set_major_locator(AutoLocator())
             ax.xaxis.set_major_formatter(FormatStrFormatter('%d'))
             if ax.is_first_col():
-                ax.set_ylabel('%s' % lc.Band.Name)
+                ax.set_ylabel('%s' % lc.Band.Name, fontsize=12)
             elif ax.is_last_col():
                 ax.yaxis.tick_right()
                 ax.yaxis.set_label_position("right")
@@ -313,7 +328,7 @@ def plot_grid_curves(curves_model, curves_obs, t0=0., magnification=1., xlim=Non
             if ax.is_first_row():
                 ax.set_title(img)
             elif ax.is_last_row():
-                ax.set_xlabel('Time [day]', fontsize=10)
+                ax.set_xlabel('Time [day]', fontsize=12)
                 # ax.xaxis.set_minor_locator(minorLocator)
 
             # ax.text(15, 23.5, '%s: %s' % (im, lc.Band.Name), bbox={'facecolor': 'blue', 'alpha': 0.2, 'pad': 10})
@@ -322,10 +337,7 @@ def plot_grid_curves(curves_model, curves_obs, t0=0., magnification=1., xlim=Non
             #     ylim = ax_cache[1].get_ylim()
 
             # Plot grav lens model
-            # gl_colors = {'ogu-g': 'brown', 'gri-g': 'magenta', 'sha-g': 'orange', 'obs-pol': 'red'}
-            gl_colors = {'ogu-g': 'black', 'gri-g': 'magenta', 'sha-g': 'orange', 'obs-sn87a': 'red'}
             for gl_name, bcolor in gl_colors.items():
-                # bcolor = sn_obs.colors[gl_name]
                 tshift, mgf = sn_obs.coef_time_mag(gl_name, img)
                 lc.tshift = tshift
 
@@ -351,6 +363,7 @@ def plot_grid_curves(curves_model, curves_obs, t0=0., magnification=1., xlim=Non
         irow += 1
 
     plt.legend(prop={'size': 8}, loc='upper center', ncol=5, bbox_to_anchor=(-1, 4.3))
+    fig.text(0.035, 0.5, "AB magnitude", rotation="vertical", va="center", fontsize=16)
     # plt.legend(prop={'size': 8}, loc='upper center', bbox_to_anchor=(0.02, 1.2), ncol=4)
     # plt.grid()
     # plt.title(title)
@@ -755,7 +768,8 @@ def main(name=''):
             is_BV = "bv" in ops
             is_grid = "grid" in ops
             if is_BV:
-                bands = str('F814W-F105W-F125W-F160W').split('-')
+                bands = str('F160W-F125W-F105W-F814W').split('-')
+                # bands = str('F814W-F105W-F125W-F160W').split('-')
             is_glens = "gl" in ops
             if is_glens:
                 bands = str('F125W-F160W').split('-')

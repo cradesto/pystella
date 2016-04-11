@@ -250,9 +250,9 @@ def plot_spec_poly(series, moments=None, fcut=1.e-20, is_info=False):
     # ax.set_xscale('log')
     ax.set_zscale('log')
 
-    ax.xaxis.set_label_text('Wave [A]')
+    ax.xaxis.set_label_text('Wavelength [A]')
     ax.yaxis.set_label_text('Time [days]')
-    ax.zaxis.set_label_text('Flux')
+    ax.zaxis.set_label_text('Flux [a.u.]')
 
     plt.grid()
     plt.show()
@@ -385,6 +385,20 @@ def compute_tcolor(star, bands):
     return Tcol, zeta
 
 
+def interval2float(v):
+    a = str(v).split(':')
+    if len(a) == 2 and len(a[0]) == 0:
+        return 0., float(a[1])
+    elif len(a) == 2 and len(a[1]) == 0:
+        return float(a[0]), float("inf")
+    elif len(a) == 2:
+        return map(np.float, str(v).split(':'))
+    elif len(a) == 1:
+        return float(v[0])
+    else:
+        return None
+
+
 def usage():
     bands = band.band_get_names().keys()
     print "Usage: show F(t,nu) from ph-file"
@@ -448,11 +462,11 @@ def main():
             is_silence = True
             continue
         if opt == '-w':
-            wl_ab = map(np.float, str(arg).split(':'))
+            wl_ab = interval2float(arg)
             # wl_ab = [np.float(s) for s in (str(arg).split(':'))]
             continue
         if opt == '-t':
-            t_ab = map(np.float, str(arg).split(':'))
+            t_ab = interval2float(arg)
             continue
         if opt == '-o':
             ops = str(arg).split(':')
