@@ -69,7 +69,7 @@ def plot_vels_models(ax, models_dic, xlim=None, ylim=None):
     ax.set_xlabel('Time [days]')
 
 
-def compute_vel(name, path, z=0., t_beg=1., t_diff=1.05):
+def compute_vel(name, path, z=0., t_beg=1., t_end=None, t_diff=1.05):
     model = Stella(name, path=path)
     if not model.is_res_data or not model.is_tt_data:
         if not model.is_res_data:
@@ -77,6 +77,9 @@ def compute_vel(name, path, z=0., t_beg=1., t_diff=1.05):
         if not model.is_tt_data:
             print "There are no tt-file for %s in the directory: %s " % (name, path)
         return None
+
+    if t_end is None:
+        t_end = float('inf')
 
     res = model.get_res()
     tt = model.read_tt_data()
@@ -88,6 +91,8 @@ def compute_vel(name, path, z=0., t_beg=1., t_diff=1.05):
     Rph_spline = interpolate.splrep(tt['time'], tt['Rph'], s=0)
     for nt in range(len(tt['time'])):
         t = tt['time'][nt]
+        if t > t_end:
+            break
         if t < t_beg or np.abs(t / t_beg < t_diff):
             continue
         t_beg = t

@@ -294,7 +294,7 @@ class SeriesSpectrum(object):
         return res
 
     def get_tspec(self, idx):
-        return self.Time[idx], self.get_spec[idx]
+        return self.Time[idx], self.get_spec(idx)
 
     def get_spec_by_time(self, time):
         idx = (np.abs(self.Time - time)).argmin()

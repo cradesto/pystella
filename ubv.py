@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 from matplotlib import gridspec
 
 import pystella.util.callback as cb
-from pystella.rf import light_curve_func as lc
+from pystella.rf import light_curve_func as lcf
 from pystella import velocity as vel
 from pystella.rf import band
 from pystella.rf import extinction
@@ -44,8 +44,8 @@ def plot_all(models_vels, models_dic, bands, call=None, xlim=None, ylim=None,
     gs1.update(wspace=0.3, hspace=0.3, left=0.1, right=0.95)
 
     # plot the light curves
-    lc.plot_ubv_models(axUbv, models_dic, bands, band_shift=band_shift, xlim=xlim, ylim=ylim,
-                       is_time_points=is_time_points)
+    lcf.plot_ubv_models(axUbv, models_dic, bands, band_shift=band_shift, xlim=xlim, ylim=ylim,
+                        is_time_points=is_time_points)
 
     # plot callback
     if call is not None:
@@ -215,13 +215,13 @@ def main(name='', model_ext='.ph'):
         i = 0
         for name in names:
             i += 1
-            mags = lc.compute_mag(name, path, bands, ext=ext, z=z, distance=distance, magnification=magnification,
-                               is_show_info=not is_quiet, is_save=is_save_mags)
+            mags = lcf.compute_mag(name, path, bands, ext=ext, z=z, distance=distance, magnification=magnification,
+                                   is_show_info=not is_quiet, is_save=is_save_mags)
             models_mags[name] = mags
 
             if not is_quiet:
                 # z, distance = 0.145, 687.7e6  # pc for comparison with Maria
-                lc.plot_bands(mags, bands, title=name, fname='', is_time_points=is_plot_time_points)
+                lcf.plot_bands(mags, bands, title=name, fname='', is_time_points=is_plot_time_points)
 
             if is_vel:
                 vels = vel.compute_vel(name, path, z=z)

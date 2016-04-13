@@ -1,0 +1,308 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+import getopt
+import numpy as np
+import os
+import sys
+from os.path import isfile, join, dirname
+from scipy import interpolate
+
+import matplotlib.pyplot as plt
+from matplotlib import gridspec
+
+import pystella.rf.rad_func as rf
+from pystella import velocity
+from pystella.rf import band
+from pystella.rf import light_curve_func
+from pystella.util.phys_var import phys
+
+__author__ = 'bakl'
+
+ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
+
+_colors = ["blue", "cyan", "brown", 'darkseagreen', 'tomato', 'olive', 'orange',
+           'skyblue', 'darkviolet']
+# colors = {"B-V": "blue", 'B-V-I': "cyan", 'V-I': "brown"}
+lntypes = {"B-V": "-", 'B-V-I': "-.", 'V-I': "--",
+           "u-g": "-", 'g-r-i': "-.", 'r-i': "--"}
+markers = {u'D': u'diamond', 6: u'caretup', u's': u'square', u'x': u'x',
+           5: u'caretright', u'^': u'triangle_up', u'd': u'thin_diamond', u'h': u'hexagon1',
+           u'+': u'plus', u'*': u'star', u'o': u'circle', u'p': u'pentagon', u'3': u'tri_left',
+           u'H': u'hexagon2', u'v': u'triangle_down', u'8': u'octagon', u'<': u'triangle_left'}
+markers = markers.keys()
+
+
+def plot_scm(models_data, mnames, bands, z, is_fit=False):
+    xlim = [-15, -20]
+    ylim = [1., 20.]
+
+    # setup figure
+    plt.matplotlib.rcParams.update({'font.size': 14})
+    # plt.rc('text', usetex=True)
+    # plt.rc('font', family='serif')
+    fig = plt.figure(num=len(bands), figsize=(9, 9), dpi=100, facecolor='w', edgecolor='k')
+    gs1 = gridspec.GridSpec(len(bands) / 2 + len(bands) % 2, 2)
+    # gs1 = gridspec.GridSpec(2, 4, width_ratios=(8, 1, 8, 1))
+    gs1.update(wspace=0., hspace=0., left=0.1, right=0.9)
+
+    ax_cache = {}
+
+    # create the grid of figures
+    ib = 0
+    for bname in bands:
+        ib += 1
+        icol = (ib - 1) % 2
+        irow = (ib - 1) / 2
+        ax = fig.add_subplot(gs1[irow, icol])
+        ax_cache[bname] = ax
+        # ax.legend(prop={'size': 6})
+        # x
+        if icol > 0:
+            ax.yaxis.tick_right()
+            ax.yaxis.set_label_position("right")
+        ax.set_ylabel(r'$V_{ph}$ [km/s]')
+
+        if irow == 1:
+            ax.set_xlabel(r'$M_{%s}$' % bname)
+
+        ax.set_xlim(xlim)
+        # xstart, xend = 0, 20000.
+        # ax.xaxis.set_ticks(np.arange(5000, xend, (xend - xstart) / 4.))
+        # ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%d'))
+        # y
+        ax.set_ylim(ylim)
+        # ax.set_yticks(np.arange(0.5, ylim[1], 0.5))
+        # ax.text(.5, .9, bset, horizontalalignment='center', transform=ax.transAxes)
+        # ax.set_title(bset)
+        ax.set_title(bname, x=0.5, y=0.9)
+
+    # plot data
+    mi = 0
+    y = models_data['v'] / 1e8  # convert to 1000 km/c
+    for bname in bands:
+        ax = ax_cache[bname]
+        x = models_data[bname]
+        bcolor = _colors[ib % (len(_colors) - 1)]
+        ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label='Models',
+                markersize=5, color=bcolor, ls="", linewidth=1.5)
+        # выбросы todo сделать относительно фита
+
+    if is_fit:  # hamuy, nugent
+        yy = np.linspace(ylim[0], ylim[1], num=50)
+        for bname in bands:
+            ax = ax_cache[bname]
+            xx = scm_fit(bname, yy, z)
+            bcolor = "darkviolet"
+            if yy is not None:
+                ax.plot(xx, yy, color=bcolor, ls="--", linewidth=2.5, label='Hamuy')
+
+    # legend
+    for bname in bands:
+        ax_cache[bname].legend(prop={'size': 6})
+
+    # plt.title('; '.join(set_bands) + ' filter response')
+    # plt.grid()
+    plt.show()
+
+
+def scm_fit(bname, v, Av=0, z=0.003, src='hamuy'):
+    """
+    Magnitude V from Hamuy & Pinto 2002, Nugent 2006
+    :param bname:  band name
+    :param v:  expansion velocity convert to units of 5000 km/c as Hamuy
+    :param Av:  host and Galaxy extinction
+    :param z:  redshift in the cosmic microwave background frame
+    :param src: fit source
+    :return: magnitude
+    """
+    coef = {'hamuy': {
+                    'V': [6.504, 1.294],
+                    'I': [5.820, 1.797]}
+        }
+    if src == 'hamuy':
+        a = coef[src][bname]
+        mag = Av - a[0] * np.log10(v) - 5*np.log10(phys.c/1e5 * z) - a[1]
+        return mag
+    return None
+#
+#
+# def compute_scm(name, path, bname, t=50):
+#     model = Stella(name, path=path)
+#
+#     if not model.is_ph_data:
+#         print "No ph-data for: " + str(model)
+#         return None
+#
+#     if not model.is_tt_data:
+#         print "No tt-data for: " + str(model)
+#         return None
+#
+#     t_beg = max(0., t-10.)
+#     t_end = t+10.
+#     serial_spec = model.read_series_spectrum(t_diff=1.05, t_beg=t_beg, t_end=t_end)
+#
+#     # read R_ph
+#     tt = model.read_tt_data()
+#     is_tt = tt['time'] > t_beg  & tt['time'] < t_end
+#     tt = tt[is_tt]  # time cut  days
+#
+#     # compute Tnu, W
+#     Tnu, Teff, W = compute_Tnu_w(serial_spec, tt=tt)
+#
+#     # fit mags by B(T_col) and get \zeta\theta & T_col
+#     Tcolors, zetaR, times = compute_Tcolor_zeta(mags, tt=tt, bands=bands, freq=serial_spec.Freq, dist=distance)
+#
+#     # show results
+#     res = np.array(np.zeros(len(Tcolors)),
+#                    dtype=np.dtype({'names': ['time', 'Tcol', 'zeta', 'Tnu', 'Teff', 'W'],
+#                                    'formats': [np.float64] * 6}))
+#     res['time'] = times
+#     res['Tcol'] = Tcolors
+#     res['zeta'] = zetaR
+#     res['Tnu'] = Tnu
+#     res['Teff'] = Teff
+#     res['W'] = W
+#
+#     return res
+
+
+def usage():
+    bands = band.band_get_names().keys()
+    print "Usage:"
+    print "  zeta.py [params]"
+    print "  -b <set_bands>: delimiter '_'. Default: B-V-I_B-V_V-I.\n" \
+          "     Available: " + '-'.join(sorted(bands))
+    print "  -i <model name>.  Example: cat_R450_M15_Ni007_E7"
+    print "  -p <model path(directory)>, default: ./"
+    print "  -f  force mode: rewrite zeta-files even if it exists"
+    # print "  -a  plot the Eastman & Dessart fits"
+    print "  -o  options: <fit:fitb:time:ubv:Tnu> - fit E&D: fit bakl:  show time points: plot UBV"
+    print "  -s  write magnitudes to file, default 'False'"
+    print "  -h  print usage"
+
+
+def extract_time(t, times, mags):
+    if t < times[0] or t > times[-1]:
+        raise ValueError("Time (%f) should be in range [%f, %f]" % (t, times[0], times[-1]))
+    
+    if len(times) > 4:
+        y_spline = interpolate.splrep(times, mags, s=0)
+        res = interpolate.splev(t, y_spline)
+    else:
+        res = np.interp(t, times, mags, 0, 0)
+    return res
+
+
+def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, is_plot_time_points=False):
+    is_silence = False
+    is_fit = False
+    is_plot_ubv = False
+    is_fit_bakl = False
+    model_ext = '.tt'
+    ubv_args = ''
+
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "fhstp:i:b:o:")
+    except getopt.GetoptError as err:
+        print str(err)  # will print something like "option -a not recognized"
+        usage()
+        sys.exit(2)
+
+    if not name:
+        if len(opts) == 0:
+            usage()
+            sys.exit(2)
+        for opt, arg in opts:
+            if opt == '-i':
+                path = ROOT_DIRECTORY
+                name = str(arg)
+                break
+
+    bands = ['V', 'I']
+    # set_bands = ['B-V', 'B-V-I', 'V-I', 'J-H-K']
+    # set_bands = ['U-B-V-I', 'U-B-V-R-I', 'U-B', 'V-R', 'B-V-I', 'B-V', 'V-I']
+
+    for opt, arg in opts:
+        if opt == '-e':
+            model_ext = '.' + arg
+            continue
+        if opt == '-b':
+            bands = str(arg).split('-')
+            for b in bands:
+                if not band.band_is_exist(b):
+                    print 'No such band: ' + b
+                    sys.exit(2)
+            continue
+        if opt == '-o':
+            ops = str(arg).split(':')
+            is_plot_ubv = "ubv" in ops
+            is_plot_Tnu = "Tnu" in ops
+            is_plot_time_points = "time" in ops
+            is_fit = "fit" in ops
+            is_fit_bakl = "fitb" in ops
+            ubv_args += " %s %s ".format(opt, arg)
+            continue
+        if opt == '-s':
+            is_save = True
+            ubv_args += opt + ' '
+            continue
+        if opt == '-f':
+            is_force = True
+            is_save = True
+            continue
+        if opt == '-p':
+            path = os.path.expanduser(str(arg))
+            if not (os.path.isdir(path) and os.path.exists(path)):
+                print "No such directory: " + path
+                sys.exit(2)
+            continue
+        elif opt == '-h':
+            usage()
+            sys.exit(2)
+
+    names = []
+    if name != '':
+        names.append(name)
+    else:  # run for all files in the path
+        files = [f for f in os.listdir(path) if isfile(join(path, f)) and f.endswith(model_ext)]
+        for f in files:
+            names.append(os.path.splitext(f)[0])
+
+    distance = 10.  # pc for Absolute magnitude
+    z = 0.001
+    im = 0
+    t50 = 50.
+    t_beg = max(0., t50-10.)
+    t_end = t50+10.
+
+    if len(names) > 0:
+        dic_results = {}  # dict((k, None) for k in names)
+        res = np.array(np.zeros(len(names)),
+                       dtype=np.dtype({'names': ['v']+bands,
+                                       'formats': [np.float64] * (1+len(bands))}))
+
+        for name in names:
+            vels = velocity.compute_vel(name, path, z=z, t_beg=t_beg, t_end=t_end)
+            if vels is None:
+                print "No enough data for %s " % name
+                continue
+
+            curves = light_curve_func.compute_curves(name, path, bands, z=z,
+                                                     t_beg=t_beg, t_end=t_end)
+            v = extract_time(t50, vels['time'], vels['vel'])
+            res[im]['v'] = v
+            # dic_results[name]['v'] = v
+            for bname in bands:
+                m = extract_time(t50, curves.get(bname).Time, curves.get(bname).Mag)
+                res[im][bname] = m
+            print "\nRun: %s [%d/%d]" % (name, im+1, len(names))
+            im += 1
+        res = res[res[:]['v'] > 0]
+        if len(res) > 0:
+            plot_scm(res, names, bands, z, is_fit=True)
+    else:
+        print "There are no models in the directory: %s with extension: %s " % (path, model_ext)
+
+
+if __name__ == '__main__':
+    main()

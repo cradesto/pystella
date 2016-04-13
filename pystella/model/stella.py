@@ -62,8 +62,9 @@ class Stella:
     def get_res(self):
         return StellaRes(self.name, self.path)
 
-    def read_series_spectrum(self, t_diff=1.05, t_beg=0.0, is_nfrus=True):
-
+    def read_series_spectrum(self, t_diff=1.05, t_beg=0.0, t_end=None, is_nfrus=True):
+        if t_end is None:
+            t_end = float('inf')
         # read first line with frequencies
         fname = os.path.join(self.path, self.name + '.ph')
         f = open(fname, 'r')
@@ -85,6 +86,8 @@ class Stella:
             if times[i] < t_beg:
                 k = i
                 continue
+            if times[i] > t_end:
+                break
             if np.abs(times[i] / times[k]) > t_diff:
                 is_times[k] = True
                 k = i

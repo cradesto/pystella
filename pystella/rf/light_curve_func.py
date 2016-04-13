@@ -226,7 +226,8 @@ def compute_mag(name, path, bands, ext=None, z=0., distance=10., magnification=1
     return mags
 
 
-def compute_curves(name, path, bands, ext=None, z=0., distance=10., magnification=1., is_show_info=True, is_save=False):
+def compute_curves(name, path, bands, ext=None, z=0., distance=10., magnification=1.,
+                   t_beg=0., t_end=None, is_show_info=False, is_save=False):
     """
         Compute magnitude in bands for the 'name' model.
     :type ext: extinction
@@ -236,6 +237,8 @@ def compute_curves(name, path, bands, ext=None, z=0., distance=10., magnificatio
     :param z: redshift, default 0
     :param distance: distance to star in parsec, default 10 pc
     :param magnification: gravitational lensing magnification
+    :param t_end:
+    :param t_beg:
     :param is_show_info: flag to write some information, default True
     :param is_save: flag to save result in file, default False
     :return: dictionary with keys = bands, value = star's magnitudes
@@ -253,7 +256,7 @@ def compute_curves(name, path, bands, ext=None, z=0., distance=10., magnificatio
         model.show_info()
 
     # serial_spec = model.read_serial_spectrum(t_diff=0.)
-    serial_spec = model.read_series_spectrum(t_diff=1.05)
+    serial_spec = model.read_series_spectrum(t_diff=1.05, t_beg=t_beg, t_end=t_end)
     curves = SetLightCurve(name)
     for n in bands:
         b = band.band_by_name(n)

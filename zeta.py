@@ -465,7 +465,7 @@ def epsilon_fit_zeta(x, models_dic, bset, t_beg, t_end=None):
 
         z_fit = zeta_fit_rev_temp(Tcol, x)
         e += np.sum((zeta - z_fit)**2) / len(zeta)
-    print "epsilon: err=%f" % e
+    # print "epsilon: err=%f" % e
     return e
 
 
@@ -510,7 +510,7 @@ def compute_Tnu_w(serial_spec, tt):
     W = list()
     Rph_spline = interpolate.splrep(tt['time'], tt['Rph'], s=0)
     x_bb = rf.compute_x_bb()
-    for nt in range(len(serial_spec.times)):
+    for nt in range(len(serial_spec.Time)):
         t, spec = serial_spec.get_tspec(nt)
         if t < min(tt['time']):
             continue
@@ -556,7 +556,7 @@ def compute_tcolor(name, path, bands, t_cut=1.):
     Tnu, Teff, W = compute_Tnu_w(serial_spec, tt=tt)
 
     # fit mags by B(T_col) and get \zeta\theta & T_col
-    Tcolors, zetaR, times = compute_Tcolor_zeta(mags, tt=tt, bands=bands, freq=serial_spec.freq, dist=distance)
+    Tcolors, zetaR, times = compute_Tcolor_zeta(mags, tt=tt, bands=bands, freq=serial_spec.Freq, dist=distance)
 
     # show results
     res = np.array(np.zeros(len(Tcolors)),
