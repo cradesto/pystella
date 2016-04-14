@@ -113,7 +113,7 @@ def compute_vel(name, path, z=0., t_beg=1., t_end=None, t_diff=1.05):
     # show results
     res = np.array(np.zeros(len(vels)),
                    dtype=np.dtype({'names': ['time', 'vel', 'r'],
-                                   'formats': [np.float64] * 3}))
+                                   'formats': [np.float] * 3}))
     res['time'] = times
     res['vel'] = vels
     res['r'] = radiuses

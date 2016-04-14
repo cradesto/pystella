@@ -33,8 +33,8 @@ markers = markers.keys()
 
 
 def plot_scm(models_data, mnames, bands, z, is_fit=False):
-    xlim = [-15, -20]
-    ylim = [1., 20.]
+    xlim = [-14., -21.]
+    ylim = [1., 10.]
 
     # setup figure
     plt.matplotlib.rcParams.update({'font.size': 14})
@@ -87,14 +87,23 @@ def plot_scm(models_data, mnames, bands, z, is_fit=False):
                 markersize=5, color=bcolor, ls="", linewidth=1.5)
         # выбросы todo сделать относительно фита
 
-    if is_fit:  # hamuy, nugent
-        yy = np.linspace(ylim[0], ylim[1], num=50)
+    if is_fit:
+        yh = np.linspace(ylim[0], ylim[1], num=50)
+        # hamuy
         for bname in bands:
             ax = ax_cache[bname]
-            xx = scm_fit(bname, yy, z)
-            bcolor = "darkviolet"
-            if yy is not None:
-                ax.plot(xx, yy, color=bcolor, ls="--", linewidth=2.5, label='Hamuy')
+            xx = scm_fit(yh, Av=0, bname=bname, z=z, src='hamuy')
+            if yh is not None:
+                ax.plot(xx, yh, color="darkviolet", ls="--", linewidth=2.5, label='Hamuy')
+        # nugent
+        yn = np.linspace(ylim[0], ylim[1], num=len(models_data['V']))
+        for bname in bands:
+            ax = ax_cache[bname]
+            V_I = models_data['V']-models_data['I']  # todo make for any bands
+            xn = scm_fit(yn, Av=V_I, src='nugent')
+            if yn is not None:
+                ax.plot(xn, yn, marker='x', label='Nugent', markersize=5, color="orange", ls="")
+                # ax.plot(xx, yy, color="orange", ls="--", linewidth=2.5, label='Nugent')
 
     # legend
     for bname in bands:
@@ -105,25 +114,33 @@ def plot_scm(models_data, mnames, bands, z, is_fit=False):
     plt.show()
 
 
-def scm_fit(bname, v, Av=0, z=0.003, src='hamuy'):
+def scm_fit(v, Av=0, bname=None, z=0.003, src='hamuy'):
     """
     Magnitude V from Hamuy & Pinto 2002, Nugent 2006
     :param bname:  band name
-    :param v:  expansion velocity convert to units of 5000 km/c as Hamuy
-    :param Av:  host and Galaxy extinction
+    :param v:  expansion velocity [1000 km/c]
+    :param Av:  host and Galaxy extinction; Av  => V-I for Nugent method
     :param z:  redshift in the cosmic microwave background frame
     :param src: fit source
     :return: magnitude
     """
     coef = {'hamuy': {
-                    'V': [6.504, 1.294],
-                    'I': [5.820, 1.797]}
-        }
+                        'V': [6.504, 1.294],
+                        'I': [5.820, 1.797]},
+            'nugent': {'alf': 6.69, 'V_I_0': 0.53, 'RI': 1.36, 'MI0': -17.49}
+           }
+    v /= 5.  # convert to units of 5000 km/c as Hamuy
     if src == 'hamuy':
         a = coef[src][bname]
-        mag = Av - a[0] * np.log10(v) - 5*np.log10(phys.c/1e5 * z) - a[1]
+        mag = Av - a[0] * np.log10(v) + 5 * np.log10(phys.c/1e5 * z) - a[1]
+        return mag
+    if src == 'nugent':
+        a = coef[src]
+        mag = - a['alf'] * np.log10(v) - a['RI']*(Av - a['V_I_0']) + a['MI0']
         return mag
     return None
+
+
 #
 #
 # def compute_scm(name, path, bname, t=50):
@@ -184,7 +201,7 @@ def usage():
 def extract_time(t, times, mags):
     if t < times[0] or t > times[-1]:
         raise ValueError("Time (%f) should be in range [%f, %f]" % (t, times[0], times[-1]))
-    
+
     if len(times) > 4:
         y_spline = interpolate.splrep(times, mags, s=0)
         res = interpolate.splev(t, y_spline)
@@ -269,17 +286,17 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
             names.append(os.path.splitext(f)[0])
 
     distance = 10.  # pc for Absolute magnitude
-    z = 0.001
+    z = phys.H0 * (distance/1e6) / (phys.c/1e5)  # convert D to Mpc, c to km/c
     im = 0
-    t50 = 50.
-    t_beg = max(0., t50-10.)
-    t_end = t50+10.
+    t50 = 70.
+    t_beg = max(0., t50 - 10.)
+    t_end = t50 + 10.
 
     if len(names) > 0:
         dic_results = {}  # dict((k, None) for k in names)
         res = np.array(np.zeros(len(names)),
-                       dtype=np.dtype({'names': ['v']+bands,
-                                       'formats': [np.float64] * (1+len(bands))}))
+                       dtype=np.dtype({'names': ['v'] + bands,
+                                       'formats': [np.float] * (1 + len(bands))}))
 
         for name in names:
             vels = velocity.compute_vel(name, path, z=z, t_beg=t_beg, t_end=t_end)
@@ -295,7 +312,7 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
             for bname in bands:
                 m = extract_time(t50, curves.get(bname).Time, curves.get(bname).Mag)
                 res[im][bname] = m
-            print "\nRun: %s [%d/%d]" % (name, im+1, len(names))
+            print "\nRun: %s [%d/%d]" % (name, im + 1, len(names))
             im += 1
         res = res[res[:]['v'] > 0]
         if len(res) > 0:
