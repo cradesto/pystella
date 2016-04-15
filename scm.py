@@ -6,11 +6,11 @@ import os
 import sys
 from os.path import isfile, join, dirname
 from scipy import interpolate
+from scipy.optimize import fmin
 
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 
-import pystella.rf.rad_func as rf
 from pystella import velocity
 from pystella.rf import band
 from pystella.rf import light_curve_func
@@ -32,9 +32,8 @@ markers = {u'D': u'diamond', 6: u'caretup', u's': u'square', u'x': u'x',
 markers = markers.keys()
 
 
-def plot_scm(models_data, mnames, bands, z, is_fit=False):
-    xlim = [-14., -21.]
-    ylim = [1., 10.]
+def plot_scm(models_data, mnames, bands, z,  xlim=None, is_fit=False):
+    ylim = (1., 5.)
 
     # setup figure
     plt.matplotlib.rcParams.update({'font.size': 14})
@@ -65,7 +64,10 @@ def plot_scm(models_data, mnames, bands, z, is_fit=False):
         if irow == 1:
             ax.set_xlabel(r'$M_{%s}$' % bname)
 
-        ax.set_xlim(xlim)
+        if xlim is None:
+            ax.set_xlim(max(models_data[bname])+2., min(models_data[bname])-2.)
+        else:
+            ax.set_xlim(xlim)
         # xstart, xend = 0, 20000.
         # ax.xaxis.set_ticks(np.arange(5000, xend, (xend - xstart) / 4.))
         # ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%d'))
@@ -78,12 +80,12 @@ def plot_scm(models_data, mnames, bands, z, is_fit=False):
 
     # plot data
     mi = 0
-    y = models_data['v'] / 1e8  # convert to 1000 km/c
+    vel = models_data['v'] / 1e8  # convert to 1000 km/c
     for bname in bands:
         ax = ax_cache[bname]
         x = models_data[bname]
         bcolor = _colors[ib % (len(_colors) - 1)]
-        ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label='Models',
+        ax.plot(x, vel, marker=markers[mi % (len(markers) - 1)], label='Models',
                 markersize=5, color=bcolor, ls="", linewidth=1.5)
         # выбросы todo сделать относительно фита
 
@@ -95,14 +97,31 @@ def plot_scm(models_data, mnames, bands, z, is_fit=False):
             xx = scm_fit(yh, Av=0, bname=bname, z=z, src='hamuy')
             if yh is not None:
                 ax.plot(xx, yh, color="darkviolet", ls="--", linewidth=2.5, label='Hamuy')
+        # kasen
+        for bname in bands:
+            ax = ax_cache[bname]
+            xx = scm_fit(yh, Av=0, bname=bname, z=z, src='hamuy')
+            if yh is not None:
+                ax.plot(xx, yh, color="red", ls="--", linewidth=2.5, label='Kasen')
         # nugent
         yn = np.linspace(ylim[0], ylim[1], num=len(models_data['V']))
         for bname in bands:
             ax = ax_cache[bname]
-            V_I = models_data['V']-models_data['I']  # todo make for any bands
+            V_I = models_data['V'] - models_data['I']  # todo make for any bands
             xn = scm_fit(yn, Av=V_I, src='nugent')
             if yn is not None:
                 ax.plot(xn, yn, marker='x', label='Nugent', markersize=5, color="orange", ls="")
+                # ax.plot(xx, yy, color="orange", ls="--", linewidth=2.5, label='Nugent')
+        # bakl
+        for bname in bands:
+            ax = ax_cache[bname]
+            mag = models_data[bname]
+            Av = 0.
+            a = scm_fit_bakl(mag, vel, z=z, Av=Av)
+            mag_bakl = hamuy_fit(a, vel, z, Av)
+            if yn is not None:
+                ax.plot(mag_bakl, vel, marker='o', label='Bakl', markersize=5, color="blue", ls="")
+            print "Bakl fit for %s: %4.2f, %4.2f" % (bname, a[0], a[1])
                 # ax.plot(xx, yy, color="orange", ls="--", linewidth=2.5, label='Nugent')
 
     # legend
@@ -125,62 +144,41 @@ def scm_fit(v, Av=0, bname=None, z=0.003, src='hamuy'):
     :return: magnitude
     """
     coef = {'hamuy': {
-                        'V': [6.504, 1.294],
-                        'I': [5.820, 1.797]},
-            'nugent': {'alf': 6.69, 'V_I_0': 0.53, 'RI': 1.36, 'MI0': -17.49}
-           }
-    v /= 5.  # convert to units of 5000 km/c as Hamuy
+        'V': [6.504, 1.294],
+        'I': [5.820, 1.797]},
+        'nugent': {'alf': 6.69, 'V_I_0': 0.53, 'RI': 1.36, 'MI0': -17.49}
+    }
     if src == 'hamuy':
         a = coef[src][bname]
-        mag = Av - a[0] * np.log10(v) + 5 * np.log10(phys.c/1e5 * z) - a[1]
+        mag = hamuy_fit(a, v, z, Av)
         return mag
     if src == 'nugent':
         a = coef[src]
-        mag = - a['alf'] * np.log10(v) - a['RI']*(Av - a['V_I_0']) + a['MI0']
+        mag = - a['alf'] * np.log10(v/5.) - a['RI'] * (Av - a['V_I_0']) + a['MI0']
+        return mag
+    if src == 'kasen':
+        t = 50.  # day
+        mag = -17.4 - 6.9 * np.log10(v/5.) +3.1*np.log10(t/50)
         return mag
     return None
 
 
-#
-#
-# def compute_scm(name, path, bname, t=50):
-#     model = Stella(name, path=path)
-#
-#     if not model.is_ph_data:
-#         print "No ph-data for: " + str(model)
-#         return None
-#
-#     if not model.is_tt_data:
-#         print "No tt-data for: " + str(model)
-#         return None
-#
-#     t_beg = max(0., t-10.)
-#     t_end = t+10.
-#     serial_spec = model.read_series_spectrum(t_diff=1.05, t_beg=t_beg, t_end=t_end)
-#
-#     # read R_ph
-#     tt = model.read_tt_data()
-#     is_tt = tt['time'] > t_beg  & tt['time'] < t_end
-#     tt = tt[is_tt]  # time cut  days
-#
-#     # compute Tnu, W
-#     Tnu, Teff, W = compute_Tnu_w(serial_spec, tt=tt)
-#
-#     # fit mags by B(T_col) and get \zeta\theta & T_col
-#     Tcolors, zetaR, times = compute_Tcolor_zeta(mags, tt=tt, bands=bands, freq=serial_spec.Freq, dist=distance)
-#
-#     # show results
-#     res = np.array(np.zeros(len(Tcolors)),
-#                    dtype=np.dtype({'names': ['time', 'Tcol', 'zeta', 'Tnu', 'Teff', 'W'],
-#                                    'formats': [np.float64] * 6}))
-#     res['time'] = times
-#     res['Tcol'] = Tcolors
-#     res['zeta'] = zetaR
-#     res['Tnu'] = Tnu
-#     res['Teff'] = Teff
-#     res['W'] = W
-#
-#     return res
+def hamuy_fit(a, v, z, Av):
+    # v /= 5.  # convert to units of 5000 km/c as Hamuy
+    res = Av - a[0] * np.log10(v/5.) + 5 * np.log10(phys.c/1e5 * z) - a[1]
+    return res
+
+
+def scm_fit_bakl(mag, vel, z, Av=0):
+    a_init = [5, 0.]
+
+    def cost(a, m, v):
+        m_fit = hamuy_fit(a, v, z, Av)
+        e = np.sum((m - m_fit)**2) / len(m)
+        return e
+
+    res = fmin(cost, x0=a_init, args=(mag, vel), disp=0)
+    return res
 
 
 def usage():
@@ -210,7 +208,31 @@ def extract_time(t, times, mags):
     return res
 
 
-def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, is_plot_time_points=False):
+def run_scm(bands, distance, im, names, path, t50, t_beg, t_end, z):
+    res = np.array(np.zeros(len(names)),
+                   dtype=np.dtype({'names': ['v'] + bands,
+                                   'formats': [np.float] * (1 + len(bands))}))
+    for name in names:
+        vels = velocity.compute_vel(name, path, z=z, t_beg=t_beg, t_end=t_end)
+        if vels is None:
+            print "No enough data for %s " % name
+            continue
+
+        curves = light_curve_func.compute_curves(name, path, bands, z=z, distance=distance,
+                                                 t_beg=t_beg, t_end=t_end)
+        v = extract_time(t50, vels['time'], vels['vel'])
+        res[im]['v'] = v
+        # dic_results[name]['v'] = v
+        for bname in bands:
+            m = extract_time(t50, curves.get(bname).Time, curves.get(bname).Mag)
+            res[im][bname] = m
+        print "\nRun: %s [%d/%d]" % (name, im + 1, len(names))
+        im += 1
+    res = res[res[:]['v'] > 0]
+    return res
+
+
+def main(name='', path='./'):
     is_silence = False
     is_fit = False
     is_plot_ubv = False
@@ -286,39 +308,21 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
             names.append(os.path.splitext(f)[0])
 
     distance = 10.  # pc for Absolute magnitude
-    z = phys.H0 * (distance/1e6) / (phys.c/1e5)  # convert D to Mpc, c to km/c
+    # distance = 10e6  # pc for Absolute magnitude
+    z = phys.H0 * (distance / 1e6) / (phys.c / 1e5)  # convert D to Mpc, c to km/c
     im = 0
-    t50 = 70.
+    t50 = 50.
     t_beg = max(0., t50 - 10.)
     t_end = t50 + 10.
 
     if len(names) > 0:
-        dic_results = {}  # dict((k, None) for k in names)
-        res = np.array(np.zeros(len(names)),
-                       dtype=np.dtype({'names': ['v'] + bands,
-                                       'formats': [np.float] * (1 + len(bands))}))
-
-        for name in names:
-            vels = velocity.compute_vel(name, path, z=z, t_beg=t_beg, t_end=t_end)
-            if vels is None:
-                print "No enough data for %s " % name
-                continue
-
-            curves = light_curve_func.compute_curves(name, path, bands, z=z,
-                                                     t_beg=t_beg, t_end=t_end)
-            v = extract_time(t50, vels['time'], vels['vel'])
-            res[im]['v'] = v
-            # dic_results[name]['v'] = v
-            for bname in bands:
-                m = extract_time(t50, curves.get(bname).Time, curves.get(bname).Mag)
-                res[im][bname] = m
-            print "\nRun: %s [%d/%d]" % (name, im + 1, len(names))
-            im += 1
-        res = res[res[:]['v'] > 0]
+        res = run_scm(bands, distance, im, names, path, t50, t_beg, t_end, z)
         if len(res) > 0:
             plot_scm(res, names, bands, z, is_fit=True)
     else:
         print "There are no models in the directory: %s with extension: %s " % (path, model_ext)
+
+
 
 
 if __name__ == '__main__':
