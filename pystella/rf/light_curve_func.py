@@ -176,6 +176,46 @@ def plot_bands(dict_mags, bands, title='', fname='', distance=10., is_time_point
     # plt.close()
 
 
+def plot_curves(curves, xlim=None, ylim=None, title='', fname=''):
+    # plt.title(''.join(bands) + ' filter response')
+    is_xlim = False
+    is_ylim = False
+    if xlim is None:
+        is_xlim = True
+        xlim = [float('inf'), float('-inf')]
+    if ylim is None:
+        is_ylim = True
+        ylim = [float('-inf'), float('inf')]
+
+    for lc in curves:
+        x = lc.Time
+        y = lc.Mag
+        bname = lc.Band.Name
+        plt.plot(x, y, label='%s' % bname, color=colors[bname], ls=lntypes[bname], linewidth=2.0)
+
+        if is_xlim:
+            xlim[0] = min(xlim[0], np.min(x))
+            xlim[1] = max(xlim[1], np.max(x))
+        if is_ylim:
+            ylim[0] = max(ylim[0], np.max(y))
+            ylim[1] = min(ylim[1], np.min(y))
+
+    ylim = [ylim[1]+10, ylim[1]-2]
+    # ylim = np.add(ylim, [1, -1])
+    plt.gca().invert_yaxis()
+    plt.xlim(xlim)
+    plt.ylim(ylim)
+    plt.legend()
+    plt.ylabel('Magnitude')
+    plt.xlabel('Time [days]')
+    plt.title(title)
+    plt.grid()
+    if fname != '':
+        plt.savefig("ubv_%s.png" % fname, format='png')
+    plt.show()
+    # plt.close()
+
+
 def compute_mag(name, path, bands, ext=None, z=0., distance=10., magnification=1., is_show_info=True, is_save=False):
     """
         Compute magnitude in bands for the 'name' model.

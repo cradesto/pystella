@@ -1,7 +1,12 @@
 import math
 import numpy as np
-import scipy.optimize as opt
-from scipy import interpolate, integrate
+try:
+    from scipy import interpolate, integrate
+    from scipy import ndimage
+    from scipy import optimize, fmin, curve_fit
+except:
+    print("WARNING: pystella: failed to import scipy modules.")
+
 
 import matplotlib.pyplot as plt
 
@@ -67,7 +72,7 @@ class Spectrum(object):
             return np.pi * rf.planck(nu, T, inp="Hz", out="freq")
 
         Tinit = self.T_wien
-        popt, pcov = opt.curve_fit(func, self.Freq, self.Flux, p0=Tinit)
+        popt, pcov = curve_fit(func, self.Freq, self.Flux, p0=Tinit)
         return popt[0]
 
     @property
@@ -87,7 +92,7 @@ class Spectrum(object):
         def func(w):
             return -interpolate.splev(w, tck, der=0)
 
-        wl_max = opt.fmin(func, x0=wl[int(len(wl) / 2)])
+        wl_max = fmin(func, x0=wl[int(len(wl) / 2)])
         return wl_max
 
     @property
@@ -129,6 +134,37 @@ class Spectrum(object):
         cut = self._flux >= bottom
         self._freq = self._freq[cut]
         self._flux = self._flux[cut]
+
+    def integrate_wl(self, wavelengthMin='min', wavelengthMax='max'):
+        """Calculates flux in SED within given wavelength range.
+
+        @type wavelengthMin: float or 'min'
+        @param wavelengthMin: minimum of the wavelength range
+        @type wavelengthMax: float or 'max'
+        @param wavelengthMax: maximum of the wavelength range
+        @rtype: float
+        @return: relative flux
+
+        """
+
+        if wavelengthMin == 'min':
+            wavelengthMin = self.Wl.min()
+        if wavelengthMax == 'max':
+            wavelengthMax = self.Wl.max()
+
+        mask = np.logical_and(np.greater(self.Wl, wavelengthMin), np.less(self.Wl, wavelengthMax))
+        flux = np.trapz(self.Flux_wl[mask], self.Wl[mask])
+        return flux
+
+    def smooth(self, smoothPix):
+        """Smooths SED.flux with a uniform (boxcar) filter of width smoothPix. Cannot be undone.
+
+        @type smoothPix: int
+        @param smoothPix: size of uniform filter applied to SED, in pixels
+
+        """
+        smoothed = ndimage.uniform_filter1d(self.flux, smoothPix)
+        self.flux = smoothed
 
     @staticmethod
     def flux_to_distance(flux, dl):

@@ -162,7 +162,8 @@ class Star:
 
     def _response_nu(self, band, is_b_spline=True):
         """
-        Compute response flux using provided spectral band
+        Compute response flux using provided spectral band.
+        see: http://www.astro.ljmu.ac.uk/~ikb/research/mags-fluxes/
         :param band:  photometric band
         :param is_b_spline:  the method of interpolation
         :return: :raise ValueError:

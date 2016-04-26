@@ -217,6 +217,10 @@ def main(name='', model_ext='.ph'):
             i += 1
             mags = lcf.compute_mag(name, path, bands, ext=ext, z=z, distance=distance, magnification=magnification,
                                    is_show_info=not is_quiet, is_save=is_save_mags)
+            # curves = lcf.compute_curves(name, path, bands, ext=ext, z=z, distance=distance, magnification=magnification,
+            #                             is_save=is_save_mags)
+            # lcf.plot_curves(curves)
+            # exit()
             models_mags[name] = mags
 
             if not is_quiet:

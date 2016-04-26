@@ -11,6 +11,9 @@ from matplotlib import gridspec
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter, AutoLocator
 import numpy as np
 
+ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
+sys.path.append(ROOT_DIRECTORY)
+
 from pystella.rf import band
 from pystella.rf import extinction
 from pystella.rf import light_curve_func as lcf
@@ -20,8 +23,6 @@ from pystella.util.phys_var import cosmology_D_by_z
 import plugin.plot_snrefsdal as sn_obs
 
 __author__ = 'bakl'
-
-ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
 
 
 def plot_SX(models_dic, bands, call=None, xlim=None, ylim=None, title='', fsave=None):
@@ -267,7 +268,7 @@ def plot_grid_curves(curves_model, curves_obs, t0=0., magnification=1., gl_color
     if xlim is None:
         xlim = (-10., 400.)
     if ylim is None:
-        ylim = (28., 24.)
+        ylim = (29., 23.)
 
     if gl_colors is None:
         # gl_colors = {'ogu-g': 'brown', 'gri-g': 'magenta', 'sha-g': 'orange', 'obs-pol': 'red'}
@@ -281,7 +282,7 @@ def plot_grid_curves(curves_model, curves_obs, t0=0., magnification=1., gl_color
     gs1 = gridspec.GridSpec(curves_model.Length, len(set_images))
     gs1.update(wspace=0., hspace=0., left=0.1, right=0.9)
 
-    y_majorLocator = MultipleLocator(np.round((np.abs(ylim[1]-ylim[0]))/3, 1))
+    y_majorLocator = MultipleLocator(np.round((np.abs(ylim[1] - ylim[0])) / 3, 1))
     lw = 1.5
 
     # find time minimum
@@ -290,13 +291,13 @@ def plot_grid_curves(curves_model, curves_obs, t0=0., magnification=1., gl_color
         time_min = min(time_min, lc_obs.tmin)
 
     time_max = float('-inf')
-    b_max  = 'F160W'
+    b_max = 'F160W'
     lc = curves_model.get(b_max)
     if lc is not None:
         time_max = lc.t_lcmax
 
-    print "Plotting grid: t0=%4.2f time_min=%4.2f time_exp=%4.2f " % (t0, time_min, time_min-t0)
-    print "Data:  time_max(%s)=%4.2f abs.time max=%4.2f" % (b_max, time_max, time_min-t0+time_max)
+    print "Plotting grid: t0=%4.2f time_min=%4.2f time_exp=%4.2f " % (t0, time_min, time_min - t0)
+    print "Data:  time_max(%s)=%4.2f abs.time max=%4.2f" % (b_max, time_max, time_min - t0 + time_max)
 
     # create the grid of figures
     irow = 0
@@ -305,12 +306,11 @@ def plot_grid_curves(curves_model, curves_obs, t0=0., magnification=1., gl_color
     bands = str('F160W-F125W-F105W-F814W').split('-')
 
     for bn in bands:
-    # for lc in curves_model:
+        # for lc in curves_model:
         lc = curves_model[bn]
         igrid += 1
         icol = 0
         for img in set_images:
-            lc_obs = curves_obs[img]
             ax = fig.add_subplot(gs1[irow, icol])
             # set axis
             ax.yaxis.set_major_locator(y_majorLocator)
@@ -322,9 +322,12 @@ def plot_grid_curves(curves_model, curves_obs, t0=0., magnification=1., gl_color
                 ax.set_ylabel('%s' % lc.Band.Name, fontsize=12)
             elif ax.is_last_col():
                 ax.yaxis.tick_right()
-                ax.yaxis.set_label_position("right")
+                # ax.yaxis.set_label_position("right")
             else:
-                ax.yaxis.set_visible(False)
+                # ax.yaxis.set_visible(False)
+                ax.set_yticklabels([])
+                # ax.set_aspect('equal')
+                pass
             if ax.is_first_row():
                 ax.set_title(img)
             elif ax.is_last_row():
@@ -341,13 +344,13 @@ def plot_grid_curves(curves_model, curves_obs, t0=0., magnification=1., gl_color
                 tshift, mgf = sn_obs.coef_time_mag(gl_name, img)
                 lc.tshift = tshift
 
-                lc.mshift = -2.5*np.log10(magnification*mgf)  # magnification
+                lc.mshift = -2.5 * np.log10(magnification * mgf)  # magnification
                 x = lc.Time
                 y = lc.Mag
                 ax.plot(x, y, label=gl_name, color=bcolor, ls="-", linewidth=lw)
 
             # Plot obs
-            lc_o = lc_obs[lc.Band.Name]
+            lc_o = curves_obs[img][lc.Band.Name]
             lc_o.tshift = -time_min + t0
             # lc_o.tshift = -lc_o.tmin + t0
             x = lc_o.Time
@@ -369,6 +372,7 @@ def plot_grid_curves(curves_model, curves_obs, t0=0., magnification=1., gl_color
     # plt.title(title)
     # fig.suptitle(title, fontsize=11)
     # plt.tight_layout()
+    # fig.subplots_adjust(wspace=0, hspace=0)
     plt.show()
 
     if fsave is not None:
