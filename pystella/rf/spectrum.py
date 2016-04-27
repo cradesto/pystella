@@ -3,7 +3,7 @@ import numpy as np
 try:
     from scipy import interpolate, integrate
     from scipy import ndimage
-    from scipy import optimize, fmin, curve_fit
+    from scipy.optimize import fmin, curve_fit
 except:
     print("WARNING: pystella: failed to import scipy modules.")
 
