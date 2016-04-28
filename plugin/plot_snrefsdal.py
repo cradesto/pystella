@@ -2,7 +2,7 @@ import numpy as np
 import os
 from scipy import interpolate
 
-from pystella.rf import band
+# from pystella.rf import band
 from pystella.rf.lc import SetLightCurve, LightCurve
 
 path_data = os.path.expanduser('~/Sn/my/papers/2016/snrefsdal/data')
@@ -10,9 +10,11 @@ grav_lens_def = 'ogu-g'
 marker_glens = {'ogu-g': 'o', 'ogu-a': 's', 'gri-g': '+', 'sha-g': '*', 'sha-a': '*', 'die-a': 'd'}
 
 
-colors = {'ogu-g': 'blue', 'gri-g': 'magenta', 'sha-g': 'orange',
-          'ogu-a': 'skyblue', 'sha-a': 'red', 'die-a': 'olive',
-          'obs-tmp': 'chocolate', 'obs-sn87a': 'brown', 'obs-pol': 'black'}
+colors_gl = {'ogu-g': 'blue', 'gri-g': 'magenta', 'sha-g': 'orange',
+             'ogu-a': 'skyblue', 'sha-a': 'red', 'die-a': 'olive',
+             'obs-tmp': 'chocolate', 'obs-sn87a': 'brown', 'obs-pol': 'black'}
+colors_band = dict(F105W="magenta", F435W="skyblue", F606W="cyan", F125W="g",
+                   F140W="orange", F160W="r", F814W="blue")
 
 
 def coef_glens():  # see http://arxiv.org/abs/1510.05750
@@ -131,8 +133,6 @@ def get_band_num(name):
 
 
 def plot_BV(ax, path, jd_shift, glens, image):
-    colors = band.bands_colors()
-
     # from Rodney_tbl4
     sn_images = {'S1': 2, 'S2': 4, 'S3': 6, 'S4': 8, 'SX': 10}
     # if image in sn_images.keys():
@@ -191,12 +191,10 @@ def plot_BV(ax, path, jd_shift, glens, image):
                 yy2 = np.interp(xx, x2, y2, 0, 0)
             bv = y1 - yy2
 
-        ax.plot(xx, bv, color=colors[bn1], label='%s-%s .' % (bn1, bn2), marker='o', markersize=9, lw=1.5, ls='')
+        ax.plot(xx, bv, color=colors_band[bn1], label='%s-%s .' % (bn1, bn2), marker='o', markersize=9, lw=1.5, ls='')
 
 
 def plot_ubv(ax, path, jd_shift, band_max, glens, image):
-    colors = band.bands_colors()
-
     lc_data, sn_images = read_lc(path)
 
     bands = np.unique(lc_data[:, 0])
@@ -213,7 +211,7 @@ def plot_ubv(ax, path, jd_shift, band_max, glens, image):
             continue
 
         yerr = data[:, colS + 1]
-        bcolor = colors[bn]
+        bcolor = colors_band[bn]
         lower_limits = np.zeros(x.shape, dtype=bool)
         lower_limits[yerr == -1] = True
 
@@ -294,7 +292,7 @@ def read_curves(path, image):
         yerr = data[:, colS + 1]
         if np.all(mags <= 0):
             continue
-        b = band.band_by_name(bname)
-        lc = LightCurve(b, time, mags, errs=yerr)
+        # b = band.band_by_name(bname)
+        lc = LightCurve(bname, time, mags, errs=yerr)
         curves.add(lc)
     return curves

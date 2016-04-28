@@ -73,7 +73,7 @@ class Popov:
 
     @property
     def Lambda(self):
-        numerator = 54.*np.sqrt(30.)*phys.sigma_SB*self.kappa*self.Mtot**1.5*self.Tion**4
+        numerator = 54.*np.sqrt(30.)*phys.sigma_SB*self.kappa**2*self.Mtot**1.5*self.Tion**4
         denominator = np.pi**5*phys.c**2*np.sqrt(self.Etot)*self.R0
         return numerator/denominator
 

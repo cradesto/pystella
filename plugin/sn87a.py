@@ -56,7 +56,7 @@ def plot_ubv(ax, path, jd_shift=0., mshift=0.):
         y = lc.Mag + mshift
         bcolor = colors[lc.Band.Name]
         ax.plot(x, y, label='%s SN 1987A' % lc.Band.Name,
-                ls=".", color=bcolor, markersize=8, marker="o")
+                ls=".", color=bcolor, markersize=6, marker=".")
 
 
 def read(path=sn_path):

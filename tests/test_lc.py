@@ -31,7 +31,6 @@ class TestLightCurve(unittest.TestCase):
                               msg="Error for band names.\n \
                 Now band is %s but  lc.Band.Name is  %s." % (' '.join(bands), ' '.join(curves.BandNames)))
 
-
     def test_lc_leastsq(self):
         dt_init = 10.
         lc1 = lc_create('U', dt=0.)

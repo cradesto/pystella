@@ -27,7 +27,7 @@ def plot(ax, dic=None):
 
 def plot_ubv(ax, path, jd_shift=0., mshift=0.):
     colors = band.bands_colors()
-    curves = read(path)
+    curves = read_curves(path)
     for lc in curves:
         x = lc.Time + jd_shift
         y = lc.Mag + mshift
@@ -36,7 +36,7 @@ def plot_ubv(ax, path, jd_shift=0., mshift=0.):
                 ls=".", color=bcolor, markersize=8, marker="o")
 
 
-def read(path=sn_path):
+def read_curves(path=sn_path):
     header = 'U B  V  I  R'
     cols = map(str.strip, header.split())
     lc_data = np.loadtxt(os.path.join(path, '1999emubvir.dat'), skiprows=1, usecols=range(1, 12))

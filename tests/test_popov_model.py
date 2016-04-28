@@ -39,7 +39,7 @@ class TestPopovModel(unittest.TestCase):
         dm = -29.38  # D = 7.5e6 pc
         # dm = -30.4  # D = 12.e6 pc
         time = np.exp(np.linspace(np.log(start), np.log(end), n))
-        popov = Popov('test', R=450., M=15., Mni=0.07, E=0.7e51)
+        popov = Popov('test', R=450., M=15., Mni=0.04, E=0.7e51)
         ax = popov.plot_Lbol(time)
         sn1999em.plot_ubv(ax, path=sn1999em.sn_path, jd_shift=jd_shift, mshift=dm)
         plt.show()
