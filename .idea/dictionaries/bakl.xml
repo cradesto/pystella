@@ -27,6 +27,7 @@
       <w>etot</w>
       <w>facecolor</w>
       <w>fcut</w>
+      <w>fjac</w>
       <w>fname</w>
       <w>freqs</w>
       <w>fsave</w>
@@ -38,6 +39,7 @@
       <w>hgamma</w>
       <w>icol</w>
       <w>irow</w>
+      <w>jacobian</w>
       <w>kait</w>
       <w>lambdaeff</w>
       <w>lbol</w>

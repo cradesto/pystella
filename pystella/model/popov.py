@@ -84,7 +84,9 @@ class Popov:
     @property
     def t_d(self):
         """Diffusion time"""
-        t = 9.*self._kappa*self.Mtot / (4. * np.pi ** 3 * phys.c * self.R0)
+        # t1 = 9.*self._kappa*self.Mtot / (4. * np.pi ** 3 * phys.c * self.R0)
+        pho0 = self.Mtot / (4./3. * np.pi * self.R0**3)
+        t = 3.*self._kappa*pho0*self.R0**2 / phys.c
         return t
 
     @property
@@ -146,16 +148,16 @@ class Popov:
             lum = self.Eth0 / self.t_d * np.exp(-(t / self.t_a) ** 2)
             return lum
 
-        if t > self.t_p:
-            lum = self.e_rate_ni(time)
-            return lum
-
         lumWCR = 8. * np.pi * phys.sigma_SB * self.Tion ** 4 * self.Rph(time) ** 2
         if t < self.t_max:
             return lumWCR
 
+        lumNiCo = self.e_rate_ni(time)
+        if t > self.t_p:
+            return lumNiCo
+
         if is_ni:
-            lumNiCo = self.e_rate_ni(time)
+            # lumNiCo = self.e_rate_ni(time)
             lum = np.max((lumWCR, lumNiCo))
         else:
             lum = lumWCR

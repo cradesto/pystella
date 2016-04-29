@@ -45,18 +45,18 @@ def popov_fit(lc, is_verbose=True, xtol=1e-10, ftol=1e-10, gtol=1e-10):
 
     R0 = 100.
     M0 = 10.
-    Mni0 = 0.1
+    Mni0 = 0.001
     E0 = 1.
     time = lc.Time
     def leastsq(p, fjac):
         ppv = Popov('test', R=p[0], M=p[1], Mni=p[2], E=p[3]*1e51)
         m = ppv.MagBol(time)
-        return 0, lc.Mag - m
+        return 0, (lc.Mag - m)/lc.MagErr
 
-    parinfo = [{'value': R0, 'limited': [1, 1], 'limits': [10., 150e0]},
-               {'value': M0, 'limited': [1, 1], 'limits': [1., 150.]},
-               {'value': Mni0, 'limited': [1, 1], 'limits': [0.1, 50.]},
-               {'value': E0, 'limited': [1, 1], 'limits': [0.1, 50.]}]
+    parinfo = [{'value': R0,   'limited': [1, 0], 'limits': [10., 1500e0]},
+               {'value': M0,   'limited': [1, 0], 'limits': [1., 150.]},
+               {'value': Mni0, 'limited': [1, 0], 'limits': [0.001, 1.]},
+               {'value': E0,   'limited': [1, 0], 'limits': [0.01, 50.]}]
     result = mpfit.mpfit(leastsq, parinfo=parinfo, quiet=quiet, maxiter=200,
                          ftol=ftol, gtol=gtol, xtol=xtol)
     if result.status == 5:
@@ -102,7 +102,7 @@ class TestFit(unittest.TestCase):
         dm = -29.38  # D = 7.5e6 pc
         # dm = -30.4  # D = 12.e6 pc
         curves = sn1999em.read_curves()
-        lc = curves.get('V')
+        lc = curves.get('R')
         lc.mshift = dm
         lc.tshift = -lc.tmin
 
