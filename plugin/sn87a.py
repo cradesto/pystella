@@ -50,7 +50,7 @@ def plot_vels_sn87a(ax, path, z=0):
 
 def plot_ubv(ax, path, jd_shift=0., mshift=0.):
     colors = band.bands_colors()
-    curves = read(path)
+    curves = read_curves(path)
     for lc in curves:
         x = lc.Time + jd_shift
         y = lc.Mag + mshift
@@ -59,7 +59,7 @@ def plot_ubv(ax, path, jd_shift=0., mshift=0.):
                 ls=".", color=bcolor, markersize=6, marker=".")
 
 
-def read(path=sn_path):
+def read_curves(path=sn_path):
     fs = {'U': 'pav_U.csv', 'B': 'pav_B.csv', 'V': 'pav_V.csv', 'R': 'pav_R.csv', 'I': 'pav_I.csv'}
     fs = dict((k, os.path.join(path, v)) for k, v in fs.items())
 
