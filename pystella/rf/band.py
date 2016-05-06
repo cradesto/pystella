@@ -59,8 +59,9 @@ class Band(object):
                 self.resp = np.array([float(string.split(line)[1]) for line in lines if line[0] != "#"])
                 self.wl = wl * phys.angs_to_cm
                 f.close()
-            # except Exception:
-            #     print"Error in rf file: %s.  Exception:  %s" % (self.file, sys.exc_info()[0])
+            except Exception:
+                print"Error in band file: %s.  Exception:  %s" % (self.file, sys.exc_info()[0])
+                sys.exit("Error while parse band-file: %s in %s" % self.file)
             finally:
                 f.close()
 
@@ -90,6 +91,22 @@ class Band(object):
         print >> out, "Band: ", self.name
         print >> out, "wave length = %.3f, %3.f " % (min(self.wl) * 1e8, max(self.wl) * 1e8)
         print >> out, ""
+
+
+class BandUni(Band):
+    def __init__(self, name='Uniform', wlrange=(1e1, 5e4), length=100):
+        """Creates a band with uniform responce.
+        :param name:  default 'Uniform'.
+        :param wlrange:  the wavelength range, default (1e1, 5e4) [A]
+        :param length: numbers of bins default 100
+        """
+        super(BandUni, self).__init__(name)
+        self.name = name
+        wl = np.exp(np.linspace(np.log(wlrange[0]) * phys.angs_to_cm
+                                , np.log(wlrange[1]) * phys.angs_to_cm
+                                , length))
+        self.wl = wl  # wavelength of response [cm]
+        self.resp = 1.  # response
 
 
 def read_zero_point(fname, ptn_file):

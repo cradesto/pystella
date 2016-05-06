@@ -1,4 +1,5 @@
 import unittest
+import numpy as np
 import pystella.rf.band as band
 
 __author__ = 'bakl'
@@ -25,6 +26,10 @@ class BandTests(unittest.TestCase):
         zp = 13.9168580779  # for KAIT U
         b = band.band_by_name('U')
         self.assertAlmostEqual(b.zp, zp, "Zero points of band %s equals %f. Should be %f" % (b, b.zp, zp))
+
+    def test_band_uniform(self):
+        b = band.BandUni()
+        self.assertTrue(np.any(b.resp == 1), "Response values is equal 1. band: %s" % b.name)
 
 
 def main():
