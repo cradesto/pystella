@@ -54,9 +54,12 @@ def plot_ubv_models(ax, models_dic, bands, band_shift, xlim=None, ylim=None, is_
             x = mdic['time']
             y = mdic[bname]
             bcolor = colors[bname]
-            ax.plot(x, y, label='%s  %s' % (lbl(bname, band_shift), mname), color=bcolor, ls="-", linewidth=lw)
-            # ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label='%s  %s' % (lbl(bname, band_shift), mname),
-            #         markersize=4, color=bcolor, ls="-", linewidth=lw)
+
+            if len(models_dic) == 1:
+                ax.plot(x, y, label='%s  %s' % (lbl(bname, band_shift), mname), color=bcolor, ls="-", linewidth=lw)
+            else:
+                ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label='%s  %s' % (lbl(bname, band_shift), mname),
+                        markersize=3, color=bcolor, ls="--", linewidth=lw)
 
             if is_time_points:
                 integers = [np.abs(x - t).argmin() for t in t_points]  # set time points

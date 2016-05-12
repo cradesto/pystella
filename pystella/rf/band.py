@@ -101,7 +101,7 @@ class BandUni(Band):
         :param length: numbers of bins default 100
         """
         super(BandUni, self).__init__(name)
-        self.name = name
+        # self.name = name
         wl = np.exp(np.linspace(np.log(wlrange[0]) * phys.angs_to_cm
                                 , np.log(wlrange[1]) * phys.angs_to_cm
                                 , length))

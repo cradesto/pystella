@@ -45,7 +45,7 @@ def popov_fit(lc, is_verbose=True, xtol=1e-10, ftol=1e-10, gtol=1e-10):
 
     R0 = 100.
     M0 = 10.
-    Mni0 = 0.001
+    Mni0 = 0.1
     E0 = 1.
     time = lc.Time
 
