@@ -24,7 +24,10 @@ class phys:
     pc = 206265 * AU
     R_sun = 6.957e10  # cm
     M_sun = 1.99e33  # g
-    L_sun = 3.9e33  # ergs
+    L_sun = 3.828e33  # ergs
+    Mag_sun = 4.74
+
+    FOE = 1.e51  # ergs
 
     d2s = 24.*60.*60.  # convert days to seconds
 

@@ -50,8 +50,8 @@ def popov_fit(lc, is_verbose=True, xtol=1e-10, ftol=1e-10, gtol=1e-10):
     time = lc.Time
 
     def leastsq(p, fjac):
-        ppv = Popov('test', R=p[0], M=p[1], Mni=p[2], E=p[3] * 1e51)
-        m = ppv.MagBol(time)
+        p = Popov('test', R=p[0], M=p[1], Mni=p[2], E=p[3])
+        m = p.MagBol(time)
         res = (lc.Mag - m)
         if lc.MagErr is not None:
             res = res / lc.MagErr
@@ -67,11 +67,11 @@ def popov_fit(lc, is_verbose=True, xtol=1e-10, ftol=1e-10, gtol=1e-10):
         print 'Maximum number of iterations exceeded in mangle_spectrum'
 
     # tshift = result.params[0]
-    ppv = Popov('test', R=result.params[0], M=result.params[1], Mni=result.params[2], E=result.params[3] * 1e51)
+    ppv = Popov('test', R=result.params[0], M=result.params[1], Mni=result.params[2], E=result.params[3])
 
     if is_verbose:
         print "The final params are: R=%f M=%f Mni=%f E=%f " % (
-        result.params[0], result.params[1], result.params[2], result.params[3])
+            result.params[0], result.params[1], result.params[2], result.params[3])
     return ppv
 
 
@@ -86,7 +86,7 @@ class TestFit(unittest.TestCase):
 
         time = lc.Time - lc.tmin
         # time = np.exp(np.linspace(np.log(start), np.log(end), n))
-        popov = Popov('test', R=450., M=15., Mni=0.04, E=0.7e51)
+        popov = Popov('test', R=450., M=15., Mni=0.04, E=0.7)
         mags = popov.MagBol(time)
 
         # fit
@@ -126,7 +126,7 @@ class TestFit(unittest.TestCase):
     def test_fit_popov_SN1987A(self):
         ##  todo fit M, E, Mni
         D = 5e4  # pc
-        dm = -5.*np.log10(D)+5  # D = 7.5e6 pc
+        dm = -5. * np.log10(D) + 5  # D = 7.5e6 pc
         # dm = -30.4  # D = 12.e6 pc
         curves = sn87a.read_curves()
         lc = curves.get('R')

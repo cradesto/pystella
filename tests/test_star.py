@@ -96,8 +96,22 @@ class TestStar(unittest.TestCase):
         self.assertIsNotNone(k_cor, "Return error for k_cor. \
                             Band-rest %s and band-obs %s." % (b_r, b_o))
         self.assertNotAlmostEqual(k_cor, 0.,
-                               msg="For z=%f it should be k_cor != 0. \
+                                  msg="For z=%f it should be k_cor != 0. \
                             Now k_kor is %f for band-rest %s and band-obs %s." % (z, k_cor, b_r, b_o))
+
+    def test_Lum2MagBol(self):
+        L_sun = 4e33
+        m = rf.Lum2MagBol(L_sun)
+        self.assertAlmostEqual(m, phys.Mag_sun,
+                               msg="Absolute magnitude of Sun is %f. \
+                                    You have  m = %f." % (phys.Mag_sun, m), delta=0.05)
+        # Vega, see http://iopscience.iop.org/article/10.1088/0004-637X/708/1/71/meta
+        L = 40.34 * phys.L_sun
+        m = rf.Lum2MagBol(L)
+        m_vega = 0.582  # absolute visual magnitude, see http://iopscience.iop.org/article/10.1088/0004-6256/136/1/452/meta
+        self.assertAlmostEqual(m, phys.Mag_sun,
+                               msg="Absolute magnitude of Vega is %f. \
+                                 You have  m = %f." % (m_vega, m), delta=0.05)
 
 
 def main():

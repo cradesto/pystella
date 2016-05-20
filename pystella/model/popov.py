@@ -21,7 +21,7 @@ class Popov:
 
         self._R0 = R * phys.R_sun
 
-        self._Etot = E
+        self._Etot = E * phys.FOE
         self._Mtot = M * phys.M_sun
         self._Mni = Mni * phys.M_sun
 

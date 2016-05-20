@@ -129,7 +129,6 @@ def temp_wien(wl):
 
 
 def Lum2MagBol(l):
-    """Convert bolometric luminosity to abs. magnitude"""
-    Msun = 4.74
-    mag = -2.5 * np.log10(l / phys.L_sun) + Msun
+    """Convert bolometric luminosity to abs. bol. magnitude"""
+    mag = -2.5 * np.log10(l / phys.L_sun) + phys.Mag_sun
     return mag
