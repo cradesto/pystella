@@ -17,10 +17,8 @@ class Popov:
         self._T_ion = 5000  # H recombination temperature [K]
         # self._v_sc = None
         self._T0 = None
-        self._rho0 = None
 
         self._R0 = R * phys.R_sun
-
         self._Etot = E * phys.FOE
         self._Mtot = M * phys.M_sun
         self._Mni = Mni * phys.M_sun
@@ -42,6 +40,10 @@ class Popov:
     @property
     def Mtot(self):
         return self._Mtot
+
+    @property
+    def Rho0(self):
+        return self.Mtot / (4./3.*np.pi*self.R0**3)
 
     @property
     def Mni(self):
@@ -86,10 +88,10 @@ class Popov:
     @property
     def t_d(self):
         """Diffusion time"""
-        # t1 = 9.*self._kappa*self.Mtot / (4. * np.pi ** 3 * phys.c * self.R0)
-        pho0 = self.Mtot / (4./3. * np.pi * self.R0**3)
-        t = 3.*self._kappa*pho0*self.R0**2 / phys.c
-        return t
+        t1 = 9.*self._kappa*self.Mtot / (4. * np.pi ** 3 * phys.c * self.R0)
+        # pho0 = self.Mtot / (4./3. * np.pi * self.R0**3)
+        # t = 3.*self._kappa*self.Rho0*self.R0**2 / phys.c
+        return t1
 
     @property
     def t_e(self):
@@ -130,7 +132,7 @@ class Popov:
         return self.v_sc * x
 
     def rho(self, time):
-        return self._rho0 * (self._R0/self.R(time))**3
+        return self.Rho0 * (self._R0/self.R(time))**3
 
     def Rph(self, time):
         t = time * phys.d2s
