@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from scipy import interpolate
 
 from pystella.model.popov import Popov
-from plugin import sn1999em, sn87a
+from plugin import sn1999em, sn87a, rednova
 from pystella.fit import mpfit
 
 __author__ = 'bakl'
@@ -123,6 +123,27 @@ class TestFit(unittest.TestCase):
                 ls=".", color='red', markersize=8, marker="o")
         plt.show()
 
+    def test_fit_popov_rednova(self):
+        D = 11.5e6  # pc
+        dm = -5. * np.log10(D) + 5
+        # dm = -30.4  # D = 12.e6 pc
+        curves = rednova.read_curves_kurtenkov()
+        lc = curves.get('R')
+        lc.mshift = dm
+        lc.tshift = -lc.tmin
+
+        # fit
+        ppv = popov_fit(lc)
+
+        # plot
+        ax = ppv.plot_Lbol(lc.Time)
+        x = lc.Time
+        # x = lc.Time + jd_shift + res
+        y = lc.Mag
+        ax.plot(x, y, label='%s SN 1999em' % lc.Band.Name,
+                ls=".", color='red', markersize=8, marker="o")
+        plt.show()
+
     def test_fit_popov_SN1987A(self):
         ##  todo fit M, E, Mni
         D = 5e4  # pc
@@ -144,3 +165,29 @@ class TestFit(unittest.TestCase):
         ax.plot(x, y, label='%s SN 1987A' % lc.Band.Name,
                 ls=".", color='red', markersize=8, marker="o")
         plt.show()
+
+
+def test_fit_time_popov_SN1999em(self):
+    jd_shift = 20.
+    dm = -29.38  # D = 7.5e6 pc
+    # dm = -30.4  # D = 12.e6 pc
+    curves = sn1999em.read_curves()
+    lc = curves.get('V')
+    lc.mshift = dm
+
+    time = lc.Time - lc.tmin
+    # time = np.exp(np.linspace(np.log(start), np.log(end), n))
+    popov = Popov('test', R=450., M=15., Mni=0.04, E=0.7)
+    mags = popov.MagBol(time)
+
+    # fit
+    tshift = myfit(mags, lc)
+
+    # plot
+    ax = popov.plot_Lbol(time)
+    x = lc.Time + tshift
+    # x = lc.Time + jd_shift + res
+    y = lc.Mag
+    ax.plot(x, y, label='%s SN 1999em' % lc.Band.Name,
+            ls=".", color='red', markersize=8, marker="o")
+    plt.show()
