@@ -43,36 +43,43 @@ def popov_fit(lc, is_verbose=True, xtol=1e-10, ftol=1e-10, gtol=1e-10):
     else:
         quiet = 1
 
-    R0 = 100.
+    R0 = 1000.
     M0 = 10.
-    Mni0 = 0.1
+    Mni0 = 0.01
     E0 = 1.
+    dt0 = 0.
     time = lc.Time
 
     def leastsq(p, fjac):
-        p = Popov('test', R=p[0], M=p[1], Mni=p[2], E=p[3])
-        m = p.MagBol(time)
+        mdl = Popov('test', R=p[0], M=p[1], Mni=p[2], E=p[3])
+        l_dt = p[4]
+        t = time + l_dt
+        m = mdl.MagBol(t)
         res = (lc.Mag - m)
+        w = np.exp(-(max(abs(lc.Mag)) - abs(lc.Mag))*2)  # weight
+        w = 1.
+        # w = w / max(w)
         if lc.MagErr is not None:
-            res = res / lc.MagErr
+            res = res * w / lc.MagErr
         return 0, res
 
-    parinfo = [{'value': R0, 'limited': [1, 1], 'limits': [10., 1500e0]},
-               {'value': M0, 'limited': [1, 1], 'limits': [1., 150.]},
+    parinfo = [{'value': R0,   'limited': [1, 1], 'limits': [10., 1500e0]},
+               {'value': M0,   'limited': [1, 1], 'limits': [1., 150.]},
                {'value': Mni0, 'limited': [1, 1], 'limits': [0.001, 1.]},
-               {'value': E0, 'limited': [1, 1], 'limits': [0.01, 50.]}]
+               {'value': E0,   'limited': [1, 1], 'limits': [0.01, 5.]},
+               {'value': dt0,  'limited': [1, 1], 'limits': [-200., 250.]}]
     result = mpfit.mpfit(leastsq, parinfo=parinfo, quiet=quiet, maxiter=200,
                          ftol=ftol, gtol=gtol, xtol=xtol)
     if result.status == 5:
         print 'Maximum number of iterations exceeded in mangle_spectrum'
 
-    # tshift = result.params[0]
     ppv = Popov('test', R=result.params[0], M=result.params[1], Mni=result.params[2], E=result.params[3])
+    tshift = result.params[4]
 
     if is_verbose:
-        print "The final params are: R=%f M=%f Mni=%f E=%f " % (
-            result.params[0], result.params[1], result.params[2], result.params[3])
-    return ppv
+        print "The final params are: R=%f M=%f Mni=%f E=%f; dt = %f " % (
+            result.params[0], result.params[1], result.params[2], result.params[3], tshift)
+    return ppv, tshift
 
 
 class TestFit(unittest.TestCase):
@@ -109,13 +116,15 @@ class TestFit(unittest.TestCase):
         curves = sn1999em.read_curves()
         lc = curves.get('R')
         lc.mshift = dm
-        lc.tshift = -lc.tmin
+        # lc.tshift = -lc.tmin
 
         # fit
-        ppv = popov_fit(lc)
-
-        # plot
+        ppv, tshift = popov_fit(lc)
+        # plot model
+        # time = lc.Time - tshift
         ax = ppv.plot_Lbol(lc.Time)
+        # plot obs
+        lc.tshift = lc.tshift + tshift
         x = lc.Time
         # x = lc.Time + jd_shift + res
         y = lc.Mag
@@ -167,27 +176,3 @@ class TestFit(unittest.TestCase):
         plt.show()
 
 
-def test_fit_time_popov_SN1999em(self):
-    jd_shift = 20.
-    dm = -29.38  # D = 7.5e6 pc
-    # dm = -30.4  # D = 12.e6 pc
-    curves = sn1999em.read_curves()
-    lc = curves.get('V')
-    lc.mshift = dm
-
-    time = lc.Time - lc.tmin
-    # time = np.exp(np.linspace(np.log(start), np.log(end), n))
-    popov = Popov('test', R=450., M=15., Mni=0.04, E=0.7)
-    mags = popov.MagBol(time)
-
-    # fit
-    tshift = myfit(mags, lc)
-
-    # plot
-    ax = popov.plot_Lbol(time)
-    x = lc.Time + tshift
-    # x = lc.Time + jd_shift + res
-    y = lc.Mag
-    ax.plot(x, y, label='%s SN 1999em' % lc.Band.Name,
-            ls=".", color='red', markersize=8, marker="o")
-    plt.show()
