@@ -156,7 +156,7 @@ class Popov:
         if t < self.t_max:
             return lumWCR
 
-        lumNiCo = self.e_rate_ni(time)
+        lumNiCo = self.L_co(time)
         if t > self.t_p:
             return lumNiCo
 
@@ -174,6 +174,18 @@ class Popov:
          Parameters: time [day]"""
         e = (6.45e43*np.exp(-time/8.8) + 1.45e43*np.exp(-time/111.3)) * self.Mni / phys.M_sun  #
         return e
+    # L Co
+    def L_co(self, time):
+        """The luminosity  by Co [ergs/s], see Arnett W.D., 1980
+         http://adsabs.harvard.edu/doi/10.1086/157898
+         Parameters: time [day]"""
+        M_co = self.Mni * (1. - np.exp(-time/8.8))
+        L = 1.63e42 * M_co / (0.1*phys.M_sun) * np.exp(-time/111.3)
+        # if self.t_p > time:
+        #     L = L * 0.03 * np.exp(-(self.t_p > time)/10)  #
+
+        # e = (6.45e43*np.exp(-time/8.8) + 1.45e43*np.exp(-time/111.3)) * self.Mni / phys.M_sun  #
+        return L
 
     def MagBol(self, time):
         mag = Lum2MagBol(self.Lbol(time))

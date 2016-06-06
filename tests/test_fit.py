@@ -37,17 +37,13 @@ def myfit(mags, lc, is_verbose=True, xtol=1e-10, ftol=1e-10, gtol=1e-10):
     return tshift
 
 
-def popov_fit(lc, is_verbose=True, xtol=1e-10, ftol=1e-10, gtol=1e-10):
+def popov_fit(lc, R0, M0, Mni0, E0, dt0=0.,
+              is_verbose=True, xtol=1e-10, ftol=1e-10, gtol=1e-10):
     if is_verbose:
         quiet = 0
     else:
         quiet = 1
 
-    R0 = 1000.
-    M0 = 10.
-    Mni0 = 0.01
-    E0 = 1.
-    dt0 = 0.
     time = lc.Time
 
     def leastsq(p, fjac):
@@ -109,7 +105,6 @@ class TestFit(unittest.TestCase):
         plt.show()
 
     def test_fit_popov_SN1999em(self):
-        ##  todo fit M, E, Mni
         D = 11.5e6  # pc
         dm = -5. * np.log10(D) + 5
         # dm = -30.4  # D = 12.e6 pc
@@ -119,7 +114,7 @@ class TestFit(unittest.TestCase):
         # lc.tshift = -lc.tmin
 
         # fit
-        ppv, tshift = popov_fit(lc)
+        ppv, tshift = popov_fit(lc, R0=1000., M0=10., Mni0=0.01, E0=1., dt0=0.)
         # plot model
         # time = lc.Time - tshift
         ax = ppv.plot_Lbol(lc.Time)
@@ -142,11 +137,11 @@ class TestFit(unittest.TestCase):
         lc.tshift = -lc.tmin
 
         # fit
-        ppv = popov_fit(lc)
+        ppv, tshift = popov_fit(lc, R0=10., M0=1., Mni0=0.001, E0=1.e-2, dt0=0.)
 
         # plot
         ax = ppv.plot_Lbol(lc.Time)
-        x = lc.Time
+        x = lc.Time + tshift
         # x = lc.Time + jd_shift + res
         y = lc.Mag
         ax.plot(x, y, label='%s SN 1999em' % lc.Band.Name,
@@ -164,11 +159,11 @@ class TestFit(unittest.TestCase):
         lc.tshift = -lc.tmin
 
         # fit
-        ppv = popov_fit(lc)
+        ppv, tshift = popov_fit(lc, R0=1000., M0=10., Mni0=0.01, E0=1., dt0=0.)
 
         # plot
         ax = ppv.plot_Lbol(lc.Time)
-        x = lc.Time
+        x = lc.Time + tshift
         # x = lc.Time + jd_shift + res
         y = lc.Mag
         ax.plot(x, y, label='%s SN 1987A' % lc.Band.Name,
