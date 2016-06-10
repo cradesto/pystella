@@ -138,7 +138,7 @@ def bands_colors():
                   J="green", H="cyan", K="black",
                   UVM2="skyblue", UVW1="orange", UVW2="blue",
                   F105W="magenta", F435W="skyblue",  F606W="cyan", F125W="g", F140W="orange", F160W="r", F814W="blue",
-                  g="blue", r="red", i="magenta", u="blue", z="chocolate",
+                  g="green", r="red", i="magenta", u="blue", z="chocolate",
                   y='olive', w='tomato')
     # for Subaru HCS: colors
     for b in list('grizy'):

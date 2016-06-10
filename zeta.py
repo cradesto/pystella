@@ -252,7 +252,7 @@ def plot_zeta(models_dic, set_bands, t_cut=4.9,
             if ye is not None:
                 ax.plot(xx, ye, color=bcolor, ls="-.", linewidth=2.5, label='Eastman 96')
 
-            if False:
+            if True:
                 yh = zeta_fit(xx, bset, "hamuy")
                 bcolor = "skyblue"
                 if yh is not None:
@@ -261,7 +261,7 @@ def plot_zeta(models_dic, set_bands, t_cut=4.9,
             yb = zeta_fit(xx, bset, "bakl")
             bcolor = "orange"
             if yb is not None:
-                ax.plot(xx, yb, color=bcolor, ls="-", linewidth=2.5, label='Baklanov 15')
+                ax.plot(xx, yb, color=bcolor, ls="-", linewidth=2.5, label='Baklanov 16')
 
     # find & plot fit zeta-Tcol for Stella
     if is_fit_bakl:  # bakl fit

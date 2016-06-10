@@ -219,15 +219,15 @@ class Star:
         """
         Compute K-correction for observed and rest-frame bands.
 
-       Args:
+        Args:
           band_r: Rest-frame band.
           band_o: Observed band.
           z:     redshift
 
-       Returns:
+        Returns:
           * K: K-correction
           * If failed return None
-       """
+        """
         # todo make k-correction with b-splinesec
 
         if z > 0:
