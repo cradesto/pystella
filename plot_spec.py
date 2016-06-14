@@ -351,9 +351,8 @@ def plot_spec_t(series, wl_lim=None, moments=None):
 
 
 def planck_fit(star, bset):
-    sp = spectrum.SpectrumPlanck(star.Freq, star.get_Tcol(bset))
+    sp = spectrum.SpectrumDilutePlanck(star.Freq, star.get_Tcol(bset), star.get_zeta(bset)**2)
     star_bb = Star("bb", sp)
-    sp.correct_zeta(star.get_zeta(bset))
     star_bb.set_radius_ph(star.radius_ph)
     star_bb.set_distance(star.distance)
     return star_bb
@@ -361,8 +360,7 @@ def planck_fit(star, bset):
 
 def epsilon(x, freq, mag, bands, radius, dist):
     temp_color, zeta = x
-    sp = spectrum.SpectrumPlanck(freq, temp_color)
-    sp.correct_zeta(zeta)
+    sp = spectrum.SpectrumDilutePlanck(freq, temp_color, zeta**2)
 
     star = Star("bb", sp)
     star.set_radius_ph(radius)

@@ -471,8 +471,8 @@ def epsilon_fit_zeta(x, models_dic, bset, t_beg, t_end=None):
 
 def epsilon(x, freq, mag, bands, radius, dist):
     temp_color, zeta = x
-    sp = spectrum.SpectrumPlanck(freq, temp_color)
-    sp.correct_zeta(zeta)
+    sp = spectrum.SpectrumDilutePlanck(freq, temp_color, W=zeta**2)
+    # sp.correct_zeta(zeta)
 
     star = Star("bb", sp)
     star.set_radius_ph(radius)

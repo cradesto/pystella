@@ -186,15 +186,15 @@ class SpectrumPlanck(Spectrum):
         flux = math.pi * rf.planck(freq, temperature=temperature)
         Spectrum.__init__(self, name, freq=freq, flux=flux)
         self._T = temperature
-        self.zeta = None
+        # self.zeta = None
 
     @property
     def T(self):
         return self._T
 
-    def correct_zeta(self, zeta):
-        self.zeta = zeta
-        self._flux *= zeta ** 2
+    # def correct_zeta(self, zeta):
+    #     self.zeta = zeta
+    #     self._flux *= zeta ** 2
 
 
 class SpectrumDilutePlanck(Spectrum):
