@@ -94,7 +94,7 @@ def compute_mag(name, path, bands, z=0., distance=10., t_cut=0., t_up=400., tdif
 
     # serial_spec = model.read_serial_spectrum(t_diff=0.)
     serial_spec = model.read_series_spectrum(t_diff=1.05)
-    mags = serial_spec.old_compute_mags(bands, z=z, dl=rf.pc_to_cm(distance))
+    mags = serial_spec.mags_bands(bands, z=z, d=rf.pc_to_cm(distance))
 
     # t_cut
     time = mags['time']

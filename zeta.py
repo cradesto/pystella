@@ -6,7 +6,7 @@ import os
 import sys
 from os.path import isfile, join, dirname
 from scipy import interpolate
-from scipy.optimize import fmin
+from scipy.optimize import fmin, minimize
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -471,6 +471,11 @@ def epsilon_fit_zeta(x, models_dic, bset, t_beg, t_end=None):
 
 def epsilon(x, freq, mag, bands, radius, dist):
     temp_color, zeta = x
+    e = 0
+    if temp_color < 0 or zeta < 0:
+        for b in bands:
+            e += mag[b] ** 2
+        return e
     sp = spectrum.SpectrumDilutePlanck(freq, temp_color, W=zeta**2)
     # sp.correct_zeta(zeta)
 
@@ -478,26 +483,28 @@ def epsilon(x, freq, mag, bands, radius, dist):
     star.set_radius_ph(radius)
     star.set_distance(dist)
     mag_bb = {b: star.flux_to_magAB(band.band_by_name(b)) for b in bands}
-    e = 0
     for b in bands:
         e += (mag[b] - mag_bb[b])**2
     return e
 
 
-def compute_Tcolor_zeta(mags, tt, bands, freq, dist):
+def compute_Tcolor_zeta(mags, tt, bands, freq, d):
     temp = list()
     zeta_radius = list()
     times = list()
     Rph_spline = interpolate.splrep(tt['time'], tt['Rph'], s=0)
-    for nt in range(len(mags['time'])):
-        t = mags['time'][nt]
+    lc_time = mags["time"]
+
+    for nt in range(len(lc_time)):
+        t = lc_time[nt]
         if t < min(tt['time']):
             continue
         if t > max(tt['time']):
             break
         mag = {b: mags[b][nt] for b in bands}
         radius = interpolate.splev(t, Rph_spline)
-        tcolor, w = fmin(epsilon, x0=np.array([1.e4, 1]), args=(freq, mag, bands, radius, dist), disp=0)
+        # tcolor, w = minimize(epsilon, x0=np.array([1.e4, 1]), args=(freq, mag, bands, radius, d))
+        tcolor, w = fmin(epsilon, x0=np.array([1.e4, 1]), args=(freq, mag, bands, radius, d), disp=False)
         temp.append(tcolor)
         zeta_radius.append(w)
         times.append(t)
@@ -544,9 +551,11 @@ def compute_tcolor(name, path, bands, t_cut=1.):
         return None
 
     distance = rf.pc_to_cm(10.)  # pc for Absolute magnitude
-    # serial_spec = model.read_serial_spectrum(t_diff=0.)
+    # serial_spec = model.read_series_spectrum(t_diff=1.)
+    # curves = serial_spec.flux_to_curves(bands, d=distance)
     serial_spec = model.read_series_spectrum(t_diff=1.05, t_beg=t_cut)
-    mags = serial_spec.old_compute_mags(bands, z=0., dl=distance)
+    # curves = serial_spec.
+    mags = serial_spec.mags_bands(bands, z=0., d=distance)
 
     # read R_ph
     tt = model.read_tt_data()
@@ -556,7 +565,7 @@ def compute_tcolor(name, path, bands, t_cut=1.):
     Tnu, Teff, W = compute_Tnu_w(serial_spec, tt=tt)
 
     # fit mags by B(T_col) and get \zeta\theta & T_col
-    Tcolors, zetaR, times = compute_Tcolor_zeta(mags, tt=tt, bands=bands, freq=serial_spec.Freq, dist=distance)
+    Tcolors, zetaR, times = compute_Tcolor_zeta(mags, tt=tt, bands=bands, freq=serial_spec.Freq, d=distance)
 
     # show results
     res = np.array(np.zeros(len(Tcolors)),

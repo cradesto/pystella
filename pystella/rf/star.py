@@ -176,7 +176,7 @@ class Star:
         nu_s = nu_s[sorti]
         flux = flux[sorti]
 
-        nu_b = band.freq
+        nu_b = band.freq[::-1]
 
         if min(nu_s) > nu_b[0] or max(nu_s) < nu_b[-1]:
             raise ValueError("Spectrum must be wider then band: " + str(band))

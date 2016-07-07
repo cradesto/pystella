@@ -245,7 +245,7 @@ def compute_mag(name, path, bands, ext=None, z=0., distance=10., magnification=1
 
     # serial_spec = model.read_serial_spectrum(t_diff=0.)
     serial_spec = model.read_series_spectrum(t_diff=1.05)
-    mags = serial_spec.old_compute_mags(bands, z=z, dl=rf.pc_to_cm(distance), magnification=magnification)
+    mags = serial_spec.mags_bands(bands, z=z, d=rf.pc_to_cm(distance), magnification=magnification)
 
     if mags is not None:
         fname = os.path.join(path, name + '.ubv')
@@ -300,13 +300,14 @@ def compute_curves(name, path, bands, ext=None, z=0., distance=10., magnificatio
 
     # serial_spec = model.read_serial_spectrum(t_diff=0.)
     serial_spec = model.read_series_spectrum(t_diff=1.05, t_beg=t_beg, t_end=t_end)
-    curves = SetLightCurve(name)
-    for n in bands:
-        b = band.band_by_name(n)
-        lc = serial_spec.flux_to_curve(b, z=z, dl=rf.pc_to_cm(distance), magnification=magnification)
-        # time = serial_spec.times * (1. + z)
-        # lc = LightCurve(b, time, mags)
-        curves.add(lc)
+    curves = serial_spec.flux_to_curves(bands, z=z, d=rf.pc_to_cm(distance), magnification=magnification)
+    # curves = SetLightCurve(name)
+    # for n in bands:
+    #     b = band.band_by_name(n)
+    #     lc = serial_spec.flux_to_curve(b, z=z, dl=rf.pc_to_cm(distance), magnification=magnification)
+    #     # time = serial_spec.times * (1. + z)
+    #     # lc = LightCurve(b, time, mags)
+    #     curves.add(lc)
 
     if is_save:
         fname = os.path.join(path, name + '.ubv')

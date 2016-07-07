@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 
 import pystella.rf.rad_func as rf
 from pystella.rf import band
-from pystella.rf.lc import LightCurve
+from pystella.rf.lc import LightCurve, SetLightCurve
 from pystella.rf.star import Star
 from pystella.util.phys_var import phys
 
@@ -336,7 +336,7 @@ class SeriesSpectrum(object):
         idx = (np.abs(self.Time - time)).argmin()
         return self.get_spec(idx)
 
-    def flux_to_mags(self, b, z=0., dl=0., magnification=1.):
+    def flux_to_mags(self, b, z=0., d=0., magnification=1.):
         if b is None:
             return None
         if not self.is_time:
@@ -345,7 +345,7 @@ class SeriesSpectrum(object):
         mags = np.zeros(len(self.Time))
         for k in range(len(self.Time)):
             star = Star(k, self.get_spec(k))
-            star.set_distance(dl)
+            star.set_distance(d)
             star.set_redshift(z)
             star.set_magnification(magnification)
             # mag = star.flux_to_mag(b)
@@ -356,31 +356,47 @@ class SeriesSpectrum(object):
 
         return mags
 
-    def flux_to_curve(self, b, z=0., dl=0., magnification=1.):
+    def flux_to_curve(self, b, z=0., d=0., magnification=1.):
         if b is None:
             raise ValueError("Band must be defined.")
         if not self.is_time:
             return ValueError("No spectral time points.")
 
-        mags = np.zeros(len(self.Time))
-        for k in range(len(self.Time)):
-            star = Star(k, self.get_spec(k))
-            star.set_distance(dl)
-            star.set_redshift(z)
-            star.set_magnification(magnification)
-            # mag = star.flux_to_mag(b)
-            mag = star.flux_to_magAB(b)
-            mags[k] = mag
+        mags = self.flux_to_mags(b, z, d, magnification)
+        # for k in range(len(self.Time)):
+        #     star = Star(k, self.get_spec(k))
+        #     star.set_distance(d)
+        #     star.set_redshift(z)
+        #     star.set_magnification(magnification)
+        #     # mag = star.flux_to_mag(b)
+        #     mag = star.flux_to_magAB(b)
+        #     mags[k] = mag
 
         time = self.Time * (1. + z)
         lc = LightCurve(b, time, mags)
         return lc
 
-    def old_compute_mags(self, bands, z=0., dl=rf.pc_to_cm(10.), magnification=1.):
+    def flux_to_curves(self, bands, z=0., d=rf.pc_to_cm(10.), magnification=1.):
+        """
+
+        :param bands:
+        :param z:
+        :param d:
+        :param magnification:
+        :return:
+        """
+        curves = SetLightCurve(self.name)
+        for n in bands:
+            b = band.band_by_name(n)
+            lc = self.flux_to_curve(b, z=z, d=d, magnification=magnification)
+            curves.add(lc)
+        return curves
+
+    def mags_bands(self, bands, z=0., d=rf.pc_to_cm(10.), magnification=1.):
         mags = dict((k, None) for k in bands)
         for n in bands:
             b = band.band_by_name(n)
-            mags[n] = self.flux_to_mags(b, z=z, dl=dl, magnification=magnification)
+            mags[n] = self.flux_to_mags(b, z=z, d=d, magnification=magnification)
 
         mags['time'] = self.Time * (1. + z)
         return mags

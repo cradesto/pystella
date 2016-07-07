@@ -58,10 +58,9 @@ class Band(object):
                 wl = np.array([float(string.split(line)[0]) for line in lines if line[0] != "#"])
                 self.resp = np.array([float(string.split(line)[1]) for line in lines if line[0] != "#"])
                 self.wl = wl * phys.angs_to_cm
-                f.close()
-            except Exception:
-                print"Error in band file: %s.  Exception:  %s" % (self.file, sys.exc_info()[0])
-                sys.exit("Error while parse band-file: %s in %s" % self.file)
+            # except Exception:
+            #     print"Error in band file: %s.  Exception:  %s" % (self.file, sys.exc_info()[0])
+            #     sys.exit("Error while parse band-file: %s in %s" % self.file)
             finally:
                 f.close()
 
