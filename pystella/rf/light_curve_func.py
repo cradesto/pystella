@@ -121,7 +121,9 @@ def plot_models_curves(ax, models_curves, bands, band_shift=None, xlim=None, yli
 
 
 def plot_bands(dict_mags, bands, title='', fname='', distance=10., is_time_points=True):
-    plt.title(''.join(bands) + ' filter response')
+    fig = plt.figure()
+    ax = fig.add_axes((0.1, 0.3, 0.8, 0.65))
+    # ax.set_title(''.join(bands) + ' filter response')
 
     # colors = band.bands_colors()
     # colors = dict(U="blue", B="cyan", V="black", R="red", I="magenta",
@@ -149,7 +151,8 @@ def plot_bands(dict_mags, bands, title='', fname='', distance=10., is_time_point
     for n in bands:
         y = dict_mags[n]
         y += dm + band_shift[n]
-        plt.plot(x, y, label=lbl(n, band_shift), color=colors[n], ls=lntypes[n], linewidth=2.0, marker='s')
+        ax.plot(x, y, label=lbl(n, band_shift), color=colors[n], ls=lntypes[n], linewidth=2.0)
+        # ax.plot(x, y, label=lbl(n, band_shift), color=colors[n], ls=lntypes[n], linewidth=2.0, marker='s')
         if is_time_points and is_first:
             is_first = False
             integers = [np.abs(x - t).argmin() for t in t_points]  # set time points
@@ -165,21 +168,28 @@ def plot_bands(dict_mags, bands, title='', fname='', distance=10., is_time_point
                 ylims[1] = min(y)
 
     ylims = np.add(ylims, [1, -1])
-    plt.gca().invert_yaxis()
-    plt.xlim(xlims)
-    plt.ylim(ylims)
-    plt.legend()
-    plt.ylabel('Magnitude')
-    plt.xlabel('Time [days]')
-    plt.title(title)
-    plt.grid()
+    ax.invert_yaxis()
+    ax.set_xlim(xlims)
+    ax.set_ylim(ylims)
+    ax.legend()
+    ax.set_ylabel('Magnitude')
+    ax.set_xlabel('Time [days]')
+    # ax.set_title(title)
+    fig.text(0.17, 0.07, title, family='monospace')
+    ax.grid()
     if fname != '':
         plt.savefig("ubv_%s.png" % fname, format='png')
-    plt.show()
+    # ax.show()
     # plt.close()
+    return ax
 
 
-def plot_curves(curves, xlim=None, ylim=None, title='', fname=''):
+def plot_curves(curves, ax=None, xlim=None, ylim=None, title='', fname='', lt='line'):
+    is_new_fig = ax is None
+    if is_new_fig:
+        fig = plt.figure()
+        ax = fig.add_axes((0.1, 0.3, 0.8, 0.65))
+
     # plt.title(''.join(bands) + ' filter response')
     is_xlim = False
     is_ylim = False
@@ -194,7 +204,10 @@ def plot_curves(curves, xlim=None, ylim=None, title='', fname=''):
         x = lc.Time
         y = lc.Mag
         bname = lc.Band.Name
-        plt.plot(x, y, label='%s' % bname, color=colors[bname], ls=lntypes[bname], linewidth=2.0)
+        if lt == 'line':
+            ax.plot(x, y, label='%s' % bname, color=colors[bname], ls=lntypes[bname], linewidth=2.0)
+        else:
+            ax.plot(x, y, label='%s' % bname, color=colors[bname], ls=".",  markersize=4, marker=lt)
 
         if is_xlim:
             xlim[0] = min(xlim[0], np.min(x))
@@ -203,21 +216,23 @@ def plot_curves(curves, xlim=None, ylim=None, title='', fname=''):
             ylim[0] = max(ylim[0], np.max(y))
             ylim[1] = min(ylim[1], np.min(y))
 
-    ylim = [ylim[1]+10, ylim[1]-2]
+    ylim = [ylim[1] + 10, ylim[1] - 2]
     # ylim = np.add(ylim, [1, -1])
-    plt.gca().invert_yaxis()
-    plt.xlim(xlim)
-    plt.ylim(ylim)
-    plt.legend()
-    plt.ylabel('Magnitude')
-    plt.xlabel('Time [days]')
-    plt.title(title)
-    plt.grid()
+    ax.invert_yaxis()
+    ax.set_xlim(xlim)
+    ax.set_ylim(ylim)
+    ax.legend()
+    ax.set_ylabel('Magnitude')
+    ax.set_xlabel('Time [days]')
+    ax.grid()
+    # ax.title(title)
+    # ax.text(0.17, 0.07, title, family='monospace')
     if fname != '':
         plt.savefig("ubv_%s.png" % fname, format='png')
-    plt.show()
+    # if is_new_fig:
+    #     plt.show()
     # plt.close()
-
+    return ax
 
 def compute_mag(name, path, bands, ext=None, z=0., distance=10., magnification=1., is_show_info=True, is_save=False):
     """

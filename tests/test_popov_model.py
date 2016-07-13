@@ -22,7 +22,7 @@ class TestPopovModel(unittest.TestCase):
 
     def test_popov_SN87A(self):
         n = 100
-        start, end = 0.1, 200.
+        start, end = 0.1, 1200.
         jd_shift = -2446850.  # moment of explosion SN 1987A, Hamuy 1988, doi:10.1086/114613
         dm = -18.6  # D = 7.5e6 pc
         time = np.exp(np.linspace(np.log(start), np.log(end), n))
