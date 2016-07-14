@@ -65,7 +65,7 @@ class TestSpectrumFitting(unittest.TestCase):
         print '  T = %.2f +/- %.2f K' % (Tbest, sigmaT)
 
         # Tcol = self.sp.temp_color
-        ybest = np.pi * rf.planck(freq, Tbest, inp="Hz", out="freq")
+        ybest = func(freq, Tbest) #np.pi * rf.planck(freq, Tbest, inp="Hz", out="freq")
         # plot the solution
         plt.plot(freq, flux, 'b*', label='Spectral T: %f' % self.sp.T)
         plt.plot(freq, ybest, 'r-', label='Best Tcol: %f' % Tbest)

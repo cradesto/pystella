@@ -51,7 +51,7 @@ class TestStar(unittest.TestCase):
                                         Now mag is %f for band %s. ZP is %f" % (mag, b, phys.ZP_AB))
 
     def test_check_band_zp_ps1(self):
-        bands = ['gps1', 'zps1', 'rps1', "ips1", "y", "w"]
+        bands = ['PS1g', 'PS1z', 'PS1r', "PS1i", "y", "w"]
         star = Star('test', self.sp)
         # star.set_radius_ph(self.distance)
         # star.set_distance(self.distance)

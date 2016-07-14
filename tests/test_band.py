@@ -25,7 +25,7 @@ class BandTests(unittest.TestCase):
     def test_zero_point(self):
         zp = 13.9168580779  # for KAIT U
         b = band.band_by_name('U')
-        self.assertAlmostEqual(b.zp, zp, "Zero points of band %s equals %f. Should be %f" % (b, b.zp, zp))
+        self.assertAlmostEqual(b.zp, zp,  msg="Zero points of band %s equals %f. Should be %f" % (b.Name, b.zp, zp))
 
     def test_band_uniform(self):
         b = band.BandUni()
