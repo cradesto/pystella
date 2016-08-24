@@ -26,6 +26,8 @@ def plot(ax, dic=None):
 
 
 def plot_ubv(ax, path, jd_shift=0., mshift=0.):
+    path = os.path.expanduser(path)
+
     colors = band.bands_colors()
     curves = read_curves_master(path)
     # curves = read_curves_kurtenkov(path)
@@ -36,6 +38,8 @@ def plot_ubv(ax, path, jd_shift=0., mshift=0.):
         ax.plot(x, y, label='%s SN Red Nova' % lc.Band.Name,
                 ls=".", color=bcolor, markersize=7, marker="o")
         ax.errorbar(x, y, yerr=lc.MagErr, color='gray', fmt='.', zorder=1)
+
+    print "mshift=%f" % mshift
 
     curves = read_curves_kurtenkov(path)
     for lc in curves:
@@ -73,8 +77,8 @@ def read_curves_kurtenkov(path=sn_path):
     lc_data = np.loadtxt(os.path.join(path, 'lrn_aa26564-15_p5.csv'), skiprows=2, usecols=(0, 1, 2, 3),
                          dtype=[('JD', '<f4'), ('b', 'S1'), ('mag', '<f4'), ('err', '<f4')])
 
-    tshift = 34.
-    mshift = 24.43  # Distance Module to M31
+    # tshift = 34.
+    # mshift = 24.43  # Distance Module to M31
     curves = SetLightCurve('Red Nova')
 
     bnames = np.unique(lc_data['b'])
@@ -92,8 +96,8 @@ def read_curves_kurtenkov(path=sn_path):
         # errs = errs[is_good]
         # add
         lc = LightCurve(b, time, mags, errs=errs)
-        lc.tshift = -tshift
-        lc.mshift = -mshift
+        # lc.tshift = -tshift
+        # lc.mshift = -mshift
         curves.add(lc)
 
     return curves
