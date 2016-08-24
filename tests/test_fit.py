@@ -37,7 +37,7 @@ def myfit(mags, lc, is_verbose=True, xtol=1e-10, ftol=1e-10, gtol=1e-10):
     return tshift
 
 
-def popov_fit(lc, R0, M0, Mni0, E0, dt0=0.,
+def popov_fit(lc, R0, M0, Mni0=None, E0=None, dt0=None,
               is_verbose=True, xtol=1e-10, ftol=1e-10, gtol=1e-10):
     if is_verbose:
         quiet = 0
@@ -60,10 +60,24 @@ def popov_fit(lc, R0, M0, Mni0, E0, dt0=0.,
         return 0, res
 
     parinfo = [{'value': R0,   'limited': [1, 1], 'limits': [10., 1500e0]},
-               {'value': M0,   'limited': [1, 1], 'limits': [1., 150.]},
-               {'value': Mni0, 'limited': [1, 1], 'limits': [0.001, 1.]},
-               {'value': E0,   'limited': [1, 1], 'limits': [0.01, 5.]},
-               {'value': dt0,  'limited': [1, 1], 'limits': [-200., 250.]}]
+               {'value': M0,   'limited': [1, 1], 'limits': [1., 150.]}
+               # {'value': Mni0, 'limited': [1, 1], 'limits': [0.0000001, 0.00001]},
+               # , {'value': E0,   'limited': [1, 1], 'limits': [0.01, 5.]}
+               # , {'value': dt0,  'limited': [1, 1], 'limits': [-200., 250.]}
+               ]
+    if Mni0 is not None:
+        parinfo.append({'value': Mni0, 'limited': [1, 1], 'limits': [0.0000001, 0.00001]})
+    else:
+        parinfo.append({'value': 0., 'fixed': 1})
+    if E0 is not None:
+        parinfo.append({'value': E0,   'limited': [1, 1], 'limits': [0.01, 5.]})
+    else:
+        parinfo.append({'value': 1., 'fixed': 1})
+    if dt0 is not None:
+        parinfo.append({'value': dt0,  'limited': [1, 1], 'limits': [-200., 250.]})
+    else:
+        parinfo.append({'value': 0., 'fixed': 1})
+
     result = mpfit.mpfit(leastsq, parinfo=parinfo, quiet=quiet, maxiter=200,
                          ftol=ftol, gtol=gtol, xtol=xtol)
     if result.status == 5:
@@ -128,23 +142,23 @@ class TestFit(unittest.TestCase):
         plt.show()
 
     def test_fit_popov_rednova(self):
-        D = 11.5e6  # pc
-        dm = -5. * np.log10(D) + 5
-        # dm = -30.4  # D = 12.e6 pc
+        D = 7.5e5  # pc
+        dm = 5. * np.log10(D) - 5
         curves = rednova.read_curves_kurtenkov()
         lc = curves.get('R')
-        lc.mshift = dm
+        lc.mshift = -dm
         lc.tshift = -lc.tmin
 
         # fit
-        ppv, tshift = popov_fit(lc, R0=10., M0=1., Mni0=0.001, E0=1.e-2, dt0=0.)
+        ppv, tshift = popov_fit(lc, R0=10., M0=3., E0=1.e-2, dt0=-10)
+        # ppv, tshift = popov_fit(lc, R0=10., M0=3., Mni0=0.00001, E0=1.e-2, dt0=0.)
 
         # plot
         ax = ppv.plot_Lbol(lc.Time)
         x = lc.Time + tshift
         # x = lc.Time + jd_shift + res
         y = lc.Mag
-        ax.plot(x, y, label='%s SN 1999em' % lc.Band.Name,
+        ax.plot(x, y, label='%s M31LRN ' % lc.Band.Name,
                 ls=".", color='red', markersize=8, marker="o")
         plt.show()
 

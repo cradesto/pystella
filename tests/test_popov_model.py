@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from pystella.model.popov import Popov
 from plugin import sn87a
 from plugin import sn1999em
+from plugin import rednova
 
 __author__ = 'bakl'
 
@@ -42,4 +43,17 @@ class TestPopovModel(unittest.TestCase):
         popov = Popov('test', R=450., M=15., Mni=0.04, E=0.7)
         ax = popov.plot_Lbol(time)
         sn1999em.plot_ubv(ax, path=sn1999em.sn_path, jd_shift=jd_shift, mshift=dm)
+        plt.show()
+
+
+    def test_popov_rednova(self):
+        n = 100
+        start, end = 0.1, 90.
+        jd_shift = 10.
+        dm = 24.38  # D = 7.5e5 pc
+        # dm = -30.4  # D = 12.e6 pc
+        time = np.exp(np.linspace(np.log(start), np.log(end), n))
+        popov = Popov('test', R=35., M=6., Mni=0., E=0.008)
+        ax = popov.plot_Lbol(time)
+        rednova.plot_ubv(ax, path=rednova.sn_path, jd_shift=jd_shift, mshift=-dm)
         plt.show()

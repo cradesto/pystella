@@ -30,10 +30,9 @@ def plot_ubv(ax, path, jd_shift=0., mshift=0.):
 
     colors = band.bands_colors()
     curves = read_curves_master(path)
-    # curves = read_curves_kurtenkov(path)
     for lc in curves:
-        x = lc.Time + jd_shift
-        y = lc.Mag + mshift
+        x = lc.Time - lc.tmin + jd_shift
+        y = lc.Mag  # todo + mshift
         bcolor = colors[lc.Band.Name]
         ax.plot(x, y, label='%s SN Red Nova' % lc.Band.Name,
                 ls=".", color=bcolor, markersize=7, marker="o")
@@ -43,7 +42,7 @@ def plot_ubv(ax, path, jd_shift=0., mshift=0.):
 
     curves = read_curves_kurtenkov(path)
     for lc in curves:
-        x = lc.Time + jd_shift
+        x = lc.Time - lc.tmin + jd_shift
         y = lc.Mag + mshift
         bcolor = colors[lc.Band.Name]
         ax.plot(x, y, label='%s SN Red Nova' % lc.Band.Name,
