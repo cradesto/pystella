@@ -69,6 +69,38 @@ def plot_vels_models(ax, models_dic, xlim=None, ylim=None):
     ax.set_xlabel('Time [days]')
 
 
+def plot_vel(ax, vel, xlim=None, ylim=None):
+    is_x_lim = xlim is None
+    is_y_lim = ylim is None
+
+    # t_points = [0.2, 1, 2, 3, 4, 5, 10, 20, 40, 80, 150]
+
+    lw = 1.
+    mi = 0
+    x_max = []
+    y_mid = []
+    x = vel['time']
+    y = vel['vel'] / 1e8
+    ax.plot(x, y, label='Velocity', color='blue', ls="-", linewidth=lw)
+    if is_x_lim:
+        x_max.append(np.max(x))
+    if is_y_lim:
+        y_mid.append(np.max(y))
+
+    if is_x_lim:
+        xlim = [-10, np.max(x_max) + 10.]
+    ax.set_xlim(xlim)
+
+    if is_y_lim:
+        ylim = [1e-1, np.max(y_mid) + 1]
+        # ylim = [np.min(y_mid) + 7., np.min(y_mid) - 2.]
+    ax.set_ylim(ylim)
+
+    ax.set_ylabel('Velocity')
+    ax.set_xlabel('Time [days]')
+    ax.grid()
+
+
 def compute_vel(name, path, z=0., t_beg=1., t_end=None, t_diff=1.05):
     model = Stella(name, path=path)
     if not model.is_res_data or not model.is_tt_data:

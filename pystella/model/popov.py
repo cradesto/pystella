@@ -224,7 +224,7 @@ class Popov:
                 xy = (v / phys.d2s, self.lum_bol(v))
             else:
                 xy = (v / phys.d2s, Lum2MagBol(self.lum_bol(v)))
-            ax.annotate(k, xy=xy, xytext=(-10, 20), ha='left',
+            ax.annotate(k, xy=xy, xytext=(1, 2), ha='left',
                         textcoords='offset points',
                         arrowprops=dict(arrowstyle='->', shrinkA=0))
 

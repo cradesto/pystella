@@ -31,18 +31,18 @@ def plot_ubv(ax, path, jd_shift=0., mshift=0.):
     colors = band.bands_colors()
     curves = read_curves_master(path)
     for lc in curves:
-        x = lc.Time - lc.tmin + jd_shift
+        x = lc.Time + jd_shift
         y = lc.Mag  # todo + mshift
         bcolor = colors[lc.Band.Name]
         ax.plot(x, y, label='%s SN Red Nova' % lc.Band.Name,
                 ls=".", color=bcolor, markersize=7, marker="o")
         ax.errorbar(x, y, yerr=lc.MagErr, color='gray', fmt='.', zorder=1)
 
-    print "mshift=%f" % mshift
+    print "jd_shift=%f mshift=%f " % (jd_shift, mshift)
 
     curves = read_curves_kurtenkov(path)
     for lc in curves:
-        x = lc.Time - lc.tmin + jd_shift
+        x = lc.Time + jd_shift
         y = lc.Mag + mshift
         bcolor = colors[lc.Band.Name]
         ax.plot(x, y, label='%s SN Red Nova' % lc.Band.Name,
@@ -51,12 +51,13 @@ def plot_ubv(ax, path, jd_shift=0., mshift=0.):
 
 
 def read_curves_master(path=sn_path):
+    jd = 2457036
     header = 'V  I  R'
     bnames = map(str.strip, header.split())
     curves = SetLightCurve('Red Nova')
     for i, n in enumerate(bnames):
         b = band.band_by_name(n)
-        time = np.loadtxt(os.path.join(path, n+'_jd.txt'))
+        time = np.loadtxt(os.path.join(path, n+'_jd.txt')) + jd
         mags = np.loadtxt(os.path.join(path, n+'_mag.txt'))
         errs = np.loadtxt(os.path.join(path, n+'_err.txt'))
 
@@ -73,10 +74,11 @@ def read_curves_master(path=sn_path):
 
 
 def read_curves_kurtenkov(path=sn_path):
+    jd = 2457000
     lc_data = np.loadtxt(os.path.join(path, 'lrn_aa26564-15_p5.csv'), skiprows=2, usecols=(0, 1, 2, 3),
                          dtype=[('JD', '<f4'), ('b', 'S1'), ('mag', '<f4'), ('err', '<f4')])
 
-    # tshift = 34.
+    tshift = 36.
     # mshift = 24.43  # Distance Module to M31
     curves = SetLightCurve('Red Nova')
 
@@ -84,7 +86,7 @@ def read_curves_kurtenkov(path=sn_path):
     for i, n in enumerate(bnames):
         b = band.band_by_name(n)
         d = lc_data[lc_data['b'] == n, ]
-        time = d['JD']
+        time = d['JD'] + jd
         mags = d['mag']
         errs = d['err']
 
