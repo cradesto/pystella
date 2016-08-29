@@ -35,7 +35,7 @@ def plot_ubv(ax, path, jd_shift=0., mshift=0.):
         y = lc.Mag  # todo + mshift
         bcolor = colors[lc.Band.Name]
         ax.plot(x, y, label='%s SN Red Nova' % lc.Band.Name,
-                ls=".", color=bcolor, markersize=7, marker="o")
+                ls="", color=bcolor, markersize=8, marker="o")
         ax.errorbar(x, y, yerr=lc.MagErr, color='gray', fmt='.', zorder=1)
 
     print "jd_shift=%f mshift=%f " % (jd_shift, mshift)
@@ -46,7 +46,7 @@ def plot_ubv(ax, path, jd_shift=0., mshift=0.):
         y = lc.Mag + mshift
         bcolor = colors[lc.Band.Name]
         ax.plot(x, y, label='%s SN Red Nova' % lc.Band.Name,
-                ls=".", color=bcolor, markersize=7, marker="*")
+                ls="", color=bcolor, markersize=8, marker="D")
         ax.errorbar(x, y, yerr=lc.MagErr, color='gray', fmt='.', zorder=1)
 
 
