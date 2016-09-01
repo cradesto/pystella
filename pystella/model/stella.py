@@ -100,7 +100,7 @@ class Stella:
             if is_times[i]:
                 t = times[i]
                 if is_nfrus:
-                    nfrus = data[i, 1]  # exact number of used (saved) freqs
+                    nfrus = int(data[i, 1])  # exact number of used (saved) freqs
                     freqs = freqs[:nfrus]
                     fl = np.array(data[i, 3:nfrus+3])
                 else:
