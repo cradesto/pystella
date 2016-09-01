@@ -234,6 +234,7 @@ def plot_curves(curves, ax=None, xlim=None, ylim=None, title='', fname='', lt='l
     # plt.close()
     return ax
 
+
 def compute_mag(name, path, bands, ext=None, z=0., distance=10., magnification=1., is_show_info=True, is_save=False):
     """
         Compute magnitude in bands for the 'name' model.

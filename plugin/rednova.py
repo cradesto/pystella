@@ -20,7 +20,6 @@ def plot(ax, dic=None):
     if len(arg) > 0:
         jd_shift = float(arg.pop(0))
 
-
     print "Plot Red Nova  jd_shift=%f  path: %s" % (jd_shift, sn_path)
     plot_ubv(ax=ax, path=sn_path, jd_shift=jd_shift)
 
@@ -34,7 +33,7 @@ def plot_ubv(ax, path, jd_shift=0., mshift=0.):
         x = lc.Time + jd_shift
         y = lc.Mag  # todo + mshift
         bcolor = colors[lc.Band.Name]
-        ax.plot(x, y, label='%s SN Red Nova' % lc.Band.Name,
+        ax.plot(x, y, label='%s Master' % lc.Band.Name,
                 ls=".", color=bcolor, markersize=7, marker="o")
         ax.errorbar(x, y, yerr=lc.MagErr, color='gray', fmt='.', zorder=1)
 
@@ -45,12 +44,12 @@ def plot_ubv(ax, path, jd_shift=0., mshift=0.):
         x = lc.Time + jd_shift
         y = lc.Mag + mshift
         bcolor = colors[lc.Band.Name]
-        ax.plot(x, y, label='%s SN Red Nova' % lc.Band.Name,
+        ax.plot(x, y, label='%s Kurtenkov' % lc.Band.Name,
                 ls=".", color=bcolor, markersize=7, marker="*")
         ax.errorbar(x, y, yerr=lc.MagErr, color='gray', fmt='.', zorder=1)
 
 
-def read_curves_master(path=sn_path):
+def read_curves_master_abs_mag(path=sn_path):
     jd = 2457036
     header = 'V  I  R'
     bnames = map(str.strip, header.split())
@@ -67,6 +66,23 @@ def read_curves_master(path=sn_path):
         # mags = mags[is_good]
         # errs = errs[is_good]
         # add
+        lc = LightCurve(b, time, mags, errs=errs)
+        curves.add(lc)
+
+    return curves
+
+
+def read_curves_master(path=sn_path):
+    header = 'V  I  R'
+    bnames = map(str.strip, header.split())
+    curves = SetLightCurve('Red Nova')
+    for i, n in enumerate(bnames):
+        b = band.band_by_name(n)
+        d = np.loadtxt(os.path.join(path, n+'.txt'),
+                             dtype=[('JD', '<f4'), ('mag', '<f4'), ('err', '<f4')])
+        time = d['JD']
+        mags = d['mag']
+        errs = d['err']
         lc = LightCurve(b, time, mags, errs=errs)
         curves.add(lc)
 
