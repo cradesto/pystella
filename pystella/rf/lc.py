@@ -98,17 +98,30 @@ class SetLightCurve(object):
     def Bands(self):
         if len(self.Set) == 0:
             raise ValueError('There are no bands in SetLightCurve.')
-        res = [lc.Band for name, lc in self.Set.items()]
-        return res
+        for name, lc in self.Set.items():
+            yield lc.Band
+        # res = [lc.Band for name, lc in self.Set.items()]
+        # return res
 
+    # @property
+    # def Bands(self):
+    #     if len(self.Set) == 0:
+    #         raise ValueError('There are no bands in SetLightCurve.')
+    #     res = [lc.Band for name, lc in self.Set.items()]
+    #     return res
+    #
     @property
     def BandNames(self):
-        res = [b.Name for b in self.Bands]
-        return res
+        for b in self.Bands:
+            yield b.Name
+    # @property
+    # def BandNames(self):
+    #     res = [b.Name for b in self.Bands]
+    #     return res
 
     @property
     def TimeDef(self):
-        b = self.BandNames[0]
+        b = next(self.BandNames)
         return self.Set[b].Time
 
     @property
@@ -120,17 +133,21 @@ class SetLightCurve(object):
     def __getitem__(self, index):
         return self.Set[index]
 
+    # def __iter__(self):
+    #     self._loop = 0
+    #     return self
     def __iter__(self):
-        self._loop = 0
-        return self
-
-    def next(self):
-        idx = self._loop
-        if idx >= self.Length:
-            raise StopIteration
-        b = self.BandNames[idx]
-        self._loop += 1
-        return self.Set[b]
+        for k, v in self.Set.items():
+            yield v
+    #
+    # def next(self):
+    #     idx = self._loop
+    #     if idx >= self.Length:
+    #         raise StopIteration
+    #     # b = self.BandNames[idx]
+    #     self._loop += 1
+    #     # return self.Set[b]
+    #     return next(self.Set)
 
     def __len__(self):
         return len(self.Set)

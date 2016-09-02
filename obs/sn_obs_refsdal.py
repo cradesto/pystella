@@ -449,9 +449,9 @@ def plot_all(models_vels, models_dic, bands, call=None, xlim=None, ylim=None,
 def run_BV(name, path, bands, e, z, distance, magnification, callback, xlim, is_save):
     if e > 0:
         if z > 1:
-            ext = extinction.extinction_law_z(ebv=e, bands=bands, z=z)
+            ext = extinction.reddening_law_z(ebv=e, bands=bands, z=z)
         else:
-            ext = extinction.extinction_law(ebv=e, bands=bands)
+            ext = extinction.reddening_law(ebv=e, bands=bands)
     else:
         ext = None
 
@@ -485,9 +485,9 @@ def run_BV(name, path, bands, e, z, distance, magnification, callback, xlim, is_
 def old_run_S4(name, path, bands, e, z, distance, magnification, callback, xlim, is_save, is_glens):
     if e > 0:
         if z > 1:
-            ext = extinction.extinction_law_z(ebv=e, bands=bands, z=z)
+            ext = extinction.reddening_law_z(ebv=e, bands=bands, z=z)
         else:
-            ext = extinction.extinction_law(ebv=e, bands=bands)
+            ext = extinction.reddening_law(ebv=e, bands=bands)
     else:
         ext = None
 
@@ -539,13 +539,6 @@ def old_run_S4(name, path, bands, e, z, distance, magnification, callback, xlim,
 
 
 def run_S4_curves(name, path, bands, e, z, distance, magnification, callback, xlim, is_save, is_SX):
-    if e > 0:
-        if z > 1:
-            ext = extinction.extinction_law_z(ebv=e, bands=bands, z=z)
-        else:
-            ext = extinction.extinction_law(ebv=e, bands=bands)
-    else:
-        ext = None
 
     glens = callback.get_arg(2)
     if glens is None:
@@ -560,8 +553,15 @@ def run_S4_curves(name, path, bands, e, z, distance, magnification, callback, xl
             #     continue
             i += 1
             mgf *= magnification
-            curves = lcf.compute_curves(name, path, bands, ext=ext, z=z, distance=distance, magnification=mgf,
+            curves = lcf.compute_curves(name, path, bands, z=z, distance=distance, magnification=mgf,
                                         is_show_info=False, is_save=is_save)
+            if e > 0:
+                if z > 0.1:
+                    lcf.reddening_curves(curves, ebv=e, z=z)
+                    # todo check reddening_curves
+                else:
+                    lcf.reddening_curves(curves, ebv=e)
+
             models_curves[im] = curves
             print "Finish image: %s [%d/%d]" % (im, i, len(sn_images))
 
@@ -575,7 +575,7 @@ def run_S4_curves(name, path, bands, e, z, distance, magnification, callback, xl
         if is_save:
             fsave = "ubv_%s_%s" % (glens, name)
 
-            if ext is not None and ext > 0:
+            if e > 0:
                 fsave = "%s_e0%2d" % (fsave, int(e * 100))  # bad formula for name
 
             d = os.path.expanduser('~/')
@@ -597,9 +597,9 @@ def run_S4_curves(name, path, bands, e, z, distance, magnification, callback, xl
 def run_curves_grid(name, path, bands, e, z, distance, mgf, xlim, is_save):
     if e > 0:
         if z > 1:
-            ext = extinction.extinction_law_z(ebv=e, bands=bands, z=z)
+            ext = extinction.reddening_law_z(ebv=e, bands=bands, z=z)
         else:
-            ext = extinction.extinction_law(ebv=e, bands=bands)
+            ext = extinction.reddening_law(ebv=e, bands=bands)
     else:
         ext = None
 
@@ -624,9 +624,9 @@ def run_ubv_vel(name, path, bands, e, z, distance, magnification, xlim, callback
                 is_vel=False, is_save=False):
     if e > 0:
         if z > 1:
-            ext = extinction.extinction_law_z(ebv=e, bands=bands, z=z)
+            ext = extinction.reddening_law_z(ebv=e, bands=bands, z=z)
         else:
-            ext = extinction.extinction_law(ebv=e, bands=bands)
+            ext = extinction.reddening_law(ebv=e, bands=bands)
     else:
         ext = None
 

@@ -203,9 +203,9 @@ def main(name='', model_ext='.ph'):
 
     if is_extinction:
         if z > 1:
-            ext = extinction.extinction_law_z(ebv=e, bands=bands, z=z)
+            ext = extinction.reddening_law_z(ebv=e, bands=bands, z=z)
         else:
-            ext = extinction.extinction_law(ebv=e, bands=bands)
+            ext = extinction.reddening_law(ebv=e, bands=bands)
     else:
         ext = None
 

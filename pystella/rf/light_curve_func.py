@@ -7,7 +7,8 @@ import matplotlib.pyplot as plt
 import pystella.rf.rad_func as rf
 from pystella.model.stella import Stella
 from pystella.rf import band
-from pystella.rf.lc import SetLightCurve
+from pystella.rf import extinction
+from pystella.rf.lc import SetLightCurve, LightCurve
 
 __author__ = 'bakl'
 
@@ -286,11 +287,10 @@ def compute_mag(name, path, bands, ext=None, z=0., distance=10., magnification=1
     return mags
 
 
-def compute_curves(name, path, bands, ext=None, z=0., distance=10., magnification=1.,
+def compute_curves(name, path, bands, z=0., distance=10., magnification=1.,
                    t_beg=0., t_end=None, is_show_info=False, is_save=False):
     """
         Compute magnitude in bands for the 'name' model.
-    :type ext: extinction
     :param name: the name of a model and data files
     :param path: the directory with data-files
     :param bands: photometric bands
@@ -339,12 +339,32 @@ def compute_curves(name, path, bands, ext=None, z=0., distance=10., magnificatio
             t_min = t[t > tmin][curves[n][t > tmin].argmin()]
             print "t_max(%s) = %f" % (n, t_min)
 
-    if ext is not None:
-        # add extinction
-        for n in bands:
-            curves[n].mshift = curves[n].mshift + ext[n]  # TODO check plus-minus
-
     return curves
+
+
+def reddening_curves(curves, ebv, z=None, law=extinction.law_default):
+    if ebv < 0.:
+        raise ValueError("ebv should be > 0")
+
+    if isinstance(curves, LightCurve):
+        lc = curves
+        bands = list(lc.Band.Name)
+        if z is not None and z > 0.1:
+            ext = extinction.reddening_law_z(ebv=ebv, bands=bands, z=z, law=law)
+        else:
+            ext = extinction.reddening_law(ebv=ebv, bands=bands, law=law)
+        lc.mshift = lc.mshift + ext[bands[0]]
+        return lc
+    else:
+        bands = tuple(curves.BandNames)
+        if z is not None and z > 0.1:
+            ext = extinction.reddening_law_z(ebv=ebv, bands=bands, z=z, law=law)
+        else:
+            ext = extinction.reddening_law(ebv=ebv, bands=bands, law=law)
+
+        for n in bands:
+            curves[n].mshift = curves[n].mshift + ext[n]
+        return curves
 
 
 def mags_save(dictionary, bands, fname):
