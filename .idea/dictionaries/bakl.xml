@@ -46,14 +46,18 @@
       <w>lbol</w>
       <w>lims</w>
       <w>lntypes</w>
+      <w>lumnorm</w>
       <w>masamune</w>
       <w>mdic</w>
       <w>mname</w>
       <w>monospace</w>
       <w>mshift</w>
+      <w>msun</w>
       <w>mtot</w>
       <w>nfreq</w>
+      <w>ntimes</w>
       <w>nugent</w>
+      <w>nzon</w>
       <w>oguri</w>
       <w>popov</w>
       <w>pystella</w>
@@ -71,6 +75,7 @@
       <w>tcol</w>
       <w>tcolor</w>
       <w>tcolors</w>
+      <w>tday</w>
       <w>tdiff</w>
       <w>teff</w>
       <w>tion</w>
@@ -83,6 +88,7 @@
       <w>vels</w>
       <w>wien</w>
       <w>wlrange</w>
+      <w>wrkx</w>
       <w>xend</w>
       <w>xlim</w>
       <w>xlims</w>

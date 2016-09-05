@@ -2,6 +2,7 @@ import os
 import numpy as np
 import math
 from pystella.model.sn_res import StellaRes
+from pystella.model.sn_swd import StellaShockWaveDetail
 from pystella.rf.spectrum import SeriesSpectrum, Spectrum
 
 __author__ = 'bakl'
@@ -61,6 +62,10 @@ class Stella:
 
     def get_res(self):
         return StellaRes(self.name, self.path)
+
+    def get_swd(self):
+        swd = StellaShockWaveDetail(self.name, self.path)
+        return swd
 
     def read_series_spectrum(self, t_diff=1.05, t_beg=0.0, t_end=None, is_nfrus=True):
         if t_end is None:
