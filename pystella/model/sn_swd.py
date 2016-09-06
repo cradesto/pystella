@@ -175,14 +175,12 @@ def plot_swd(ax, b, **kwargs):
     if 'xlim' in kwargs:
         xlim = kwargs['xlim']
     else:
-        xlim = [min(x), max(x) + 2]
-    ax.set_xlim(xlim)
+        xlim = [min(x), max(x) * 1.1]
 
     if 'ylim' in kwargs:
         ylim = kwargs['ylim']
     else:
         ylim = [np.min(y), np.max(y) + 2]
-    ax.set_ylim(ylim)
 
     ax.set_ylabel('log10(Rho)')
     if 'is_xlabel' in kwargs:
@@ -204,7 +202,8 @@ def plot_swd(ax, b, **kwargs):
     lumnorm = 1.e40
     if 'lumnorm' in kwargs:
         lumnorm = kwargs['lumnorm']
-    y2 = np.log10(b.Lum) - np.log10(lumnorm)
+    # y2 = np.ma.log10(b.Lum)
+    y2 = np.ma.log10(b.Lum) - np.log10(lumnorm)
     ax2.plot(x, y2,  color='orange', ls="-", label='Lum%d'%int(np.log10(lumnorm)))
 
     vnorm = 1.e8
@@ -223,5 +222,9 @@ def plot_swd(ax, b, **kwargs):
         ax.legend(loc=2, prop={'size': 9})
         ax2.legend(prop={'size': 9})
     ax2.set_ylabel('T, Vel, Lum, Tau')
+
+    ax.set_xlim(xlim)
+    ax.set_ylim(ylim)
+
     # ax.grid()
 
