@@ -1,9 +1,15 @@
 import os
+import logging
+
 import numpy as np
 import itertools
 import re
 
 __author__ = 'bakl'
+
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 class StellaRes:
@@ -163,7 +169,7 @@ class StellaResInfo:
                 res = pattern.findall(line)
                 if len(res) > 0:
                     for k, v in res:
-                        # print "key: %s  v: %f " % (k, float(v))
+                        logger.debug("key: %s  v: %f " % (k, float(v)))
                         self._dict[str.strip(k)] = float(v)
                     #
                     # p = r"(.*?)\s*=\s+([-+]?\d*\.\d+|\d+)"
@@ -193,6 +199,23 @@ class StellaResInfo:
     def E(self):
         return self._dict['Ebstht']
 
+    @property
+    def Mni(self):
+        return self._dict['XMNI']
+
+    @property
+    def TcurA(self):
+        return self._dict['TcurA']
+
+    @property
+    def TcurB(self):
+        return self._dict['TcurB']
+
+    @property
+    def Rce(self):
+        return self._dict['Rce']
+
     def show(self):
         # print "INFO %s" % self.name
-        print "%40s: R = %7.2f M = %6.2f E = %6.2f" % (self.name, self.R, self.M, self.E)
+        # print " %40s: R = %7.2f M = %6.2f E = %6.2f " % (self.name, self.R, self.M, self.E)
+        print "| %40s |  %7.2f |  %6.2f | %6.2f |" % (self.name, self.R, self.M, self.E)

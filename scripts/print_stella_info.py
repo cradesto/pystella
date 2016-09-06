@@ -5,8 +5,10 @@ import getopt
 import os
 import sys
 from os import listdir
-from os.path import isfile, join
-from shutil import copyfile
+from os.path import isfile, join, dirname
+
+ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
+sys.path.append(ROOT_DIRECTORY)
 
 from pystella.model.stella import Stella
 
