@@ -117,7 +117,7 @@ class BlockSwd:
         return 10. ** self._block['lgR14']  # [cm]
 
     def Rsun(self):
-        return 10. ** self._block['lgR14'] / phys.R_sun  # [Rsun]
+        return self.R / phys.R_sun  # [Rsun]
 
     @property
     def Vel(self):
@@ -167,7 +167,15 @@ class BlockSwd:
 # ==================================================================
 def plot_swd(ax, b, **kwargs):
     lw = 1.
-    x = b.M
+    x, xlabel = b.M, 'Ejecta Mass [Msun]'
+
+    rnorm = 1.e-14
+    if 'rnorm' in kwargs:
+        rnorm = kwargs['rnorm']
+        if rnorm == 'sun':
+            rnorm = 1./phys.R_sun
+        x, xlabel = b.R * rnorm, 'Ejecta Radius, R%d' % int(np.log10(rnorm**-1))
+
     y = np.log10(b.Rho)
     ax.plot(x, y, label='Rho', color='black', ls="-", linewidth=lw)
     ax.text(.5, 1.01, '%5.2f days' % b.Time, horizontalalignment='center', transform=ax.transAxes)
@@ -182,19 +190,23 @@ def plot_swd(ax, b, **kwargs):
     else:
         ylim = [np.min(y), np.max(y) + 2]
 
-    ax.set_ylabel('log10(Rho)')
     if 'is_xlabel' in kwargs:
         if kwargs['is_xlabel']:
-            ax.set_xlabel('Ejecta Mass [Msun]')
+            ax.set_xlabel(xlabel)
     else:
-        ax.set_xlabel('Ejecta Mass [Msun]')
+        ax.set_xlabel(xlabel)
+    if 'is_ylabel' in kwargs:
+        if kwargs['is_ylabel']:
+            ax.set_ylabel('log10(Rho)')
+    else:
+        ax.set_ylabel('log10(Rho)')
 
     # Right axe
     ax2 = ax.twinx()
     ax2.set_ylim((0., 10.))
 
     y2 = b.Tau
-    ax2.plot(x, y2, 'g.', label='tau')
+    ax2.plot(x, y2, 'g-', label='tau')
 
     y2 = np.log10(b.T)
     ax2.plot(x, y2, 'r-', label='T')
