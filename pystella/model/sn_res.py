@@ -34,7 +34,10 @@ class StellaRes:
 
     def read_at_time(self, time):
         t, s, e = self.find_block(time)
-        return self.read_res_block(s, e)
+        if t is not None:
+            return self.read_res_block(s, e)
+        else:
+            return None
 
     def read_res_block(self, start, end):
         """
@@ -108,7 +111,7 @@ class StellaRes:
         if start < end:
             return t, start, end
         else:
-            return None
+            return None, None, None
 
 
 class StellaResInfo:
@@ -219,3 +222,15 @@ class StellaResInfo:
         # print "INFO %s" % self.name
         # print " %40s: R = %7.2f M = %6.2f E = %6.2f " % (self.name, self.R, self.M, self.E)
         print "| %40s |  %7.2f |  %6.2f | %6.2f |" % (self.name, self.R, self.M, self.E)
+
+    def print_tex(self, o=None, lend=''):
+        # print "INFO %s" % self.name
+        # print " %40s: R = %7.2f M = %6.2f E = %6.2f " % (self.name, self.R, self.M, self.E)
+        s = " \\mbox{%s} &  %7.2f &  %6.2f & %6.2f \\\ %s " % (self.name, self.R, self.M, self.E, lend)
+        if o is not None and o:
+            return s
+        else:
+            print o
+
+
+

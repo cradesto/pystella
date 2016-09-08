@@ -20,14 +20,16 @@ def usage():
     print "Usage:"
     print "  %s [params]" % __file__
     print "  -p <directory with models>"
+    print "  -f <format: tex>"
 
 
 def main():
     dir_target = './'
     ext_def = '.res'
+    is_tex = False
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "h:p:")
+        opts, args = getopt.getopt(sys.argv[1:], "h:f:p:")
     except getopt.GetoptError as err:
         print str(err)  # will print something like "option -a not recognized"
         usage()
@@ -44,6 +46,9 @@ def main():
                 print "No such directory: " + dir_target
                 sys.exit(2)
             continue
+        if opt == '-f':
+            if str(arg) == 'tex':
+                is_tex = True
         elif opt == '-h':
             usage()
             sys.exit(2)
@@ -58,7 +63,11 @@ def main():
         name, ext = os.path.splitext(f)
         stella = Stella(name, path=dir_target)
         info = stella.get_res().Info
-        info.show()
+        if is_tex:
+            info.print_tex(lend=' \hline')
+        else:
+            info.show()
+
 
 if __name__ == '__main__':
     main()

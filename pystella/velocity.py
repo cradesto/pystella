@@ -132,6 +132,9 @@ def compute_vel(name, path, z=0., t_beg=1., t_end=None, t_diff=1.05):
         if np.isnan(radius):
             radius = np.interp(t, tt['time'], tt['Rph'], 0, 0)  # One-dimensional linear interpolation.
         block = res.read_at_time(time=t)
+        if block is None:
+            break
+
         if True:
             vel = np.interp(radius, block['R14']*1e14, block['V8'], 0, 0)  # One-dimensional linear interpolation.
             vels.append(vel * 1e8)

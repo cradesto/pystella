@@ -45,13 +45,13 @@ class Stella:
 
     @property
     def is_res_data(self):
-        ext = ['res']
-        return any(map(os.path.isfile, [os.path.join(self.path, self.name + '.' + e) for e in ext]))
+        fname = os.path.join(self.path, self.name + '.res')
+        return os.path.isfile(fname)
 
     @property
     def is_tt_data(self):
-        ext = ['tt']
-        return any(map(os.path.isfile, [os.path.join(self.path, self.name + '.' + e) for e in ext]))
+        fname = os.path.join(self.path, self.name + '.tt')
+        return os.path.isfile(fname)
 
     @property
     def series_spec(self):
