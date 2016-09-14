@@ -226,7 +226,7 @@ def run_scm(bands, distance, im, names, path, t50, t_beg, t_end, z):
         for bname in bands:
             m = extract_time(t50, curves.get(bname).Time, curves.get(bname).Mag)
             res[im][bname] = m
-        print "\nRun: %s [%d/%d]" % (name, im + 1, len(names))
+        print "Run: %s [%d/%d]" % (name, im + 1, len(names))
         im += 1
     res = res[res[:]['v'] > 0]
     return res
