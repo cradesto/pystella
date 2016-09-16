@@ -1,16 +1,15 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 import getopt
+import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 import numpy as np
 import os
 import sys
+from matplotlib import gridspec
 from os.path import isfile, join, dirname
 from scipy import interpolate
-from scipy.optimize import fmin, minimize
-
-import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
-from matplotlib import gridspec
+from scipy.optimize import fmin
 
 import pystella.rf.rad_func as rf
 from pystella.model.stella import Stella

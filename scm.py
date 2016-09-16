@@ -184,7 +184,7 @@ def scm_fit_bakl(mag, vel, z, Av=0):
 def usage():
     bands = band.band_get_names().keys()
     print "Usage:"
-    print "  zeta.py [params]"
+    print "  %s [params]" % __file__
     print "  -b <set_bands>: delimiter '_'. Default: B-V-I_B-V_V-I.\n" \
           "     Available: " + '-'.join(sorted(bands))
     print "  -i <model name>.  Example: cat_R450_M15_Ni007_E7"
