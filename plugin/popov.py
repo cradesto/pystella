@@ -37,13 +37,13 @@ def plot(ax, dic=None):
 
     lbl = 'R M E Mni: %4.1f %2.1f %2.1f %3.2f' % (r_init, m_tot, e_tot, m_ni)
     print "Plot Popov model:  %s " % lbl
-    times = {'Diffusion time': ppv.t_d,
-             'Expansion time': ppv.t_e,
-             'T surf > Tion': ppv.t_i,
-             'Max bol time': ppv.t_max,
-             'Plateau duration time': ppv.t_p}
+    times = {'Diffusion time [d]': ppv.t_d,
+             'Expansion time [d]': ppv.t_e,
+             'T surf > Tion [d]': ppv.t_i,
+             'Max bol time [d]': ppv.t_max,
+             'Plateau duration time [d]': ppv.t_p}
     for k, v in times.items():
-        print "  %s: %8.2f " % (k, v/phys.d2s)
+        print "  %25s: %8.2f " % (k, v/phys.d2s)
 
     ax.plot(time, mags,  color='blue', ls='-.', label=lbl, lw=2.5)
     ax.plot(time, mags_ni, color='red', ls='-.', label='Ni56 & Co56', lw=2.)
