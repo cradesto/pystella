@@ -85,7 +85,7 @@ def usage():
     print "  -i <model name>.  Example: cat_R450_M15_Ni007_E7"
     print "  -p <model directory>, default: ./"
     print "  -e <extinction, E(B-V)> is used to define A_nu, default: 0 "
-    print "  -c <callback> [plot_tolstov, plot_snrefsdal, rednova]. You can add parameters in format func:params"
+    print "  -c <callback> [plot_tolstov, popov[:R:M:E:Mni]]. You can add parameters in format func:params"
     print "  -d <distance> [pc].  Default: 10 pc"
     print "  -m <magnification>.  Default: None, used for grav lens"
     print "  -z <redshift>.  Default: 0"

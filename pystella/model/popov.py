@@ -174,7 +174,7 @@ class Popov:
          Parameters: time [day]"""
         e = (6.45e43*np.exp(-time/8.8) + 1.45e43*np.exp(-time/111.3)) * self.Mni / phys.M_sun  #
         return e
-    # L Co
+
     def L_co(self, time):
         """The luminosity  by Co [ergs/s], see Arnett W.D., 1980
          http://adsabs.harvard.edu/doi/10.1086/157898
