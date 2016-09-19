@@ -89,7 +89,7 @@ def usage():
     print "  -d <distance> [pc].  Default: 10 pc"
     print "  -m <magnification>.  Default: None, used for grav lens"
     print "  -z <redshift>.  Default: 0"
-    print "  -q  quiet mode: no info, no plot"
+    print "  -q  turn off quiet mode: print info and additional plots"
     print "  -t  plot time points"
     print "  -s  save plot to pdf-file."
     print "  -v  plot model velocities."
@@ -105,7 +105,7 @@ def lc_wrapper(param):
 
 
 def main(name='', model_ext='.ph'):
-    is_quiet = False
+    is_quiet = True
     is_save_mags = False
     is_save_plot = False
     is_plot_time_points = False
@@ -132,7 +132,7 @@ def main(name='', model_ext='.ph'):
     if not name:
         for opt, arg in opts:
             if opt == '-i':
-                path = ROOT_DIRECTORY
+                path = os.path.join(ROOT_DIRECTORY, 'pystella/')
                 name = os.path.splitext(os.path.basename(str(arg)))[0]
                 break
                 # if name == '':
@@ -158,7 +158,7 @@ def main(name='', model_ext='.ph'):
             callback = lc_wrapper(str(arg))
             continue
         if opt == '-q':
-            is_quiet = True
+            is_quiet = False
             continue
         if opt == '-s':
             is_save_plot = True
