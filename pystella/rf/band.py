@@ -20,7 +20,7 @@ class Band(object):
         self.file = fname  # location of the filter response
         self.__freq = None  # frequencies of response [Hz]
         self.__wl = None  # wavelength of response [cm]
-        self.resp = None  # response
+        self._resp = None  # response
         self.zp = None  # zero points
         self.file_zp = 'filters.dat'  # file with zero points data
         if fname is not None and load == 1:
@@ -29,6 +29,10 @@ class Band(object):
     @property
     def freq(self):
         return self.__freq
+
+    @property
+    def resp(self):
+        return self._resp
 
     @property
     def wl(self):
@@ -43,6 +47,12 @@ class Band(object):
         self.__wl = wl
         self.__freq = phys.c / self.__wl
 
+    @resp.setter
+    def resp(self, v):
+        if np.any(v > 1.):
+            raise ValueError("Band response  must be <=1 : " + str(self))
+        self._resp = v
+
     def __str__(self):
         return "%s" % self.name
 
@@ -56,7 +66,7 @@ class Band(object):
             try:
                 lines = f.readlines()
                 wl = np.array([float(string.split(line)[0]) for line in lines if line[0] != "#"])
-                self.resp = np.array([float(string.split(line)[1]) for line in lines if line[0] != "#"])
+                self._resp = np.array([float(string.split(line)[1]) for line in lines if line[0] != "#"])
                 self.wl = wl * phys.angs_to_cm
             # except Exception:
             #     print"Error in band file: %s.  Exception:  %s" % (self.file, sys.exc_info()[0])
@@ -101,11 +111,12 @@ class BandUni(Band):
         """
         super(BandUni, self).__init__(name)
         # self.name = name
-        wl = np.exp(np.linspace(np.log(wlrange[0]) * phys.angs_to_cm
-                                , np.log(wlrange[1]) * phys.angs_to_cm
+        wl = np.exp(np.linspace(np.log(wlrange[0]*phys.angs_to_cm)
+                                , np.log(wlrange[1]*phys.angs_to_cm)
                                 , length))
         self.wl = wl  # wavelength of response [cm]
-        self.resp = 1.  # response
+        self.resp = np.ones(len(wl))  # response
+        self.zp = 0.
 
 
 def read_zero_point(fname, ptn_file):
@@ -138,7 +149,7 @@ def bands_colors():
                   UVM2="skyblue", UVW1="orange", UVW2="blue",
                   F105W="magenta", F435W="skyblue",  F606W="cyan", F125W="g", F140W="orange", F160W="r", F814W="blue",
                   g="green", r="red", i="magenta", u="blue", z="chocolate",
-                  y='olive', w='tomato')
+                  y='olive', w='tomato', bol="black")
     # for Subaru HCS: colors
     for b in list('grizy'):
         colors['HSC' + b] = colors[b]
@@ -236,6 +247,7 @@ def bands_dict_SubaruHSC():
 
 
 def band_get_names():
+    bands = {'bol': ''}
     # STANDARD
     # bands0 = bands_dict_STANDARD()
 
@@ -265,7 +277,7 @@ def band_get_names():
     # The HSC filters
     bands7 = bands_dict_HST()
 
-    return merge_dicts(bands1, bandsJHK, bands3, bands4, bands5, bands6, bands7)
+    return merge_dicts(bands, bands1, bandsJHK, bands3, bands4, bands5, bands6, bands7)
 
 
 def band_is_exist(name):
@@ -284,7 +296,11 @@ def band_by_name(name):
 
     if band_is_exist(name):
         bands = band_get_names()
-        b = Band(name=name, fname=bands[name], load=1)
+        if name == 'bol':  # bolometric
+            # todo check this filter: values less then g-u etc.
+            b = BandUni(name='bol', wlrange=(1e0, 42e3), length=300)
+        else:
+            b = Band(name=name, fname=bands[name], load=1)
         Band.Cache[name] = b
         return b
     else:

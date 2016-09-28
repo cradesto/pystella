@@ -176,10 +176,16 @@ class Star:
         nu_s = nu_s[sorti]
         flux = flux[sorti]
 
-        nu_b = band.freq[::-1]
+        nu_b = np.array(band.freq[::-1])
+        resp_b = np.array(band.resp)
 
         if min(nu_s) > nu_b[0] or max(nu_s) < nu_b[-1]:
-            raise ValueError("Spectrum must be wider then band: " + str(band))
+            # decrease wave length range of the band
+            f = (min(nu_s) < nu_b) & (nu_b < max(nu_s))
+            # f = map(lambda x: min(nu_s) < x < max(nu_s), nu_b)
+            nu_b = nu_b[f]
+            resp_b = resp_b[f]
+            # raise ValueError("Spectrum must be wider then band: " + str(band))
 
         if is_b_spline:
             tck = interpolate.splrep(nu_s, flux, s=0)
@@ -189,8 +195,8 @@ class Star:
         else:
             flux_spline = np.interp(nu_b, nu_s, flux, 0, 0)  # One-dimensional linear interpolation.
 
-        a = integralfunc(flux_spline * band.resp / nu_b, nu_b)
-        b = integralfunc(band.resp / nu_b, nu_b)
+        a = integralfunc(flux_spline * resp_b / nu_b, nu_b)
+        b = integralfunc(resp_b / nu_b, nu_b)
         if a / b < 0:
             raise ValueError("Spectrum should be more 0: " + str(a / b))
 

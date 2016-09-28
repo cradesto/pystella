@@ -111,7 +111,8 @@ def main(name='', model_ext='.ph'):
     is_plot_time_points = False
     is_extinction = False
     is_vel = False
-    path = ''
+    # path = ''
+    path = os.getcwd()
     z = 0
     e = 0.
     magnification = 1.
@@ -132,7 +133,7 @@ def main(name='', model_ext='.ph'):
     if not name:
         for opt, arg in opts:
             if opt == '-i':
-                path = os.path.join(ROOT_DIRECTORY, 'pystella/')
+                # path = os.path.join(ROOT_DIRECTORY, 'pystella/')
                 name = os.path.splitext(os.path.basename(str(arg)))[0]
                 break
                 # if name == '':
@@ -235,7 +236,7 @@ def main(name='', model_ext='.ph'):
                 print "Finish velocity: %s [%d/%d]" % (name, i, len(names))
             else:
                 models_vels = None
-                print "Finish mags: %s [%d/%d]" % (name, i, len(names))
+                print "Finish mags: %s [%d/%d] in %s" % (name, i, len(names), path)
 
         t = ''
         if callback is not None:

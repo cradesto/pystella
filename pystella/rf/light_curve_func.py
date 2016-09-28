@@ -8,16 +8,17 @@ import pystella.rf.rad_func as rf
 from pystella.model.stella import Stella
 from pystella.rf import band
 from pystella.rf import extinction
-from pystella.rf.lc import SetLightCurve, LightCurve
+from pystella.rf.lc import LightCurve
 
 __author__ = 'bakl'
 
-colors = band.bands_colors()
+lc_colors = band.bands_colors()
 
-lntypes = dict(U="-", B="-", V="-", R="-", I="-",
-               UVM2="-.", UVW1="-.", UVW2="-.",
-               F125W="--", F160W="-.", F140W="--", F105W="-.", F435W="--", F606W="-.", F814W="--",
-               u="--", g="--", r="--", i="--", z="--")
+lc_lntypes = dict(U="-", B="-", V="-", R="-", I="-",
+                  UVM2="-.", UVW1="-.", UVW2="-.",
+                  F125W="--", F160W="-.", F140W="--", F105W="-.", F435W="--", F606W="-.", F814W="--",
+                  u="--", g="--", r="--", i="--", z="--",
+                  bol='-')
 
 markers = {u'D': u'diamond', 6: u'caretup', u's': u'square', u'x': u'x',
            5: u'caretright', u'^': u'triangle_up', u'd': u'thin_diamond', u'h': u'hexagon1',
@@ -36,7 +37,8 @@ def lbl(b, band_shift):
     return l
 
 
-def plot_ubv_models(ax, models_dic, bands, band_shift, xlim=None, ylim=None, is_time_points=False):
+def plot_ubv_models(ax, models_dic, bands, band_shift, xlim=None, ylim=None,
+                    colors=lc_colors, is_time_points=False):
     is_compute_x_lim = xlim is None
     is_compute_y_lim = ylim is None
 
@@ -87,7 +89,7 @@ def plot_ubv_models(ax, models_dic, bands, band_shift, xlim=None, ylim=None, is_
     return lc_min
 
 
-def plot_models_curves(ax, models_curves, bands, band_shift=None, xlim=None, ylim=None):
+def plot_models_curves(ax, models_curves, bands, band_shift=None, xlim=None, ylim=None, colors=lc_colors):
     is_compute_x_lim = xlim is None
     is_compute_y_lim = ylim is None
 
@@ -104,8 +106,8 @@ def plot_models_curves(ax, models_curves, bands, band_shift=None, xlim=None, yli
             ib += 1
             x = curves.TimeDef
             y = curves[bname].Mag
-            bcolor = colors[bname]
-            ax.plot(x, y, label='%s  %s' % (lbl(bname, band_shift), mname), color=bcolor, ls="-", linewidth=lw)
+            ax.plot(x, y, label='%s  %s' % (lbl(bname, band_shift), mname),
+                    color=colors[bname], ls="-", linewidth=lw)
             if is_compute_x_lim:
                 x_max.append(np.max(x))
             if is_compute_y_lim:
@@ -134,7 +136,7 @@ def plot_bands(dict_mags, bands, title='', fname='', distance=10., is_time_point
     # band_shift = dict(U=6.9, B=3.7, V=0, R=-2.4, I=-4.7,
     #                   UVM2=11.3, UVW1=10, UVW2=13.6,
     #                   u=3.5, g=2.5, r=-1.2, i=-3.7, z=-4.2)
-    band_shift = dict((k, 0) for k, v in colors.items())  # no y-shift
+    band_shift = dict((k, 0) for k, v in lc_colors.items())  # no y-shift
 
     t_points = [2, 5, 10, 20, 40, 80, 150]
 
@@ -152,7 +154,7 @@ def plot_bands(dict_mags, bands, title='', fname='', distance=10., is_time_point
     for n in bands:
         y = dict_mags[n]
         y += dm + band_shift[n]
-        ax.plot(x, y, label=lbl(n, band_shift), color=colors[n], ls=lntypes[n], linewidth=2.0)
+        ax.plot(x, y, label=lbl(n, band_shift), color=lc_colors[n], ls=lc_lntypes[n], linewidth=2.0)
         # ax.plot(x, y, label=lbl(n, band_shift), color=colors[n], ls=lntypes[n], linewidth=2.0, marker='s')
         if is_time_points and is_first:
             is_first = False
@@ -185,7 +187,15 @@ def plot_bands(dict_mags, bands, title='', fname='', distance=10., is_time_point
     return ax
 
 
-def plot_curves(curves, ax=None, xlim=None, ylim=None, title='', fname='', lt='line'):
+def plot_curves(curves, ax=None, xlim=None, ylim=None, title=None, fname='',
+                **kwargs):
+    is_line = 'ls' in kwargs or 'lt' not in kwargs
+    ls = kwargs.pop('ls', {lc.Band.Name: '-' for lc in curves})
+    lt = kwargs.pop('lt', {lc.Band.Name: 'o' for lc in curves})
+    colors = kwargs.pop('colors', lc_colors)
+    linewidth = kwargs.pop('linewidth', 2.0)
+    markersize = kwargs.pop('markersize', 5)
+
     is_new_fig = ax is None
     if is_new_fig:
         fig = plt.figure()
@@ -205,10 +215,10 @@ def plot_curves(curves, ax=None, xlim=None, ylim=None, title='', fname='', lt='l
         x = lc.Time
         y = lc.Mag
         bname = lc.Band.Name
-        if lt == 'line':
-            ax.plot(x, y, label='%s' % bname, color=colors[bname], ls=lntypes[bname], linewidth=2.0)
+        if is_line:
+            ax.plot(x, y, label='%s' % bname, color=colors[bname], ls=ls[bname], linewidth=linewidth)
         else:
-            ax.plot(x, y, label='%s' % bname, color=colors[bname], ls=".",  markersize=4, marker=lt)
+            ax.plot(x, y, label='%s' % bname, color=colors[bname], ls=".", marker=lt[bname], markersize=markersize)
 
         if is_xlim:
             xlim[0] = min(xlim[0], np.min(x))
@@ -227,10 +237,12 @@ def plot_curves(curves, ax=None, xlim=None, ylim=None, title='', fname='', lt='l
     ax.set_ylabel('Magnitude')
     ax.set_xlabel('Time [days]')
     ax.grid()
-    # ax.title(title)
-    # ax.text(0.17, 0.07, title, family='monospace')
+    if title is not None:
+        plt.title(title)
+        # ax.text(0.17, 0.07, title, family='monospace')
     if fname != '':
-        plt.savefig("ubv_%s.png" % fname, format='png')
+        # plt.savefig("ubv_%s.png" % fname, format='png')
+        plt.savefig(fname)
     # if is_new_fig:
     #     plt.show()
     # plt.close()
@@ -240,7 +252,7 @@ def plot_curves(curves, ax=None, xlim=None, ylim=None, title='', fname='', lt='l
 def compute_mag(name, path, bands, ext=None, z=0., distance=10., magnification=1., is_show_info=True, is_save=False):
     """
         Compute magnitude in bands for the 'name' model.
-    :type ext: extinction
+    :param ext: extinction
     :param name: the name of a model and data files
     :param path: the directory with data-files
     :param bands: photometric bands
@@ -279,8 +291,7 @@ def compute_mag(name, path, bands, ext=None, z=0., distance=10., magnification=1
             t_min = t[t > tmin][mags[n][t > tmin].argmin()]
             print "t_max(%s) = %f" % (n, t_min)
 
-    if ext is not None:
-        # add extinction
+    if ext is not None:  # add extinction
         for n in bands:
             mags[n] = mags[n] + ext[n]
 
