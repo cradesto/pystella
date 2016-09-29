@@ -195,7 +195,7 @@ def plot_curves(curves, ax=None, xlim=None, ylim=None, title=None, fname='', **k
     linewidth = kwargs.pop('linewidth', 2.0)
     markersize = kwargs.pop('markersize', 5)
     rect = kwargs.pop('rect', (0.1, 0.3, 0.8, 0.65))
-    fontsize = kwargs.pop('fontsize', (0.1, 0.3, 0.8, 0.65))
+    fontsize = kwargs.pop('fontsize', 18)
 
     is_new_fig = ax is None
     if is_new_fig:
