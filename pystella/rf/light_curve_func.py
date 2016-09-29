@@ -187,19 +187,27 @@ def plot_bands(dict_mags, bands, title='', fname='', distance=10., is_time_point
     return ax
 
 
-def plot_curves(curves, ax=None, xlim=None, ylim=None, title=None, fname='',
-                **kwargs):
+def plot_curves(curves, ax=None, xlim=None, ylim=None, title=None, fname='', **kwargs):
     is_line = 'ls' in kwargs or 'lt' not in kwargs
     ls = kwargs.pop('ls', {lc.Band.Name: '-' for lc in curves})
     lt = kwargs.pop('lt', {lc.Band.Name: 'o' for lc in curves})
     colors = kwargs.pop('colors', lc_colors)
     linewidth = kwargs.pop('linewidth', 2.0)
     markersize = kwargs.pop('markersize', 5)
+    rect = kwargs.pop('rect', (0.1, 0.3, 0.8, 0.65))
+    fontsize = kwargs.pop('fontsize', (0.1, 0.3, 0.8, 0.65))
 
     is_new_fig = ax is None
     if is_new_fig:
+        plt.matplotlib.rcParams.update({'font.size': 14})
         fig = plt.figure()
-        ax = fig.add_axes((0.1, 0.3, 0.8, 0.65))
+        # fig = plt.figure(num=None, figsize=(7, 11), dpi=100, facecolor='w', edgecolor='k')
+        # ax = fig.add_axes()
+        ax = fig.add_axes(rect)
+        for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
+                         ax.get_xticklabels() + ax.get_yticklabels()):
+            item.set_fontsize(fontsize)
+            # ax = fig.add_axes((0.1, 0.3, 0.8, 0.65))
 
     # plt.title(''.join(bands) + ' filter response')
     is_xlim = False

@@ -99,8 +99,7 @@ def bb_flux_dist(nu, temperature, r, radius):
 
 def bb_fit_flux_dist(nu, r):
     """Takes in known values and returns a function useful for fitting temperature and radius"""
-    func = lambda temperature, radius: bb_flux_dist(nu, temperature, r, radius)
-    return func
+    return lambda temperature, radius: bb_flux_dist(nu, temperature, r, radius)
 
 
 def fit_planck(x, inp="Hz", out="freq"):
@@ -113,8 +112,8 @@ def compute_x_bb():
     H nu / k T = x_bb --- const
     :return: const
     """
-    a, err1 = integrate.quad(lambda x: x ** 4 * np.exp(-x) / (1. - np.exp(-x)), 0, np.inf)
-    b, err2 = integrate.quad(lambda x: x ** 3 * np.exp(-x) / (1. - np.exp(-x)), 0, np.inf)
+    a, err1 = integrate.quad(lambda x: x**4 * np.exp(-x) / (1.-np.exp(-x)), 0, np.inf)
+    b, err2 = integrate.quad(lambda x: x**3 * np.exp(-x) / (1.-np.exp(-x)), 0, np.inf)
     return a / b
 
 
