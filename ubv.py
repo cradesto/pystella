@@ -92,6 +92,7 @@ def usage():
     print "  -q  turn off quiet mode: print info and additional plots"
     print "  -t  plot time points"
     print "  -s  save plot to pdf-file."
+    print "  -x  xlim. Default: None, used all days"
     print "  -v  plot model velocities."
     print "  -w  write magnitudes to file, default 'False'"
     print "  -h  print usage"
@@ -118,9 +119,11 @@ def main(name='', model_ext='.ph'):
     magnification = 1.
     distance = 10.  # pc
     callback = None
+    xlim = None
+    ylim = None
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hqswtc:d:p:e:i:b:m:vz:")
+        opts, args = getopt.getopt(sys.argv[1:], "hqswtc:d:p:e:i:b:m:vx:y:z:")
     except getopt.GetoptError as err:
         print str(err)  # will print something like "option -a not recognized"
         usage()
@@ -181,6 +184,12 @@ def main(name='', model_ext='.ph'):
             continue
         if opt == '-d':
             distance = float(arg)
+            continue
+        if opt == '-x':
+            xlim = map(float, str(arg).split('-'))
+            continue
+        if opt == '-y':
+            ylim = map(float, str(arg).split('-'))
             continue
         if opt == '-p':
             path = os.path.expanduser(str(arg))
@@ -258,7 +267,7 @@ def main(name='', model_ext='.ph'):
             # d = '/home/bakl/Sn/my/conf/2016/snrefsdal/img'
             fsave = os.path.join(d, fsave) + '.pdf'
 
-        plot_all(models_vels, models_mags, bands, call=callback, is_time_points=is_plot_time_points, title=t, fsave=fsave)
+        plot_all(models_vels, models_mags, bands, call=callback, xlim=xlim, ylim=ylim, is_time_points=is_plot_time_points, title=t, fsave=fsave)
         # plot_all(dic_results, bands,  xlim=(-10, 410), is_time_points=is_plot_time_points)
         # plot_all(dic_results, bands, xlim=(-10, 410), callback=callback, is_time_points=is_plot_time_points)
         # plot_all(dic_results, bands,  ylim=(40, 23),  is_time_points=is_plot_time_points)
