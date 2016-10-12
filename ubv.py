@@ -112,6 +112,8 @@ def main(name='', model_ext='.ph'):
     is_plot_time_points = False
     is_extinction = False
     is_vel = False
+
+    t_diff = 1.0001
     # path = ''
     path = os.getcwd()
     z = 0
@@ -226,7 +228,7 @@ def main(name='', model_ext='.ph'):
         for name in names:
             i += 1
             mags = lcf.compute_mag(name, path, bands, ext=ext, z=z, distance=distance, magnification=magnification,
-                                   is_show_info=not is_quiet, is_save=is_save_mags)
+                                   t_diff=t_diff, is_show_info=not is_quiet, is_save=is_save_mags)
             # curves = lcf.compute_curves(name, path, bands, ext=ext, z=z, distance=distance, magnification=magnification,
             #                             is_save=is_save_mags)
             # lcf.plot_curves(curves)

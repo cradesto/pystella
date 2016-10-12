@@ -71,7 +71,7 @@ def plot_ubv_models(ax, models_dic, bands, band_shift, xlim=None, ylim=None,
                                 textcoords='offset points', color=bcolor,
                                 arrowprops=dict(arrowstyle='->', shrinkA=0))
             idx = np.argmin(y)
-            lc_min[bname] = [x[idx], y[idx]]
+            lc_min[bname] = (x[idx], y[idx])
             if is_compute_x_lim:
                 x_max.append(np.max(x))
             if is_compute_y_lim:
@@ -257,16 +257,17 @@ def plot_curves(curves, ax=None, xlim=None, ylim=None, title=None, fname='', **k
     return ax
 
 
-def compute_mag(name, path, bands, ext=None, z=0., distance=10., magnification=1., is_show_info=True, is_save=False):
+def compute_mag(name, path, bands, ext=None, z=0., distance=10., magnification=1., t_diff=1., is_show_info=True, is_save=False):
     """
         Compute magnitude in bands for the 'name' model.
-    :param ext: extinction
     :param name: the name of a model and data files
     :param path: the directory with data-files
     :param bands: photometric bands
+    :param ext: extinction
     :param z: redshift, default 0
     :param distance: distance to star in parsec, default 10 pc
     :param magnification: gravitational lensing magnification
+    :param t_diff:  depression between time points
     :param is_show_info: flag to write some information, default True
     :param is_save: flag to save result in file, default False
     :return: dictionary with keys = bands, value = star's magnitudes
@@ -282,7 +283,7 @@ def compute_mag(name, path, bands, ext=None, z=0., distance=10., magnification=1
         return None
 
     # serial_spec = model.read_serial_spectrum(t_diff=0.)
-    serial_spec = model.read_series_spectrum(t_diff=1.05)
+    serial_spec = model.read_series_spectrum(t_diff=t_diff)
     mags = serial_spec.mags_bands(bands, z=z, d=rf.pc_to_cm(distance), magnification=magnification)
 
     if mags is not None:

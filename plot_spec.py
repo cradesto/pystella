@@ -25,7 +25,7 @@ from pystella.util.phys_var import phys
 
 __author__ = 'bakl'
 
-ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
+ROOT_DIRECTORY = dirname(os.path.abspath(__file__))
 
 colors_band = dict(U="blue", B="cyan", V="black", R="red", I="magenta",
                    J="green", H="cyan", K="black",

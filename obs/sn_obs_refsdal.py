@@ -407,13 +407,13 @@ def plot_all(models_vels, models_dic, bands, call=None, xlim=None, ylim=None,
     # show  times of spectral observations
     dt = 1.
     z = 1.49
-    ts = np.array([-47, 16])  # see spectral dates in Kelly, 1512.09093
+    ts = np.array([-47., 16.])  # see spectral dates in Kelly, 1512.09093
     ts *= 1. + z
     for bname, v in lc_min.items():
         if bname == 'F160W':
             for t in ts:
                 axVel.axvspan(v[0] + t - dt, v[0] + t + dt, facecolor='g', alpha=0.5)
-                print "Spectral obs: t=%8.1f, tmax=%8.1f" % (v[0] + t, v[0],)
+                print "Spectral obs: t=%8.1f, tmax=%8.1f" % (v[0] + t, v[0])
 
     # plot callback
     if call is not None:

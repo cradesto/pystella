@@ -10,6 +10,8 @@ __author__ = 'bakl'
 
 # see bands: http://svo2.cab.inta-csic.es/theory/fps3/index.php?mode=browse&gname=GALEX
 
+BAND_BOL_NAME = 'bol'
+
 
 class Band(object):
     Cache = dict()
@@ -149,7 +151,8 @@ def bands_colors():
                   UVM2="skyblue", UVW1="orange", UVW2="blue",
                   F105W="magenta", F435W="skyblue",  F606W="cyan", F125W="g", F140W="orange", F160W="r", F814W="blue",
                   g="green", r="red", i="magenta", u="blue", z="chocolate",
-                  y='olive', w='tomato', bol="black")
+                  y='olive', w='tomato')
+    colors[BAND_BOL_NAME] = 'black'
     # for Subaru HCS: colors
     for b in list('grizy'):
         colors['HSC' + b] = colors[b]
@@ -247,7 +250,7 @@ def bands_dict_SubaruHSC():
 
 
 def band_get_names():
-    bands = {'bol': ''}
+    bands = {BAND_BOL_NAME: ''}
     # STANDARD
     # bands0 = bands_dict_STANDARD()
 
@@ -296,9 +299,9 @@ def band_by_name(name):
 
     if band_is_exist(name):
         bands = band_get_names()
-        if name == 'bol':  # bolometric
+        if name == BAND_BOL_NAME:  # bolometric
             # todo check this filter: values less then g-u etc.
-            b = BandUni(name='bol', wlrange=(1e0, 42e3), length=300)
+            b = BandUni(name=BAND_BOL_NAME, wlrange=(1e0, 42e3), length=300)
         else:
             b = Band(name=name, fname=bands[name], load=1)
         Band.Cache[name] = b
