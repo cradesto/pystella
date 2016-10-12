@@ -425,7 +425,7 @@ def main():
         sys.exit(2)
 
     name = ''
-    path = os.path.expanduser('./')
+    path = os.getcwd()
     # name = 'cat_R500_M15_Ni006_E12'
 
     if not name:
@@ -434,7 +434,6 @@ def main():
             sys.exit(2)
         for opt, arg in opts:
             if opt == '-i':
-                path = ROOT_DIRECTORY
                 name = str(arg)
                 break
 

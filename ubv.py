@@ -88,13 +88,14 @@ def usage():
     print "  -c <callback> [plot_tolstov, popov[:R:M:E:Mni]]. You can add parameters in format func:params"
     print "  -d <distance> [pc].  Default: 10 pc"
     print "  -m <magnification>.  Default: None, used for grav lens"
-    print "  -z <redshift>.  Default: 0"
     print "  -q  turn off quiet mode: print info and additional plots"
     print "  -t  plot time points"
-    print "  -s  save plot to pdf-file."
+    print "  -s  <file-name> without extension. Save plot to pdf-file. Default: ubv_<file-name>.pdf"
     print "  -x  xlim. Default: None, used all days"
     print "  -v  plot model velocities."
     print "  -w  write magnitudes to file, default 'False'"
+    print "  -z <redshift>.  Default: 0"
+    print "  -l  write plot label"
     print "  -h  print usage"
 
 
@@ -113,6 +114,8 @@ def main(name='', model_ext='.ph'):
     is_extinction = False
     is_vel = False
 
+    label = None
+    fsave = None
     t_diff = 1.0001
     # path = ''
     path = os.getcwd()
@@ -125,7 +128,7 @@ def main(name='', model_ext='.ph'):
     ylim = None
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hqswtc:d:p:e:i:b:m:vx:y:z:")
+        opts, args = getopt.getopt(sys.argv[1:], "hqwtc:d:p:e:i:b:l:m:vs:x:y:z:")
     except getopt.GetoptError as err:
         print str(err)  # will print something like "option -a not recognized"
         usage()
@@ -168,6 +171,7 @@ def main(name='', model_ext='.ph'):
             continue
         if opt == '-s':
             is_save_plot = True
+            fsave = str.strip(arg)
             continue
         if opt == '-w':
             is_save_mags = True
@@ -186,6 +190,9 @@ def main(name='', model_ext='.ph'):
             continue
         if opt == '-d':
             distance = float(arg)
+            continue
+        if opt == '-l':
+            label = str.strip(arg)
             continue
         if opt == '-x':
             xlim = map(float, str(arg).split('-'))
@@ -249,18 +256,18 @@ def main(name='', model_ext='.ph'):
                 models_vels = None
                 print "Finish mags: %s [%d/%d] in %s" % (name, i, len(names), path)
 
-        t = ''
-        if callback is not None:
-            t = "ts=%s z=%4.2f D=%6.2e mu=%3.1f ebv=%4.2f" % (callback.arg_totext(0), z, distance, magnification, e)
-        else:
-            t = "z=%4.2f D=%6.2e mu=%3.1f ebv=%4.2f" % (z, distance, magnification, e)
-
-        fsave = None
-        if is_save_plot:
-            if is_vel:
-                fsave = "ubv_vel_%s" % name
+        if label is None:
+            if callback is not None:
+                label = "ts=%s z=%4.2f D=%6.2e mu=%3.1f ebv=%4.2f" % (callback.arg_totext(0), z, distance, magnification, e)
             else:
-                fsave = "ubv_%s" % name
+                label = "z=%4.2f D=%6.2e mu=%3.1f ebv=%4.2f" % (z, distance, magnification, e)
+
+        if is_save_plot:
+            if len(fsave) == 0:
+                if is_vel:
+                    fsave = "ubv_vel_%s" % name
+                else:
+                    fsave = "ubv_%s" % name
 
             if is_extinction and e > 0:
                 fsave = "%s_e0%2d" % (fsave, int(e * 100))  # bad formula for name
@@ -269,7 +276,7 @@ def main(name='', model_ext='.ph'):
             # d = '/home/bakl/Sn/my/conf/2016/snrefsdal/img'
             fsave = os.path.join(d, fsave) + '.pdf'
 
-        plot_all(models_vels, models_mags, bands, call=callback, xlim=xlim, ylim=ylim, is_time_points=is_plot_time_points, title=t, fsave=fsave)
+        plot_all(models_vels, models_mags, bands, call=callback, xlim=xlim, ylim=ylim, is_time_points=is_plot_time_points, title=label, fsave=fsave)
         # plot_all(dic_results, bands,  xlim=(-10, 410), is_time_points=is_plot_time_points)
         # plot_all(dic_results, bands, xlim=(-10, 410), callback=callback, is_time_points=is_plot_time_points)
         # plot_all(dic_results, bands,  ylim=(40, 23),  is_time_points=is_plot_time_points)
