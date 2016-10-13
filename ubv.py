@@ -100,9 +100,14 @@ def usage():
 
 
 def lc_wrapper(param):
+    p = cb.plugin_path
     a = param.split(':')
     func = a.pop(0)
-    c = cb.CallBack(func, path=cb.plugin_path, args=a, load=1)
+    if os.path.isfile(os.path.join(os.getcwd(), func+'.py')):
+        p = os.getcwd()
+        # p = os.path.join(os.getcwd(), 'plugin')
+    print "Return callback: path=%s" % p
+    c = cb.CallBack(func, path=p, args=a, load=1)
     return c
 
 

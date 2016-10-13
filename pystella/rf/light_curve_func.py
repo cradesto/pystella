@@ -44,7 +44,7 @@ def plot_ubv_models(ax, models_dic, bands, band_shift, xlim=None, ylim=None,
 
     t_points = [0.2, 1, 2, 3, 4, 5, 10, 20, 40, 80, 150]
 
-    lw = 1.
+    lw = 2
     mi = 0
     ib = 0
     x_max = []
