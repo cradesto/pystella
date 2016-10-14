@@ -226,7 +226,7 @@ def plot_curves(curves, ax=None, xlim=None, ylim=None, title=None, fname='', **k
         if is_line:
             ax.plot(x, y, label='%s' % bname, color=colors[bname], ls=ls[bname], linewidth=linewidth)
         else:
-            ax.plot(x, y, label='%s' % bname, color=colors[bname], ls=".", marker=lt[bname], markersize=markersize)
+            ax.plot(x, y, label='%s' % bname, color=colors[bname], ls=None, marker=lt[bname], markersize=markersize)
 
         if is_xlim:
             xlim[0] = min(xlim[0], np.min(x))

@@ -66,9 +66,12 @@ class Band(object):
         if self.file is not None:
             f = open(self.file)
             try:
-                lines = f.readlines()
-                wl = np.array([float(string.split(line)[0]) for line in lines if line[0] != "#"])
-                self._resp = np.array([float(string.split(line)[1]) for line in lines if line[0] != "#"])
+                # lines = f.readlines()
+                lines = [str.strip(line) for line in f.readlines() if not line.startswith('#')]
+                wl = np.array([float(string.split(line)[0]) for line in lines if len(line) > 0])
+                # wl = np.array([float(string.split(line)[0]) ])
+
+                self._resp = np.array([float(string.split(line)[1]) for line in lines if len(line) > 0])
                 self.wl = wl * phys.angs_to_cm
             # except Exception:
             #     print"Error in band file: %s.  Exception:  %s" % (self.file, sys.exc_info()[0])
@@ -150,6 +153,7 @@ def bands_colors():
                   J="green", H="cyan", K="black",
                   UVM2="skyblue", UVW1="orange", UVW2="blue",
                   F105W="magenta", F435W="skyblue",  F606W="cyan", F125W="g", F140W="orange", F160W="r", F814W="blue",
+                  Kepler="magenta",
                   g="green", r="red", i="magenta", u="blue", z="chocolate",
                   y='olive', w='tomato')
     colors[BAND_BOL_NAME] = 'black'
@@ -249,6 +253,14 @@ def bands_dict_SubaruHSC():
     return bands4
 
 
+def bands_dict_Kepler():
+    bands = dict(Kepler="kepler_response_hires1.txt")
+    d = os.path.join(ROOT_DIRECTORY, "data/bands/Kepler")
+    for k, v in bands.items():
+        bands[k] = os.path.join(d, v)
+    return bands
+
+
 def band_get_names():
     bands = {BAND_BOL_NAME: ''}
     # STANDARD
@@ -280,7 +292,10 @@ def band_get_names():
     # The HSC filters
     bands7 = bands_dict_HST()
 
-    return merge_dicts(bands, bands1, bandsJHK, bands3, bands4, bands5, bands6, bands7)
+    # The Kepler filters
+    bands8 = bands_dict_Kepler()
+
+    return merge_dicts(bands, bands1, bandsJHK, bands3, bands4, bands5, bands6, bands7, bands8)
 
 
 def band_is_exist(name):

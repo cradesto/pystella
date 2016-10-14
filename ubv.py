@@ -91,7 +91,8 @@ def usage():
     print "  -q  turn off quiet mode: print info and additional plots"
     print "  -t  plot time points"
     print "  -s  <file-name> without extension. Save plot to pdf-file. Default: ubv_<file-name>.pdf"
-    print "  -x  xlim. Default: None, used all days"
+    print "  -x  <xbeg:xend> - xlim, ex: 0:12. Default: None, used all days."
+    print "  -y  <ybeg:yend> - ylim, ex: 26:21. Default: None, used top-magnitude+-5."
     print "  -v  plot model velocities."
     print "  -w  write magnitudes to file, default 'False'"
     print "  -z <redshift>.  Default: 0"
@@ -200,10 +201,10 @@ def main(name='', model_ext='.ph'):
             label = str.strip(arg)
             continue
         if opt == '-x':
-            xlim = map(float, str(arg).split('-'))
+            xlim = map(float, str(arg).split(':'))
             continue
         if opt == '-y':
-            ylim = map(float, str(arg).split('-'))
+            ylim = map(float, str(arg).split(':'))
             continue
         if opt == '-p':
             path = os.path.expanduser(str(arg))

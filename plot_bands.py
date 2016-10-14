@@ -103,6 +103,20 @@ def plot_HST():
     plt.show()
 
 
+def plot_Kepler():
+    plt.title('The Kepler Space Telescope  filter responses')
+
+    bands = dict(Kepler="magenta")
+    for k, v in bands.items():
+        b = band.band_by_name(k)
+        plt.plot(b.wl*phys.cm_to_angs,  b.resp, v, label=k, linewidth=2)
+    plt.legend(loc=4)
+    plt.ylabel('Amplitude Response')
+    plt.xlabel('Wave [A]')
+    plt.grid()
+    plt.show()
+
+
 def main():
     plot_UBVRI()
     plot_JHK()
@@ -111,6 +125,7 @@ def main():
     plot_PS1()
     plot_HSC()
     plot_HST()
+    plot_Kepler()
 
 if __name__ == '__main__':
     main()
