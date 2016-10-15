@@ -58,6 +58,11 @@ class StellaEve:
         return self._data
 
     @property
+    def is_load(self):
+        """Check if data has been loaded."""
+        return self._data is not None
+
+    @property
     def rho_file(self):
         return os.path.join(self.path, self.name + '.rho')
 
@@ -65,6 +70,14 @@ class StellaEve:
     def is_rho_data(self):
         ext = ['rho']
         return any(map(os.path.isfile, [os.path.join(self.path, self.name + '.' + e) for e in ext]))
+
+    def el(self, el):
+        if el not in eve_elements:
+            raise ValueError("There is no  element [%s] in eve" % el)
+        if not self.is_load:
+            raise StandardError("Eve-Data has not been loaded. Check and load from %s" % self.rho_file)
+
+        return self.data[el]
 
     def load(self):
         if not self.is_rho_data:
