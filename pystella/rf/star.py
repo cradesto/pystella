@@ -1,6 +1,8 @@
 from scipy import interpolate
 import numpy as np
 from scipy.integrate import simps as integralfunc
+
+from pystella.rf.rad_func import Flux2MagAB
 from pystella.util.phys_var import phys
 
 __author__ = 'bakl'
@@ -218,7 +220,8 @@ class Star:
                 raise ValueError("Spectrum should be more 0: " + str(conv))
             return None
         else:
-            mag = -2.5 * np.log10(conv) + phys.ZP_AB - band.zp
+            # mag = -2.5 * np.log10(conv) + phys.ZP_AB - band.zp
+            mag = Flux2MagAB(conv) - band.zp
             return mag
 
     def k_cor(self, band_r, band_o, z=0.):
@@ -254,12 +257,6 @@ class Star:
         else:
             kcor = -2.5 * np.log10(resp_z / resp_0 / (1 + z_o)) + band_r.zp - band_o.zp
             return kcor
-
-    @staticmethod
-    def flux2AB(flux):
-        """Convert flux to AB magnitude"""
-        mag = -2.5 * np.log10(flux) + phys.ZP_AB
-        return mag
 
     @staticmethod
     def flux_to_redshift(flux, z):

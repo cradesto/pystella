@@ -16,29 +16,33 @@ def lc_wrapper(param, path=plugin_path):
 
 
 class CallBack(object):
-    def __init__(self, func, path='./', args=None, load=1):
+    def __init__(self, fname, path='./', args=None, load=1):
         self._func = None
         self._path = path
-        self._funcName = func
+        self._fname = fname
         self._args = args
-        if func is not None and load == 1:
+        if fname is not None and load == 1:
             self._func = self.find_func
 
     @property
-    def path(self):
+    def Path(self):
         return self._path
 
     @property
-    def funcName(self):
-        return self._funcName
+    def FileName(self):
+        return self._fname
 
     @property
     def FuncFile(self):
-        return self.funcName + '.py'
+        return self.FileName + '.py'
 
     @property
     def FuncFileFull(self):
-        return os.path.join(self.path, self.FuncFile)
+        return os.path.join(self.Path, self.FuncFile)
+
+    @property
+    def Func(self):
+        return self._func
 
     def get_arg(self, idx):
         if self._args is None:
@@ -84,18 +88,18 @@ class CallBack(object):
     def find_func(self):
         possibles = globals().copy()
         possibles.update(locals())
-        method = possibles.get(self.funcName)
+        method = possibles.get(self.FileName)
 
         if not method and os.path.isfile(self.FuncFileFull):  # find in files
-            sys.path.append(self.path)
-            py_mod = __import__(self.funcName, fromlist=['run', 'plot'])
+            sys.path.append(self.Path)
+            py_mod = __import__(self.FileName, fromlist=['run', 'plot'])
             if hasattr(py_mod, 'run'):
-                method = getattr(__import__(self.funcName), 'run')
+                method = getattr(__import__(self.FileName), 'run')
             elif hasattr(py_mod, 'plot'):
-                method = getattr(__import__(self.funcName), 'plot')
+                method = getattr(__import__(self.FileName), 'plot')
 
         if not method:
-            raise Exception("Method %s not implemented" % self._funcName)
+            raise Exception("Method %s not implemented" % self._fname)
 
         return method
 

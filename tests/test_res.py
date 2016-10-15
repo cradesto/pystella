@@ -1,11 +1,7 @@
 import re
-from os.path import dirname, abspath, join
 import unittest
+from os.path import dirname, abspath, join
 
-import matplotlib.pyplot as plt
-from matplotlib import gridspec
-
-from pystella.model import sn_swd
 from pystella.model.stella import Stella
 
 __author__ = 'bakl'
@@ -51,7 +47,7 @@ class TestStellaRes(unittest.TestCase):
         pattern = map(str.strip, pattern)
         p = r"(.*?)\s*=\s+([-+]?\d*\.\d+|\d+)"
         for line in pattern:
-            res = re.findall(p,line)
+            res = re.findall(p, line)
             if len(res) > 0:
                 for k, v in res:
                     print "key: %s  v: %f " % (k, float(v))
@@ -67,6 +63,7 @@ class TestStellaRes(unittest.TestCase):
 
         tmp = 15.
         self.assertEquals(info.E, tmp, "Ebstht [%f] should be %f" % (info.E, tmp))
+
 
 def main():
     unittest.main()

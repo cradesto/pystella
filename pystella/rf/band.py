@@ -26,7 +26,7 @@ class Band(object):
         self.zp = None  # zero points
         self.file_zp = 'filters.dat'  # file with zero points data
         if fname is not None and load == 1:
-            self.read()
+            self.load()
 
     @property
     def freq(self):
@@ -61,7 +61,7 @@ class Band(object):
     def __repr__(self):
         return "%s" % self.name
 
-    def read(self):
+    def load(self):
         """Reads the waves and response from file. Read zero point"""
         if self.file is not None:
             f = open(self.file)
@@ -69,8 +69,6 @@ class Band(object):
                 # lines = f.readlines()
                 lines = [str.strip(line) for line in f.readlines() if not line.startswith('#')]
                 wl = np.array([float(string.split(line)[0]) for line in lines if len(line) > 0])
-                # wl = np.array([float(string.split(line)[0]) ])
-
                 self._resp = np.array([float(string.split(line)[1]) for line in lines if len(line) > 0])
                 self.wl = wl * phys.angs_to_cm
             # except Exception:
@@ -103,7 +101,8 @@ class Band(object):
         """
         print >> out, '-' * 80
         print >> out, "Band: ", self.name
-        print >> out, "wave length = %.3f, %3.f " % (min(self.wl) * 1e8, max(self.wl) * 1e8)
+        print >> out, "wave length = %.3f, %3.f " % self.wave_range * 1e8
+        # print >> out, "wave length = %.3f, %3.f " % (min(self.wl) * 1e8, max(self.wl) * 1e8)
         print >> out, ""
 
 

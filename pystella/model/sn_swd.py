@@ -53,9 +53,9 @@ class StellaShockWaveDetail:
     def Name(self):
         return self._name
 
-    def read(self):
+    def load(self):
         """
-        Read swd-file
+        Load datd from swd-file
         :return:
         """
         fname = os.path.abspath(os.path.join(self._path, self._name + ".swd"))

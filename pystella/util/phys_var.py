@@ -24,8 +24,8 @@ class phys:
     pc = 206265 * AU
     R_sun = 6.957e10  # cm
     M_sun = 1.99e33  # g
-    L_sun = 3.828e33  # ergs
-    Mag_sun = 4.74
+    L_sun = 3.8270e33  # ergs  # see https://sites.google.com/site/mamajeksstarnotes/bc-scale
+    Mag_sun = 4.7554
 
     FOE = 1.e51  # ergs
 

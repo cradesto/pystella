@@ -51,10 +51,8 @@ class TestStar(unittest.TestCase):
                                         Now mag is %f for band %s. ZP is %f" % (mag, b, phys.ZP_AB))
 
     def test_check_band_zp_ps1(self):
-        bands = ['gps1', 'zps1', 'rps1', "ips1", "y", "w"]
+        bands = ['PS1g', 'PS1z', 'PS1r', "PS1i", "y", "w"]
         star = Star('test', self.sp)
-        # star.set_radius_ph(self.distance)
-        # star.set_distance(self.distance)
         for n in bands:
             b = band.band_by_name(n)
             mag = star.flux_to_magAB(b)
@@ -100,7 +98,7 @@ class TestStar(unittest.TestCase):
                             Now k_kor is %f for band-rest %s and band-obs %s." % (z, k_cor, b_r, b_o))
 
     def test_Lum2MagBol(self):
-        L_sun = 4e33
+        L_sun = 3.827e33
         m = rf.Lum2MagBol(L_sun)
         self.assertAlmostEqual(m, phys.Mag_sun,
                                msg="Absolute magnitude of Sun is %f. \
@@ -108,10 +106,10 @@ class TestStar(unittest.TestCase):
         # Vega, see http://iopscience.iop.org/article/10.1088/0004-637X/708/1/71/meta
         L = 40.34 * phys.L_sun
         m = rf.Lum2MagBol(L)
-        m_vega = 0.582  # absolute visual magnitude, see http://iopscience.iop.org/article/10.1088/0004-6256/136/1/452/meta
-        self.assertAlmostEqual(m, phys.Mag_sun,
-                               msg="Absolute magnitude of Vega is %f. \
-                                 You have  m = %f." % (m_vega, m), delta=0.05)
+        # absolute visual magnitude, see http://iopscience.iop.org/article/10.1088/0004-6256/136/1/452/meta
+        m_vega = 0.582
+        self.assertAlmostEqual(m, m_vega, msg="Absolute magnitude of Vega is %4.3f. You have  m = %4.3f." % (m_vega, m),
+                               delta=0.05)
 
 
 def main():

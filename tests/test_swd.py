@@ -20,14 +20,14 @@ class TestStellaShockWaveDetail(unittest.TestCase):
     def test_reading(self):
         nzon = 100
         ntimes = 20
-        self.swd.read()
+        self.swd.load()
         self.assertEquals(self.swd.Nzon, nzon, "Error in zon setting: swd.Nzon=%d, but should be %d"
                           % (self.swd.Nzon, nzon))
         self.assertEquals(self.swd.Ntimes, ntimes, "Error in time reading: swd.Ntimes=%d, but should be %d"
                           % (self.swd.Ntimes, ntimes))
 
     def test_reading_block(self):
-        self.swd.read()
+        self.swd.load()
         time = 2.
         idx, t = self.swd.time_nearest(time)
         b = self.swd.block_nearest(time)
@@ -38,8 +38,9 @@ class TestStellaShockWaveDetail(unittest.TestCase):
         # self.assertTrue(np.all([b.Tau[i] < b.Tau[i+1] for i in range(0, b.Nzon-1)]),
         #                 "The Tau should be a monotonically increasing function")
 
+    @unittest.skip("just for plot")
     def test_block_plot(self):
-        self.swd.read()
+        self.swd.load()
         time = 2.
         idx, t = self.swd.time_nearest(time)
         b = self.swd.block_nearest(time)
@@ -61,8 +62,9 @@ class TestStellaShockWaveDetail(unittest.TestCase):
         # self.assertTrue(np.all([b.Tau[i] < b.Tau[i+1] for i in range(0, b.Nzon-1)]),
         #                 "The Tau should be a monotonically increasing function")
 
+    @unittest.skip("just for plot")
     def test_block_plot_many(self):
-        self.swd.read()
+        self.swd.load()
         times = [1., 2., 3.]
 
         fig = plt.figure(num=None, figsize=(8, 12), dpi=100, facecolor='w', edgecolor='k')

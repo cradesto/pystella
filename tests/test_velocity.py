@@ -10,6 +10,7 @@ __author__ = 'bakl'
 
 
 class TestVelocity(unittest.TestCase):
+    @unittest.skip("just for plot")
     def test_velocity(self):
         fig = plt.figure(num=None, figsize=(12, 8), dpi=100, facecolor='w', edgecolor='k')
         gs1 = gridspec.GridSpec(4, 1)

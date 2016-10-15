@@ -17,15 +17,17 @@ class BandTests(unittest.TestCase):
             b = band.band_by_name(n)
             self.assertTrue(b is not None, "Band %s does not exist." % b)
 
-        bands = ['U_UVOT', 'B_UVOT', 'V_UVOT', 'UVM2', "UVW1", "UVW2"]
+        bands4 = dict(UVM2="photonUVM2.dat", UVW1="photonUVW1.dat", UVW2="photonUVW2.dat",
+                      UVOTU="photonU_UVOT.dat", UVOTB="photonB_UVOT.dat", UVOTV="photonV_UVOT.dat")
+        bands = ['UVOTU', 'UVOTB', 'UVOTV', 'UVM2', "UVW1", "UVW2"]
         for n in bands:
             b = band.band_by_name(n)
             self.assertTrue(b is not None, "Band %s does not exist." % b)
 
     def test_zero_point(self):
-        zp = 13.9168580779  # for KAIT U
+        zp = 0.790  # 13.9168580779  for KAIT U
         b = band.band_by_name('U')
-        self.assertAlmostEqual(b.zp, zp, "Zero points of band %s equals %f. Should be %f" % (b, b.zp, zp))
+        self.assertAlmostEqual(b.zp, zp, "Zero points of band %s equals %f. Should be %f" % (b.name, b.zp, zp))
 
     def test_band_uniform(self):
         b = band.BandUni()
