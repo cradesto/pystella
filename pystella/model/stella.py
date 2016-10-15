@@ -4,6 +4,7 @@ import math
 from pystella.model.sn_res import StellaRes
 from pystella.model.sn_swd import StellaShockWaveDetail
 from pystella.rf.spectrum import SeriesSpectrum, Spectrum
+from pystella.model.sn_eve import StellaEve
 
 __author__ = 'bakl'
 
@@ -59,6 +60,12 @@ class Stella:
 
     def set_series_spec(self, ss):
         self._serial_spec = ss
+
+    def get_eve(self, name, path=None):
+        if path is None:
+            path = self.path
+        eve = StellaEve(name, path=path)
+        return eve
 
     def get_res(self):
         return StellaRes(self.name, self.path)

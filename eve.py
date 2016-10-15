@@ -83,7 +83,7 @@ def main(name=''):
 
     eve = sneve.StellaEve(name, path=path)
     if eve.is_rho_data:
-        eve.rho_load()
+        eve.load()
         eve.plot_chem(elements=elements, ylim=[-6, 0.], is_save=is_save_plot)
     else:
         eve.show_info()

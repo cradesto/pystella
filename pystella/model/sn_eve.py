@@ -11,16 +11,19 @@ logger.setLevel(logging.INFO)
 __author__ = 'bakl'
 
 eve_elements = map(str.strip, "Ni56 H He C N O Ne Na  Mg  Al  Si  S  Ar  Ca  Fe  Ni".split())
-eve_colors = dict(Ni56="black", H="blue", He="magenta", C="coral", N="red",
-                  O="cyan", Ne="green", Na="sandybrown",
-                  Mg="skyblue", Si="violet", Al="lime",
-                  S="indigo", Ar="olive", Ca="purple",
-                  Fe='maroon', Ni='steelblue')
-eve_lntypes = dict((k, '-') for k, v in eve_colors.items())  # no y-shift
-eve_lntypes['O'] = '--'
-eve_lntypes['Ni'] = '--'
-eve_lntypes['Si'] = '--'
-eve_lntypes['Fe'] = '--'
+eve_colors = dict(Ni56="red", H="blue", He="cyan", C="darkorange", N="coral",
+                  O="violet", Ne="green", Na="sandybrown",
+                  Mg="skyblue", Si="olive", Al="lime",
+                  S="indigo", Ar="brown", Ca="purple",
+                  Fe='maroon', Ni='magenta')
+eve_lntypes = dict((k, '--') for k, v in eve_colors.items())  # no y-shift
+eve_lntypes['H'] = '-'
+eve_lntypes['He'] = '-'
+eve_lntypes['O'] = '-'
+eve_lntypes['C'] = '-'
+eve_lntypes['Ni56'] = '-'
+# eve_lntypes['Si'] = '-'
+# eve_lntypes['Fe'] = '-'
 
 
 class StellaEve:
@@ -63,7 +66,7 @@ class StellaEve:
         ext = ['rho']
         return any(map(os.path.isfile, [os.path.join(self.path, self.name + '.' + e) for e in ext]))
 
-    def rho_load(self):
+    def load(self):
         if not self.is_rho_data:
             logger.error(' No rho-data for %s' % self.rho_file)
             return None

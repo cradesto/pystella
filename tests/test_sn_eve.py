@@ -10,7 +10,7 @@ class SnEveTests(unittest.TestCase):
         name = 'cat_R1000_M15_Ni007'
         path = join(dirname(abspath(__file__)), 'data', 'stella')
         eve = StellaEve(name, path=path)
-        data = eve.rho_load()
+        data = eve.load()
         self.assertIsNotNone(data, "Rho-file have not been loaded: %s." % eve.rho_file)
 
         # self.assertAlmostEqual(b.zp, zp, "Zero points of band %s equals %f. Should be %f" % (b, b.zp, zp))
@@ -19,7 +19,7 @@ class SnEveTests(unittest.TestCase):
         name = 'cat_R1000_M15_Ni007'
         path = join(dirname(abspath(__file__)), 'data', 'stella')
         eve = StellaEve(name, path=path)
-        eve.rho_load()
+        eve.load()
         eve.plot_chem()
 
         # self.assertAlmostEqual(b.zp, zp, "Zero points of band %s equals %f. Should be %f" % (b, b.zp, zp))
