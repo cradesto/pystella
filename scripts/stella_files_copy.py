@@ -13,7 +13,7 @@ __author__ = 'bakl'
 stl_exts = ('tt', 'res', 'ph', 'swd')
 
 
-def simplecopy(dir_src, dir_target, ext_ptn, ext):
+def simplecopy(dir_src, dir_target, ext_ptn, ext, is_force=False):
     enew = '.' + ext.replace('.', '')
     eold = '.' + ext_ptn.replace('.', '')
     files = [f for f in listdir(dir_src) if isfile(os.path.join(dir_src, f)) and f.endswith(eold)]
@@ -23,10 +23,28 @@ def simplecopy(dir_src, dir_target, ext_ptn, ext):
         sfull = os.path.join(dir_src, s)
         tfull = os.path.abspath(os.path.join(dir_target, s))
         if isfile(os.path.join(dir_src, s)):
-            print 'Copy: %s to %s' % (sfull, tfull)
-            copyfile(sfull, tfull)
+            if not isfile(tfull):
+                print 'Copy: %s to %s' % (sfull, tfull)
+                copyfile(sfull, tfull)
+            elif is_force:
+                print 'Force copy: %s to %s' % (sfull, tfull)
+                copyfile(sfull, tfull)
+            else:
+                print ' File exist:  %s' % tfull
         else:
             print '  no file: %s' % sfull
+
+
+def catcopy(dir_src, dir_target, ext='tt', exts=stl_exts, is_force=False):
+    if not (os.path.isdir(dir_src) and os.path.exists(dir_src)):
+        print "No source directory: " + dir_src
+        sys.exit(2)
+    if not (os.path.isdir(dir_target) and os.path.exists(dir_target)):
+        print "No target directory: " + dir_target
+        sys.exit(2)
+
+    for e in exts:
+        simplecopy(dir_src, dir_target, ext, e, is_force)
 
 
 def usage():
@@ -38,18 +56,7 @@ def usage():
     print "  -e <extension to copy>, default: swd or %s" % '-'.join(stl_exts)
     print "  -m <cat>. if mode is 'cat', then copy %s-files to target.  Default: simple copy" % '-'.join(stl_exts)
     print "  -o <pattern extension>. Default: tt"
-
-
-def catcopy(dir_src, dir_target, ext='tt', exts=stl_exts):
-    if not (os.path.isdir(dir_src) and os.path.exists(dir_src)):
-        print "No source directory: " + dir_src
-        sys.exit(2)
-    if not (os.path.isdir(dir_target) and os.path.exists(dir_target)):
-        print "No target directory: " + dir_target
-        sys.exit(2)
-
-    for e in exts:
-        simplecopy(dir_src, dir_target, ext, e)
+    print "  -f. Rewrite target file, even exist. Default: missed"
 
 
 def main():
@@ -59,9 +66,10 @@ def main():
     ext = 'swd'
     dir_src = '/home/bakl/Sn/Release/seb_git/run/strad/'
     mode = None
+    is_force = False
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "e:h:m:o:p:t:")
+        opts, args = getopt.getopt(sys.argv[1:], "fe:h:m:o:p:t:")
     except getopt.GetoptError as err:
         print str(err)  # will print something like "option -a not recognized"
         usage()
@@ -72,6 +80,9 @@ def main():
         sys.exit(2)
 
     for opt, arg in opts:
+        if opt == '-f':
+            is_force = True
+            continue
         if opt == '-e':
             ext = str.strip(arg)
             exts = map(str.strip, str(arg).split('-'))
@@ -99,9 +110,9 @@ def main():
             sys.exit(2)
 
     if mode == 'cat':
-        catcopy(dir_src, dir_target, ext_ptn, exts)
+        catcopy(dir_src, dir_target, ext_ptn, exts, is_force)
     else:
-        simplecopy(dir_src, dir_target, ext_ptn, ext)
+        simplecopy(dir_src, dir_target, ext_ptn, ext, is_force)
 
 
 if __name__ == '__main__':
