@@ -85,7 +85,7 @@ def usage():
     print "  -i <model name>.  Example: cat_R450_M15_Ni007_E7"
     print "  -p <model directory>, default: ./"
     print "  -e <extinction, E(B-V)> is used to define A_nu, default: 0 "
-    print "  -c <callback> [plot_tolstov, popov[:R:M:E:Mni]]. You can add parameters in format func:params"
+    print "  -c <callback> [plot_tolstov, popov[:R:M:E[FOE]:Mni]]. You can add parameters in format func:params"
     print "  -d <distance> [pc].  Default: 10 pc"
     print "  -m <magnification>.  Default: None, used for grav lens"
     print "  -q  turn off quiet mode: print info and additional plots"
@@ -123,7 +123,7 @@ def main(name='', model_ext='.ph'):
 
     label = None
     fsave = None
-    t_diff = 1.0001
+    t_diff = 1.0003
     # path = ''
     path = os.getcwd()
     z = 0

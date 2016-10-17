@@ -16,7 +16,7 @@ __author__ = 'bakl'
 
 
 def usage():
-    print "Print info from stella files"
+    print "Print info from stella res-files"
     print "Usage:"
     print "  %s [params]" % __file__
     print "  -p <directory with models>"

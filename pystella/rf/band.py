@@ -148,7 +148,7 @@ def get_full_path(fname):
 
 
 def bands_colors():
-    colors = dict(U="blue", B="cyan", V="black", R="red", I="magenta",
+    colors = dict(U="blue", B="cyan", V="darkgreen", R="red", I="magenta",
                   J="green", H="cyan", K="black",
                   UVM2="skyblue", UVW1="orange", UVW2="blue",
                   F105W="magenta", F435W="skyblue",  F606W="cyan", F125W="g", F140W="orange", F160W="r", F814W="blue",

@@ -2,6 +2,7 @@ from scipy import interpolate
 import numpy as np
 from scipy.integrate import simps as integralfunc
 
+from pystella.rf import band
 from pystella.rf.rad_func import Flux2MagAB
 from pystella.util.phys_var import phys
 
@@ -162,11 +163,11 @@ class Star:
         a = integralfunc(flux_spline * band.resp * wl_b, wl_b) / (phys.c * phys.cm_to_angs) / phys.h
         return a
 
-    def _response_nu(self, band, is_b_spline=True):
+    def _response_nu(self, b, is_b_spline=True):
         """
         Compute response flux using provided spectral band.
         see: http://www.astro.ljmu.ac.uk/~ikb/research/mags-fluxes/
-        :param band:  photometric band
+        :param b:  photometric band
         :param is_b_spline:  the method of interpolation
         :return: :raise ValueError:
         """
@@ -178,8 +179,8 @@ class Star:
         nu_s = nu_s[sorti]
         flux = flux[sorti]
 
-        nu_b = np.array(band.freq[::-1])
-        resp_b = np.array(band.resp)
+        nu_b = np.array(b.freq[::-1])
+        resp_b = np.array(b.resp)
 
         if min(nu_s) > nu_b[0] or max(nu_s) < nu_b[-1]:
             # decrease wave length range of the band
@@ -198,11 +199,13 @@ class Star:
             flux_spline = np.interp(nu_b, nu_s, flux, 0, 0)  # One-dimensional linear interpolation.
 
         a = integralfunc(flux_spline * resp_b / nu_b, nu_b)
-        b = integralfunc(resp_b / nu_b, nu_b)
-        if a / b < 0:
-            raise ValueError("Spectrum should be more 0: " + str(a / b))
+        d = integralfunc(resp_b / nu_b, nu_b)
+        if a / d < 0:
+            raise ValueError("Spectrum should be more 0: " + str(a / d))
 
-        return a / b
+        if b.name == band.BAND_BOL_NAME:
+            return a
+        return a / d
 
     def flux_to_mag_not_checked(self, band):
         conv = self._response_lmb(band)
