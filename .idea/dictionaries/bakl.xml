@@ -16,6 +16,7 @@
       <w>bset</w>
       <w>caretright</w>
       <w>caretup</w>
+      <w>catcopy</w>
       <w>coef</w>
       <w>conv</w>
       <w>darkseagreen</w>
@@ -26,6 +27,7 @@
       <w>emubvir</w>
       <w>errorbar</w>
       <w>etot</w>
+      <w>exts</w>
       <w>facecolor</w>
       <w>fcut</w>
       <w>fjac</w>
@@ -75,6 +77,7 @@
       <w>snpy</w>
       <w>snrefsdal</w>
       <w>starrs</w>
+      <w>strad</w>
       <w>suprime</w>
       <w>swiftuvot</w>
       <w>tcol</w>
