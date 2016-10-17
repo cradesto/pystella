@@ -20,8 +20,13 @@ def simplecopy(dir_src, dir_target, ext_ptn, ext):
     for f in files:
         filename, file_extension = os.path.splitext(f)
         s = filename+enew
-        print 'Copy: %s to %s' % (os.path.join(dir_src, s), os.path.join(dir_target, s))
-        copyfile(os.path.join(dir_src, s), os.path.abspath(os.path.join(dir_target, s)))
+        sfull = os.path.join(dir_src, s)
+        tfull = os.path.abspath(os.path.join(dir_target, s))
+        if isfile(os.path.join(dir_src, s)):
+            print 'Copy: %s to %s' % (sfull, tfull)
+            copyfile(sfull, tfull)
+        else:
+            print '  no file: %s' % sfull
 
 
 def usage():
