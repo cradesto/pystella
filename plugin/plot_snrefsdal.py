@@ -71,7 +71,7 @@ def plot(ax, dic=None):
     z = 0.
     arg = None
     jd_shift = None
-    im = 'S2'
+    im = 'S1'
     glens = grav_lens_def
 
     if 'args' in dic:

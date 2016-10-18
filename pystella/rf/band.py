@@ -3,6 +3,8 @@ import sys
 import numpy as np
 import string
 from os.path import dirname
+from scipy.integrate import simps as integralfunc
+
 from pystella.util.phys_var import phys
 from pystella.util.arr_dict import merge_dicts
 
@@ -43,6 +45,13 @@ class Band(object):
     @property
     def Name(self):
         return self.name
+
+    @property
+    def Norm(self):
+        nu_b = np.array(self.freq[::-1])
+        resp_b = np.array(self.resp)
+        d = integralfunc(resp_b / nu_b, nu_b)
+        return d
 
     @wl.setter
     def wl(self, wl):
@@ -121,6 +130,10 @@ class BandUni(Band):
         self.wl = wl  # wavelength of response [cm]
         self.resp = np.ones(len(wl))  # response
         self.zp = 0.
+
+    @property
+    def Norm(self):
+        return 1.
 
 
 def read_zero_point(fname, ptn_file):

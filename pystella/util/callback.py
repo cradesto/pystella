@@ -117,3 +117,36 @@ class CallBack(object):
 
     def run(self):
         self._func(self._args)
+
+
+class CallBackArray(CallBack):
+    def __init__(self, calls, fname=None):
+        super(CallBackArray, self).__init__(fname)
+        self._calls = calls
+
+    def get_arg(self, idx):
+        return super(CallBackArray, self).get_arg(idx)
+
+    def set_arg(self, idx, val):
+        super(CallBackArray, self).set_arg(idx, val)
+        return self
+
+    def add_arg(self, val):
+        super(CallBackArray, self).add_arg(val)
+
+    def put_args(self, args):
+        super(CallBackArray, self).put_args(args)
+
+    def plot(self, ax, dic=None):
+        if dic is None:
+            dic = {}
+
+        if self._args is not None:
+            dic['args'] = self._args[:]
+
+        for c in self._calls:
+            c.plot(ax, dic)
+
+    def run(self):
+        for c in self._calls:
+            c.run(self._args)

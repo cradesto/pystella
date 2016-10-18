@@ -32,6 +32,7 @@ def reddening_law(ebv, bands, law=law_default):
     :return: dictionary of extinction for the bands
     """
     # see http://iopscience.iop.org/article/10.1088/0004-637X/737/2/103/meta
+    print "Reddening law [%s] Ebv=%6.3f " % (law, ebv)
 
     ext_all, laws = read_data()
     if law not in laws:
@@ -55,7 +56,7 @@ def reddening_law_z(ebv, bands, z, law=law_default):
     # ext_dic = dict(zip(ext_all['band'], ext_all['Rv3.1']))
 
     ext = {}
-    print "Extinction law for z=%f" % z
+    print "Reddening law [%s] Ebv=%6.3f for z=%6.3f" % (law, ebv, z)
     for b in bands:
         alias = bands_alias[b]
         lmb_rest = lmb_dic[alias] / (1. + z)

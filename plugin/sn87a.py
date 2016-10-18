@@ -16,13 +16,15 @@ def plot(ax, dic=None):
     if dic is not None and 'args' in dic:
         arg = dic['args']
 
+    jd_shift = -2446850.
+    mshift = 0.
     if len(arg) > 0:
-        jd_shift = float(arg.pop(0))
-    else:
-        jd_shift = -2446850.
+        jd_shift += float(arg.pop(0))
+    if len(arg) > 0:
+        mshift = float(arg.pop(0))
 
-    print "Plot Sn 1987A  jd_shift=%f  path: %s" % (jd_shift, sn_path)
-    plot_ubv(ax=ax, path=sn_path, jd_shift=jd_shift)
+    print "Plot Sn 1987A  jd_shift=%f  mshift=%f path: %s" % (jd_shift, mshift, sn_path)
+    plot_ubv(ax=ax, path=sn_path, jd_shift=jd_shift, mshift=mshift)
 
 
 def plot_vels_sn87a(ax, path, z=0):
@@ -56,7 +58,7 @@ def plot_ubv(ax, path, jd_shift=0., mshift=0.):
         y = lc.Mag + mshift
         bcolor = colors[lc.Band.Name]
         ax.plot(x, y, label='%s SN 1987A' % lc.Band.Name,
-                ls=".", color=bcolor, markersize=6, marker=".")
+                ls="", color=bcolor, markersize=6, marker=".")
 
 
 def read_curves(path=sn_path):

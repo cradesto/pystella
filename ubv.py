@@ -31,7 +31,7 @@ def plot_all(models_vels, models_dic, bands, call=None, xlim=None, ylim=None,
 
     # setup figure
     plt.matplotlib.rcParams.update({'font.size': 14})
-    fig = plt.figure(num=None, figsize=(7, 11), dpi=100, facecolor='w', edgecolor='k')
+    fig = plt.figure(num=None, figsize=(12, 12), dpi=100, facecolor='w', edgecolor='k')
 
     if is_vel:
         gs1 = gridspec.GridSpec(4, 1)
@@ -171,7 +171,10 @@ def main(name='', model_ext='.ph'):
                     sys.exit(2)
             continue
         if opt == '-c':
-            callback = lc_wrapper(str(arg))
+            c = lc_wrapper(str(arg))
+            if callback is not None:
+                c = cb.CallBackArray((callback, c))
+            callback = c
             continue
         if opt == '-q':
             is_quiet = False

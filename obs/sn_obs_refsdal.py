@@ -387,7 +387,7 @@ def plot_all(models_vels, models_dic, bands, call=None, xlim=None, ylim=None,
     is_vel = models_vels is not None
 
     # setup figure
-    plt.matplotlib.rcParams.update({'font.size': 14})
+    plt.matplotlib.rcParams.update({'font.size': 16})
     fig = plt.figure(num=None, figsize=(7, 11), dpi=100, facecolor='w', edgecolor='k')
 
     if is_vel:
@@ -398,7 +398,7 @@ def plot_all(models_vels, models_dic, bands, call=None, xlim=None, ylim=None,
         gs1 = gridspec.GridSpec(1, 1)
         axUbv = fig.add_subplot(gs1[0, 0])
         axVel = None
-    gs1.update(wspace=0.3, hspace=0.3, left=0.1, right=0.95)
+    gs1.update(wspace=0.5, hspace=0.5, left=0.1, right=0.95)
 
     # plot the light curves
     lc_min = lcf.plot_ubv_models(axUbv, models_dic, bands, band_shift=band_shift, xlim=xlim, ylim=ylim,
@@ -421,7 +421,7 @@ def plot_all(models_vels, models_dic, bands, call=None, xlim=None, ylim=None,
 
     # finish plot
     axUbv.set_ylabel('Magnitude')
-    # axUbv.set_xlabel('Time [days]')
+    axUbv.set_xlabel('Time [days]')
 
     axUbv.legend(prop={'size': 8}, loc=2, ncol=4)
     # ax.set_title(bset)
@@ -539,7 +539,6 @@ def old_run_S4(name, path, bands, e, z, distance, magnification, callback, xlim,
 
 
 def run_S4_curves(name, path, bands, e, z, distance, magnification, callback, xlim, is_save, is_SX):
-
     glens = callback.get_arg(2)
     if glens is None:
         glens = sn_obs.grav_lens_def
@@ -622,13 +621,15 @@ def run_curves_grid(name, path, bands, e, z, distance, mgf, xlim, is_save):
 
 def run_ubv_vel(name, path, bands, e, z, distance, magnification, xlim, callback=None,
                 is_vel=False, is_save=False):
-    if e > 0:
-        if z > 1:
-            ext = extinction.reddening_law_z(ebv=e, bands=bands, z=z)
-        else:
-            ext = extinction.reddening_law(ebv=e, bands=bands)
+    ext = None
+    if np.isscalar(e):
+        if e > 0.:
+            if z > 1:
+                ext = extinction.reddening_law_z(ebv=e, bands=bands, z=z, law='Rv4.1')
+            else:
+                ext = extinction.reddening_law(ebv=e, bands=bands, law='Rv4.1')
     else:
-        ext = None
+        ext = e
 
     models_mags = {}
     models_vels = {}
@@ -648,9 +649,14 @@ def run_ubv_vel(name, path, bands, e, z, distance, magnification, xlim, callback
         print "Finish mags: %s " % name
 
     if callback is not None:
-        t = "ts=%s z=%4.2f D=%6.2e mu=%3.1f ebv=%4.2f" % (callback.arg_totext(0), z, distance, magnification, e)
+        t = "ts=%s z=%4.2f D=%6.2e mu=%3.1f" % (callback.arg_totext(0), z, distance, magnification)
     else:
-        t = "z=%4.2f D=%6.2e mu=%3.1f ebv=%4.2f" % (z, distance, magnification, e)
+        t = "z=%4.2f D=%6.2e mu=%3.1f" % (z, distance, magnification)
+
+    if np.isscalar(e):
+        t += " ebv=%4.2f" % e
+    elif len(e) > 0:
+        t += " Ebv"
 
     fsave = None
     if is_save:
@@ -792,6 +798,20 @@ def main(name=''):
             continue
 
     print "Plot magnitudes on z=%f at distance=%e [cosmology D(z)=%s Mpc]" % (z, distance, cosmology_D_by_z(z))
+
+    ##  debug
+    # e = 0.16
+    # if e > 0:
+    #     if z > 1:
+    #         ext = extinction.reddening_law_z(ebv=e, bands=bands, z=z)
+    #     else:
+    #         ext = extinction.reddening_law(ebv=e, bands=bands)
+    # else:
+    #     ext = None
+    #
+    # run_ubv_vel('14E1nommixaa', path, bands=bands, e=ext, z=0, distance=51.4e3, magnification=1.,
+    #             xlim=[-5, 200], callback=callback, is_vel=True)
+    # sys.exit(2)
 
     if is_BV:
         run_BV(name, path, bands, e, z, distance, magnification, callback, xlim=xlim, is_save=is_save)

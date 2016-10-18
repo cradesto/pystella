@@ -12,17 +12,19 @@ sn_path = os.path.expanduser('~/Sn/Release/svn_kepler/stella/branches/lucy/run/r
 
 
 def plot(ax, dic=None):
+    jd_shift = 0.  # -2451482.  # for date 30/10/1999
+    m_shift = 0.  # DM = 29.4  d=7.8 Mpc
     arg = []
     if dic is not None and 'args' in dic:
         arg = dic['args']
 
     if len(arg) > 0:
         jd_shift = float(arg.pop(0))
-    else:
-        jd_shift = -2451482.  # for date 30/10/1999
+    if len(arg) > 0:
+        m_shift = float(arg.pop(0))
 
-    print "Plot Sn 1999em  jd_shift=%f  path: %s" % (jd_shift, sn_path)
-    plot_ubv(ax=ax, path=sn_path, jd_shift=jd_shift)
+    print "Plot Sn 1987A  jd_shift=%f  mshift=%f path: %s" % (jd_shift, m_shift, sn_path)
+    plot_ubv(ax=ax, path=sn_path, jd_shift=jd_shift, mshift=m_shift)
 
 
 def plot_ubv(ax, path, jd_shift=0., mshift=0.):
@@ -33,7 +35,7 @@ def plot_ubv(ax, path, jd_shift=0., mshift=0.):
         y = lc.Mag + mshift
         bcolor = colors[lc.Band.Name]
         ax.plot(x, y, label='%s SN 1999em' % lc.Band.Name,
-                ls=".", color=bcolor, markersize=8, marker="o")
+                ls="", color=bcolor, markersize=8, marker="o")
 
 
 def read_curves(path=sn_path):

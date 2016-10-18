@@ -169,7 +169,7 @@ class Star:
         see: http://www.astro.ljmu.ac.uk/~ikb/research/mags-fluxes/
         :param b:  photometric band
         :param is_b_spline:  the method of interpolation
-        :return: :raise ValueError:
+        :return:
         """
         nu_s = self.Freq
         flux = self.FluxObs  # / phys.cm_to_angs  # to flux [erg/cm^2/A) ]
@@ -199,13 +199,14 @@ class Star:
             flux_spline = np.interp(nu_b, nu_s, flux, 0, 0)  # One-dimensional linear interpolation.
 
         a = integralfunc(flux_spline * resp_b / nu_b, nu_b)
-        d = integralfunc(resp_b / nu_b, nu_b)
-        if a / d < 0:
-            raise ValueError("Spectrum should be more 0: " + str(a / d))
+        # d = integralfunc(resp_b / nu_b, nu_b)
+        # if a / d < 0:
+        # if a < 0:
+        #     raise ValueError("Spectrum should be more 0: %f" % a)
 
-        if b.name == band.BAND_BOL_NAME:
-            return a
-        return a / d
+        # if b.name == band.BAND_BOL_NAME:
+        #     return a
+        return a
 
     def flux_to_mag_not_checked(self, band):
         conv = self._response_lmb(band)
@@ -216,15 +217,14 @@ class Star:
             mag = -2.5 * np.log10(conv) + band.zp
             return mag
 
-    def flux_to_magAB(self, band):
-        conv = self._response_nu(band)
-        if conv <= 0:
-            if conv < 0:
-                raise ValueError("Spectrum should be more 0: " + str(conv))
-            return None
+    def flux_to_magAB(self, b):
+        response = self._response_nu(b)
+        if response <= 0:
+            raise ValueError("Spectrum should be more 0: %f" % response)
+            # return None
         else:
             # mag = -2.5 * np.log10(conv) + phys.ZP_AB - band.zp
-            mag = Flux2MagAB(conv) - band.zp
+            mag = Flux2MagAB(response / b.Norm) - b.zp
             return mag
 
     def k_cor(self, band_r, band_o, z=0.):
