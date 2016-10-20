@@ -3,6 +3,7 @@ import numpy as np
 import math
 from pystella.model.sn_res import StellaRes
 from pystella.model.sn_swd import StellaShockWaveDetail
+from pystella.model.sn_tt import StellaTt
 from pystella.rf.spectrum import SeriesSpectrum, Spectrum
 from pystella.model.sn_eve import StellaEve
 
@@ -70,6 +71,9 @@ class Stella:
     def get_res(self):
         return StellaRes(self.name, self.path)
 
+    def get_tt(self):
+        return StellaTt(self.name, self.path)
+
     def get_swd(self):
         swd = StellaShockWaveDetail(self.name, self.path)
         return swd
@@ -128,27 +132,29 @@ class Stella:
         self.set_series_spec(series)
         return series
 
+    # old
     def read_tt_data(self):
-        num_line_header = 87
-        fname = os.path.join(self.path, self.name + '.tt')
-        header = ''
-        i = 0
-        with open(fname, "r") as f:
-            for line in f:
-                i += 1
-                if i < num_line_header:
-                    continue
-                if line.lstrip().startswith("time"):
-                    header = line
-                    num_line_header = i
-                    break
-        # time Tbb rbb Teff Rlast_sc R(tau2/3) Mbol MU MB MV MI MR Mbolavg  gdepos
-        # time Tbb rbb Teff Rlast_sc R(tau2/3) Mbol MU MB MV MI MR   Mbolavg  gdepos
-        if header != '':
-            names = map(str.strip, header.split())
-            names = [w.replace('R(tau2/3)', 'Rph') for w in names]
-            dtype = np.dtype({'names': names, 'formats': [np.float64] * len(names)})
-            block = np.loadtxt(fname, skiprows=num_line_header + 1, dtype=dtype)
-            return block
-        else:
-            return None
+        return self.get_tt().read()
+        # num_line_header = 87
+        # fname = os.path.join(self.path, self.name + '.tt')
+        # header = ''
+        # i = 0
+        # with open(fname, "r") as f:
+        #     for line in f:
+        #         i += 1
+        #         if i < num_line_header:
+        #             continue
+        #         if line.lstrip().startswith("time"):
+        #             header = line
+        #             num_line_header = i
+        #             break
+        # # time Tbb rbb Teff Rlast_sc R(tau2/3) Mbol MU MB MV MI MR Mbolavg  gdepos
+        # # time Tbb rbb Teff Rlast_sc R(tau2/3) Mbol MU MB MV MI MR   Mbolavg  gdepos
+        # if header != '':
+        #     names = map(str.strip, header.split())
+        #     names = [w.replace('R(tau2/3)', 'Rph') for w in names]
+        #     dtype = np.dtype({'names': names, 'formats': [np.float64] * len(names)})
+        #     block = np.loadtxt(fname, skiprows=num_line_header + 1, dtype=dtype)
+        #     return block
+        # else:
+        #     return None

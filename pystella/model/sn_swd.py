@@ -169,12 +169,16 @@ def plot_swd(ax, b, **kwargs):
     lw = 1.
     x, xlabel = b.M, 'Ejecta Mass [Msun]'
 
-    rnorm = 1.e-14
+    rnorm = 1.e14
     if 'rnorm' in kwargs:
-        rnorm = kwargs['rnorm']
+        if kwargs['rnorm'] is not None:
+            rnorm = kwargs['rnorm']
+
         if rnorm == 'sun':
-            rnorm = 1./phys.R_sun
-        x, xlabel = b.R * rnorm, 'Ejecta Radius, R%d' % int(np.log10(rnorm**-1))
+            rnorm = phys.R_sun
+            x, xlabel = b.R / rnorm, 'Ejecta Radius, [Rsun]'
+        else:
+            x, xlabel = b.R / rnorm, 'Ejecta Radius, [x10^%d cm]' % int(np.log10(rnorm))
 
     y = np.log10(b.Rho)
     ax.plot(x, y, label='Rho', color='black', ls="-", linewidth=lw)
