@@ -218,7 +218,7 @@ def run_scm(bands, distance, im, names, path, t50, t_beg, t_end, z):
             print "No enough data for %s " % name
             continue
 
-        curves = light_curve_func.compute_curves(name, path, bands, z=z, distance=distance,
+        curves = light_curve_func.curves_compute(name, path, bands, z=z, distance=distance,
                                                  t_beg=t_beg, t_end=t_end)
         v = extract_time(t50, vels['time'], vels['vel'])
         res[im]['v'] = v

@@ -187,7 +187,7 @@ def plot_bands(dict_mags, bands, title='', fname='', distance=10., is_time_point
     return ax
 
 
-def plot_curves(curves, ax=None, xlim=None, ylim=None, title=None, fname='', **kwargs):
+def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname='', **kwargs):
     is_line = 'ls' in kwargs or 'lt' not in kwargs
     ls = kwargs.pop('ls', {lc.Band.Name: '-' for lc in curves})
     lt = kwargs.pop('lt', {lc.Band.Name: 'o' for lc in curves})
@@ -307,7 +307,23 @@ def compute_mag(name, path, bands, ext=None, z=0., distance=10., magnification=1
     return mags
 
 
-def compute_curves(name, path, bands, z=0., distance=10., magnification=1.,
+def curves_save(curves, fname):
+    """
+       Save curves to CSV-format
+    :param curves:
+    :param fname:
+    :return:
+    """
+    with open(fname, 'wb') as f:
+        writer = csv.writer(f, delimiter='\t')
+        writer.writerow(['{:^8s}'.format(x) for x in ['time'] + curves.BandNames])
+        for i, (row) in enumerate(zip(curves.TimeDef, *[curves.Set[b] for b in curves.BandNames])):
+            # row = row[-1:] + row[:-1]  # make time first column
+            writer.writerow(['{:8.3f}'.format(x) for x in row])
+            # writer.writerow(['{:3.4e}'.format(x) for x in row])
+
+
+def curves_compute(name, path, bands, z=0., distance=10., magnification=1.,
                    t_beg=0., t_end=None, is_show_info=False, is_save=False):
     """
         Compute magnitude in bands for the 'name' model.
@@ -348,7 +364,7 @@ def compute_curves(name, path, bands, z=0., distance=10., magnification=1.,
 
     if is_save:
         fname = os.path.join(path, name + '.ubv')
-        curves.save(fname)
+        curves_save(curves, fname)
         print "Magnitudes have been saved to " + fname
 
     if is_show_info:
@@ -362,7 +378,7 @@ def compute_curves(name, path, bands, z=0., distance=10., magnification=1.,
     return curves
 
 
-def reddening_curves(curves, ebv, z=None, law=extinction.law_default):
+def curves_reddening(curves, ebv, z=None, law=extinction.law_default):
     if ebv < 0.:
         raise ValueError("ebv should be > 0")
 

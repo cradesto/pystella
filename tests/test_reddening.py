@@ -5,7 +5,7 @@ import numpy as np
 
 from pystella.rf import extinction
 from pystella.rf.lc import LightCurve
-from pystella.rf.light_curve_func import reddening_curves
+from pystella.rf.light_curve_func import curves_reddening
 
 __author__ = 'bakl'
 
@@ -40,7 +40,7 @@ class TestReddening(unittest.TestCase):
         ebv = 1.
         lc = lc_create(band)
         magExpect = lc.Mag + mshift  # Av for e=1.
-        reddening_curves(lc, ebv=ebv)
+        curves_reddening(lc, ebv=ebv)
         magRed = lc.Mag
         res = filter(lambda x: abs(x) > 1e-4, magExpect - magRed)
         self.assertTrue(len(res) == 0,
@@ -63,7 +63,7 @@ class TestReddening(unittest.TestCase):
         ebv = 1.
         lc = lc_create(band)
         magExpect = lc.Mag + mshift  # Av for e=1.
-        reddening_curves(lc, ebv=ebv, z=z)
+        curves_reddening(lc, ebv=ebv, z=z)
         magRed = lc.Mag
         res = filter(lambda x: abs(x) > 1e-4, magExpect - magRed)
         self.assertTrue(len(res) == 0,

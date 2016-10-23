@@ -552,14 +552,69 @@ def run_S4_curves(name, path, bands, e, z, distance, magnification, callback, xl
             #     continue
             i += 1
             mgf *= magnification
-            curves = lcf.compute_curves(name, path, bands, z=z, distance=distance, magnification=mgf,
+            curves = lcf.curves_compute(name, path, bands, z=z, distance=distance, magnification=mgf,
                                         is_show_info=False, is_save=is_save)
             if e > 0:
                 if z > 0.1:
-                    lcf.reddening_curves(curves, ebv=e, z=z)
+                    lcf.curves_reddening(curves, ebv=e, z=z)
                     # todo check reddening_curves
                 else:
-                    lcf.reddening_curves(curves, ebv=e)
+                    lcf.curves_reddening(curves, ebv=e)
+
+            models_curves[im] = curves
+            print "Finish image: %s [%d/%d]" % (im, i, len(sn_images))
+
+        mgf = sn_images['S1'] * magnification
+        if callback is not None:
+            t = "ts=%s z=%4.2f D=%6.2e mu=%3.1f ebv=%4.2f" % (callback.arg_totext(0), z, distance, mgf, e)
+        else:
+            t = "z=%4.2f D=%6.2e mu=%3.1f ebv=%4.2f" % (z, distance, mgf, e)
+
+        fsave = None
+        if is_save:
+            fsave = "ubv_%s_%s" % (glens, name)
+
+            if e > 0:
+                fsave = "%s_e0%2d" % (fsave, int(e * 100))  # bad formula for name
+
+            d = os.path.expanduser('~/')
+            # d = '/home/bakl/Sn/my/conf/2016/snrefsdal/img'
+            fsave = os.path.join(d, fsave) + '.pdf'
+
+        if is_SX:
+            plot_SX(models_curves, bands, call=callback, xlim=xlim, title=t, fsave=fsave)
+        else:
+            if is_save:  # Don't save subtitle
+                print t
+                plot_S4_curves(models_curves, bands, glens=glens, call=callback, xlim=xlim, fsave=fsave)
+            else:
+                plot_S4_curves(models_curves, bands, glens=glens, call=callback, xlim=xlim, title=t, fsave=fsave)
+    else:
+        print "There are no sn images"
+
+
+def run_plot_images_together(name, path, bands, e, z, distance, magnification, callback, xlim, is_save, is_SX):
+    glens = callback.get_arg(2)
+    if glens is None:
+        glens = sn_obs.grav_lens_def
+
+    sn_images = sn_obs.coef_magnification(glens)
+    if len(sn_images) > 0:
+        models_curves = {}  # dict((k, None) for k in names)
+        i = 0
+        for im, mgf in sn_images.items():
+            # if im == 'SX':  # pass image
+            #     continue
+            i += 1
+            mgf *= magnification
+            curves = lcf.curves_compute(name, path, bands, z=z, distance=distance, magnification=mgf,
+                                        is_show_info=False, is_save=is_save)
+            if e > 0:
+                if z > 0.1:
+                    lcf.curves_reddening(curves, ebv=e, z=z)
+                    # todo check reddening_curves
+                else:
+                    lcf.curves_reddening(curves, ebv=e)
 
             models_curves[im] = curves
             print "Finish image: %s [%d/%d]" % (im, i, len(sn_images))
@@ -602,7 +657,7 @@ def run_curves_grid(name, path, bands, e, z, distance, mgf, xlim, is_save):
     else:
         ext = None
 
-    curves_model = lcf.compute_curves(name, path, bands, ext=ext, z=z, distance=distance,
+    curves_model = lcf.curves_compute(name, path, bands, ext=ext, z=z, distance=distance,
                                       is_show_info=False, is_save=is_save)
 
     print "Read model: %s. z=%4.2f D=%6.2e mu=%3.1f ebv=%4.2f" % (name, z, distance, mgf, e)
