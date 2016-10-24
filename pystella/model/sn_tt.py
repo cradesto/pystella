@@ -31,23 +31,23 @@ class StellaTt:
         return StellaTtInfo(self.name, self.path)
         # return "%s" % self.name
 
-    def read(self):
+    def read(self, ext='tt', line_header=87):
         """
         Read tt-data
         :return: data in np.array
         """
-        num_line_header = 87
-        fname = os.path.join(self.path, self.name + '.tt')
+
+        fname = os.path.join(self.path, self.name + '.' + ext)
         header = ''
         i = 0
         with open(fname, "r") as f:
             for line in f:
                 i += 1
-                if i < num_line_header:
+                if i < line_header:
                     continue
                 if line.lstrip().startswith("time"):
                     header = line
-                    num_line_header = i
+                    line_header = i
                     break
         # time Tbb rbb Teff Rlast_sc R(tau2/3) Mbol MU MB MV MI MR Mbolavg  gdepos
         # time Tbb rbb Teff Rlast_sc R(tau2/3) Mbol MU MB MV MI MR   Mbolavg  gdepos
@@ -55,18 +55,34 @@ class StellaTt:
             names = map(str.strip, header.split())
             names = [w.replace('R(tau2/3)', 'Rph') for w in names]
             dtype = np.dtype({'names': names, 'formats': [np.float64] * len(names)})
-            block = np.loadtxt(fname, skiprows=num_line_header + 1, dtype=dtype)
+            block = np.loadtxt(fname, skiprows=line_header + 1, dtype=dtype)
             return block
         else:
             return None
 
-    def read_curves(self):
+    def read_curves_tt(self):
         block = self.read()
-        header = 'Mbol MU MB MV MI MR'.split(' ')
+        header = 'Mbol MU MB MV MI MR'.split()
         curves = SetLightCurve(self.name)
         time = block['time']
         for col in header:
             b = band.band_by_name(col.replace('M', ''))
+            mag = block[col]
+            lc = LightCurve(b, time, mag)
+            curves.add(lc)
+        return curves
+
+    def read_curves_gri(self):
+        block = self.read(ext='gri', line_header=1)
+        # header = 'L_bol    Mu        MB    Mg         Mr         Mi'.split()
+        # header = 'MB    MV'.split()
+        header = 'L_bol    Mu        MB        MV       Mg         Mr         Mi'.split()
+        # header = 'MB        MV '.split()
+        # header = 'L_bol   L_ubvgri      Mu        MB        MV       Mg         Mr         Mi'.split()
+        curves = SetLightCurve(self.name)
+        time = block['time']
+        for col in header:
+            b = band.band_by_name(col.replace('M', '').replace('L_', ''))
             mag = block[col]
             lc = LightCurve(b, time, mag)
             curves.add(lc)

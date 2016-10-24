@@ -89,8 +89,46 @@ def plot_ubv_models(ax, models_dic, bands, band_shift, xlim=None, ylim=None,
     return lc_min
 
 
-def plot_models_curves(ax, models_curves, bands, band_shift=None, xlim=None, ylim=None, lc_types=None, colors=lc_colors,
+def plot_models_curves(ax, models_curves, band_shift=None, xlim=None, ylim=None, lc_types=None, colors=lc_colors,
                        lw=2.):
+    is_compute_x_lim = xlim is None
+    is_compute_y_lim = ylim is None
+
+    if lc_types is None:
+        lc_types = dict((name, '-') for name in models_curves.keys())  # solid line
+
+    mi, ib = 0, 0
+    x_max = []
+    y_mid = []
+    for mname, curves in models_curves.iteritems():
+        mi += 1
+        bands = curves.BandNames
+        if band_shift is None:
+            mshift = dict((bname, 0.) for bname in bands)  # no y-shift
+        for bname in bands:
+            ib += 1
+            x = curves.TimeDef
+            y = curves[bname].Mag + mshift[bname]
+            ax.plot(x, y, label='%s  %s' % (lbl(bname, mshift), mname),
+                    color=colors[bname], ls=lc_types[mname], linewidth=lw)
+            if is_compute_x_lim:
+                x_max.append(np.max(x))
+            if is_compute_y_lim:
+                y_mid.append(np.min(y))
+
+    if is_compute_x_lim:
+        xlim = [-10, np.max(x_max) + 10.]
+    if is_compute_y_lim:
+        ylim = [np.min(y_mid) + 7., np.min(y_mid) - 2.]
+
+    ax.set_xlim(xlim)
+    ax.invert_yaxis()
+    ax.set_ylim(ylim)
+
+
+def plot_models_curves_fixed_bands(ax, models_curves, bands, band_shift=None, xlim=None, ylim=None, lc_types=None,
+                                   colors=lc_colors,
+                                   lw=2.):
     is_compute_x_lim = xlim is None
     is_compute_y_lim = ylim is None
 
@@ -99,7 +137,6 @@ def plot_models_curves(ax, models_curves, bands, band_shift=None, xlim=None, yli
 
     if lc_types is None:
         lc_types = dict((name, '-') for name in models_curves.keys())  # solid line
-
 
     mi, ib = 0, 0
     x_max = []
@@ -261,7 +298,8 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname='', **k
     return ax
 
 
-def compute_mag(name, path, bands, ext=None, z=0., distance=10., magnification=1., t_diff=1.05, is_show_info=True, is_save=False):
+def compute_mag(name, path, bands, ext=None, z=0., distance=10., magnification=1., t_diff=1.05, is_show_info=True,
+                is_save=False):
     """
         Compute magnitude in bands for the 'name' model.
     :param name: the name of a model and data files

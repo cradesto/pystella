@@ -1,6 +1,7 @@
 from scipy import interpolate
 import numpy as np
-from scipy.integrate import simps as integralfunc
+# from scipy.integrate import simps as integralfunc
+from scipy import integrate
 
 from pystella.rf import band
 from pystella.rf.rad_func import Flux2MagAB
@@ -160,7 +161,7 @@ class Star:
         else:
             flux_spline = np.interp(wl_b, wl_s, flux, 0, 0)  # One-dimensional linear interpolation.
 
-        a = integralfunc(flux_spline * band.resp * wl_b, wl_b) / (phys.c * phys.cm_to_angs) / phys.h
+        a = integrate.integralfunc(flux_spline * band.resp * wl_b, wl_b) / (phys.c * phys.cm_to_angs) / phys.h
         return a
 
     def _response_nu(self, b, is_b_spline=True):
@@ -180,7 +181,7 @@ class Star:
         flux = flux[sorti]
 
         nu_b = np.array(b.freq[::-1])
-        resp_b = np.array(b.resp)
+        resp_b = np.array(b.resp[::-1])
 
         if min(nu_s) > nu_b[0] or max(nu_s) < nu_b[-1]:
             # decrease wave length range of the band
@@ -198,14 +199,7 @@ class Star:
         else:
             flux_spline = np.interp(nu_b, nu_s, flux, 0, 0)  # One-dimensional linear interpolation.
 
-        a = integralfunc(flux_spline * resp_b / nu_b, nu_b)
-        # d = integralfunc(resp_b / nu_b, nu_b)
-        # if a / d < 0:
-        # if a < 0:
-        #     raise ValueError("Spectrum should be more 0: %f" % a)
-
-        # if b.name == band.BAND_BOL_NAME:
-        #     return a
+        a = integrate.simps(flux_spline * resp_b / nu_b, nu_b)
         return a
 
     def flux_to_mag_not_checked(self, band):

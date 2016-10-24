@@ -133,8 +133,16 @@ def Lum2MagBol(l):
     return mag
 
 
-def Flux2MagAB(l):
+def Flux2MagAB(f):
     """Convert monochromatic flux [ erg sec^-1 cm^-2 Hz^-1] to AB magnitudes"""
     # ab = 3631e-23  # erg
-    mag = -2.5 * np.log10(l) + phys.ZP_AB
+    mag = -2.5 * np.log10(f) + phys.ZP_AB
     return mag
+
+
+def MagAB2Flux(ab):
+    """Convert AB magnitudes to monochromatic flux [ erg sec^-1 cm^-2 Hz^-1]
+    see http://www.jstor.org/stable/10.1086/429382
+    """
+    f = 3631e-23*10**(-0.4*ab)
+    return f

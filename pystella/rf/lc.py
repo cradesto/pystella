@@ -94,10 +94,10 @@ class SetLightCurve(object):
     def Bands(self):
         if len(self.Set) == 0:
             raise ValueError('There are no bands in SetLightCurve.')
-        for name, lc in self.Set.items():
-            yield lc.Band
-        # res = [lc.Band for name, lc in self.Set.items()]
-        # return res
+        # for name, lc in self.Set.items():
+        #     yield lc.Band
+        res = (lc.Band for name, lc in self.Set.items())
+        return res
 
     # @property
     # def Bands(self):

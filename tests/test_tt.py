@@ -1,8 +1,9 @@
 import matplotlib.pyplot as plt
 import re
 import unittest
-from matplotlib import gridspec
 from os.path import dirname, abspath, join
+
+import numpy as np
 
 from pystella.model.stella import Stella
 
@@ -13,6 +14,7 @@ __author__ = 'bakl'
 
 class TestStellaTt(unittest.TestCase):
     def setUp(self):
+        # name = 'ccsn2007bi1dNi6smE23bRlDC'
         name = 'cat_R500_M15_Ni006_E12'
         # name = 'cat_R1000_M15_Ni007_E15'
         path = join(dirname(abspath(__file__)), 'data', 'stella')
@@ -71,7 +73,7 @@ class TestStellaTt(unittest.TestCase):
         self.assertEquals(info.E, tmp, "Ebstht [%f] should be %f" % (info.E, tmp))
 
     def test_tt_vs_ph(self):
-        curves_tt = self.tt.read_curves()
+        curves_tt = self.tt.read_curves_tt()
         bands = curves_tt.BandNames
 
         serial_spec = self.stella.read_series_spectrum(t_diff=1.00001)
@@ -83,8 +85,49 @@ class TestStellaTt(unittest.TestCase):
         plt.matplotlib.rcParams.update({'font.size': 14})
         fig, ax = plt.subplots(1, 1)
 
-        lcf.plot_models_curves(ax, models_dic, bands, lc_types=lc_types, ylim=(-10, -24))
+        lcf.plot_models_curves_fixed_bands(ax, models_dic, bands, lc_types=lc_types, ylim=(-10, -24))
         # lcf.plot_models_curves(ax, models_dic, bands, lc_types=lc_types, ylim=(-10, -24), xlim=(0, 20))
+        plt.legend()
+        plt.show()
+
+    def test_gri_vs_ph(self):
+        curves_gri = self.tt.read_curves_gri()
+        bands = curves_gri.BandNames
+
+        serial_spec = self.stella.read_series_spectrum(t_diff=1.)
+        curves_ph = serial_spec.flux_to_curves(bands)
+
+        models_dic = {'gri': curves_gri, 'ph': curves_ph}
+        lc_types = {'gri': '--', 'ph': ':'}
+
+        plt.matplotlib.rcParams.update({'font.size': 14})
+        fig, ax = plt.subplots(1, 1)
+
+        # lcf.plot_models_curves_fixed_bands(ax, models_dic, bands=('r','B','V'), lc_types=lc_types, ylim=(-13, -23), lw=3)
+        lcf.plot_models_curves(ax, models_dic, lc_types=lc_types, ylim=(-10, -23), lw=3)
+        plt.legend()
+        plt.show()
+
+    def test_tt_vs_gri_vs_ph(self):
+        curves_tt = self.tt.read_curves_tt()
+        bands_tt = curves_tt.BandNames
+
+        curves_gri = self.tt.read_curves_gri()
+        bands_gri = curves_gri.BandNames
+
+        bands = np.unique(np.array(bands_tt + bands_gri))
+
+        serial_spec = self.stella.read_series_spectrum(t_diff=1.00001)
+        curves_ph = serial_spec.flux_to_curves(bands)
+
+        models_dic = {'tt': curves_tt, 'gri': curves_gri, 'ph': curves_ph}
+        lc_types = {'tt': ':', 'gri': '--', 'ph': '-'}
+
+        plt.matplotlib.rcParams.update({'font.size': 14})
+        fig, ax = plt.subplots(1, 1)
+
+        # lcf.plot_models_curves(ax, models_dic, lc_types=lc_types, ylim=(-13, -23), lw=3)
+        lcf.plot_models_curves_fixed_bands(ax, models_dic, bands=('B', 'V'), lc_types=lc_types, ylim=(-13, -23), lw=3)
         plt.legend()
         plt.show()
 

@@ -240,7 +240,7 @@ def plot_S4_curves(models_curves, bands, glens, call=None, xlim=None, ylim=None,
             xlim = ax_cache[1].get_xlim()
             ylim = ax_cache[1].get_ylim()
 
-        lcf.plot_models_curves(ax, {im: models_curves[im]}, bands, band_shift=band_shift, xlim=xlim, ylim=ylim)
+        lcf.plot_models_curves_fixed_bands(ax, {im: models_curves[im]}, bands, band_shift=band_shift, xlim=xlim, ylim=ylim)
         # plot callback
         if call is not None:
             call.plot(ax, {'glens': glens, 'image': im})

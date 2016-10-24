@@ -78,7 +78,7 @@ class Stella:
         swd = StellaShockWaveDetail(self.name, self.path)
         return swd
 
-    def read_series_spectrum(self, t_diff=1.05, t_beg=0.0, t_end=None, is_nfrus=True):
+    def read_series_spectrum(self, t_diff=1.005, t_beg=0.0, t_end=None, is_nfrus=True):
         if t_end is None:
             t_end = float('inf')
         # read first line with frequencies

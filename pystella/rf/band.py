@@ -90,6 +90,7 @@ class Band(object):
             ptn_file = os.path.basename(self.file)
             fname = os.path.join(dirname(os.path.abspath(self.file)), self.file_zp)
 
+            # self.zp = 0.
             self.zp = read_zero_point(fname, ptn_file)
 
     @property
@@ -166,8 +167,8 @@ def bands_colors():
                   UVM2="skyblue", UVW1="orange", UVW2="blue",
                   F105W="magenta", F435W="skyblue",  F606W="cyan", F125W="g", F140W="orange", F160W="r", F814W="blue",
                   Kepler="magenta",
-                  g="green", r="red", i="magenta", u="blue", z="chocolate",
-                  y='olive', w='tomato')
+                  g="olive", r="red", i="magenta", u="blue", z="chocolate",
+                  y='y', w='tomato')
     colors[BAND_BOL_NAME] = 'black'
     # for Subaru HCS: colors
     for b in list('grizy'):
@@ -178,6 +179,8 @@ def bands_colors():
 
 def bands_dict_Bessell():
     bands = dict(U="U-bessell.dat", B="B-bessell.dat", V="V-bessell.dat", R="R-bessell.dat", I="I-bessell.dat")
+    # bands = dict(U="U-bessell.dat", B="B-bessell.dat", V="Vprompt135.dat", R="R-bessell.dat", I="I-bessell.dat")
+    # bands = dict(U="U-bessell.dat", B="BD+174708.dat", V="V-bessell.dat", R="R-bessell.dat", I="I-bessell.dat")
     d = os.path.join(ROOT_DIRECTORY, "data/bands/Bessell")
     for k, v in bands.items():
         bands[k] = os.path.join(d, v)
