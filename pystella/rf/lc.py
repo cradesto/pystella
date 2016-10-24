@@ -106,18 +106,19 @@ class SetLightCurve(object):
     #     res = [lc.Band for name, lc in self.Set.items()]
     #     return res
     #
-    @property
-    def BandNames(self):
-        for b in self.Bands:
-            yield b.Name
     # @property
     # def BandNames(self):
-    #     res = [b.Name for b in self.Bands]
-    #     return res
+    #     for b in self.Bands:
+    #         yield b.Name
+    @property
+    def BandNames(self):
+        res = [b.Name for b in self.Bands]
+        return res
 
     @property
     def TimeDef(self):
-        b = next(self.BandNames)
+        # b = next(self.BandNames)
+        b = self.BandNames[0]
         return self.Set[b].Time
 
     @property

@@ -1,18 +1,23 @@
+import matplotlib.pyplot as plt
 import re
 import unittest
+from matplotlib import gridspec
 from os.path import dirname, abspath, join
 
 from pystella.model.stella import Stella
+
+from pystella.rf import light_curve_func as lcf
 
 __author__ = 'bakl'
 
 
 class TestStellaTt(unittest.TestCase):
     def setUp(self):
-        name = 'cat_R1000_M15_Ni007_E15'
+        name = 'cat_R500_M15_Ni006_E12'
+        # name = 'cat_R1000_M15_Ni007_E15'
         path = join(dirname(abspath(__file__)), 'data', 'stella')
-        stella = Stella(name, path=path)
-        self.tt = stella.get_tt()
+        self.stella = Stella(name, path=path)
+        self.tt = self.stella.get_tt()
 
     def test_info_parse(self):
         tt_header = """
@@ -64,6 +69,24 @@ class TestStellaTt(unittest.TestCase):
 
         tmp = 15.
         self.assertEquals(info.E, tmp, "Ebstht [%f] should be %f" % (info.E, tmp))
+
+    def test_tt_vs_ph(self):
+        curves_tt = self.tt.read_curves()
+        bands = curves_tt.BandNames
+
+        serial_spec = self.stella.read_series_spectrum(t_diff=1.00001)
+        curves_ph = serial_spec.flux_to_curves(bands)
+
+        models_dic = {'tt': curves_tt, 'ph': curves_ph}
+        lc_types = {'tt': '--', 'ph': '-'}
+
+        plt.matplotlib.rcParams.update({'font.size': 14})
+        fig, ax = plt.subplots(1, 1)
+
+        lcf.plot_models_curves(ax, models_dic, bands, lc_types=lc_types, ylim=(-10, -24))
+        # lcf.plot_models_curves(ax, models_dic, bands, lc_types=lc_types, ylim=(-10, -24), xlim=(0, 20))
+        plt.legend()
+        plt.show()
 
 
 def main():

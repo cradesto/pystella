@@ -387,7 +387,6 @@ class SeriesSpectrum(object):
         """
         curves = SetLightCurve(self.name)
         for n in bands:
-
             b = band.band_by_name(n)
             lc = self.flux_to_curve(b, z=z, d=d, magnification=magnification)
             curves.add(lc)

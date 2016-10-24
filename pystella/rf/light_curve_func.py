@@ -89,14 +89,18 @@ def plot_ubv_models(ax, models_dic, bands, band_shift, xlim=None, ylim=None,
     return lc_min
 
 
-def plot_models_curves(ax, models_curves, bands, band_shift=None, xlim=None, ylim=None, colors=lc_colors):
+def plot_models_curves(ax, models_curves, bands, band_shift=None, xlim=None, ylim=None, lc_types=None, colors=lc_colors,
+                       lw=2.):
     is_compute_x_lim = xlim is None
     is_compute_y_lim = ylim is None
 
     if band_shift is None:
         band_shift = dict((bname, 0) for bname in bands)  # no y-shift
 
-    lw = 1.
+    if lc_types is None:
+        lc_types = dict((name, '-') for name in models_curves.keys())  # solid line
+
+
     mi, ib = 0, 0
     x_max = []
     y_mid = []
@@ -107,7 +111,7 @@ def plot_models_curves(ax, models_curves, bands, band_shift=None, xlim=None, yli
             x = curves.TimeDef
             y = curves[bname].Mag
             ax.plot(x, y, label='%s  %s' % (lbl(bname, band_shift), mname),
-                    color=colors[bname], ls="-", linewidth=lw)
+                    color=colors[bname], ls=lc_types[mname], linewidth=lw)
             if is_compute_x_lim:
                 x_max.append(np.max(x))
             if is_compute_y_lim:

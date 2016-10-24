@@ -3,6 +3,9 @@ import numpy as np
 import os
 import re
 
+from pystella.rf import band
+from pystella.rf.lc import SetLightCurve, LightCurve
+
 __author__ = 'bakl'
 
 
@@ -56,6 +59,18 @@ class StellaTt:
             return block
         else:
             return None
+
+    def read_curves(self):
+        block = self.read()
+        header = 'Mbol MU MB MV MI MR'.split(' ')
+        curves = SetLightCurve(self.name)
+        time = block['time']
+        for col in header:
+            b = band.band_by_name(col.replace('M', ''))
+            mag = block[col]
+            lc = LightCurve(b, time, mag)
+            curves.add(lc)
+        return curves
 
 
 class StellaTtInfo:
