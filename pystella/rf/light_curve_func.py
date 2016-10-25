@@ -358,13 +358,16 @@ def curves_save(curves, fname):
     :param fname:
     :return:
     """
-    with open(fname, 'wb') as f:
-        writer = csv.writer(f, delimiter='\t')
-        writer.writerow(['{:^8s}'.format(x) for x in ['time'] + curves.BandNames])
-        for i, (row) in enumerate(zip(curves.TimeDef, *[curves.Set[b] for b in curves.BandNames])):
-            # row = row[-1:] + row[:-1]  # make time first column
-            writer.writerow(['{:8.3f}'.format(x) for x in row])
-            # writer.writerow(['{:3.4e}'.format(x) for x in row])
+    if curves.Length > 0:
+        with open(fname, 'wb') as f:
+            writer = csv.writer(f, delimiter='\t')
+            writer.writerow(['{:^8s}'.format(x) for x in ['time'] + curves.BandNames])
+            for i, (row) in enumerate(zip(curves.TimeDef, *[curves.get(b) for b in curves.BandNames])):
+                # row = row[-1:] + row[:-1]  # make time first column
+                writer.writerow(['{:8.3f}'.format(x) for x in row])
+                # writer.writerow(['{:3.4e}'.format(x) for x in row])
+    else:
+        print "Nothing to save: curves.Length=%d" % curves.Length
 
 
 def curves_compute(name, path, bands, z=0., distance=10., magnification=1.,

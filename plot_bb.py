@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 from matplotlib import gridspec
 
 from pystella.rf import spectrum, rad_func
-from pystella.util import rad_func
 from pystella.util.phys_var import phys
 
 

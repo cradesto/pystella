@@ -388,7 +388,7 @@ def plot_all(models_vels, models_dic, bands, call=None, xlim=None, ylim=None,
 
     # setup figure
     plt.matplotlib.rcParams.update({'font.size': 16})
-    fig = plt.figure(num=None, figsize=(7, 11), dpi=100, facecolor='w', edgecolor='k')
+    fig = plt.figure(num=None, figsize=(10, 12), dpi=100, facecolor='w', edgecolor='k')
 
     if is_vel:
         gs1 = gridspec.GridSpec(4, 1)
@@ -409,11 +409,12 @@ def plot_all(models_vels, models_dic, bands, call=None, xlim=None, ylim=None,
     z = 1.49
     ts = np.array([-47., 16.])  # see spectral dates in Kelly, 1512.09093
     ts *= 1. + z
-    for bname, v in lc_min.items():
-        if bname == 'F160W':
-            for t in ts:
-                axVel.axvspan(v[0] + t - dt, v[0] + t + dt, facecolor='g', alpha=0.5)
-                print "Spectral obs: t=%8.1f, tmax=%8.1f" % (v[0] + t, v[0])
+    if is_vel:
+        for bname, v in lc_min.items():
+            if bname == 'F160W':
+                for t in ts:
+                    axVel.axvspan(v[0] + t - dt, v[0] + t + dt, facecolor='g', alpha=0.5)
+                    print "Spectral obs: t=%8.1f, tmax=%8.1f" % (v[0] + t, v[0])
 
     # plot callback
     if call is not None:
@@ -432,7 +433,7 @@ def plot_all(models_vels, models_dic, bands, call=None, xlim=None, ylim=None,
     if is_vel:
         vel.plot_vels_models(axVel, models_vels, xlim=axUbv.get_xlim())
         # vel.plot_vels_sn87a(axVel, z=1.49)
-        axVel.legend(prop={'size': 8}, loc=1)
+        axVel.legend(prop={'size': 10}, loc=1)
         # for xlim in zip(x-xerr, x+xerr):
         #     axVel.axvspan(xlim[0], xlim[1], facecolor='g', alpha=0.5)
 
@@ -553,7 +554,7 @@ def run_S4_curves(name, path, bands, e, z, distance, magnification, callback, xl
             i += 1
             mgf *= magnification
             curves = lcf.curves_compute(name, path, bands, z=z, distance=distance, magnification=mgf,
-                                        is_show_info=False, is_save=is_save)
+                                        is_show_info=False, is_save=False)
             if e > 0:
                 if z > 0.1:
                     lcf.curves_reddening(curves, ebv=e, z=z)
@@ -720,7 +721,7 @@ def run_ubv_vel(name, path, bands, e, z, distance, magnification, xlim, callback
         else:
             fsave = "ubv_%s" % name
 
-        if ext is not None and ext > 0:
+        if np.isscalar(e):
             fsave = "%s_e0%2d" % (fsave, int(ext * 100))  # bad formula for name
 
         d = os.path.expanduser('~/')
