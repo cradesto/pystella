@@ -30,6 +30,8 @@ markers = markers.keys()
 def lbl(b, band_shift):
     shift = band_shift[b]
     l = b
+    if shift == int(shift):
+        shift = int(shift)
     if shift > 0:
         l += '+' + str(shift)
     elif shift < 0:
@@ -55,7 +57,7 @@ def plot_ubv_models(ax, models_dic, bands, band_shift, xlim=None, ylim=None,
         for bname in bands:
             ib += 1
             x = mdic['time']
-            y = mdic[bname]
+            y = mdic[bname] + band_shift[bname]
             bcolor = colors[bname]
 
             if len(models_dic) == 1:

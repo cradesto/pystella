@@ -24,9 +24,15 @@ ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
 
 
 def plot_all(models_vels, models_dic, bands, call=None, xlim=None, ylim=None,
-             is_time_points=False, title='', fsave=None):
+             is_time_points=False, title='', fsave=None, bshift=None):
     colors = band.bands_colors()
     band_shift = dict((k, 0) for k, v in colors.items())  # no y-shift
+    if bshift is not None:
+        for k, v in bshift.items():
+            band_shift[k] = v
+    # band_shift['UVW1'] = 3
+    # band_shift['UVW2'] = 5
+    # band_shift['i'] = -1
     is_vel = models_vels is not None
 
     # setup figure
@@ -80,8 +86,9 @@ def usage():
     bands = band.band_get_names().keys()
     print "Usage:"
     print "  ubv.py [params]"
-    print "  -b <bands>: string, default: U-B-V-R-I, for example U-B-V-R-I-u-g-i-r-z-UVW1-UVW2.\n" \
-          "     Available: " + '-'.join(sorted(bands))
+    print "  -b <bands:shift>: string, default: U-B-V-R-I, for example U-B-V-R-I-u-g-i-r-z-UVW1-UVW2.\n" \
+          "     shift: to move lc along y-axe (minus is '_', for example -b R:2-V-I:_4-B:5  \n"   \
+          "     Available bands: " + '-'.join(sorted(bands))
     print "  -i <model name>.  Example: cat_R450_M15_Ni007_E7"
     print "  -p <model directory>, default: ./"
     print "  -e <extinction, E(B-V)> is used to define A_nu, default: 0 "
@@ -123,7 +130,7 @@ def main(name='', model_ext='.ph'):
 
     label = None
     fsave = None
-    t_diff = 1.0003
+    t_diff = 1.00001
     # path = ''
     path = os.getcwd()
     z = 0
@@ -133,6 +140,7 @@ def main(name='', model_ext='.ph'):
     callback = None
     xlim = None
     ylim = None
+    bshift = None
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hqwtc:d:p:e:i:b:l:m:vs:x:y:z:")
@@ -164,11 +172,22 @@ def main(name='', model_ext='.ph'):
             is_extinction = True
             continue
         if opt == '-b':
-            bands = str(arg).split('-')
-            for b in bands:
-                if not band.band_is_exist(b):
-                    print 'No such band: ' + b
+            bands = []
+            bs = {}
+            for b in str(arg).split('-'):
+                # extract band shift
+                if ':' in b:
+                    bname, shift = b.split(':')
+                    if '_' in shift:
+                        bs[bname] = -float(shift.replace('_', ''))
+                    else:
+                        bs[bname] = float(shift)
+                else:
+                    bname = b
+                if not band.band_is_exist(bname):
+                    print 'No such band: ' + bname
                     sys.exit(2)
+                bands.append(bname)
             continue
         if opt == '-c':
             c = lc_wrapper(str(arg))
@@ -286,7 +305,8 @@ def main(name='', model_ext='.ph'):
             # d = '/home/bakl/Sn/my/conf/2016/snrefsdal/img'
             fsave = os.path.join(d, fsave) + '.pdf'
 
-        plot_all(models_vels, models_mags, bands, call=callback, xlim=xlim, ylim=ylim, is_time_points=is_plot_time_points, title=label, fsave=fsave)
+        plot_all(models_vels, models_mags, bands, call=callback, xlim=xlim, ylim=ylim,
+                 is_time_points=is_plot_time_points, title=label, fsave=fsave, bshift=bs)
         # plot_all(dic_results, bands,  xlim=(-10, 410), is_time_points=is_plot_time_points)
         # plot_all(dic_results, bands, xlim=(-10, 410), callback=callback, is_time_points=is_plot_time_points)
         # plot_all(dic_results, bands,  ylim=(40, 23),  is_time_points=is_plot_time_points)

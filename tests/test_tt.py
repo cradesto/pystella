@@ -126,8 +126,8 @@ class TestStellaTt(unittest.TestCase):
         plt.matplotlib.rcParams.update({'font.size': 14})
         fig, ax = plt.subplots(1, 1)
 
-        # lcf.plot_models_curves(ax, models_dic, lc_types=lc_types, ylim=(-13, -23), lw=3)
-        lcf.plot_models_curves_fixed_bands(ax, models_dic, bands=('B', 'V'), lc_types=lc_types, ylim=(-13, -23), lw=3)
+        lcf.plot_models_curves(ax, models_dic, lc_types=lc_types, ylim=(-10, -19), lw=3)
+        # lcf.plot_models_curves_fixed_bands(ax, models_dic, bands=('B', 'V'), lc_types=lc_types, ylim=(-13, -23), lw=3)
         plt.legend()
         plt.show()
 

@@ -251,8 +251,10 @@ def bands_dict_PS1():
 
 
 def bands_dict_SWIFT():
-    bands4 = dict(UVM2="photonUVM2.dat", UVW1="photonUVW1.dat", UVW2="photonUVW2.dat",
+    bands4 = dict(UVM2="Swift-UVOT.UVM2.dat", UVW1="Swift-UVOT.UVW1.dat", UVW2="Swift-UVOT.UVW2.dat",
                   UVOTU="photonU_UVOT.dat", UVOTB="photonB_UVOT.dat", UVOTV="photonV_UVOT.dat")
+    #  bands4 = dict(UVM2="photonUVM2.dat", UVW1="photonUVW1.dat", UVW2="photonUVW2.dat",
+    #               UVOTU="photonU_UVOT.dat", UVOTB="photonB_UVOT.dat", UVOTV="photonV_UVOT.dat")
     d = os.path.join(ROOT_DIRECTORY, "data/bands/SWIFTUVOT")
     for k, v in bands4.items():
         bands4[k] = os.path.join(d, v)
