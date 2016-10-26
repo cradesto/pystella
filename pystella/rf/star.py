@@ -161,7 +161,7 @@ class Star:
         else:
             flux_spline = np.interp(wl_b, wl_s, flux, 0, 0)  # One-dimensional linear interpolation.
 
-        a = integrate.integralfunc(flux_spline * band.resp * wl_b, wl_b) / (phys.c * phys.cm_to_angs) / phys.h
+        a = integrate.integralfunc(flux_spline * band.resp_wl * wl_b, wl_b) / (phys.c * phys.cm_to_angs) / phys.h
         return a
 
     def _response_nu(self, b, is_b_spline=True):
@@ -180,8 +180,8 @@ class Star:
         nu_s = nu_s[sorti]
         flux = flux[sorti]
 
-        nu_b = np.array(b.freq[::-1])
-        resp_b = np.array(b.resp[::-1])
+        nu_b = np.array(b.freq)
+        resp_b = np.array(b.resp_fr)
 
         if min(nu_s) > nu_b[0] or max(nu_s) < nu_b[-1]:
             # decrease wave length range of the band

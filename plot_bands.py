@@ -13,7 +13,7 @@ def plot_griuz():
     bands = dict(g='g', i='r+', r='r', u='o', z='*')
     for k, v in bands.items():
         b = band.band_by_name(k)
-        plt.plot(b.wl*phys.cm_to_angs,  b.resp, v, label=k)
+        plt.plot(b.wl * phys.cm_to_angs, b.resp_wl, v, label=k)
 
     plt.legend()
     plt.ylabel('Amplitude Response')
@@ -27,7 +27,7 @@ def plot_UBVRI():
     bands = dict(U='b', B='c', V='g', R='r', I='p')
     for k, v in bands.items():
         b = band.band_by_name(k)
-        plt.plot(b.wl*phys.cm_to_angs,  b.resp, v, label=k)
+        plt.plot(b.wl * phys.cm_to_angs, b.resp_wl, v, label=k)
     plt.legend()
     plt.ylabel('Amplitude Response')
     plt.xlabel('Wave [A]')
@@ -40,7 +40,7 @@ def plot_JHK():
     bands = dict(J='b', H='c', K='r')
     for k, v in bands.items():
         b = band.band_by_name(k)
-        plt.plot(b.wl*phys.cm_to_angs,  b.resp, v, label=k)
+        plt.plot(b.wl * phys.cm_to_angs, b.resp_wl, v, label=k)
     plt.legend()
     plt.ylabel('Amplitude Response')
     plt.xlabel('Wave [A]')
@@ -53,7 +53,7 @@ def plot_SWIFT():
     bands = dict(UVM2='m', UVW1='r', UVW2='b', UVOTU='k', UVOTB='c', UVOTV='g')
     for k, v in bands.items():
         b = band.band_by_name(k)
-        plt.plot(b.wl*phys.cm_to_angs,  b.resp, v, label=k)
+        plt.plot(b.wl * phys.cm_to_angs, b.resp_wl, v, label=k)
     plt.legend()
     plt.ylabel('Amplitude Response')
     plt.xlabel('Wave [A]')
@@ -67,7 +67,7 @@ def plot_PS1():
 
     for k, v in bands.items():
         b = band.band_by_name(k)
-        plt.plot(b.wl*phys.cm_to_angs,  b.resp, v, label=k)
+        plt.plot(b.wl * phys.cm_to_angs, b.resp_wl, v, label=k)
     plt.legend()
     plt.ylabel('Amplitude Response')
     plt.xlabel('Wave [A]')
@@ -81,7 +81,7 @@ def plot_HSC():
     bands = dict(HSCg='m', HSCr='b', HSCi='r', HSCz='y', HSCy='g')
     for k, v in bands.items():
         b = band.band_by_name(k)
-        plt.plot(b.wl*phys.cm_to_angs,  b.resp, v, label=k, linewidth=2)
+        plt.plot(b.wl * phys.cm_to_angs, b.resp_wl, v, label=k, linewidth=2)
     plt.legend(loc=4)
     plt.ylabel('Amplitude Response')
     plt.xlabel('Wave [A]')
@@ -95,7 +95,7 @@ def plot_HST():
     bands = dict(F105W="blue",  F125W="g", F435W="skyblue",  F140W="orange", F160W="r", F606W="cyan", F814W="magenta")
     for k, v in bands.items():
         b = band.band_by_name(k)
-        plt.plot(b.wl*phys.cm_to_angs,  b.resp, v, label=k, linewidth=2)
+        plt.plot(b.wl * phys.cm_to_angs, b.resp_wl, v, label=k, linewidth=2)
     plt.legend(loc=4)
     plt.ylabel('Amplitude Response')
     plt.xlabel('Wave [A]')
@@ -109,7 +109,7 @@ def plot_Kepler():
     bands = dict(Kepler="magenta")
     for k, v in bands.items():
         b = band.band_by_name(k)
-        plt.plot(b.wl*phys.cm_to_angs,  b.resp, v, label=k, linewidth=2)
+        plt.plot(b.wl * phys.cm_to_angs, b.resp_wl, v, label=k, linewidth=2)
     plt.legend(loc=4)
     plt.ylabel('Amplitude Response')
     plt.xlabel('Wave [A]')

@@ -35,7 +35,11 @@ class Band(object):
         return self.__freq
 
     @property
-    def resp(self):
+    def resp_fr(self):
+        return self._resp[::-1]
+
+    @property
+    def resp_wl(self):
         return self._resp
 
     @property
@@ -48,18 +52,18 @@ class Band(object):
 
     @property
     def Norm(self):
-        nu_b = np.array(self.freq[::-1])
-        resp_b = np.array(self.resp)
+        nu_b = np.array(self.freq)
+        resp_b = np.array(self.resp_fr)
         d = integralfunc(resp_b / nu_b, nu_b)
         return d
 
     @wl.setter
     def wl(self, wl):
         self.__wl = wl
-        self.__freq = phys.c / self.__wl
+        self.__freq = phys.c / self.__wl[::-1]
 
-    @resp.setter
-    def resp(self, v):
+    @resp_wl.setter
+    def resp_wl(self, v):
         if np.any(v > 1.):
             raise ValueError("Band response  must be <=1 : " + str(self))
         self._resp = v
@@ -129,7 +133,7 @@ class BandUni(Band):
                                 , np.log(wlrange[1]*phys.angs_to_cm)
                                 , length))
         self.wl = wl  # wavelength of response [cm]
-        self.resp = np.ones(len(wl))  # response
+        self.resp_wl = np.ones(len(wl))  # response
         self.zp = 0.
 
     @property
@@ -165,6 +169,7 @@ def bands_colors():
     colors = dict(U="blue", B="cyan", V="darkgreen", R="red", I="magenta",
                   J="green", H="cyan", K="black",
                   UVM2="skyblue", UVW1="orange", UVW2="blue",
+                  UVM2o="deepskyblue", UVW1o="darkviolet", UVW2o="darkblue",
                   F105W="magenta", F435W="skyblue",  F606W="cyan", F125W="g", F140W="orange", F160W="r", F814W="blue",
                   Kepler="magenta",
                   g="olive", r="red", i="magenta", u="blue", z="chocolate",
@@ -252,7 +257,7 @@ def bands_dict_PS1():
 
 def bands_dict_SWIFT():
     bands4 = dict(UVM2="Swift-UVOT.UVM2.dat", UVW1="Swift-UVOT.UVW1.dat", UVW2="Swift-UVOT.UVW2.dat",
-                  UVOTU="photonU_UVOT.dat", UVOTB="photonB_UVOT.dat", UVOTV="photonV_UVOT.dat")
+                  UVOTU="Swift-UVOT.U.dat", UVOTB="Swift-UVOT.B.dat", UVOTV="Swift-UVOT.V.dat")
     #  bands4 = dict(UVM2="photonUVM2.dat", UVW1="photonUVW1.dat", UVW2="photonUVW2.dat",
     #               UVOTU="photonU_UVOT.dat", UVOTB="photonB_UVOT.dat", UVOTV="photonV_UVOT.dat")
     d = os.path.join(ROOT_DIRECTORY, "data/bands/SWIFTUVOT")

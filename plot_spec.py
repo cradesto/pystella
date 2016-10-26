@@ -98,7 +98,7 @@ def plot_spec(dic_stars, times, set_bands, is_planck=False, is_filter=False):
             for n in bands:
                 b = band.band_by_name(n)
                 xx = b.wl * phys.cm_to_angs
-                yy = b.resp
+                yy = b.resp_wl
                 ax2.plot(xx, yy, color=colors_band[n], ls="--", linewidth=1.5, label=n)
             ax2.set_xscale('log')
             ax2.set_xlim(xlim)

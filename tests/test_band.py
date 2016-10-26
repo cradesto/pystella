@@ -32,7 +32,8 @@ class BandTests(unittest.TestCase):
 
     def test_band_uniform(self):
         b = band.BandUni()
-        self.assertTrue(np.any(b.resp == 1), "Response values is equal 1. band: %s" % b.name)
+        self.assertTrue(np.any(b.resp_wl == 1), "Response values is equal 1. band: %s" % b.name)
+        self.assertTrue(np.any(b.resp_fr == 1), "Response values is equal 1. band: %s" % b.name)
 
     def test_zp_AB(self):
         # see https://www.gemini.edu/sciops/instruments/magnitudes-and-fluxes

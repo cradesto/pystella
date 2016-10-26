@@ -140,7 +140,8 @@ def main(name='', model_ext='.ph'):
     callback = None
     xlim = None
     ylim = None
-    bshift = None
+    # bshift = None
+    bshift = {}
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hqwtc:d:p:e:i:b:l:m:vs:x:y:z:")
@@ -173,15 +174,14 @@ def main(name='', model_ext='.ph'):
             continue
         if opt == '-b':
             bands = []
-            bs = {}
             for b in str(arg).split('-'):
                 # extract band shift
                 if ':' in b:
                     bname, shift = b.split(':')
                     if '_' in shift:
-                        bs[bname] = -float(shift.replace('_', ''))
+                        bshift[bname] = -float(shift.replace('_', ''))
                     else:
-                        bs[bname] = float(shift)
+                        bshift[bname] = float(shift)
                 else:
                     bname = b
                 if not band.band_is_exist(bname):
@@ -306,7 +306,7 @@ def main(name='', model_ext='.ph'):
             fsave = os.path.join(d, fsave) + '.pdf'
 
         plot_all(models_vels, models_mags, bands, call=callback, xlim=xlim, ylim=ylim,
-                 is_time_points=is_plot_time_points, title=label, fsave=fsave, bshift=bs)
+                 is_time_points=is_plot_time_points, title=label, fsave=fsave, bshift=bshift)
         # plot_all(dic_results, bands,  xlim=(-10, 410), is_time_points=is_plot_time_points)
         # plot_all(dic_results, bands, xlim=(-10, 410), callback=callback, is_time_points=is_plot_time_points)
         # plot_all(dic_results, bands,  ylim=(40, 23),  is_time_points=is_plot_time_points)
