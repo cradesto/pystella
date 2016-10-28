@@ -7,6 +7,32 @@ __author__ = 'bakl'
 
 
 class BandTests(unittest.TestCase):
+    def test_load_names(self):
+        bands = band.band_load_names()
+        self.assertTrue(len(bands) > 0, "You have to see more bands. Not %d" % len(bands))
+
+    def test_band_colors_name(self):
+        bands = band.band_load_names()
+        for bname in bands:
+            self.assertTrue(bname in band.bands_colors(), "You have not color for band: %s" % bname)
+
+    def test_band_by_name(self):
+        b = band.band_by_name("BesU")
+        self.assertTrue(b.is_load, "The band should be loaded and with data")
+
+    def test_aliases_load(self):
+        band.Band.load_settings()
+        aliases = band.band_get_aliases()
+        self.assertTrue(len(aliases), "Should be more aliases.")
+
+    def test_aliases(self):
+        bo = band.band_by_name("BesU")
+        ba = band.band_by_name("U")
+        self.assertTrue(ba.is_load, "The band should be loaded and with data")
+        self.assertItemsEqual(expected_seq=bo.wl, actual_seq=ba.wl, msg="The alias wl should be the same as original")
+        self.assertItemsEqual(expected_seq=bo.resp_wl, actual_seq=ba.resp_wl,
+                              msg="The alias wl should be the same as original")
+
     def test_available_bands(self):
         bands = ['U', 'B', 'V', 'R', "I"]
         for n in bands:
@@ -19,11 +45,11 @@ class BandTests(unittest.TestCase):
             self.assertTrue(b is not None, "Band %s does not exist." % b)
 
         bands4 = dict(UVM2="photonUVM2.dat", UVW1="photonUVW1.dat", UVW2="photonUVW2.dat",
-                      UVOTU="photonU_UVOT.dat", UVOTB="photonB_UVOT.dat", UVOTV="photonV_UVOT.dat")
-        bands = ['UVOTU', 'UVOTB', 'UVOTV', 'UVM2', "UVW1", "UVW2"]
+                      SwiftU="photonU_Swift.dat", SwiftB="photonB_Swift.dat", SwiftV="photonV_Swift.dat")
+        bands = ['SwiftU', 'SwiftB', 'SwiftV', 'UVM2', "UVW1", "UVW2"]
         for n in bands:
             b = band.band_by_name(n)
-            self.assertTrue(b is not None, "Band %s does not exist." % b)
+            self.assertTrue(b is not None, "Band %s does not exist." % n)
 
     def test_zero_point(self):
         zp = 0.790  # 13.9168580779  for KAIT U

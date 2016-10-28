@@ -51,7 +51,7 @@ class TestStar(unittest.TestCase):
                                         Now mag is %f for band %s. ZP is %f" % (mag, b, phys.ZP_AB))
 
     def test_check_band_zp_ps1(self):
-        bands = ['PS1g', 'PS1z', 'PS1r', "PS1i", "y", "w"]
+        bands = ['PS1g', 'PS1z', 'PS1r', "PS1i", "PS1y", "PS1w"]
         star = Star('test', self.sp)
         for n in bands:
             b = band.band_by_name(n)

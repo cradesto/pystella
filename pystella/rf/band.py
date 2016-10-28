@@ -1,34 +1,49 @@
-import os
-import sys
+import ConfigParser
 import numpy as np
+import os
 import string
 from os.path import dirname
 from scipy.integrate import simps as integralfunc
 
 from pystella.util.phys_var import phys
-from pystella.util.arr_dict import merge_dicts
 
 __author__ = 'bakl'
 
-# see bands: http://svo2.cab.inta-csic.es/theory/fps3/index.php?mode=browse&gname=GALEX
 
-BAND_BOL_NAME = 'bol'
+# see bands: http://svo2.cab.inta-csic.es/theory/fps3/index.php?mode=browse&gname=GALEX
 
 
 class Band(object):
     Cache = dict()
+    Alias = None
+    FileFilters = 'filters.ini'
+    FileSettings = 'settings.ini'
+    BolName = 'bol'
+    DirRoot = os.path.join(dirname(dirname(dirname(os.path.realpath(__file__)))), 'data/bands')
 
-    def __init__(self, name=None, fname=None, load=1):
+    def __init__(self, name=None, fname=None, zp=0., is_load=False):
         """Creates a band instance.  Required parameters:  name and file."""
         self.name = name
-        self.file = fname  # location of the filter response
+        self._fname = fname  # location of the filter response
+        self._zp = zp  # zero points
         self.__freq = None  # frequencies of response [Hz]
         self.__wl = None  # wavelength of response [cm]
         self._resp = None  # response
-        self.zp = None  # zero points
-        self.file_zp = 'filters.dat'  # file with zero points data
-        if fname is not None and load == 1:
+        self._is_load = False
+        if is_load:  # and os.path.isfile(self.fname):
             self.load()
+
+    @property
+    def is_load(self):
+        return self._is_load
+
+    @property
+    def fname(self):
+        return self._fname
+
+    @property
+    def zp(self):
+        return self._zp
 
     @property
     def freq(self):
@@ -57,6 +72,13 @@ class Band(object):
         d = integralfunc(resp_b / nu_b, nu_b)
         return d
 
+    @property
+    def wave_range(self):
+        if self.wl is not None:
+            return np.min(self.wl), np.max(self.wl)
+        else:
+            return None
+
     @wl.setter
     def wl(self, wl):
         self.__wl = wl
@@ -76,48 +98,52 @@ class Band(object):
 
     def load(self):
         """Reads the waves and response from file. Read zero point"""
-        if self.file is not None:
-            f = open(self.file)
+        if self._fname is not None:
+            f = open(self._fname)
             try:
-                # lines = f.readlines()
                 lines = [str.strip(line) for line in f.readlines() if not line.startswith('#')]
                 wl = np.array([float(string.split(line)[0]) for line in lines if len(line) > 0])
+
                 self._resp = np.array([float(string.split(line)[1]) for line in lines if len(line) > 0])
                 self.wl = wl * phys.angs_to_cm
+
+                self._is_load = True
+
             # except Exception:
             #     print"Error in band file: %s.  Exception:  %s" % (self.file, sys.exc_info()[0])
             #     sys.exit("Error while parse band-file: %s in %s" % self.file)
             finally:
                 f.close()
 
-            # read zero point
-            ptn_file = os.path.basename(self.file)
-            fname = os.path.join(dirname(os.path.abspath(self.file)), self.file_zp)
+                # read zero point
+                # ptn_file = os.path.basename(self._fname)
+                # fname = os.path.join(dirname(os.path.abspath(self._fname)), self.file_zp)
+                #
+                # # old code
+                # if self.zp is None:
+                #     self._zp = read_zero_point(fname, ptn_file)
 
-            # self.zp = 0.
-            self.zp = read_zero_point(fname, ptn_file)
-
-    @property
-    def wave_range(self):
-        if self.wl is not None:
-            return np.min(self.wl), np.max(self.wl)
-        else:
-            return None
-
-    def summary(self, out=sys.stdout):
-        """Get a quick summary of the band
-
-        Args:
-         out (str or open file): where to write the summary
-
-        Returns:
-             None
+    def clone(self, name):
         """
-        print >> out, '-' * 80
-        print >> out, "Band: ", self.name
-        print >> out, "wave length = %.3f, %3.f " % self.wave_range * 1e8
-        # print >> out, "wave length = %.3f, %3.f " % (min(self.wl) * 1e8, max(self.wl) * 1e8)
-        print >> out, ""
+            Clone this band with new name
+        :param name: the name of new cloned band
+        :return:  new Band object
+        """
+        b = Band(name, self.fname, zp=self.zp)
+        if self.is_load:
+            b.wl = self.wl
+            b.resp_wl = self.resp_wl
+            b._is_load = self.is_load
+        return b
+
+    @classmethod
+    def load_settings(cls):
+        parser = ConfigParser.ConfigParser()
+        parser.optionxform = str
+        fini = os.path.join(Band.DirRoot, Band.FileSettings)
+        parser.read(fini)
+        Band.Alias = {k: v for k, v in parser.items('alias')}
+        return True
 
 
 class BandUni(Band):
@@ -128,53 +154,42 @@ class BandUni(Band):
         :param length: numbers of bins default 100
         """
         super(BandUni, self).__init__(name)
-        # self.name = name
-        wl = np.exp(np.linspace(np.log(wlrange[0]*phys.angs_to_cm)
-                                , np.log(wlrange[1]*phys.angs_to_cm)
-                                , length))
+        wl = np.exp(np.linspace(np.log(wlrange[0] * phys.angs_to_cm),
+                                np.log(wlrange[1] * phys.angs_to_cm), length))
         self.wl = wl  # wavelength of response [cm]
         self.resp_wl = np.ones(len(wl))  # response
-        self.zp = 0.
 
     @property
     def Norm(self):
         return 1.
 
 
-def read_zero_point(fname, ptn_file):
-    f = open(fname)
-    try:
-        lines = f.readlines()
-        for line in lines:
-            if line[0] == "#":
-                continue
-            if string.split(line)[1] == ptn_file:
-                zp = float(string.split(line)[2])
-                return zp
-    # except Exception:
-    #     print"Error in zero points data-file: %s.  Exception:  %s" % (fname, sys.exc_info()[0])
-    #     return np.nan
-    finally:
-        f.close()
-
-
 ROOT_DIRECTORY = dirname(dirname(dirname(os.path.abspath(__file__))))
 
 
-def get_full_path(fname):
-    return os.path.join(ROOT_DIRECTORY, fname)
+#
+# def get_full_path(fname):
+#     return os.path.join(ROOT_DIRECTORY, fname)
 
 
 def bands_colors():
-    colors = dict(U="blue", B="cyan", V="darkgreen", R="red", I="magenta",
-                  J="green", H="cyan", K="black",
-                  UVM2="skyblue", UVW1="orange", UVW2="blue",
-                  UVM2o="deepskyblue", UVW1o="darkviolet", UVW2o="darkblue",
-                  F105W="magenta", F435W="skyblue",  F606W="cyan", F125W="g", F140W="orange", F160W="r", F814W="blue",
-                  Kepler="magenta",
-                  g="olive", r="red", i="magenta", u="blue", z="chocolate",
-                  y='y', w='tomato')
-    colors[BAND_BOL_NAME] = 'black'
+    colors = dict(
+        U="blue", B="cyan", V="darkgreen", R="red", I="magenta",
+        BesU="blue", BesB="cyan", BesV="darkgreen", BesR="red", BesI="magenta",
+        SwiftU="blue", SwiftB="cyan", SwiftV="darkgreen",
+        KaitU="blue", KaitB="cyan", KaitV="darkgreen", KaitR="red", KaitI="magenta",
+        J="green", H="cyan", K="black",
+        LcoJ="green", LcoH="cyan", LcoK="black",
+        UVM2="skyblue", UVW1="orange", UVW2="blue",
+        UVM2o="deepskyblue", UVW1o="darkviolet", UVW2o="darkblue",
+        USNO40i="blue", USNO40g="cyan", USNO40z="darkgreen", USNO40r="darkviolet", USNO40u="magenta",
+        F105W="magenta", F435W="skyblue", F606W="cyan", F125W="g", F140W="orange", F160W="r", F814W="blue",
+        Kepler="magenta",
+        g="olive", r="red", i="magenta", u="blue", z="chocolate",
+        Sdssg="olive", Sdssr="red", Sdssi="magenta", Sdssu="blue", Sdssz="chocolate",
+        PS1g="olive", PS1r="red", PS1i="magenta", PS1u="blue", PS1z="chocolate", PS1y="cyan", PS1w="orange",
+        y='y', w='tomato')
+    colors[Band.BolName] = 'black'
     # for Subaru HCS: colors
     for b in list('grizy'):
         colors['HSC' + b] = colors[b]
@@ -182,147 +197,197 @@ def bands_colors():
     return colors
 
 
-def bands_dict_Bessell():
-    bands = dict(U="U-bessell.dat", B="B-bessell.dat", V="V-bessell.dat", R="R-bessell.dat", I="I-bessell.dat")
-    # bands = dict(U="U-bessell.dat", B="B-bessell.dat", V="Vprompt135.dat", R="R-bessell.dat", I="I-bessell.dat")
-    # bands = dict(U="U-bessell.dat", B="BD+174708.dat", V="V-bessell.dat", R="R-bessell.dat", I="I-bessell.dat")
-    d = os.path.join(ROOT_DIRECTORY, "data/bands/Bessell")
-    for k, v in bands.items():
-        bands[k] = os.path.join(d, v)
+#
+# def bands_dict_Bessell():
+#     bands = dict(U="U-bessell.dat", B="B-bessell.dat", V="V-bessell.dat", R="R-bessell.dat", I="I-bessell.dat")
+#     # bands = dict(U="U-bessell.dat", B="B-bessell.dat", V="Vprompt135.dat", R="R-bessell.dat", I="I-bessell.dat")
+#     # bands = dict(U="U-bessell.dat", B="BD+174708.dat", V="V-bessell.dat", R="R-bessell.dat", I="I-bessell.dat")
+#     d = os.path.join(ROOT_DIRECTORY, "data/bands/Bessell")
+#     for k, v in bands.items():
+#         bands[k] = os.path.join(d, v)
+#
+#     return bands
+#
+#
+# def bands_dict_KAIT():
+#     bands = dict(U="kait_U.dat", B="kait_B.dat", V="kait_V.dat", R="kait_R.dat", I="kait_I.dat")
+#     d = os.path.join(ROOT_DIRECTORY, "data/bands/KAIT")
+#     for k, v in bands.items():
+#         bands[k] = os.path.join(d, v)
+#
+#     return bands
+#
+#
+# def bands_dict_Persson():
+#     bands = dict(J="jfilter", H="hfilter", K="kfilter")
+#     d = os.path.join(ROOT_DIRECTORY, "data/bands/Persson")
+#     for k, v in bands.items():
+#         bands[k] = os.path.join(d, v)
+#
+#     return bands
+#
+#
+# def bands_dict_USNO():
+#     # bands = dict(V="usno_g.res", I="usno_i.res", R="usno_r.res", U="usno_u.res", B="usno_z.res") # for comparison
+#     bands = dict(g="usno_g.res", i="usno_i.res", r="usno_r.res", u="usno_u.res", z="usno_z.res")
+#     d = os.path.join(ROOT_DIRECTORY, "data/bands/USNO40")
+#     for k, v in bands.items():
+#         bands[k] = os.path.join(d, v)
+#     return bands
+# #
+# def bands_dict_SDSS():
+#     bands = dict(g="sdss_g.dat", i="sdss_i.dat", r="sdss_r.dat", u="sdss_u.dat", z="sdss_z.dat")
+#     d = os.path.join(ROOT_DIRECTORY, "data/bands/SDSS")
+#     for k, v in bands.items():
+#         bands[k] = os.path.join(d, v)
+#     return bands
+#
+#
+# def bands_dict_HST():
+#     d = os.path.join(ROOT_DIRECTORY, "data/bands/HST")
+#     # bands = dict(F125W="hst_wfc3_ir_f125w.dat", F160W="hst_wfc3_ir_f160w.dat")
+#     fname = os.path.join(d, 'filters.dat')
+#     bands = {}
+#     with open(fname, "r") as f:
+#         for line in f:
+#             names = map(str.strip, line.split())
+#             bands[names[0]] = os.path.join(d, names[1])
+#     return bands
+#
+#
+# def bands_dict_PS1():
+#     """
+#         The Pan-STARRS1 Photometric System
+#         see http://ipp.ifa.hawaii.edu/ps1.filters/
+#
+#     :return: band-pass filters
+#     """
+#     bands = dict(PS1g="ps1_g.dat", PS1i="ps1_i.dat", PS1r="ps1_r.dat", PS1z="ps1_z.dat",
+#                  y="ps1_y.dat", w="ps1_w.dat")
+#     d = os.path.join(ROOT_DIRECTORY, "data/bands/PS1")
+#     for k, v in bands.items():
+#         bands[k] = os.path.join(d, v)
+#     return bands
+#
+#
+# def bands_dict_SWIFT():
+#     bands4 = dict(UVM2="Swift-UVOT.UVM2.dat", UVW1="Swift-UVOT.UVW1.dat", UVW2="Swift-UVOT.UVW2.dat",
+#                   UVOTU="Swift-UVOT.U.dat", UVOTB="Swift-UVOT.B.dat", UVOTV="Swift-UVOT.V.dat")
+#     #  bands4 = dict(UVM2="photonUVM2.dat", UVW1="photonUVW1.dat", UVW2="photonUVW2.dat",
+#     #               UVOTU="photonU_UVOT.dat", UVOTB="photonB_UVOT.dat", UVOTV="photonV_UVOT.dat")
+#     d = os.path.join(ROOT_DIRECTORY, "data/bands/SWIFTUVOT")
+#     for k, v in bands4.items():
+#         bands4[k] = os.path.join(d, v)
+#     return bands4
+#
+#
+# def bands_dict_SubaruHSC():
+#     bands4 = dict(HSCg="HSC-g.txt", HSCr="HSC-r.txt", HSCi="HSC-i.txt",
+#                   HSCz="HSC-z.txt", HSCy="HSC-Y.txt")
+#     d = os.path.join(ROOT_DIRECTORY, "data/bands/SubaruHSC")
+#     for k, v in bands4.items():
+#         bands4[k] = os.path.join(d, v)
+#     return bands4
+#
+#
+# def bands_dict_Kepler():
+#     bands = dict(Kepler="kepler_response_hires1.txt")
+#     d = os.path.join(ROOT_DIRECTORY, "data/bands/Kepler")
+#     for k, v in bands.items():
+#         bands[k] = os.path.join(d, v)
+#     return bands
 
-    return bands
 
+def band_load_names(path=Band.DirRoot):
+    """Find directories with filter.dat """
 
-def bands_dict_KAIT():
-    bands = dict(U="kait_U.dat", B="kait_B.dat", V="kait_V.dat", R="kait_R.dat", I="kait_I.dat")
-    d = os.path.join(ROOT_DIRECTORY, "data/bands/KAIT")
-    for k, v in bands.items():
-        bands[k] = os.path.join(d, v)
+    def ini_to_bands(fini):
+        parser = ConfigParser.ConfigParser()
+        parser.optionxform = str
+        parser.read(fini)
+        res = {}
+        for bname in parser.sections():
+            fn = os.path.join(dirname(fini), parser.get(bname, 'file'))
+            zp = 0.
+            if parser.has_option(bname, 'zp'):
+                zp = float(parser.get(bname, 'zp'))
 
-    return bands
+            b = Band(name=bname, fname=fn, zp=zp)
+            res[bname] = b
+        return res
 
+    # todo check this filter: values less then g-u etc.
+    b = BandUni(name=Band.BolName, wlrange=(1e0, 42e3), length=300)
+    bands = {'bol': b}
+    for d, dir_names, file_names in os.walk(path):
+        if Band.FileFilters in file_names:  # check that there are info-file in this directory
+            fname = os.path.join(d, Band.FileFilters)
+            bs = ini_to_bands(fname)
+            if len(bs) > 0:
+                bands.update(bs)
 
-def bands_dict_Persson():
-    bands = dict(J="jfilter", H="hfilter", K="kfilter")
-    d = os.path.join(ROOT_DIRECTORY, "data/bands/Persson")
-    for k, v in bands.items():
-        bands[k] = os.path.join(d, v)
-
-    return bands
-
-
-def bands_dict_USNO():
-    # bands = dict(V="usno_g.res", I="usno_i.res", R="usno_r.res", U="usno_u.res", B="usno_z.res") # for comparison
-    bands = dict(g="usno_g.res", i="usno_i.res", r="usno_r.res", u="usno_u.res", z="usno_z.res")
-    d = os.path.join(ROOT_DIRECTORY, "data/bands/USNO40")
-    for k, v in bands.items():
-        bands[k] = os.path.join(d, v)
-    return bands
-
-
-def bands_dict_SDSS():
-    bands = dict(g="sdss_g.dat", i="sdss_i.dat", r="sdss_r.dat", u="sdss_u.dat", z="sdss_z.dat")
-    d = os.path.join(ROOT_DIRECTORY, "data/bands/SDSS")
-    for k, v in bands.items():
-        bands[k] = os.path.join(d, v)
-    return bands
-
-
-def bands_dict_HST():
-    d = os.path.join(ROOT_DIRECTORY, "data/bands/HST")
-    # bands = dict(F125W="hst_wfc3_ir_f125w.dat", F160W="hst_wfc3_ir_f160w.dat")
-    fname = os.path.join(d, 'filters.dat')
-    bands = {}
-    with open(fname, "r") as f:
-        for line in f:
-            names = map(str.strip, line.split())
-            bands[names[0]] = os.path.join(d, names[1])
-    return bands
-
-
-def bands_dict_PS1():
-    """
-        The Pan-STARRS1 Photometric System
-        see http://ipp.ifa.hawaii.edu/ps1.filters/
-
-    :return: band-pass filters
-    """
-    bands = dict(PS1g="ps1_g.dat", PS1i="ps1_i.dat", PS1r="ps1_r.dat", PS1z="ps1_z.dat",
-                 y="ps1_y.dat", w="ps1_w.dat")
-    d = os.path.join(ROOT_DIRECTORY, "data/bands/PS1")
-    for k, v in bands.items():
-        bands[k] = os.path.join(d, v)
-    return bands
-
-
-def bands_dict_SWIFT():
-    bands4 = dict(UVM2="Swift-UVOT.UVM2.dat", UVW1="Swift-UVOT.UVW1.dat", UVW2="Swift-UVOT.UVW2.dat",
-                  UVOTU="Swift-UVOT.U.dat", UVOTB="Swift-UVOT.B.dat", UVOTV="Swift-UVOT.V.dat")
-    #  bands4 = dict(UVM2="photonUVM2.dat", UVW1="photonUVW1.dat", UVW2="photonUVW2.dat",
-    #               UVOTU="photonU_UVOT.dat", UVOTB="photonB_UVOT.dat", UVOTV="photonV_UVOT.dat")
-    d = os.path.join(ROOT_DIRECTORY, "data/bands/SWIFTUVOT")
-    for k, v in bands4.items():
-        bands4[k] = os.path.join(d, v)
-    return bands4
-
-
-def bands_dict_SubaruHSC():
-    bands4 = dict(HSCg="HSC-g.txt", HSCr="HSC-r.txt", HSCi="HSC-i.txt",
-                  HSCz="HSC-z.txt", HSCy="HSC-Y.txt")
-    d = os.path.join(ROOT_DIRECTORY, "data/bands/SubaruHSC")
-    for k, v in bands4.items():
-        bands4[k] = os.path.join(d, v)
-    return bands4
-
-
-def bands_dict_Kepler():
-    bands = dict(Kepler="kepler_response_hires1.txt")
-    d = os.path.join(ROOT_DIRECTORY, "data/bands/Kepler")
-    for k, v in bands.items():
-        bands[k] = os.path.join(d, v)
     return bands
 
 
 def band_get_names():
-    bands = {BAND_BOL_NAME: ''}
-    # STANDARD
-    # bands0 = bands_dict_STANDARD()
+    if len(Band.Cache) == 0:
+        Band.Cache = band_load_names()
 
-    # KAIT
-    # bands1 = bands_dict_KAIT()
-    # Bessell
-    bands1 = bands_dict_Bessell()
+    return Band.Cache.keys()
 
-    # HJK
-    bandsJHK = bands_dict_Persson()
 
-    # USNO40
-    # bands2 = bands_dict_USNO()
+def band_get_aliases():
+    return Band.Alias
 
-    # SDSS
-    bands3 = bands_dict_SDSS()
 
-    # SWIFT
-    bands4 = bands_dict_SWIFT()
+#
+# def old_band_get_names():
+#     bands = {Band.BolName: ''}
+#     # STANDARD
+#     # bands0 = bands_dict_STANDARD()
+#
+#     # KAIT
+#     # bands1 = bands_dict_KAIT()
+#     # Bessell
+#     bands1 = bands_dict_Bessell()
+#
+#     # HJK
+#     bandsJHK = bands_dict_Persson()
+#
+#     # USNO40
+#     # bands2 = bands_dict_USNO()
+#
+#     # SDSS
+#     bands3 = bands_dict_SDSS()
+#
+#     # SWIFT
+#     bands4 = bands_dict_SWIFT()
+#
+#     # The Pan-STARRS1 Photometric System
+#     bands5 = bands_dict_PS1()
+#
+#     # The HSC filters
+#     bands6 = bands_dict_SubaruHSC()
+#
+#     # The HSC filters
+#     bands7 = bands_dict_HST()
+#
+#     # The Kepler filters
+#     bands8 = bands_dict_Kepler()
+#
+#     return merge_dicts(bands, bands1, bandsJHK, bands3, bands4, bands5, bands6, bands7, bands8)
 
-    # The Pan-STARRS1 Photometric System
-    bands5 = bands_dict_PS1()
 
-    # The HSC filters
-    bands6 = bands_dict_SubaruHSC()
+def band_is_exist_names(name):
+    return  name in band_get_names()
 
-    # The HSC filters
-    bands7 = bands_dict_HST()
 
-    # The Kepler filters
-    bands8 = bands_dict_Kepler()
-
-    return merge_dicts(bands, bands1, bandsJHK, bands3, bands4, bands5, bands6, bands7, bands8)
+def band_is_exist_alias(name):
+    return name in band_get_aliases().keys()
 
 
 def band_is_exist(name):
-    b = band_get_names()
-    return name in b
+     return band_is_exist_names(name) or band_is_exist_alias(name)
 
 
 def band_by_name(name):
@@ -332,16 +397,33 @@ def band_by_name(name):
     :return: class Band with waves and respons
     """
     if name in Band.Cache:
+        b = Band.Cache[name]
+        if not b.is_load:
+            b.load()
         return Band.Cache[name]
 
+    if Band.Alias is None or band_is_exist_alias(name):
+        Band.load_settings()
+        for aname, oname in Band.Alias.items():
+            if band_is_exist(oname):
+                bo = Band.Cache[oname]
+                ba = bo.clone(aname)
+                if not ba.is_load:
+                    ba.load()
+                Band.Cache[aname] = ba
+            else:
+                raise ValueError("Errors in your aliases: for alias [%s] no such band [%s]. See settings in  %s"
+                                 % (aname, oname, Band.FileSettings))
+
     if band_is_exist(name):
-        bands = band_get_names()
-        if name == BAND_BOL_NAME:  # bolometric
-            # todo check this filter: values less then g-u etc.
-            b = BandUni(name=BAND_BOL_NAME, wlrange=(1e0, 42e3), length=300)
-        else:
-            b = Band(name=name, fname=bands[name], load=1)
-        Band.Cache[name] = b
+        # if name == Band.BolName:  # bolometric
+        #     # todo check this filter: values less then g-u etc.
+        #     b = BandUni(name=Band.BolName, wlrange=(1e0, 42e3), length=300)
+        # else:
+        b = Band.Cache[name]
+        if not b.is_load:
+            b.load()
+        # Band.Cache[name] = b
         return b
     else:
         return None

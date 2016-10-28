@@ -83,12 +83,10 @@ def plot_all(models_vels, models_dic, bands, call=None, xlim=None, ylim=None,
 
 
 def usage():
-    bands = band.band_get_names().keys()
     print "Usage:"
     print "  ubv.py [params]"
     print "  -b <bands:shift>: string, default: U-B-V-R-I, for example U-B-V-R-I-u-g-i-r-z-UVW1-UVW2.\n" \
-          "     shift: to move lc along y-axe (minus is '_', for example -b R:2-V-I:_4-B:5  \n"   \
-          "     Available bands: " + '-'.join(sorted(bands))
+          "     shift: to move lc along y-axe (minus is '_', for example -b R:2-V-I:_4-B:5 "
     print "  -i <model name>.  Example: cat_R450_M15_Ni007_E7"
     print "  -p <model directory>, default: ./"
     print "  -e <extinction, E(B-V)> is used to define A_nu, default: 0 "
@@ -105,6 +103,17 @@ def usage():
     print "  -z <redshift>.  Default: 0"
     print "  -l  write plot label"
     print "  -h  print usage"
+    print "   --- "
+    bands = band.band_get_names()
+    band.Band.load_settings()
+    alias = band.band_get_aliases()
+    print "   Available bands: \n %s" % '-'.join(sorted(bands))
+    print "   Available aliases: "
+    if len(alias) > 0:
+        for k, v in alias.items():
+            print "     %s => %s " % (k, v)
+    else:
+        print "     No aliases."
 
 
 def lc_wrapper(param, p=None):
@@ -174,6 +183,7 @@ def main(name='', model_ext='.ph'):
             continue
         if opt == '-b':
             bands = []
+            band.Band.load_settings()
             for b in str(arg).split('-'):
                 # extract band shift
                 if ':' in b:
