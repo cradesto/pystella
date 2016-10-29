@@ -18,6 +18,8 @@ class phys:
     cm_to_angs = 1. / angs_to_cm
     ZP_AB = -48.6  # zero point AB magnitude for nu
     ZP_AB_lmb = -21.10  # zero point AB magnitude  for lambda
+    jy_to_erg = 1.e-23  # 1 Jy = 10^-23 erg sec^-1 cm^-2 Hz^-1
+    jy_to_photon = 1.51e3  # 1 Jy = 1.51e7 photons sec^-1 m^-2 (dlambda/lambda)^-1
 
     # units
     AU = 1.4959787066e13  # cm

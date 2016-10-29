@@ -76,7 +76,7 @@ class StellaTt:
         block = self.read(ext='gri', line_header=1)
         # header = 'L_bol    Mu        MB    Mg         Mr         Mi'.split()
         # header = 'MB    MV'.split()
-        header = 'L_bol    Mu        MB        MV       Mg         Mr         Mi'.split()
+        header = 'L_bol    Mu        MB   MV    Mg    Mr Mi  Y  J  H  K '.split()
         # header = 'MB        MV '.split()
         # header = 'L_bol   L_ubvgri      Mu        MB        MV       Mg         Mr         Mi'.split()
         curves = SetLightCurve(self.name)

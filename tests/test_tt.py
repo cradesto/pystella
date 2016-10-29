@@ -93,6 +93,7 @@ class TestStellaTt(unittest.TestCase):
     def test_gri_vs_ph(self):
         curves_gri = self.tt.read_curves_gri()
         bands = curves_gri.BandNames
+        bands = ('J','H','K')
 
         serial_spec = self.stella.read_series_spectrum(t_diff=1.)
         curves_ph = serial_spec.flux_to_curves(bands)

@@ -144,5 +144,6 @@ def MagAB2Flux(ab):
     """Convert AB magnitudes to monochromatic flux [ erg sec^-1 cm^-2 Hz^-1]
     see http://www.jstor.org/stable/10.1086/429382
     """
-    f = 3631e-23*10**(-0.4*ab)
+    zp_def = 3631  # in Jy
+    f = zp_def * phys.jy_to_erg*10**(-0.4*ab)
     return f

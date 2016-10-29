@@ -5,6 +5,7 @@ import string
 from os.path import dirname
 from scipy.integrate import simps as integralfunc
 
+from pystella.rf.rad_func import MagAB2Flux, Flux2MagAB
 from pystella.util.phys_var import phys
 
 __author__ = 'bakl'
@@ -18,14 +19,18 @@ class Band(object):
     Alias = None
     FileFilters = 'filters.ini'
     FileSettings = 'settings.ini'
-    BolName = 'bol'
+    NameBol = 'bol'
+    NameZp = 'zp'
+    NameJy = 'Jy'
     DirRoot = os.path.join(dirname(dirname(dirname(os.path.realpath(__file__)))), 'data/bands')
 
-    def __init__(self, name=None, fname=None, zp=0., is_load=False):
+    def __init__(self, name=None, fname=None, zp=None, jy=None, is_load=False):
         """Creates a band instance.  Required parameters:  name and file."""
         self.name = name
         self._fname = fname  # location of the filter response
-        self._zp = zp  # zero points
+        self._zp = zp  # zero points for mag
+        self._jy = jy  # zero points for flux [Jansky] # 1 Jy = 1.51e7 photons sec^-1 m^-2 (dlambda/lambda)^-1
+        self.sync_zp()
         self.__freq = None  # frequencies of response [Hz]
         self.__wl = None  # wavelength of response [cm]
         self._resp = None  # response
@@ -43,7 +48,23 @@ class Band(object):
 
     @property
     def zp(self):
+        if self._zp is None:
+            return 0.
         return self._zp
+
+    @property
+    def is_zp(self):
+        return self._zp is not None
+
+    @property
+    def Jy(self):
+        if self._jy is None:
+            return 0.
+        return self._jy
+
+    @property
+    def is_Jy(self):
+        return self._jy is not None
 
     @property
     def freq(self):
@@ -115,13 +136,16 @@ class Band(object):
             finally:
                 f.close()
 
-                # read zero point
-                # ptn_file = os.path.basename(self._fname)
-                # fname = os.path.join(dirname(os.path.abspath(self._fname)), self.file_zp)
-                #
-                # # old code
-                # if self.zp is None:
-                #     self._zp = read_zero_point(fname, ptn_file)
+    def sync_zp(self):
+        """Compute Jy or zp if one of them is None"""
+        if self.is_Jy and self.is_zp:
+            return
+        if not self.is_Jy and not self.is_zp:
+            return
+        if self.is_zp:
+            self._jy = MagAB2Flux(self.zp) * 1e23
+        if self.is_Jy:
+            self._zp = Flux2MagAB(self.Jy * 1e-23)
 
     def clone(self, name):
         """
@@ -129,7 +153,9 @@ class Band(object):
         :param name: the name of new cloned band
         :return:  new Band object
         """
-        b = Band(name, self.fname, zp=self.zp)
+        b = Band(name, self.fname)
+        b._zp = self._zp
+        b._jy = self._jy
         if self.is_load:
             b.wl = self.wl
             b.resp_wl = self.resp_wl
@@ -163,6 +189,10 @@ class BandUni(Band):
     def Norm(self):
         return 1.
 
+    @classmethod
+    def get_bol(cls):  # todo check this filter: values less then g-u etc.
+        return BandUni(name=Band.NameBol, wlrange=(1e0, 42e3), length=300)
+
 
 ROOT_DIRECTORY = dirname(dirname(dirname(os.path.abspath(__file__))))
 
@@ -178,7 +208,8 @@ def bands_colors():
         BesU="blue", BesB="cyan", BesV="darkgreen", BesR="red", BesI="magenta",
         SwiftU="blue", SwiftB="cyan", SwiftV="darkgreen",
         KaitU="blue", KaitB="cyan", KaitV="darkgreen", KaitR="red", KaitI="magenta",
-        J="green", H="cyan", K="black",
+        J="darkred", H="brown", K="saddlebrown",
+        massJ="green", massH="cyan", massK="black",
         LcoJ="green", LcoH="cyan", LcoK="black",
         UVM2="skyblue", UVW1="orange", UVW2="blue",
         UVM2o="deepskyblue", UVW1o="darkviolet", UVW2o="darkblue",
@@ -188,10 +219,10 @@ def bands_colors():
         g="olive", r="red", i="magenta", u="blue", z="chocolate",
         Sdssg="olive", Sdssr="red", Sdssi="magenta", Sdssu="blue", Sdssz="chocolate",
         PS1g="olive", PS1r="red", PS1i="magenta", PS1u="blue", PS1z="chocolate", PS1y="cyan", PS1w="orange",
-        y='y', w='tomato')
-    colors[Band.BolName] = 'black'
+        y='y', Y='y', w='tomato')
+    colors[Band.NameBol] = 'black'
     # for Subaru HCS: colors
-    for b in list('grizy'):
+    for b in list('grizY'):
         colors['HSC' + b] = colors[b]
 
     return colors
@@ -308,17 +339,19 @@ def band_load_names(path=Band.DirRoot):
         res = {}
         for bname in parser.sections():
             fn = os.path.join(dirname(fini), parser.get(bname, 'file'))
-            zp = 0.
-            if parser.has_option(bname, 'zp'):
-                zp = float(parser.get(bname, 'zp'))
+            zp = None
+            if parser.has_option(bname, Band.NameZp):
+                zp = float(parser.get(bname, Band.NameZp))
+            jy = None
+            if parser.has_option(bname, Band.NameJy):
+                jy = float(parser.get(bname, Band.NameJy))
 
-            b = Band(name=bname, fname=fn, zp=zp)
+            b = Band(name=bname, fname=fn, zp=zp, jy=jy)
             res[bname] = b
         return res
 
-    # todo check this filter: values less then g-u etc.
-    b = BandUni(name=Band.BolName, wlrange=(1e0, 42e3), length=300)
-    bands = {'bol': b}
+    bol = BandUni.get_bol()
+    bands = {Band.NameBol: bol}
     for d, dir_names, file_names in os.walk(path):
         if Band.FileFilters in file_names:  # check that there are info-file in this directory
             fname = os.path.join(d, Band.FileFilters)
@@ -340,46 +373,8 @@ def band_get_aliases():
     return Band.Alias
 
 
-#
-# def old_band_get_names():
-#     bands = {Band.BolName: ''}
-#     # STANDARD
-#     # bands0 = bands_dict_STANDARD()
-#
-#     # KAIT
-#     # bands1 = bands_dict_KAIT()
-#     # Bessell
-#     bands1 = bands_dict_Bessell()
-#
-#     # HJK
-#     bandsJHK = bands_dict_Persson()
-#
-#     # USNO40
-#     # bands2 = bands_dict_USNO()
-#
-#     # SDSS
-#     bands3 = bands_dict_SDSS()
-#
-#     # SWIFT
-#     bands4 = bands_dict_SWIFT()
-#
-#     # The Pan-STARRS1 Photometric System
-#     bands5 = bands_dict_PS1()
-#
-#     # The HSC filters
-#     bands6 = bands_dict_SubaruHSC()
-#
-#     # The HSC filters
-#     bands7 = bands_dict_HST()
-#
-#     # The Kepler filters
-#     bands8 = bands_dict_Kepler()
-#
-#     return merge_dicts(bands, bands1, bandsJHK, bands3, bands4, bands5, bands6, bands7, bands8)
-
-
 def band_is_exist_names(name):
-    return  name in band_get_names()
+    return name in band_get_names()
 
 
 def band_is_exist_alias(name):
@@ -387,7 +382,7 @@ def band_is_exist_alias(name):
 
 
 def band_is_exist(name):
-     return band_is_exist_names(name) or band_is_exist_alias(name)
+    return band_is_exist_names(name) or band_is_exist_alias(name)
 
 
 def band_by_name(name):
