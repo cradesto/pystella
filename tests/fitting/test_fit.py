@@ -93,7 +93,7 @@ def popov_fit(lc, R0, M0, Mni0=None, E0=None, dt0=None,
 
 
 class TestFit(unittest.TestCase):
-    @unittest.skip("just for plot")
+    # @unittest.skip("just for plot")
     def test_fit_time_popov_SN1999em(self):
         jd_shift = 20.
         dm = -29.38  # D = 7.5e6 pc
@@ -119,7 +119,7 @@ class TestFit(unittest.TestCase):
                 ls=".", color='red', markersize=8, marker="o")
         plt.show()
 
-    @unittest.skip("just for plot")
+    # @unittest.skip("just for plot")
     def test_fit_popov_SN1999em(self):
         D = 11.5e6  # pc
         dm = -5. * np.log10(D) + 5
@@ -143,7 +143,7 @@ class TestFit(unittest.TestCase):
                 ls=".", color='red', markersize=8, marker="o")
         plt.show()
 
-    @unittest.skip("just for plot")
+    # @unittest.skip("just for plot")
     def test_fit_popov_rednova(self):
         D = 7.5e5  # pc
         dm = 5. * np.log10(D) - 5
@@ -165,7 +165,7 @@ class TestFit(unittest.TestCase):
                 ls=".", color='red', markersize=8, marker="o")
         plt.show()
 
-    @unittest.skip("just for plot")
+    # @unittest.skip("just for plot")
     def test_fit_popov_SN1987A(self):
         ##  todo fit M, E, Mni
         D = 5e4  # pc

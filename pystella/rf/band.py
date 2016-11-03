@@ -421,4 +421,5 @@ def band_by_name(name):
         # Band.Cache[name] = b
         return b
     else:
+        print "  Error: no band: %s " % name
         return None

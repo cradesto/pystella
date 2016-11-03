@@ -2,13 +2,11 @@ import numpy as np
 import os
 from scipy import interpolate
 
-# from pystella.rf import band
 from pystella.rf.lc import SetLightCurve, LightCurve
 
 path_data = os.path.expanduser('~/Sn/my/papers/2016/snrefsdal/data')
 grav_lens_def = 'ogu-g'
 marker_glens = {'ogu-g': 'o', 'ogu-a': 's', 'gri-g': '+', 'sha-g': '*', 'sha-a': '*', 'die-a': 'd'}
-
 
 colors_gl = {'ogu-g': 'blue', 'gri-g': 'magenta', 'sha-g': 'orange',
              'ogu-a': 'skyblue', 'sha-a': 'red', 'die-a': 'olive',
@@ -30,7 +28,7 @@ def coef_glens():  # see http://arxiv.org/abs/1510.05750
                    'mag': {'S1': 1., 'S2': 0.84, 'S3': 1.46, 'S4': 0.44, 'SX': 0.19}},
          'die-a': {'time': {'S1': 0, 'S2': -17., 'S3': -4., 'S4': 74., 'SX': 262.},
                    'mag': {'S1': 1., 'S2': 1.89, 'S3': 0.64, 'S4': 0.35, 'SX': 0.31}},
-         'obs-tmp': {'time': {'S1': 0, 'S2': 4., 'S3': 2., 'S4': 24., 'SX': 0},   # Rodney
+         'obs-tmp': {'time': {'S1': 0, 'S2': 4., 'S3': 2., 'S4': 24., 'SX': 0},  # Rodney
                      'mag': {'S1': 1., 'S2': 1.15, 'S3': 1.01, 'S4': 0.34, 'SX': 0}},
          'obs-sn87a': {'time': {'S1': 0, 'S2': -1., 'S3': 0.4, 'S4': 14.1, 'SX': 0},  # Rodney
                        'mag': {'S1': 1., 'S2': 1.14, 'S3': 1.05, 'S4': 0.34, 'SX': 0}},
@@ -73,6 +71,7 @@ def plot(ax, dic=None):
     jd_shift = None
     im = 'S1'
     glens = grav_lens_def
+    t_lc_max = 0.
 
     if 'args' in dic:
         arg = dic['args']
@@ -121,7 +120,7 @@ def plot(ax, dic=None):
 
 
 def get_xy(d, b, colS):
-    d2 = d[d[:, 0] == b, ]
+    d2 = d[d[:, 0] == b,]
     x = d2[:, 1]
     y = d2[:, colS]
     is_good = y != 0
@@ -204,7 +203,7 @@ def plot_ubv(ax, path, jd_shift, band_max, glens, image):
 
     for b in bands:
         bn = 'F%sW' % int(b)
-        data = lc_data[lc_data[:, 0] == b,]
+        data = lc_data[lc_data[:, 0] == b, ]
         x = data[:, 1] + jd_shift - time_delay[image]
         y = data[:, colS]
         if np.all(y <= 0):
@@ -212,6 +211,7 @@ def plot_ubv(ax, path, jd_shift, band_max, glens, image):
 
         yerr = data[:, colS + 1]
         bcolor = colors_band[bn]
+        print "bn: %s bcolor: %s" % (bn, bcolor)
         lower_limits = np.zeros(x.shape, dtype=bool)
         lower_limits[yerr == -1] = True
 
@@ -252,7 +252,7 @@ def plot_vel(ax, path, jd_shift, z=0.):
     # fb = ax.fill_between([x-errx, x+errx], ylim[0], ylim[1], facecolor='blue', alpha=0.2, label='Visible')
 
 
-def read_lc(path):
+def read_lc(path=path_data):
     # from Rodney_tbl4
     lc_data = np.loadtxt(os.path.join(path, 'rodney_all.csv'), comments='#', skiprows=3)
 
@@ -277,8 +277,8 @@ def read_lc(path):
     return lc_data, col_pos
 
 
-def read_curves(path, image):
-    curves = SetLightCurve("SN Refsdal")
+def read_curves(path=path_data, image='S1'):
+    curves = SetLightCurve("SN Refsdal, image: %s" % image)
 
     lc_data, sn_images = read_lc(path)
     bands = np.unique(lc_data[:, 0])
@@ -286,13 +286,17 @@ def read_curves(path, image):
 
     for ib in bands:
         bname = 'F%sW' % int(ib)
-        data = lc_data[lc_data[:, 0] == ib,]
-        time = data[:, 1]
-        mags = data[:, colS]
-        yerr = data[:, colS + 1]
-        if np.all(mags <= 0):
+        data = lc_data[lc_data[:, 0] == ib, ]
+        t = data[:, 1]
+        m = data[:, colS]
+        e = data[:, colS + 1]
+        if np.all(m <= 0):
             continue
-        # b = band.band_by_name(bname)
+        # filter data
+        is_good = m > 0
+        time = t[is_good]
+        mags = m[is_good]
+        yerr = e[is_good]
         lc = LightCurve(bname, time, mags, errs=yerr)
         curves.add(lc)
     return curves

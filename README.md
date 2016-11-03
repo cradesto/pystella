@@ -2,15 +2,6 @@
 
 ## Flux from ph-files to the bands
 
-#### Install:
-```bash
->>> git clone https://github.com/baklanovp/pystella.git
-
->>> cd pystella
-
->>> ./ubv.py [params]
-```
-
 #### Usage:
 
   ubv.py [params]
@@ -46,6 +37,24 @@ Run script for all *.ph-files in the DIR:
 ```
 also the same could be done with key '-p' without model's name. 
 
+
+#### Install:
+```bash
+>>> git clone https://github.com/baklanovp/pystella.git
+
+>>> cd pystella
+
+>>> ./ubv.py [params]
+```
+
+### Libraries
+
+For fit observations using Gaussian process 
+```bash
+>>> pip install cython
+>>> pip install gptools
+>>> pip install corner
+```
 
 Acknowledgments:
     Some of the data of bands was taken from  SNPY (see http://csp.obs.carnegiescience.edu/data/snpy/) and

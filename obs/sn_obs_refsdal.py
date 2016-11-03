@@ -20,7 +20,7 @@ from pystella.rf import light_curve_func as lcf
 from pystella import velocity as vel
 import pystella.util.callback as cb
 from pystella.util.phys_var import cosmology_D_by_z
-import plugin.plot_snrefsdal as sn_obs
+import plugin.snrefsdal as sn_obs
 
 __author__ = 'bakl'
 
@@ -733,7 +733,7 @@ def run_ubv_vel(name, path, bands, e, z, distance, magnification, xlim, callback
 
 
 def usage():
-    bands = band.band_get_names().keys()
+    bands = band.band_get_names()
     print "Usage: lens: "
     print "      grav. lens: ogu-a sha-a die-a "
     print "  ubv.py [params]"

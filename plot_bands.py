@@ -50,7 +50,7 @@ def plot_JHK():
 
 def plot_SWIFT():
     plt.title('SWIFT filter response')
-    bands = dict(UVM2='m', UVW1='r', UVW2='b', UVOTU='k', UVOTB='c', UVOTV='g')
+    bands = dict(UVM2='m', UVW1='r', UVW2='b', SwiftU='k', SwiftB='c', SwiftV='g')
     for k, v in bands.items():
         b = band.band_by_name(k)
         plt.plot(b.wl * phys.cm_to_angs, b.resp_wl, v, label=k)
@@ -63,7 +63,7 @@ def plot_SWIFT():
 
 def plot_PS1():
     plt.title('The Pan-STARRS1 Photometric  filter responses')
-    bands = dict(PS1g='m', PS1i='r', PS1r='b', PS1z='y', y='g', w='p')
+    bands = dict(PS1g='m', PS1i='r', PS1r='b', PS1z='y', PS1y='g', PS1w='p')
 
     for k, v in bands.items():
         b = band.band_by_name(k)
@@ -78,7 +78,7 @@ def plot_PS1():
 def plot_HSC():
     plt.title('The Hyper Suprime-Cam(HSC) Photometric  filter responses')
 
-    bands = dict(HSCg='m', HSCr='b', HSCi='r', HSCz='y', HSCy='g')
+    bands = dict(HSCg='m', HSCr='b', HSCi='r', HSCz='y', HSCY='g')
     for k, v in bands.items():
         b = band.band_by_name(k)
         plt.plot(b.wl * phys.cm_to_angs, b.resp_wl, v, label=k, linewidth=2)
