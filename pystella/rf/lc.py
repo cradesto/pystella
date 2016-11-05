@@ -152,6 +152,9 @@ class SetLightCurve(object):
     def add(self, lc):
         self._set[lc.Band.Name] = lc
 
+    def rm(self, bname):
+        self._set.pop(bname, None)
+
     def get(self, bn):
         for n, lc in self.Set.items():
             if lc.Band.Name == bn:

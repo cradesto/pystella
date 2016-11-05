@@ -33,7 +33,10 @@ def coef_glens():  # see http://arxiv.org/abs/1510.05750
          'obs-sn87a': {'time': {'S1': 0, 'S2': -1., 'S3': 0.4, 'S4': 14.1, 'SX': 0},  # Rodney
                        'mag': {'S1': 1., 'S2': 1.14, 'S3': 1.05, 'S4': 0.34, 'SX': 0}},
          'obs-pol': {'time': {'S1': 0, 'S2': 7., 'S3': 0.6, 'S4': 27., 'SX': 0},  # Rodney
-                     'mag': {'S1': 1., 'S2': 1.17, 'S3': 1., 'S4': 0.38, 'SX': 0}}
+                     'mag': {'S1': 1., 'S2': 1.17, 'S3': 1., 'S4': 0.38, 'SX': 0}},
+         'bakl': {'time': {'S1': 0, 'S2': 4.56, 'S3': -1.79, 'S4': 15.07, 'SX': 0},  # sn_obs_refsdal_grav-lens.ipynb
+                  'mag': {'S1': 1., 'S2': 1.15, 'S3': 1.02, 'S4': 0.37, 'SX': 10}}
+
          # 'obs-tmp': {'time': {'S1': 0, 'S2': -2.1, 'S3': 5.6, 'S4': 22., 'SX': 0},  # Treu
          #             'mag': {'S1': 1., 'S2': 1.09, 'S3': 1.04, 'S4': 0.35, 'SX': 0}}, # Treu
          # 'obs-sn87a': {'time': {'S1': 0, 'S2': -0.8, 'S3': -0.9, 'S4': 14.9, 'SX': 0},
@@ -68,26 +71,20 @@ def plot(ax, dic=None):
 
     z = 0.
     arg = None
+    bnames = None
     jd_shift = None
     im = 'S1'
     glens = grav_lens_def
     t_lc_max = 0.
 
-    if 'args' in dic:
-        arg = dic['args']
-    if 'glens' in dic:
-        glens = dic['glens']
-    if 'image' in dic:
-        im = dic['image']
-    if 'jd_shift' in dic:
-        jd_shift = dic['jd_shift']
+    if dic is not None:
+        glens = dic.get('glens', grav_lens_def)
+        im = dic.get('image', 'S1')
+        jd_shift = dic.get('jd_shift', None)
+        bnames = dic.get('bands', None)
 
     if jd_shift is None:
         jd_shift = float(arg.pop(0)) if arg is not None else -56950
-        # if arg is None:
-        #     jd_shift = -56950
-        # else:
-        #     jd_shift = float(arg.pop(0))
 
     print "Plot Sn Refsdal %s, glens: %s, path: %s, band_max=%s " % (im, glens, d, band_max)
 
@@ -95,7 +92,7 @@ def plot(ax, dic=None):
     if 'bv' in dic:
         plot_BV(ax=ax, path=d, jd_shift=jd_shift, glens=glens, image=im)
     elif ax is not None:  # plot ubv
-        t_lc_max = plot_ubv(ax=ax, path=d, jd_shift=jd_shift, band_max=band_max, glens=glens, image=im)
+        t_lc_max = plot_ubv(ax=ax, path=d, jd_shift=jd_shift, band_max=band_max, glens=glens, image=im, bnames=bnames)
 
     # plot velocities
     if 'ax2' in dic and dic['ax2'] is not None:
@@ -193,17 +190,21 @@ def plot_BV(ax, path, jd_shift, glens, image):
         ax.plot(xx, bv, color=colors_band[bn1], label='%s-%s .' % (bn1, bn2), marker='o', markersize=9, lw=1.5, ls='')
 
 
-def plot_ubv(ax, path, jd_shift, band_max, glens, image):
+def plot_ubv(ax, path, jd_shift, band_max, glens, image, bnames=None):
     lc_data, sn_images = read_lc(path)
 
     bands = np.unique(lc_data[:, 0])
     time_delay = coef_time_delay(glens)
 
+    marker_s = {'S1': 'o', 'S2': 's', 'S3': 'd', 'S4': '*', 'SX': '+'}
     colS = sn_images[image]  # S1 - 2, col  S2 - 4, S3 - 6, S4 - 8 col
 
     for b in bands:
         bn = 'F%sW' % int(b)
-        data = lc_data[lc_data[:, 0] == b, ]
+        if bnames is not None:
+            if bn not in bnames:
+                continue
+        data = lc_data[lc_data[:, 0] == b,]
         x = data[:, 1] + jd_shift - time_delay[image]
         y = data[:, colS]
         if np.all(y <= 0):
@@ -211,7 +212,7 @@ def plot_ubv(ax, path, jd_shift, band_max, glens, image):
 
         yerr = data[:, colS + 1]
         bcolor = colors_band[bn]
-        print "bn: %s bcolor: %s" % (bn, bcolor)
+        # print "bn: %s bcolor: %s" % (bn, bcolor)
         lower_limits = np.zeros(x.shape, dtype=bool)
         lower_limits[yerr == -1] = True
 
@@ -222,7 +223,7 @@ def plot_ubv(ax, path, jd_shift, band_max, glens, image):
             yy = y[with_errors]
             yyerr = yerr[with_errors]
             # ax.errorbar(xx, yy, yerr=yyerr, fmt=marker_glens[glens], color=bcolor, label='%s obs.' % bn)
-            ax.errorbar(xx, yy, yerr=yyerr, fmt='o', color=bcolor, label='%s obs.' % bn)
+            ax.errorbar(xx, yy, yerr=yyerr, fmt=marker_s[image], color=bcolor, label='%s obs. %s' % (bn, image))
 
         # plot upper limits
         xxx = x[lower_limits]
@@ -277,7 +278,7 @@ def read_lc(path=path_data):
     return lc_data, col_pos
 
 
-def read_curves(path=path_data, image='S1'):
+def read_curves(path=path_data, image='S1', bnames=None):
     curves = SetLightCurve("SN Refsdal, image: %s" % image)
 
     lc_data, sn_images = read_lc(path)
@@ -286,7 +287,9 @@ def read_curves(path=path_data, image='S1'):
 
     for ib in bands:
         bname = 'F%sW' % int(ib)
-        data = lc_data[lc_data[:, 0] == ib, ]
+        if bnames is not None and bname not in bnames:
+            continue
+        data = lc_data[lc_data[:, 0] == ib,]
         t = data[:, 1]
         m = data[:, colS]
         e = data[:, colS + 1]
