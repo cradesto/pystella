@@ -361,3 +361,20 @@ class TestFitGaussianProcess(unittest.TestCase):
                 alpha=.5, fc='b', ec='None', label='95% confidence interval')
 
         plt.show()
+
+    def test_error_func(self):
+        def rel_errors(mu, sig, func, num=100):
+            x_norm = []
+            for x, s in zip(mu, sig):
+                x_norm.append(np.random.normal(x, s, num))
+                #     x_norm = np.random.normal(mu,sig, num)
+            f_dist = func(x_norm)
+            return np.mean(f_dist), np.std(f_dist)
+
+        x1, sigX1 = (20.05, 0.20)
+        x2, sigX2 = (23.12, 0.11)
+
+        # dS1 = np.random.normal(x1, sigX1, 1000)
+        # dS2 = np.random.normal(x2, sigX2, 1000)
+        fmu, fsig = rel_errors([x2, x1], [sigX2, sigX1], lambda arg: arg[0] / arg[1], num=10000)
+        print 'fmu= %f fsig = %f' % (fmu, fsig)
