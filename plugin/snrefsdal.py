@@ -35,7 +35,9 @@ def coef_glens():  # see http://arxiv.org/abs/1510.05750
          'obs-pol': {'time': {'S1': 0, 'S2': 7., 'S3': 0.6, 'S4': 27., 'SX': 0},  # Rodney
                      'mag': {'S1': 1., 'S2': 1.17, 'S3': 1., 'S4': 0.38, 'SX': 0}},
          'bakl': {'time': {'S1': 0, 'S2': 4.56, 'S3': -1.79, 'S4': 15.07, 'SX': 0},  # sn_obs_refsdal_grav-lens.ipynb
-                  'mag': {'S1': 1., 'S2': 1.15, 'S3': 1.02, 'S4': 0.37, 'SX': 10}}
+                  'mag': {'S1': 1., 'S2': 1.15, 'S3': 1.02, 'S4': 0.37, 'SX': 10}},
+         'zero': {'time': {'S1': 0, 'S2': 0., 'S3': 0., 'S4': 0., 'SX': 0.},  # sn_obs_refsdal_grav-lens.ipynb
+                  'mag': {'S1': 1., 'S2': 1., 'S3': 1., 'S4': 1., 'SX': 1.}}
 
          # 'obs-tmp': {'time': {'S1': 0, 'S2': -2.1, 'S3': 5.6, 'S4': 22., 'SX': 0},  # Treu
          #             'mag': {'S1': 1., 'S2': 1.09, 'S3': 1.04, 'S4': 0.35, 'SX': 0}}, # Treu
@@ -72,6 +74,7 @@ def plot(ax, dic=None):
     z = 0.
     arg = None
     bnames = None
+    is_lens_shift = False
     jd_shift = None
     im = 'S1'
     glens = grav_lens_def
@@ -82,6 +85,7 @@ def plot(ax, dic=None):
         im = dic.get('image', 'S1')
         jd_shift = dic.get('jd_shift', None)
         bnames = dic.get('bands', None)
+        is_lens_shift = dic.get('shift', '') == 'lens'
 
     if jd_shift is None:
         jd_shift = float(arg.pop(0)) if arg is not None else -56950
@@ -92,7 +96,8 @@ def plot(ax, dic=None):
     if 'bv' in dic:
         plot_BV(ax=ax, path=d, jd_shift=jd_shift, glens=glens, image=im)
     elif ax is not None:  # plot ubv
-        t_lc_max = plot_ubv(ax=ax, path=d, jd_shift=jd_shift, band_max=band_max, glens=glens, image=im, bnames=bnames)
+        t_lc_max = plot_ubv(ax=ax, path=d, jd_shift=jd_shift, band_max=band_max, glens=glens, image=im, bnames=bnames,
+                            is_lens_shift=is_lens_shift)
 
     # plot velocities
     if 'ax2' in dic and dic['ax2'] is not None:
@@ -190,23 +195,36 @@ def plot_BV(ax, path, jd_shift, glens, image):
         ax.plot(xx, bv, color=colors_band[bn1], label='%s-%s .' % (bn1, bn2), marker='o', markersize=9, lw=1.5, ls='')
 
 
-def plot_ubv(ax, path, jd_shift, band_max, glens, image, bnames=None):
+def plot_ubv(ax, path, jd_shift, band_max, glens, image, bnames=None, is_lens_shift=False):
+    bands_excluded = ['F435W']
     lc_data, sn_images = read_lc(path)
 
     bands = np.unique(lc_data[:, 0])
     time_delay = coef_time_delay(glens)
+    mu_ratio = coef_magnification(glens)
 
     marker_s = {'S1': 'o', 'S2': 's', 'S3': 'd', 'S4': '*', 'SX': '+'}
     colS = sn_images[image]  # S1 - 2, col  S2 - 4, S3 - 6, S4 - 8 col
+
+    def m_mu(x):
+        return 10 ** (-x * 0.4)
+
+    def mu_m(x):
+        return -2.5 * np.log10(x)
 
     for b in bands:
         bn = 'F%sW' % int(b)
         if bnames is not None:
             if bn not in bnames:
                 continue
+        if bn in bands_excluded:
+            continue
+
         data = lc_data[lc_data[:, 0] == b,]
         x = data[:, 1] + jd_shift - time_delay[image]
         y = data[:, colS]
+        if is_lens_shift:
+            y += -mu_m(mu_ratio[image])
         if np.all(y <= 0):
             continue
 

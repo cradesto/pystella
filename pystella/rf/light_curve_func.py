@@ -48,16 +48,15 @@ def plot_ubv_models(ax, models_dic, bands, band_shift, xlim=None, ylim=None,
 
     lw = 2
     mi = 0
-    ib = 0
     x_max = []
     y_mid = []
     lc_min = {}
     for mname, mdic in models_dic.iteritems():
         mi += 1
         for bname in bands:
-            ib += 1
-            x = mdic['time']
-            y = mdic[bname] + band_shift[bname]
+            lc = mdic[bname]
+            x = lc.Time
+            y = lc.Mag + band_shift[bname]
             bcolor = colors[bname]
 
             if len(models_dic) == 1:
