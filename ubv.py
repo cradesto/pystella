@@ -159,7 +159,11 @@ def main(name='', model_ext='.ph'):
         usage()
         sys.exit(2)
 
-    if len(opts) == 0:
+    if len(args) > 0:
+        path, name = os.path.split(str(args[0]))
+        path = os.path.expanduser(path)
+        name = name.replace('.ph', '')
+    elif len(opts) == 0:
         usage()
         sys.exit(2)
 
