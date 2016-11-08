@@ -40,7 +40,7 @@ def plot_vels_models(ax, models_dic, xlim=None, ylim=None):
     is_x_lim = xlim is None
     is_y_lim = ylim is None
 
-    t_points = [0.2, 1, 2, 3, 4, 5, 10, 20, 40, 80, 150]
+    # t_points = [0.2, 1, 2, 3, 4, 5, 10, 20, 40, 80, 150]
 
     lw = 1.
     mi = 0
