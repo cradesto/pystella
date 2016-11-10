@@ -1,0 +1,5 @@
+--
+ubv.py
+
+- сделать чтение настроек из конфиг файла, а потом из строки:
+для z, distance, set of bands, options etc.
