@@ -263,13 +263,13 @@ def main(name='', model_ext='.ph'):
         for f in files:
             names.append(os.path.splitext(f)[0])
 
-    if is_extinction:
-        if z > 1:
-            ext = extinction.reddening_law_z(ebv=e, bands=bands, z=z)
-        else:
-            ext = extinction.reddening_law(ebv=e, bands=bands)
-    else:
-        ext = None
+    # if is_extinction:
+    #     if z > 1:
+    #         ext = extinction.reddening_law_z(ebv=e, bands=bands, z=z)
+    #     else:
+    #         ext = extinction.reddening_law(ebv=e, bands=bands)
+    # else:
+    #     ext = None
 
     if len(names) > 0:
         models_mags = {}  # dict((k, None) for k in names)
@@ -277,17 +277,21 @@ def main(name='', model_ext='.ph'):
         i = 0
         for name in names:
             i += 1
-            mags = lcf.compute_mag(name, path, bands, ext=ext, z=z, distance=distance, magnification=magnification,
-                                   t_diff=t_diff, is_show_info=not is_quiet, is_save=is_save_mags)
-            # curves = lcf.compute_curves(name, path, bands, ext=ext, z=z, distance=distance, magnification=magnification,
-            #                             is_save=is_save_mags)
+            # mags = lcf.compute_mag(name, path, bands, ext=ext, z=z, distance=distance, magnification=magnification,
+            #                        t_diff=t_diff, is_show_info=not is_quiet, is_save=is_save_mags)
+            curves = lcf.curves_compute(name, path, bands, z=z, distance=distance, magnification=magnification,
+                                        is_save=is_save_mags)
+            if is_extinction:
+                lcf.curves_reddening(curves, ebv=e, z=z)
             # lcf.plot_curves(curves)
             # exit()
-            models_mags[name] = mags
+            # models_mags[name] = mags
+            models_mags[name] = curves
 
             if not is_quiet:
                 # z, distance = 0.145, 687.7e6  # pc for comparison with Maria
-                lcf.plot_bands(mags, bands, title=name, fname='', is_time_points=is_plot_time_points)
+                # lcf.plot_bands(mags, bands, title=name, fname='', is_time_points=is_plot_time_points)
+                lcf.plot_bands(curves, bands, title=name, fname='', is_time_points=is_plot_time_points)
 
             if is_vel:
                 vels = vel.compute_vel(name, path, z=z)
