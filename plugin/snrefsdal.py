@@ -118,7 +118,7 @@ def plot(ax, dic=None):
     band_max = 'F160W'
 
     z = 0.
-    arg = None
+    arg = []
     bnames = None
     is_lens_shift = False
     jd_shift = None
@@ -127,6 +127,7 @@ def plot(ax, dic=None):
     t_lc_max = 0.
 
     if dic is not None:
+        arg = dic.get('args', [])
         glens = dic.get('glens', grav_lens_def)
         im = dic.get('image', 'S1')
         jd_shift = dic.get('jd_shift', None)
