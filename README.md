@@ -49,7 +49,7 @@ also the same could be done with key '-p' without model's name.
 
 ### Libraries
 
-For fit observations using Gaussian process 
+To fit observations using Gaussian process 
 ```bash
 >>> pip install cython
 >>> pip install gptools
