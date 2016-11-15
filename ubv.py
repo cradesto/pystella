@@ -12,10 +12,9 @@ import matplotlib.pyplot as plt
 from matplotlib import gridspec
 
 import pystella.util.callback as cb
-from pystella.rf import light_curve_func as lcf
 from pystella import velocity as vel
 from pystella.rf import band
-from pystella.rf import extinction
+from pystella.rf import light_curve_func as lcf
 from pystella.util.phys_var import cosmology_D_by_z
 
 __author__ = 'bakl'

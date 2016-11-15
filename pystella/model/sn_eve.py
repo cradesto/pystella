@@ -145,4 +145,4 @@ class StellaEve:
             logger.info(" Save plot to %s " % fsave)
             fig.savefig(fsave, bbox_inches='tight', format='pdf')
 
-        return fig
+        return ax

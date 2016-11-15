@@ -220,14 +220,13 @@ def plot_swd(ax, b, **kwargs):
         lumnorm = kwargs['lumnorm']
     # y2 = np.ma.log10(b.Lum)
     y2 = np.ma.log10(b.Lum) - np.log10(lumnorm)
-    ax2.plot(x, y2,  color='orange', ls="-", label='Lum%d'%int(np.log10(lumnorm)))
+    ax2.plot(x, y2, color='orange', ls="-", label='Lum%d' % int(np.log10(lumnorm)))
 
     vnorm = 1.e8
     if 'vnorm' in kwargs:
-         vnorm = kwargs['vnorm']
+        vnorm = kwargs['vnorm']
     y2 = b.Vel / vnorm
-    ax2.plot(x, y2, 'b-', label='V%d'%int(np.log10(vnorm)))
-
+    ax2.plot(x, y2, 'b-', label='V%d' % int(np.log10(vnorm)))
 
     # for tl in ax2.get_yticklabels():
     #     tl.set_color('r')
@@ -243,4 +242,3 @@ def plot_swd(ax, b, **kwargs):
     ax.set_ylim(ylim)
 
     # ax.grid()
-

@@ -3,8 +3,10 @@ import numpy as np
 import os
 
 import matplotlib.pyplot as plt
+from matplotlib import gridspec
 
 import pystella.rf.rad_func as rf
+from pystella.model import sn_swd
 from pystella.model.stella import Stella
 from pystella.rf import band
 from pystella.rf import extinction
@@ -37,6 +39,45 @@ def lbl(b, band_shift):
     elif shift < 0:
         l += '-' + str(abs(shift))
     return l
+
+#
+# def plot_curves(ax, curves, band_shift=None, xlim=None, ylim=None,
+#                 colors=lc_colors, ls='-', lw=2):
+#     is_compute_x_lim = xlim is None
+#     is_compute_y_lim = ylim is None
+#
+#     bands = curves.BandNames
+#     if band_shift is None:
+#         band_shift = dict((bname, 0) for bname in bands)  # no y-shift
+#
+#     x_max = []
+#     y_mid = []
+#     lc_min = {}
+#
+#     for bname in bands:
+#         lc = curves[bname]
+#         x = lc.Time
+#         y = lc.Mag + band_shift[bname]
+#         bcolor = colors[bname]
+#         ax.plot(x, y, label='%s  %s' % (lbl(bname, band_shift), curves.Name), color=bcolor, ls=ls, linewidth=lw)
+#
+#         idx = np.argmin(y)
+#         lc_min[bname] = (x[idx], y[idx])
+#         if is_compute_x_lim:
+#             x_max.append(np.max(x))
+#         if is_compute_y_lim:
+#             y_mid.append(np.min(y))
+#
+#     if is_compute_x_lim:
+#         xlim = [-10, np.max(x_max) + 10.]
+#     if is_compute_y_lim:
+#         ylim = [np.min(y_mid) + 7., np.min(y_mid) - 2.]
+#
+#     ax.set_xlim(xlim)
+#     ax.invert_yaxis()
+#     ax.set_ylim(ylim)
+#
+#     return lc_min
 
 
 def plot_ubv_models(ax, models_dic, bands, band_shift, xlim=None, ylim=None,
@@ -165,7 +206,8 @@ def plot_models_curves_fixed_bands(ax, models_curves, bands, band_shift=None, xl
     ax.set_ylim(ylim)
 
 
-def plot_bands(dict_mags, bands, title='', fname='', distance=10., is_time_points=True):
+def plot_bands(dict_mags, bands, title='', fname='', distance=10., xlim=(-10, 200), ylim=(-12, -19),
+               is_time_points=True):
     fig = plt.figure()
     ax = fig.add_axes((0.1, 0.3, 0.8, 0.65))
     # ax.set_title(''.join(bands) + ' filter response')
@@ -184,12 +226,10 @@ def plot_bands(dict_mags, bands, title='', fname='', distance=10., is_time_point
 
     dm = 5 * np.log10(distance) - 5  # distance module
     # dm = 0
-    xlims = [-10, 200]
-    ylims = [-12, -19]
-    ylims += dm
+    ylim += dm
     is_auto_lim = True
     if is_auto_lim:
-        ylims = [0, 0]
+        ylim = [0, 0]
 
     x = dict_mags['time']
     is_first = True
@@ -207,15 +247,15 @@ def plot_bands(dict_mags, bands, title='', fname='', distance=10., is_time_point
                              arrowprops=dict(arrowstyle='->', shrinkA=0))
 
         if is_auto_lim:
-            if ylims[0] < max(y[len(y) / 2:]) or ylims[0] == 0:
-                ylims[0] = max(y[len(y) / 2:])
-            if ylims[1] > min(y) or ylims[1] == 0:
-                ylims[1] = min(y)
+            if ylim[0] < max(y[len(y) / 2:]) or ylim[0] == 0:
+                ylim[0] = max(y[len(y) / 2:])
+            if ylim[1] > min(y) or ylim[1] == 0:
+                ylim[1] = min(y)
 
-    ylims = np.add(ylims, [1, -1])
+    ylim = np.add(ylim, [1, -1])
     ax.invert_yaxis()
-    ax.set_xlim(xlims)
-    ax.set_ylim(ylims)
+    ax.set_xlim(xlim)
+    ax.set_ylim(ylim)
     ax.legend()
     ax.set_ylabel('Magnitude')
     ax.set_xlabel('Time [days]')
@@ -457,3 +497,21 @@ def mags_save(dictionary, bands, fname):
             # row = row[-1:] + row[:-1]  # make time first column
             writer.writerow(['{:8.3f}'.format(x) for x in row])
             # writer.writerow(['{:3.4e}'.format(x) for x in row])
+
+
+def plot_shock_details(swd, times, is_legend=True, rnorm=False):
+    fig = plt.figure(num=None, figsize=(16, len(times) * 4), dpi=100, facecolor='w', edgecolor='k')
+    gs1 = gridspec.GridSpec(len(times), 2)
+    plt.matplotlib.rcParams.update({'font.size': 14})
+
+    i = 0
+    for t in times:
+        b = swd.block_nearest(t)
+        ax = fig.add_subplot(gs1[i, 0])
+        sn_swd.plot_swd(ax, b, is_xlabel=i == len(times) - 1, vnorm=1e7, lumnorm=1e36, rnorm=rnorm,
+                        is_legend=is_legend)
+        ax2 = fig.add_subplot(gs1[i, 1])
+        sn_swd.plot_swd(ax2, b, is_xlabel=i == len(times) - 1, vnorm=1e7, lumnorm=1e36,
+                        is_legend=is_legend, is_ylabel=False)
+        i += 1
+    plt.show()
