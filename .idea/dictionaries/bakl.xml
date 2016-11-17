@@ -58,15 +58,20 @@
       <w>lntypes</w>
       <w>lumnorm</w>
       <w>masamune</w>
+      <w>mcmc</w>
       <w>mdic</w>
       <w>mname</w>
       <w>monospace</w>
       <w>mshift</w>
       <w>msun</w>
       <w>mtot</w>
+      <w>nburn</w>
+      <w>ndim</w>
       <w>nfreq</w>
+      <w>nsteps</w>
       <w>ntimes</w>
       <w>nugent</w>
+      <w>nwalkers</w>
       <w>nzon</w>
       <w>oguri</w>
       <w>popov</w>
@@ -83,6 +88,7 @@
       <w>snrefsdal</w>
       <w>starrs</w>
       <w>strad</w>
+      <w>strs</w>
       <w>suprime</w>
       <w>swiftuvot</w>
       <w>tcol</w>
@@ -112,6 +118,7 @@
       <w>ylim</w>
       <w>ylims</w>
       <w>yyerr</w>
+      <w>ztdata</w>
     </words>
   </dictionary>
 </component>

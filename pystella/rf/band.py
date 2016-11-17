@@ -378,6 +378,8 @@ def band_is_exist_names(name):
 
 
 def band_is_exist_alias(name):
+    if band_get_aliases() is None:
+        return False
     return name in band_get_aliases().keys()
 
 

@@ -6,7 +6,6 @@ import getopt
 import os
 import sys
 from os.path import dirname
-from os.path import isfile, join
 
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
@@ -15,6 +14,7 @@ import pystella.util.callback as cb
 from pystella import velocity as vel
 from pystella.rf import band
 from pystella.rf import light_curve_func as lcf
+from pystella.util.path_misc import get_model_names
 from pystella.util.phys_var import cosmology_D_by_z
 
 __author__ = 'bakl'
@@ -119,7 +119,7 @@ def lc_wrapper(param, p=None):
     a = param.split(':')
     fname = a.pop(0)
     if p is None:
-        if os.path.isfile(os.path.join(os.getcwd(), fname+'.py')):
+        if os.path.isfile(os.path.join(os.getcwd(), fname + '.py')):
             p = os.getcwd()
         else:
             p = cb.plugin_path
@@ -258,17 +258,7 @@ def main(name='', model_ext='.ph'):
     if name != '':
         names.append(name)
     else:  # run for all files in the path
-        files = [f for f in os.listdir(path) if isfile(join(path, f)) and f.endswith(model_ext)]
-        for f in files:
-            names.append(os.path.splitext(f)[0])
-
-    # if is_extinction:
-    #     if z > 1:
-    #         ext = extinction.reddening_law_z(ebv=e, bands=bands, z=z)
-    #     else:
-    #         ext = extinction.reddening_law(ebv=e, bands=bands)
-    # else:
-    #     ext = None
+        names = get_model_names(path, model_ext)
 
     if len(names) > 0:
         models_mags = {}  # dict((k, None) for k in names)
@@ -304,7 +294,8 @@ def main(name='', model_ext='.ph'):
 
         if label is None:
             if callback is not None:
-                label = "ts=%s z=%4.2f D=%6.2e mu=%3.1f ebv=%4.2f" % (callback.arg_totext(0), z, distance, magnification, e)
+                label = "ts=%s z=%4.2f D=%6.2e mu=%3.1f ebv=%4.2f" % (
+                    callback.arg_totext(0), z, distance, magnification, e)
             else:
                 label = "z=%4.2f D=%6.2e mu=%3.1f ebv=%4.2f" % (z, distance, magnification, e)
 

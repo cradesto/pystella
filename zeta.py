@@ -7,7 +7,7 @@ import numpy as np
 import os
 import sys
 from matplotlib import gridspec
-from os.path import isfile, join, dirname
+from os.path import dirname
 from scipy import interpolate
 from scipy.optimize import fmin
 
@@ -15,6 +15,7 @@ import pystella.rf.rad_func as rf
 from pystella.model.stella import Stella
 from pystella.rf import band, spectrum
 from pystella.rf.star import Star
+from pystella.util.path_misc import get_model_names
 from pystella.util.phys_var import phys
 from pystella.util.string_misc import cache_load, cache_name, cache_save
 
@@ -120,7 +121,7 @@ def plot_zeta_oneframe(models_dic, set_bands, t_cut=4.9, is_fit=False, is_fit_ba
     plt.show()
 
 
-def plot_zeta(models_dic, set_bands, t_cut=4.9,
+def plot_zeta(models_dic, set_bands, theta_dic, t_cut=4.9,
               is_plot_Tcolor=True, is_plot_Tnu=True, is_fit=False,
               is_fit_bakl=False, is_time_points=False):
     t_points = [1, 5, 10, 30, 80, 140]
@@ -262,6 +263,12 @@ def plot_zeta(models_dic, set_bands, t_cut=4.9,
             if yb is not None:
                 ax.plot(xx, yb, color=bcolor, ls="-", linewidth=2.5, label='Baklanov 16')
 
+            # new fit
+            yf = zeta_fit_rev_temp(xx, theta_dic[bset]['v'])
+            bcolor = "blue"
+            if yb is not None:
+                ax.plot(xx, yf, color=bcolor, ls="-", linewidth=2.5, label='new')
+
     # find & plot fit zeta-Tcol for Stella
     if is_fit_bakl:  # bakl fit
         # find a_coef
@@ -300,6 +307,7 @@ def plot_zeta(models_dic, set_bands, t_cut=4.9,
     # plt.title('; '.join(set_bands) + ' filter response')
     # plt.grid()
     plt.show()
+    return fig
 
 
 def plot_fits(set_bands, is_grid=True):
@@ -468,8 +476,8 @@ def epsilon_fit_zeta(x, models_dic, bset, t_beg, t_end=None):
     return e
 
 
-def epsilon(x, freq, mag, bands, radius, dist):
-    temp_color, zeta = x
+def epsilon(theta, freq, mag, bands, radius, dist):
+    temp_color, zeta = theta
     e = 0
     if temp_color < 0 or zeta < 0:
         for b in bands:
@@ -580,8 +588,101 @@ def compute_tcolor(name, path, bands, t_cut=1.):
     return res
 
 
+def fit_bayesian(ztdata, tlim=None, is_debug=True, is_info=False):
+    import emcee
+
+    if tlim is not None:
+        ztdata = cut_ztdata(ztdata, tlim)
+
+    def log_prior(theta):
+        if np.any(theta > 5):
+            return -np.inf
+        if np.any(theta < -5):
+            return -np.inf
+        return 1  # flat prior
+
+    def log_likelihood_t(theta, zt):
+        Tcol = zt['Tcol']
+        zeta = zt['zeta']
+        z_fit = zeta_fit_rev_temp(Tcol, theta)
+        e = zeta * 0.005
+        l = -0.5 * np.sum(np.log(2 * np.pi * (e**2))
+                          + (zeta - z_fit)**2 / e**2)
+        # print "epsilon: err=%f" % l
+        return l
+
+    def log_posterior(theta, zt):
+        return log_prior(theta) + log_likelihood_t(theta, zt)
+
+    ndim = 3  # number of parameters in the model
+    nwalkers = 50  # number of MCMC walkers
+    if is_debug:  # debug
+        nwalkers = 6
+    # run
+    nburn = 1000  # "burn-in" period to let chains stabilize
+    nsteps = 2000  # number of MCMC steps to take
+    if is_debug:  # debug
+        nburn = 100  # "burn-in" period to let chains stabilize
+        nsteps = 200  # number of MCMC steps to take
+
+    # we'll start at random locations between 0 and 2000
+    # starting_guesses = np.zeros(nwalkers, ndim)
+    starting_guesses = np.random.rand(nwalkers, ndim)
+    starting_guesses[0] = 1.
+
+    # fit
+    sampler = emcee.EnsembleSampler(nwalkers, ndim, log_posterior, args=[ztdata])
+    sampler.run_mcmc(starting_guesses, nsteps)
+    # plot
+    if is_info:
+        for i in range(ndim):
+            plt.figure()
+            plt.hist(sampler.flatchain[:, i], 100, color="k", histtype="stepfilled",
+                     alpha=0.3, normed=True, label='%d' % i)
+            plt.title("Dimension {0:d}".format(i))
+
+            # the fraction of steps accepted for each walker.
+            print("Mean acceptance fraction: {0:.3f}"
+                  .format(np.mean(sampler.acceptance_fraction)))
+
+    a = []
+    e = []
+    for i in range(ndim):
+        sample = sampler.chain[:, nburn:, i].ravel()
+        a.append(np.mean(sample))
+        e.append(np.std(sample))
+
+    res = {'v': a, 'e': e}
+    return res
+
+
+def cut_ztdata(ztdata, tlim):
+    t = ztdata['time']
+    t_beg = tlim[0]
+    t_end = tlim[1]
+    if t_end is None:
+        cut = t >= t_beg
+    else:
+        cut = (t >= t_beg) & (t <= t_end)
+
+    time = ztdata['time'][cut]
+    # show results
+    res = np.array(np.zeros(len(time)),
+                   dtype=np.dtype({'names': ['time', 'Tcol', 'zeta', 'Tnu', 'Teff', 'W'],
+                                   'formats': [np.float64] * 6}))
+
+    res['time'] = time
+    res['Tcol'] = ztdata['Tcol'][cut]
+    res['zeta'] = ztdata['zeta'][cut]
+    res['Tnu'] = ztdata['Tnu'][cut]
+    res['Teff'] = ztdata['Teff'][cut]
+    res['W'] = ztdata['W'][cut]
+
+    return res
+
+
 def usage():
-    bands = band.band_get_names().keys()
+    bands = band.band_get_names()
     print "Usage:"
     print "  zeta.py [params]"
     print "  -b <set_bands>: delimiter '_'. Default: B-V-I_B-V_V-I.\n" \
@@ -597,6 +698,16 @@ def usage():
     print "  -h  print usage"
 
 
+def print_coef(theta):
+    strs = []
+    for v, e in zip(theta['v'], theta['e']):
+        strs.append("{0:.2f}+/-{1:.4f}".format(v, e))
+
+    print(""" Results: """)
+    for i, s in enumerate(strs):
+        print("{0}: {1}".format(i, s))
+
+
 def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, is_plot_time_points=False):
     is_silence = False
     is_fit = False
@@ -604,6 +715,8 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
     is_fit_bakl = False
     model_ext = '.tt'
     ubv_args = ''
+
+    band.Band.load_settings()
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], "fhswtp:e:i:b:o:")
@@ -673,9 +786,7 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
     if name != '':
         names.append(name)
     else:  # run for all files in the path
-        files = [f for f in os.listdir(path) if isfile(join(path, f)) and f.endswith(model_ext)]
-        for f in files:
-            names.append(os.path.splitext(f)[0])
+        names = get_model_names(path, model_ext)
 
     im = 0
     if len(names) > 0:
@@ -700,8 +811,18 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
             print "Finish: %s" % name
         if is_plot_ubv:
             os.system("./ubv.py -i %s -p %s %s & " % (name, path, ubv_args))
+        if is_fit:
+            theta_dic = {}
+            im = 0
+            for bset in set_bands:
+                print "\nFit: %s [%d/%d]" % (bset, im, len(set_bands))
+                im += 1
+                theta = fit_bayesian(dic[bset], tlim=(5., 110),  is_debug=True, is_info=False)
+                theta_dic[bset] = theta
+                print_coef(theta)
+                
         if not is_silence and len(dic_results) > 0:
-            plot_zeta(dic_results, set_bands, t_cut=1.9, is_fit=is_fit, is_fit_bakl=is_fit_bakl,
+            plot_zeta(dic_results, set_bands, theta_dic, t_cut=1.9, is_fit=is_fit, is_fit_bakl=is_fit_bakl,
                       is_plot_Tnu=is_plot_Tnu, is_time_points=is_plot_time_points)
             # plot_zeta_oneframe(dic_results, set_bands, t_cut=1.9, is_fit=is_fit,
             #                    is_plot_Tnu=is_plot_Tnu, is_time_points=is_plot_time_points)
@@ -713,6 +834,7 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
 if __name__ == '__main__':
     main()
 
+# -b g-r_g-r-i_r-i
      # set_bands = ['B-V', 'B-V-I', 'V-I']
      # set_bands = ['B-V', 'B-V-I', 'V-I', 'J-H-K']
      # plot_fits(set_bands, is_grid=False)
