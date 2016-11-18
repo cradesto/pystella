@@ -34,6 +34,33 @@ markers = {u'D': u'diamond', 6: u'caretup', u's': u'square', u'x': u'x',
            u'H': u'hexagon2', u'v': u'triangle_down', u'8': u'octagon', u'<': u'triangle_left'}
 markers = markers.keys()
 
+epm_coef = {
+    'dessart': {
+        'B-V': [0.47188, -0.25399, 0.32630],
+        'B-V-I': [0.63241, -0.38375, 0.28425],
+        'V-I': [0.81662, -0.62896, 0.33852],
+        'J-H-K': [0.10786, 1.12374, 0.]
+    },
+    'eastman': {
+        'B-V': [0.674, -0.741, 0.456, 0.11],
+        'B-V-I': [0.686, -0.577, 0.316, 0.05],
+        'V-I': [0.445, 0.0136, 0., 0.08],
+        'J-H-K': [1.45, -0.45, 0.]
+    },
+    'hamuy': {
+        'B-V': [0.7557, -0.8997, 0.5199, 0.048],
+        'B-V-I': [0.7336, -0.6942, 0.3740, 0.027],
+        'V-I': [0.7013, -0.5304, 0.2646, 0.029],
+        'J-H-K': [1.4787, -0.4799, 0., 0.046]
+    },
+    'bakl': {  # dir /home/bakl/Sn/Release/seb_git/res/tt/tcolor/r500/1
+        'B-V': [0.5948, -0.5891, 0.4784],
+        'B-V-I': [0.6416, -0.3788, 0.2955],
+        'V-I': [0.9819, -0.7699, 0.3919],
+        'J-H-K': [1.331, -0.4201, 0.0891]
+    }
+}
+
 
 def plot_zeta_oneframe(models_dic, set_bands, t_cut=4.9, is_fit=False, is_fit_bakl=False,
                        is_plot_Tcolor=True, is_plot_Tnu=True, is_time_points=False):
@@ -243,30 +270,30 @@ def plot_zeta(models_dic, set_bands, theta_dic, t_cut=4.9,
         for bset in set_bands:
             ax = ax_cache[bset]
             yd = zeta_fit(xx, bset, "dessart")
-            bcolor = "darkviolet"
             if yd is not None:
+                bcolor = "darkviolet"
                 ax.plot(xx, yd, color=bcolor, ls="--", linewidth=2.5, label='Dessart 05')
 
             ye = zeta_fit(xx, bset, "eastman")
-            bcolor = "tomato"
             if ye is not None:
+                bcolor = "tomato"
                 ax.plot(xx, ye, color=bcolor, ls="-.", linewidth=2.5, label='Eastman 96')
 
             if True:
                 yh = zeta_fit(xx, bset, "hamuy")
-                bcolor = "skyblue"
                 if yh is not None:
+                    bcolor = "skyblue"
                     ax.plot(xx, yh, color=bcolor, ls="-.", linewidth=2.5, label='Hamuy 01')
 
             yb = zeta_fit(xx, bset, "bakl")
-            bcolor = "orange"
             if yb is not None:
+                bcolor = "orange"
                 ax.plot(xx, yb, color=bcolor, ls="-", linewidth=2.5, label='Baklanov 16')
 
             # new fit
-            yf = zeta_fit_rev_temp(xx, theta_dic[bset]['v'])
-            bcolor = "blue"
-            if yb is not None:
+            if theta_dic is not None:
+                yf = zeta_fit_rev_temp(xx, theta_dic[bset]['v'])
+                bcolor = "blue"
                 ax.plot(xx, yf, color=bcolor, ls="-", linewidth=2.5, label='new')
 
     # find & plot fit zeta-Tcol for Stella
@@ -284,11 +311,13 @@ def plot_zeta(models_dic, set_bands, theta_dic, t_cut=4.9,
             # print "%s & %s " % (bset, ', '.join([str(round(x, 4)) for x in a[bset]]))
             print " Baklan zeta-T  %s: %s : err %f" % (bset, ' '.join([str(round(x, 4)) for x in a[bset]]), err[bset])
             # print " Baklan errors  %s: %s " % (bset, ' '.join([str(round(x, 4)) for x in ]))
-            if is_fit:
+            if is_fit and zeta_fit_coef_exists(bset):
                 print "Dessart zeta-T  %s: %s " % (bset, ' '.join(map(str, zeta_fit_coef(bset, "dessart"))))
                 print "Eastman zeta-T  %s: %s " % (bset, ' '.join(map(str, zeta_fit_coef(bset, "eastman"))))
                 print "Hamuy01 zeta-T  %s: %s " % (bset, ' '.join(map(str, zeta_fit_coef(bset, "hamuy"))))
                 print "Baklanov zeta-T %s: %s " % (bset, ' '.join(map(str, zeta_fit_coef(bset, "bakl"))))
+                if theta_dic is not None:
+                    print "     New zeta-T %s: %s " % (bset, ' '.join(map(str, np.round(theta_dic[bset]['v'], 4))))
                 print ""
 
         # show fit
@@ -390,6 +419,13 @@ def zeta_fit(Tcol, bset, src):
     return None
 
 
+def zeta_fit_coef_exists(bset):
+    for src, v in epm_coef.items():
+        if bset in v.keys():
+            return True
+    return False
+
+
 def zeta_fit_coef(bset, src):
     """
     Coefficients for zeta fit from Dessart, L., & Hillier, D. J. (2005). doi:10.1051/0004-6361:20053217
@@ -397,37 +433,12 @@ def zeta_fit_coef(bset, src):
     :param bset:
     :return:
     """
-    a = {
-        'dessart': {
-            'B-V': [0.47188, -0.25399, 0.32630],
-            'B-V-I': [0.63241, -0.38375, 0.28425],
-            'V-I': [0.81662, -0.62896, 0.33852],
-            'J-H-K': [0.10786, 1.12374, 0.]
-        },
-        'eastman': {
-            'B-V': [0.674, -0.741, 0.456, 0.11],
-            'B-V-I': [0.686, -0.577, 0.316, 0.05],
-            'V-I': [0.445, 0.0136, 0., 0.08],
-            'J-H-K': [1.45, -0.45, 0.]
-        },
-        'hamuy': {
-            'B-V': [0.7557, -0.8997, 0.5199, 0.048],
-            'B-V-I': [0.7336, -0.6942, 0.3740, 0.027],
-            'V-I': [0.7013, -0.5304, 0.2646, 0.029],
-            'J-H-K': [1.4787, -0.4799, 0., 0.046]
-        },
-        'bakl': {  # dir /home/bakl/Sn/Release/seb_git/res/tt/tcolor/r500/1
-            'B-V': [0.5948, -0.5891, 0.4784],
-            'B-V-I': [0.6416, -0.3788, 0.2955],
-            'V-I': [0.9819, -0.7699, 0.3919],
-            'J-H-K': [1.331, -0.4201, 0.0891]
-        }
-    }
-    if src not in a:
+
+    if src not in epm_coef:
         return None
-    if bset not in a[src]:
+    if bset not in epm_coef[src]:
         return None
-    return a[src][bset]
+    return epm_coef[src][bset]
 
 
 def zeta_fit_rev_temp(T, a_coef):
