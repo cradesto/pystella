@@ -10,13 +10,13 @@ class SnEveTests(unittest.TestCase):
         name = 'cat_R1000_M15_Ni007'
         path = join(dirname(abspath(__file__)), 'data', 'stella')
         eve = StellaEve(name, path=path).load()
-        self.assertTrue(eve.is_load, "Rho-file have not been loaded: %s" % eve.rho_file)
+        self.assertTrue(eve.is_chem_load, "Rho-file have not been loaded: %s" % eve.rho_file)
 
     def test_eve_el(self):
         name = 'cat_R1000_M15_Ni007'
         path = join(dirname(abspath(__file__)), 'data', 'stella')
         eve = StellaEve(name, path=path).load()
-        h = eve.el('H')
+        h = eve.lg_el('H')
         self.assertTrue(len(h) == len(eve.mass), "No data for el: %s" % 'H')
 
     @staticmethod

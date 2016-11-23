@@ -395,7 +395,7 @@ def band_by_name(name):
     """
     if name in Band.Cache:
         b = Band.Cache[name]
-        if not b.is_load:
+        if not b.is_chem_load:
             b.load()
         return Band.Cache[name]
 
@@ -405,7 +405,7 @@ def band_by_name(name):
             if band_is_exist(oname):
                 bo = Band.Cache[oname]
                 ba = bo.clone(aname)
-                if not ba.is_load:
+                if not ba.is_chem_load:
                     ba.load()
                 Band.Cache[aname] = ba
             else:
@@ -418,7 +418,7 @@ def band_by_name(name):
         #     b = BandUni(name=Band.BolName, wlrange=(1e0, 42e3), length=300)
         # else:
         b = Band.Cache[name]
-        if not b.is_load:
+        if not b.is_chem_load:
             b.load()
         # Band.Cache[name] = b
         return b
