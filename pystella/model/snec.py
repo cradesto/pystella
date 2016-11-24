@@ -4,6 +4,8 @@ import logging
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 
+from pystella.util.phys_var import phys
+
 __author__ = 'bakl'
 
 logger = logging.getLogger(__name__)
@@ -169,7 +171,7 @@ class Problem:
             ax.set_xlabel(r'R [cm]')
             ax.set_xscale('log')
         else:
-            x = self.mass
+            x = self.mass / phys.M_sun
             ax.set_xlabel(r'M [$M_\odot$]')
 
         for el in elements:
