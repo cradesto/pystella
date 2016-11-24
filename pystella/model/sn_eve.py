@@ -10,13 +10,12 @@ logger.setLevel(logging.INFO)
 
 __author__ = 'bakl'
 
-# eve_elements = map(str.strip, "Ni56 H He C N O Ne Na  Mg  Al  Si  S  Ar  Ca  Fe  Ni".split())
+eve_elements = map(str.strip, "Ni56 H He C N O Ne Na  Mg  Al  Si  S  Ar  Ca  Fe  Ni".split())
 eve_colors = dict(Ni56="red", H="blue", He="cyan", C="darkorange", N="coral",
                   O="violet", Ne="green", Na="sandybrown",
                   Mg="skyblue", Si="olive", Al="lime",
                   S="indigo", Ar="brown", Ca="purple",
                   Fe='maroon', Ni='magenta')
-eve_elements = list(eve_colors.keys())
 eve_lntypes = dict((k, '--') for k, v in eve_colors.items())  # no y-shift
 eve_lntypes['H'] = '-'
 eve_lntypes['He'] = '-'
