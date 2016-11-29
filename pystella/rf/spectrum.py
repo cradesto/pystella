@@ -349,7 +349,7 @@ class SeriesSpectrum(object):
             star.set_redshift(z)
             star.set_magnification(magnification)
             # mag = star.flux_to_mag(b)
-            mag = star.flux_to_magAB(b)
+            mag = star.magAB(b)
             mags[k] = mag
             # if self.times[k] > 50:
             #     spec.plot_spec(title="t=%f, mag=%f" % (self.times[k], mag))

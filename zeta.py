@@ -17,7 +17,7 @@ from pystella.rf import band, spectrum
 from pystella.rf.star import Star
 from pystella.util.path_misc import get_model_names
 from pystella.util.phys_var import phys
-from pystella.util.string_misc import cache_load, cache_name, cache_save
+from pystella.util.string_misc import cache_load, cache_save
 
 __author__ = 'bakl'
 
@@ -229,10 +229,10 @@ def plot_zeta(models_dic, set_bands, theta_dic, t_cut=4.9,
 
                 if is_time_points:
                     integers = [np.abs(z - t).argmin() for t in t_points]  # set time points
-                    ax.plot(x[integers], y[integers], marker=markers[mi % (len(markers) - 1)], label='',  # mname,   # label='T_mag ' + mname,
+                    ax.plot(x[integers], y[integers], marker=markers[mi % (len(markers) - 1)], label='',
                             markersize=5, color=bcolor, ls="", linewidth=1.5)
                 else:
-                    ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label='',  # mname,   # label='T_mag ' + mname,
+                    ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label='',  # mname, # label='T_mag ' + mname,
                             markersize=5, color=bcolor, ls="", linewidth=1.5)
 
                 if is_time_points and mi % 10 == 1:
@@ -299,7 +299,6 @@ def plot_zeta(models_dic, set_bands, theta_dic, t_cut=4.9,
                 yf = zeta_fit_rev_temp(xx, theta_dic[bset]['v'])
                 bcolor = "orange"
                 ax.plot(xx, yf, color=bcolor, ls="-", linewidth=2.5, label='Baklanov 16')
-
 
         # PRINT coef
         for bset in set_bands:
@@ -496,26 +495,28 @@ def epsilon_fit_zeta(x, models_dic, bset, t_beg, t_end=None):
     return e
 
 
-def epsilon(theta, freq, mag, bands, radius, dist):
+def epsilon(theta, freq, mag, bands, radius, dist, z):
     temp_color, zeta = theta
     e = 0
     if temp_color < 0 or zeta < 0:
         for b in bands:
             e += mag[b] ** 2
         return e
+    # sp = spectrum.SpectrumDilutePlanck(freq, temp_color, W=zeta**2)
     sp = spectrum.SpectrumDilutePlanck(freq, temp_color, W=zeta**2)
     # sp.correct_zeta(zeta)
 
     star = Star("bb", sp)
     star.set_radius_ph(radius)
     star.set_distance(dist)
-    mag_bb = {b: star.flux_to_magAB(band.band_by_name(b)) for b in bands}
+    star.set_redshift(z)
+    mag_bb = {b: star.magAB(band.band_by_name(b)) for b in bands}
     for b in bands:
         e += (mag[b] - mag_bb[b])**2
     return e
 
 
-def compute_Tcolor_zeta(mags, tt, bands, freq, d):
+def compute_Tcolor_zeta(mags, tt, bands, freq, d, z):
     temp = list()
     zeta_radius = list()
     times = list()
@@ -531,7 +532,7 @@ def compute_Tcolor_zeta(mags, tt, bands, freq, d):
         mag = {b: mags[b][nt] for b in bands}
         radius = interpolate.splev(t, Rph_spline)
         # tcolor, w = minimize(epsilon, x0=np.array([1.e4, 1]), args=(freq, mag, bands, radius, d))
-        tcolor, w = fmin(epsilon, x0=np.array([1.e4, 1]), args=(freq, mag, bands, radius, d), disp=False)
+        tcolor, w = fmin(epsilon, x0=np.array([1.e4, 1]), args=(freq, mag, bands, radius, d, z), disp=False)
         temp.append(tcolor)
         zeta_radius.append(w)
         times.append(t)
@@ -566,7 +567,7 @@ def compute_Tnu_w(serial_spec, tt):
     return temp_nu, temp_eff, W
 
 
-def compute_tcolor(name, path, bands, t_cut=1.):
+def compute_tcolor(name, path, bands, d=rf.pc_to_cm(10.), z=0., t_cut=1.):
     model = Stella(name, path=path)
 
     if not model.is_ph_data:
@@ -577,12 +578,11 @@ def compute_tcolor(name, path, bands, t_cut=1.):
         print "No tt-data for: " + str(model)
         return None
 
-    distance = rf.pc_to_cm(10.)  # pc for Absolute magnitude
     # serial_spec = model.read_series_spectrum(t_diff=1.)
     # curves = serial_spec.flux_to_curves(bands, d=distance)
     serial_spec = model.read_series_spectrum(t_diff=1.05, t_beg=t_cut)
     # curves = serial_spec.
-    mags = serial_spec.mags_bands(bands, z=0., d=distance)
+    mags = serial_spec.mags_bands(bands, z=z, d=d)
 
     # read R_ph
     tt = model.read_tt_data()
@@ -592,7 +592,7 @@ def compute_tcolor(name, path, bands, t_cut=1.):
     Tnu, Teff, W = compute_Tnu_w(serial_spec, tt=tt)
 
     # fit mags by B(T_col) and get \zeta\theta & T_col
-    Tcolors, zetaR, times = compute_Tcolor_zeta(mags, tt=tt, bands=bands, freq=serial_spec.Freq, d=distance)
+    Tcolors, zetaR, times = compute_Tcolor_zeta(mags, tt=tt, bands=bands, freq=serial_spec.Freq, d=d, z=z)
 
     # show results
     res = np.array(np.zeros(len(Tcolors)),
@@ -608,7 +608,7 @@ def compute_tcolor(name, path, bands, t_cut=1.):
     return res
 
 
-def fit_bayesian(ztdata, tlim=None, is_debug=True, is_info=False):
+def fit_bayesian(ztdata, tlim=None, is_debug=True, is_info=False, title=''):
     import emcee
 
     if tlim is not None:
@@ -625,7 +625,7 @@ def fit_bayesian(ztdata, tlim=None, is_debug=True, is_info=False):
         Tcol = zt['Tcol']
         zeta = zt['zeta']
         z_fit = zeta_fit_rev_temp(Tcol, theta)
-        e = zeta * 0.005
+        e = zeta * 0.0005
         l = -0.5 * np.sum(np.log(2 * np.pi * (e**2))
                           + (zeta - z_fit)**2 / e**2)
         # print "epsilon: err=%f" % l
@@ -655,24 +655,29 @@ def fit_bayesian(ztdata, tlim=None, is_debug=True, is_info=False):
     sampler.run_mcmc(starting_guesses, nsteps)
     # plot
     if is_info:
+        # Plot
+        fig = plt.figure(num=None, figsize=(6, ndim*2), dpi=100, facecolor='w', edgecolor='k')
+        gs1 = gridspec.GridSpec(ndim, 1)
+        plt.matplotlib.rcParams.update({'font.size': 10})
+        fig.suptitle(title)
         for i in range(ndim):
-            plt.figure()
-            plt.hist(sampler.flatchain[:, i], 100, color="k", histtype="stepfilled",
-                     alpha=0.3, normed=True, label='%d' % i)
-            plt.title("Dimension {0:d}".format(i))
+            ax = fig.add_subplot(gs1[i, 0])
+            ax.hist(sampler.flatchain[:, i], 100, color="k", histtype="step",
+                    alpha=0.3, normed=True, label='a_%d' % i)
+            ax.legend()
 
             # the fraction of steps accepted for each walker.
             print("Mean acceptance fraction: {0:.3f}"
                   .format(np.mean(sampler.acceptance_fraction)))
 
     a = []
-    e = []
+    sigma = []
     for i in range(ndim):
         sample = sampler.chain[:, nburn:, i].ravel()
         a.append(np.mean(sample))
-        e.append(np.std(sample))
+        sigma.append(np.std(sample))
 
-    res = {'v': a, 'e': e}
+    res = {'v': a, 'e': sigma}
     return res
 
 
@@ -707,6 +712,7 @@ def usage():
     print "  zeta.py [params]"
     print "  -b <set_bands>: delimiter '_'. Default: B-V-I_B-V_V-I.\n" \
           "     Available: " + '-'.join(sorted(bands))
+    print "  -d <distance> [pc].  Default: 10 pc"
     print "  -i <model name>.  Example: cat_R450_M15_Ni007_E7"
     print "  -p <model path(directory)>, default: ./"
     print "  -e <model extension> is used to define model name, default: tt "
@@ -715,6 +721,7 @@ def usage():
     # print "  -a  plot the Eastman & Dessart fits"
     print "  -o  options: <fit:fitb:time:ubv:Tnu> - fit E&D: fit bakl:  show time points: plot UBV"
     print "  -w  write magnitudes to file, default 'False'"
+    print "  -z <redshift>.  Default: 0"
     print "  -h  print usage"
 
 
@@ -728,32 +735,44 @@ def print_coef(theta):
         print("{0}: {1}".format(i, s))
 
 
+def cache_name(name, path, bands, z=0.):
+    fname = os.path.join(path, "%s.%s" % (name, bands))
+    if z > 0.:
+        fname += ".z%.2f" % z
+    fname += ".zeta"
+    return fname
+
+
 def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, is_plot_time_points=False):
-    is_silence = False
+    is_info = False
     is_fit = False
-    is_plot_ubv = False
+    is_save_plot = False
     is_fit_bakl = False
     model_ext = '.tt'
-    ubv_args = ''
     theta_dic = None
+    distance = rf.pc_to_cm(10.)  # pc
+    z = 0.
 
     band.Band.load_settings()
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "fhswtp:e:i:b:o:")
+        opts, args = getopt.getopt(sys.argv[1:], "fhswtb:d:e:i:p:o:z:")
     except getopt.GetoptError as err:
         print str(err)  # will print something like "option -a not recognized"
         usage()
         sys.exit(2)
 
+    if len(args) > 0:
+        path, name = os.path.split(str(args[0]))
+        path = os.path.expanduser(path)
+    elif len(opts) == 0:
+        usage()
+        sys.exit(2)
+
     if not name:
-        if len(opts) == 0:
-            usage()
-            sys.exit(2)
         for opt, arg in opts:
             if opt == '-i':
-                path = ROOT_DIRECTORY
-                name = str(arg)
+                name = os.path.splitext(os.path.basename(str(arg)))[0]
                 break
 
     set_bands = ['B-V', 'B-V-I', 'V-I', 'J-H-K']
@@ -772,22 +791,24 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
                         print 'No such band: ' + b
                         sys.exit(2)
             continue
+        if opt == '-z':
+            z = float(arg)
+            continue
+        if opt == '-d':
+            distance = rf.pc_to_cm(float(arg))
+            continue
         if opt == '-s':
-            is_silence = True
-            ubv_args += opt + ' '
+            is_save_plot = True
             continue
         if opt == '-o':
             ops = str(arg).split(':')
-            is_plot_ubv = "ubv" in ops
             is_plot_Tnu = "Tnu" in ops
             is_plot_time_points = "time" in ops
             is_fit = "fit" in ops
             is_fit_bakl = "fitb" in ops
-            ubv_args += " %s %s ".format(opt, arg)
             continue
         if opt == '-w':
             is_save = True
-            ubv_args += opt + ' '
             continue
         if opt == '-f':
             is_force = True
@@ -815,14 +836,14 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
         for name in names:
             im += 1
             dic = {}  # dict((k, None) for k in set_bands)
-            print "\nRun: %s [%d/%d]" % (name, im, len(names))
+            print "\nRun: %s [%d/%d], z=%.2f, d=%.2e" % (name, im, len(names), z, distance)
             is_err = False
             for bset in set_bands:
                 fname = cache_name(name, path, bset)
                 if not is_force and os.path.exists(fname):
                     res = cache_load(fname)
                 else:
-                    res = compute_tcolor(name, path, bset.split('-'), t_cut=0.9)
+                    res = compute_tcolor(name, path, bset.split('-'), d=distance, z=z, t_cut=0.9)
 
                 if res is not None:
                     dic[bset] = res
@@ -838,21 +859,20 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
 
             dic_results[name] = dic
             print "Finish: %s" % name
-        if is_plot_ubv:
-            os.system("./ubv.py -i %s -p %s %s & " % (name, path, ubv_args))
         if is_fit:
             theta_dic = {}
             im = 0
             for bset in set_bands:
+                todo сделать фитирование по всем! моделям а не по одной!
                 print "\nFit: %s [%d/%d]" % (bset, im, len(set_bands))
                 im += 1
-                theta = fit_bayesian(dic[bset], tlim=(7., 80),  is_debug=True, is_info=False)
+                theta = fit_bayesian(dic[bset], tlim=(7., 80),  is_debug=True, is_info=is_info, title=bset)
                 theta_dic[bset] = theta
                 print_coef(theta)
-                
-        if not is_silence and len(dic_results) > 0:
-            fig = plot_zeta(dic_results, set_bands, theta_dic, t_cut=1.9, is_fit=is_fit, is_fit_bakl=is_fit_bakl,
-                            is_plot_Tnu=is_plot_Tnu, is_time_points=is_plot_time_points)
+
+        fig = plot_zeta(dic_results, set_bands, theta_dic, t_cut=1.9, is_fit=is_fit, is_fit_bakl=is_fit_bakl,
+                        is_plot_Tnu=is_plot_Tnu, is_time_points=is_plot_time_points)
+        if is_save_plot and len(dic_results) > 0:
             fsave = os.path.join(os.path.expanduser('~/'), 'epm_'+'_'.join(set_bands)+'.pdf')
             print "Save plot in %s" % fsave
             fig.savefig(fsave, bbox_inches='tight', format='pdf')

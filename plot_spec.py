@@ -365,7 +365,7 @@ def epsilon(x, freq, mag, bands, radius, dist):
     star = Star("bb", sp)
     star.set_radius_ph(radius)
     star.set_distance(dist)
-    mag_bb = {b: star.flux_to_magAB(band.band_by_name(b)) for b in bands}
+    mag_bb = {b: star.magAB(band.band_by_name(b)) for b in bands}
     e = 0
     for b in bands:
         e += abs(mag[b] - mag_bb[b])
@@ -376,7 +376,7 @@ def compute_tcolor(star, bands):
     mags = {}
     for n in bands:
         b = band.band_by_name(n)
-        mags[n] = star.flux_to_magAB(b)
+        mags[n] = star.magAB(b)
 
     Tcol, zeta = fmin(epsilon, x0=np.array([1.e4, 1]),
                       args=(star.Freq, mags, bands, star.radius_ph, star.distance), disp=0)

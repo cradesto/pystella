@@ -30,7 +30,7 @@ class TestStar(unittest.TestCase):
             b = band.band_by_name(n)
             # mag = star.flux_to_mag(b) - phys.ZP_AB_lmb
 
-            mag = star.flux_to_magAB(b) - phys.ZP_AB
+            mag = star.magAB(b) - phys.ZP_AB
             # mag = star.flux_to_magAB(b) - delta[n] - phys.ZP_AB
 
             self.assertAlmostEqual(mag, 0., delta=0.5,
@@ -45,7 +45,7 @@ class TestStar(unittest.TestCase):
         for n in bands:
             b = band.band_by_name(n)
             # mag = star.flux_to_mag(b)
-            mag = star.flux_to_magAB(b)
+            mag = star.magAB(b)
             self.assertAlmostEqual(mag, phys.ZP_AB, delta=1.,
                                    msg="For uniform flux=1 it should be mag==AB zero point.\n \
                                         Now mag is %f for band %s. ZP is %f" % (mag, b, phys.ZP_AB))
@@ -55,7 +55,7 @@ class TestStar(unittest.TestCase):
         star = Star('test', self.sp)
         for n in bands:
             b = band.band_by_name(n)
-            mag = star.flux_to_magAB(b)
+            mag = star.magAB(b)
             self.assertAlmostEqual(mag, phys.ZP_AB, delta=1.,
                                    msg="For uniform flux=1 it should be mag==AB zero point.\n \
                                         Now mag is %f for band %s. ZP is %f" % (mag, b, phys.ZP_AB))
@@ -67,7 +67,7 @@ class TestStar(unittest.TestCase):
         # star.set_distance(self.distance)
         for n in bands:
             b = band.band_by_name(n)
-            mag = star.flux_to_magAB(b)
+            mag = star.magAB(b)
             self.assertAlmostEqual(mag, phys.ZP_AB, delta=1.,
                                    msg="For uniform flux=1 it should be mag==AB zero point.\n \
                                         Now mag is %f for band %s. ZP is %f" % (mag, b, phys.ZP_AB))

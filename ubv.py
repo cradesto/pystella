@@ -169,12 +169,8 @@ def main(name='', model_ext='.ph'):
     if not name:
         for opt, arg in opts:
             if opt == '-i':
-                # path = os.path.join(ROOT_DIRECTORY, 'pystella/')
                 name = os.path.splitext(os.path.basename(str(arg)))[0]
                 break
-                # if name == '':
-                #     print 'Error: you should specify the name of model.'
-                #     sys.exit(2)
 
     bands = ['U', 'B', 'V', 'R', "I"]
     # bands = ['U', 'B', 'V', 'R', "I", 'UVM2', "UVW1", "UVW2", 'g', "r", "i"]

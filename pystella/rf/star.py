@@ -1,9 +1,7 @@
-from scipy import interpolate
 import numpy as np
-# from scipy.integrate import simps as integralfunc
 from scipy import integrate
+from scipy import interpolate
 
-from pystella.rf import band
 from pystella.rf.rad_func import Flux2MagAB
 from pystella.util.phys_var import phys
 
@@ -161,7 +159,7 @@ class Star:
         else:
             flux_spline = np.interp(wl_b, wl_s, flux, 0, 0)  # One-dimensional linear interpolation.
 
-        a = integrate.integralfunc(flux_spline * band.resp_wl * wl_b, wl_b) / (phys.c * phys.cm_to_angs) / phys.h
+        a = integrate.simps(flux_spline * band.resp_wl * wl_b, wl_b) / (phys.c * phys.cm_to_angs) / phys.h
         return a
 
     def _response_nu(self, b, is_b_spline=True):
@@ -173,12 +171,10 @@ class Star:
         :return:
         """
         nu_s = self.Freq
-        flux = self.FluxObs  # / phys.cm_to_angs  # to flux [erg/cm^2/A) ]
-
         # sort
         sorti = np.argsort(nu_s)
         nu_s = nu_s[sorti]
-        flux = flux[sorti]
+        flux = self.FluxObs[sorti]
 
         nu_b = np.array(b.freq)
         resp_b = np.array(b.resp_fr)
@@ -202,16 +198,7 @@ class Star:
         a = integrate.simps(flux_spline * resp_b / nu_b, nu_b)
         return a
 
-    def flux_to_mag_not_checked(self, band):
-        conv = self._response_lmb(band)
-        # conv = self._response_nu(band)
-        if conv <= 0:
-            return None
-        else:
-            mag = -2.5 * np.log10(conv) + band.zp
-            return mag
-
-    def flux_to_magAB(self, b):
+    def magAB(self, b):
         response = self._response_nu(b)
         if response <= 0:
             raise ValueError("Spectrum should be more 0: %f" % response)
