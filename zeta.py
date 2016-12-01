@@ -58,9 +58,9 @@ epm_coef = {
         'B-V-I': [0.6416, -0.3788, 0.2955],
         'V-I': [0.9819, -0.7699, 0.3919],
         'J-H-K': [1.331, -0.4201, 0.0891],
-        'g-r':   [0.69, -0.58, 0.42],
+        'g-r': [0.69, -0.58, 0.42],
         'g-r-i': [0.72, -0.49, 0.33],
-        'r-i':   [0.82, -0.49, 0.26]
+        'r-i': [0.82, -0.49, 0.26]
     }
 }
 
@@ -201,26 +201,20 @@ def plot_zeta(models_dic, set_bands, theta_dic, t_cut=4.9,
         ax.set_title(bset, x=0.5, y=0.9)
 
     # plot data
-    mi = 0
-    i = 0
-    for mname, mdic in models_dic.iteritems():
-        mi += 1
-        ib = 0
-        for bset in set_bands:
-            ib += 1
-            i += 1
-            if bset in ax_cache:
-                ax = ax_cache[bset]
-            else:
-                icol = (ib - 1) % 2
-                irow = (ib - 1) / 2
-                ax = fig.add_subplot(gs1[irow, icol])
-                ax_cache[bset] = ax
+    # i = 0
+    ib = 0
+    for bset in set_bands:
+        ib += 1
+        mi = 0
+        for mname, tbl in models_dic[bset].iteritems():
+            ax = ax_cache[bset]
+            mi += 1
+            # i += 1
 
             if is_plot_Tcolor:
-                x = mdic[bset]['Tcol']
-                y = mdic[bset]['zeta']
-                z = mdic[bset]['time']
+                x = tbl['Tcol']
+                y = tbl['zeta']
+                z = tbl['time']
                 x = x[z > t_cut]
                 y = y[z > t_cut]
                 z = z[z > t_cut]
@@ -244,10 +238,10 @@ def plot_zeta(models_dic, set_bands, theta_dic, t_cut=4.9,
                         # t_min = z[y[x > 5000.].argmin()]
                         # print "t_min( %s) = %f" % (bset, t_min)
             if is_plot_Tnu:
-                z = mdic[bset]['time']
-                xTnu = mdic[bset]['Tnu']
-                zTeff = mdic[bset]['Teff']
-                yW = mdic[bset]['W']
+                z = tbl['time']
+                xTnu = tbl['Tnu']
+                zTeff = tbl['Teff']
+                yW = tbl['W']
                 xTnu = xTnu[z > t_cut]
                 yW = yW[z > t_cut]
                 yW = np.sqrt(yW)
@@ -298,7 +292,7 @@ def plot_zeta(models_dic, set_bands, theta_dic, t_cut=4.9,
             if theta_dic is not None:
                 yf = zeta_fit_rev_temp(xx, theta_dic[bset]['v'])
                 bcolor = "orange"
-                ax.plot(xx, yf, color=bcolor, ls="-", linewidth=2.5, label='Baklanov 16')
+                ax.plot(xx, yf, color=bcolor,  dashes=[12,6,12,6,3,6], linewidth=2.5, label='Baklanov 16')
 
         # PRINT coef
         for bset in set_bands:
@@ -322,7 +316,8 @@ def plot_zeta(models_dic, set_bands, theta_dic, t_cut=4.9,
                 t_beg, t_end = 5., 110  # None  # 100.
                 a[bset], err[bset] = zeta_fit_coef_my(models_dic, bset, t_beg=t_beg, t_end=t_end)  # todo check t_end
                 # print "%s & %s " % (bset, ', '.join([str(round(x, 4)) for x in a[bset]]))
-                print " Baklan zeta-T  %s: %s : err %f" % (bset, ' '.join([str(round(x, 4)) for x in a[bset]]), err[bset])
+                print " Baklan zeta-T  %s: %s : err %f" % (
+                bset, ' '.join([str(round(x, 4)) for x in a[bset]]), err[bset])
                 # print " Baklan errors  %s: %s " % (bset, ' '.join([str(round(x, 4)) for x in ]))
                 print ""
 
@@ -477,10 +472,10 @@ def zeta_fit_coef_my(models_dic, bset, t_beg, t_end=None):
 
 def epsilon_fit_zeta(x, models_dic, bset, t_beg, t_end=None):
     e = 0
-    for mname, mdic in models_dic.iteritems():
-        Tcol = mdic[bset]['Tcol']
-        zeta = mdic[bset]['zeta']
-        z = mdic[bset]['time']
+    for mname, tbl in models_dic[bset].iteritems():
+        Tcol = tbl['Tcol']
+        zeta = tbl['zeta']
+        z = tbl['time']
         if t_end is None:
             cut = z >= t_beg
         else:
@@ -490,7 +485,7 @@ def epsilon_fit_zeta(x, models_dic, bset, t_beg, t_end=None):
         zeta = zeta[cut]
 
         z_fit = zeta_fit_rev_temp(Tcol, x)
-        e += np.sum((zeta - z_fit)**2) / len(zeta)
+        e += np.sum((zeta - z_fit) ** 2) / len(zeta)
     # print "epsilon: err=%f" % e
     return e
 
@@ -503,7 +498,7 @@ def epsilon(theta, freq, mag, bands, radius, dist, z):
             e += mag[b] ** 2
         return e
     # sp = spectrum.SpectrumDilutePlanck(freq, temp_color, W=zeta**2)
-    sp = spectrum.SpectrumDilutePlanck(freq, temp_color, W=zeta**2)
+    sp = spectrum.SpectrumDilutePlanck(freq, temp_color, W=zeta ** 2)
     # sp.correct_zeta(zeta)
 
     star = Star("bb", sp)
@@ -512,7 +507,7 @@ def epsilon(theta, freq, mag, bands, radius, dist, z):
     star.set_redshift(z)
     mag_bb = {b: star.magAB(band.band_by_name(b)) for b in bands}
     for b in bands:
-        e += (mag[b] - mag_bb[b])**2
+        e += (mag[b] - mag_bb[b]) ** 2
     return e
 
 
@@ -608,11 +603,14 @@ def compute_tcolor(name, path, bands, d=rf.pc_to_cm(10.), z=0., t_cut=1.):
     return res
 
 
-def fit_bayesian(ztdata, tlim=None, is_debug=True, is_info=False, title=''):
+def fit_bayesian(models_zt, tlim=None, is_debug=True, is_info=False, title=''):
     import emcee
 
     if tlim is not None:
-        ztdata = cut_ztdata(ztdata, tlim)
+        models_zt_new = {}
+        for mname, tbl in models_zt.iteritems():
+            models_zt_new[mname] = table_cut_by_col(tbl, tlim, 'time')
+        models_zt = models_zt_new
 
     def log_prior(theta):
         if np.any(theta > 5):
@@ -621,18 +619,21 @@ def fit_bayesian(ztdata, tlim=None, is_debug=True, is_info=False, title=''):
             return -np.inf
         return 1  # flat prior
 
-    def log_likelihood_t(theta, zt):
-        Tcol = zt['Tcol']
-        zeta = zt['zeta']
+    def log_likelihood_t(theta, tbl_zt):
+        Tcol = tbl_zt['Tcol']
+        zeta = tbl_zt['zeta']
         z_fit = zeta_fit_rev_temp(Tcol, theta)
-        e = zeta * 0.0005
-        l = -0.5 * np.sum(np.log(2 * np.pi * (e**2))
-                          + (zeta - z_fit)**2 / e**2)
+        e = 0.01
+        l = -0.5 * np.sum(np.log(2 * np.pi * (e ** 2))
+                          + (zeta - z_fit) ** 2 / e ** 2)
         # print "epsilon: err=%f" % l
         return l
 
-    def log_posterior(theta, zt):
-        return log_prior(theta) + log_likelihood_t(theta, zt)
+    def log_posterior(theta, models_zt):
+        p = 0.
+        for mname, tbl in models_zt.iteritems():
+            p += log_likelihood_t(theta, tbl)
+        return log_prior(theta) + p
 
     ndim = 3  # number of parameters in the model
     nwalkers = 50  # number of MCMC walkers
@@ -651,12 +652,12 @@ def fit_bayesian(ztdata, tlim=None, is_debug=True, is_info=False, title=''):
     starting_guesses[0] = 1.
 
     # fit
-    sampler = emcee.EnsembleSampler(nwalkers, ndim, log_posterior, args=[ztdata])
+    sampler = emcee.EnsembleSampler(nwalkers, ndim, log_posterior, args=[models_zt])
     sampler.run_mcmc(starting_guesses, nsteps)
     # plot
     if is_info:
         # Plot
-        fig = plt.figure(num=None, figsize=(6, ndim*2), dpi=100, facecolor='w', edgecolor='k')
+        fig = plt.figure(num=None, figsize=(6, ndim * 2), dpi=100, facecolor='w', edgecolor='k')
         gs1 = gridspec.GridSpec(ndim, 1)
         plt.matplotlib.rcParams.update({'font.size': 10})
         fig.suptitle(title)
@@ -681,28 +682,20 @@ def fit_bayesian(ztdata, tlim=None, is_debug=True, is_info=False, title=''):
     return res
 
 
-def cut_ztdata(ztdata, tlim):
-    t = ztdata['time']
-    t_beg = tlim[0]
-    t_end = tlim[1]
-    if t_end is None:
-        cut = t >= t_beg
+def table_cut_by_col(tbl, xlim, cname):
+    x = tbl[cname]
+    x_beg = xlim[0]
+    x_end = xlim[1]
+    if x_beg is None:
+        cut = x <= x_end
+    elif x_end is None:
+        cut = x >= x_beg
     else:
-        cut = (t >= t_beg) & (t <= t_end)
+        cut = (x >= x_beg) & (x <= x_end)
 
-    time = ztdata['time'][cut]
-    # show results
-    res = np.array(np.zeros(len(time)),
-                   dtype=np.dtype({'names': ['time', 'Tcol', 'zeta', 'Tnu', 'Teff', 'W'],
-                                   'formats': [np.float64] * 6}))
-
-    res['time'] = time
-    res['Tcol'] = ztdata['Tcol'][cut]
-    res['zeta'] = ztdata['zeta'][cut]
-    res['Tnu'] = ztdata['Tnu'][cut]
-    res['Teff'] = ztdata['Teff'][cut]
-    res['W'] = ztdata['W'][cut]
-
+    res = np.zeros(np.sum(cut), dtype=tbl.dtype)
+    for col in res.dtype.names:
+        res[col] = tbl[col][cut]
     return res
 
 
@@ -730,7 +723,7 @@ def print_coef(theta):
     for v, e in zip(theta['v'], theta['e']):
         strs.append("{0:.2f}+/-{1:.4f}".format(v, e))
 
-    print(""" Results: """)
+    # print(""" Results: """)
     for i, s in enumerate(strs):
         print("{0}: {1}".format(i, s))
 
@@ -830,15 +823,18 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
     else:  # run for all files in the path
         names = get_model_names(path, model_ext)
 
-    im = 0
     if len(names) > 0:
         dic_results = {}  # dict((k, None) for k in names)
-        for name in names:
-            im += 1
-            dic = {}  # dict((k, None) for k in set_bands)
-            print "\nRun: %s [%d/%d], z=%.2f, d=%.2e" % (name, im, len(names), z, distance)
-            is_err = False
-            for bset in set_bands:
+        ib = 0
+        for bset in set_bands:
+            ib += 1
+            im = 0
+            dic = {}
+            print "\nRun: %s [%d/%d], z=%.2f, d=%.2e" % (bset, ib, len(set_bands), z, distance)
+            for name in names:
+                im += 1
+                print "Run: %s [%d/%d]" % (name, im, len(names))
+                is_err = False
                 fname = cache_name(name, path, bset)
                 if not is_force and os.path.exists(fname):
                     res = cache_load(fname)
@@ -846,7 +842,7 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
                     res = compute_tcolor(name, path, bset.split('-'), d=distance, z=z, t_cut=0.9)
 
                 if res is not None:
-                    dic[bset] = res
+                    dic[name] = res
                     if is_save:
                         print "Save Tcolor & Zeta for %s in %s" % (bset, fname)
                         cache_save(dic[bset], fname=fname)
@@ -857,23 +853,22 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
             if is_err:
                 print " ERROR for %s " % name
 
-            dic_results[name] = dic
+            dic_results[bset] = dic
             print "Finish: %s" % name
         if is_fit:
             theta_dic = {}
             im = 0
             for bset in set_bands:
-                todo сделать фитирование по всем! моделям а не по одной!
                 print "\nFit: %s [%d/%d]" % (bset, im, len(set_bands))
                 im += 1
-                theta = fit_bayesian(dic[bset], tlim=(7., 80),  is_debug=True, is_info=is_info, title=bset)
+                theta = fit_bayesian(dic_results[bset], tlim=(7., 80), is_debug=True, is_info=is_info, title=bset)
                 theta_dic[bset] = theta
                 print_coef(theta)
 
         fig = plot_zeta(dic_results, set_bands, theta_dic, t_cut=1.9, is_fit=is_fit, is_fit_bakl=is_fit_bakl,
                         is_plot_Tnu=is_plot_Tnu, is_time_points=is_plot_time_points)
         if is_save_plot and len(dic_results) > 0:
-            fsave = os.path.join(os.path.expanduser('~/'), 'epm_'+'_'.join(set_bands)+'.pdf')
+            fsave = os.path.join(os.path.expanduser('~/'), 'epm_' + '_'.join(set_bands) + '.pdf')
             print "Save plot in %s" % fsave
             fig.savefig(fsave, bbox_inches='tight', format='pdf')
 
@@ -885,9 +880,9 @@ if __name__ == '__main__':
     main()
 
 # -b g-r_g-r-i_r-i
-     # set_bands = ['B-V', 'B-V-I', 'V-I']
-     # set_bands = ['B-V', 'B-V-I', 'V-I', 'J-H-K']
-     # plot_fits(set_bands, is_grid=False)
+# set_bands = ['B-V', 'B-V-I', 'V-I']
+# set_bands = ['B-V', 'B-V-I', 'V-I', 'J-H-K']
+# plot_fits(set_bands, is_grid=False)
 
-    # main(name="cat_R1000_M15_Ni007_E15", path="/home/bakl/Sn/Release/seb_git/res/tt",
-    #      is_force=False, is_save=True, is_plot_time_points=True)
+# main(name="cat_R1000_M15_Ni007_E15", path="/home/bakl/Sn/Release/seb_git/res/tt",
+#      is_force=False, is_save=True, is_plot_time_points=True)
