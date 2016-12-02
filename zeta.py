@@ -9,7 +9,7 @@ import sys
 from matplotlib import gridspec
 from os.path import dirname
 from scipy import interpolate
-from scipy.optimize import fmin
+from scipy.optimize import fmin, minimize
 
 import pystella.rf.rad_func as rf
 from pystella.model.stella import Stella
@@ -526,7 +526,9 @@ def compute_Tcolor_zeta(mags, tt, bands, freq, d, z):
             break
         mag = {b: mags[b][nt] for b in bands}
         radius = interpolate.splev(t, Rph_spline)
-        # tcolor, w = minimize(epsilon, x0=np.array([1.e4, 1]), args=(freq, mag, bands, radius, d))
+        # res = minimize(lambda x: epsilon(x, freq, mag, bands, radius, d, z),
+        #                x0=[1.e4, 1], method='Nelder-Mead', tol=1e-4)
+        # tcolor, w = res.x
         tcolor, w = fmin(epsilon, x0=np.array([1.e4, 1]), args=(freq, mag, bands, radius, d, z), disp=False)
         temp.append(tcolor)
         zeta_radius.append(w)
@@ -603,14 +605,8 @@ def compute_tcolor(name, path, bands, d=rf.pc_to_cm(10.), z=0., t_cut=1.):
     return res
 
 
-def fit_bayesian(models_zt, tlim=None, is_debug=True, is_info=False, title=''):
+def fit_bayesian(models_zt, is_debug=True, is_info=False, title=''):
     import emcee
-
-    if tlim is not None:
-        models_zt_new = {}
-        for mname, tbl in models_zt.iteritems():
-            models_zt_new[mname] = table_cut_by_col(tbl, tlim, 'time')
-        models_zt = models_zt_new
 
     def log_prior(theta):
         if np.any(theta > 5):
@@ -623,17 +619,16 @@ def fit_bayesian(models_zt, tlim=None, is_debug=True, is_info=False, title=''):
         Tcol = tbl_zt['Tcol']
         zeta = tbl_zt['zeta']
         z_fit = zeta_fit_rev_temp(Tcol, theta)
-        e = 0.01
-        l = -0.5 * np.sum(np.log(2 * np.pi * (e ** 2))
-                          + (zeta - z_fit) ** 2 / e ** 2)
+        e = 0.01 *zeta
+        l = -0.5 * np.sum(np.log(2 * np.pi * (e ** 2)) + (zeta - z_fit) ** 2 / e ** 2)
         # print "epsilon: err=%f" % l
         return l
 
-    def log_posterior(theta, models_zt):
-        p = 0.
-        for mname, tbl in models_zt.iteritems():
+    def log_posterior(theta, models):
+        p = log_prior(theta)
+        for mname, tbl in models.iteritems():
             p += log_likelihood_t(theta, tbl)
-        return log_prior(theta) + p
+        return p
 
     ndim = 3  # number of parameters in the model
     nwalkers = 50  # number of MCMC walkers
@@ -824,7 +819,7 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
         names = get_model_names(path, model_ext)
 
     if len(names) > 0:
-        dic_results = {}  # dict((k, None) for k in names)
+        results = {}  # dict((k, None) for k in names)
         ib = 0
         for bset in set_bands:
             ib += 1
@@ -832,6 +827,7 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
             dic = {}
             print "\nRun: %s [%d/%d], z=%.2f, d=%.2e" % (bset, ib, len(set_bands), z, distance)
             for name in names:
+                res = None
                 im += 1
                 print "Run: %s [%d/%d]" % (name, im, len(names))
                 is_err = False
@@ -840,34 +836,51 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
                     res = cache_load(fname)
                 else:
                     res = compute_tcolor(name, path, bset.split('-'), d=distance, z=z, t_cut=0.9)
-
-                if res is not None:
-                    dic[name] = res
-                    if is_save:
+                    if is_save and res is not None:
                         print "Save Tcolor & Zeta for %s in %s" % (bset, fname)
-                        cache_save(dic[bset], fname=fname)
+                        cache_save(res, fname=fname)
 
-                    idx = np.argmin(np.abs(res['Tcol'] - 1.e4))
-                    if abs(res['zeta'][idx] - 1.) <= 1e-3:
-                        is_err = True
+                dic[name] = res
+                # check for errors
+                idx = np.argmin(np.abs(res['Tcol'] - 1.e4))
+                if abs(res['zeta'][idx] - 1.) <= 1e-3:
+                    is_err = True
             if is_err:
-                print " ERROR for %s " % name
+                print " ERROR for %s in %s" % (name, bset)
 
-            dic_results[bset] = dic
+            results[bset] = dic
             print "Finish: %s" % name
         if is_fit:
             theta_dic = {}
             im = 0
+            results_flter = {}
             for bset in set_bands:
-                print "\nFit: %s [%d/%d]" % (bset, im, len(set_bands))
                 im += 1
-                theta = fit_bayesian(dic_results[bset], tlim=(7., 80), is_debug=True, is_info=is_info, title=bset)
+                models = results[bset]
+                tlim = (7., 80)
+                if tlim is not None:
+                    models_zt_new = {}
+                    for mname, tbl in models.iteritems():
+                        models_zt_new[mname] = table_cut_by_col(tbl, tlim, 'time')
+                    models = models_zt_new
+
+                # templim = (4.e3, 12e3)
+                # if templim is not None:
+                #     models_zt_new = {}
+                #     for mname, tbl in models.iteritems():
+                #         models_zt_new[mname] = table_cut_by_col(tbl, templim, 'Tcol')
+                #     models = models_zt_new
+
+                print "\nFit: %s [%d/%d]" % (bset, im, len(set_bands))
+                theta = fit_bayesian(models, is_debug=True, is_info=is_info, title=bset)
+                results_flter[bset] = models
                 theta_dic[bset] = theta
                 print_coef(theta)
 
-        fig = plot_zeta(dic_results, set_bands, theta_dic, t_cut=1.9, is_fit=is_fit, is_fit_bakl=is_fit_bakl,
+        # fig = plot_zeta(results, set_bands, theta_dic, t_cut=1.9, is_fit=is_fit, is_fit_bakl=is_fit_bakl,
+        fig = plot_zeta(results_flter, set_bands, theta_dic, t_cut=1.9, is_fit=is_fit, is_fit_bakl=is_fit_bakl,
                         is_plot_Tnu=is_plot_Tnu, is_time_points=is_plot_time_points)
-        if is_save_plot and len(dic_results) > 0:
+        if is_save_plot and len(results) > 0:
             fsave = os.path.join(os.path.expanduser('~/'), 'epm_' + '_'.join(set_bands) + '.pdf')
             print "Save plot in %s" % fsave
             fig.savefig(fsave, bbox_inches='tight', format='pdf')
