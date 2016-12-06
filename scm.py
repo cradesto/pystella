@@ -32,8 +32,8 @@ markers = {u'D': u'diamond', 6: u'caretup', u's': u'square', u'x': u'x',
 markers = markers.keys()
 
 
-def plot_scm(models_data, mnames, bands, z,  xlim=None, is_fit=False):
-    ylim = (1., 5.)
+def plot_scm(models_data, mnames, bands, z, xlim=None, is_fit=False):
+    ylim = (1.5, 4.)
 
     # setup figure
     plt.matplotlib.rcParams.update({'font.size': 14})
@@ -59,13 +59,13 @@ def plot_scm(models_data, mnames, bands, z,  xlim=None, is_fit=False):
         if icol > 0:
             ax.yaxis.tick_right()
             ax.yaxis.set_label_position("right")
-        ax.set_ylabel(r'$V_{ph}$ [km/s]')
+        ax.set_ylabel(r'$V_{ph}$ [1000 km/s]')
 
-        if irow == 1:
+        if irow == 0:
             ax.set_xlabel(r'$M_{%s}$' % bname)
 
         if xlim is None:
-            ax.set_xlim(max(models_data[bname])+2., min(models_data[bname])-2.)
+            ax.set_xlim(max(models_data[bname]) + 2., min(models_data[bname]) - 2.)
         else:
             ax.set_xlim(xlim)
         # xstart, xend = 0, 20000.
@@ -110,7 +110,8 @@ def plot_scm(models_data, mnames, bands, z,  xlim=None, is_fit=False):
             V_I = models_data['V'] - models_data['I']  # todo make for any bands
             xn = scm_fit(yn, Av=V_I, src='nugent')
             if yn is not None:
-                ax.plot(xn, yn, marker='x', label='Nugent', markersize=5, color="orange", ls="")
+                ax.plot(xn, yn, label='Nugent', color="blue", ls="--")
+                # ax.plot(xn, yn, marker='x', label='Nugent', markersize=5, color="blue", ls="")
                 # ax.plot(xx, yy, color="orange", ls="--", linewidth=2.5, label='Nugent')
         # bakl
         for bname in bands:
@@ -120,9 +121,10 @@ def plot_scm(models_data, mnames, bands, z,  xlim=None, is_fit=False):
             a = scm_fit_bakl(mag, vel, z=z, Av=Av)
             mag_bakl = hamuy_fit(a, vel, z, Av)
             if yn is not None:
-                ax.plot(mag_bakl, vel, marker='o', label='Bakl', markersize=5, color="blue", ls="")
+                ax.plot(mag_bakl, vel, label='Baklanov', color="orange", ls="--", lw=2)
+                # ax.plot(mag_bakl, vel, marker='o', label='Baklanov', markersize=5, color="blue", ls="")
             print "Bakl fit for %s: %4.2f, %4.2f" % (bname, a[0], a[1])
-                # ax.plot(xx, yy, color="orange", ls="--", linewidth=2.5, label='Nugent')
+            # ax.plot(xx, yy, color="orange", ls="--", linewidth=2.5, label='Nugent')
 
     # legend
     for bname in bands:
@@ -131,6 +133,8 @@ def plot_scm(models_data, mnames, bands, z,  xlim=None, is_fit=False):
     # plt.title('; '.join(set_bands) + ' filter response')
     # plt.grid()
     plt.show()
+    return fig
+
 
 
 def scm_fit(v, Av=0, bname=None, z=0.003, src='hamuy'):
@@ -143,38 +147,36 @@ def scm_fit(v, Av=0, bname=None, z=0.003, src='hamuy'):
     :param src: fit source
     :return: magnitude
     """
-    coef = {'hamuy': {
-        'V': [6.504, 1.294],
-        'I': [5.820, 1.797]},
-        'nugent': {'alf': 6.69, 'V_I_0': 0.53, 'RI': 1.36, 'MI0': -17.49}
-    }
+    coef = {'hamuy': {'V': [6.504, 1.294], 'I': [5.820, 1.797]},
+            'nugent': {'alf': 6.69, 'V_I_0': 0.53, 'RI': 1.36, 'MI0': -17.49}
+            }
     if src == 'hamuy':
         a = coef[src][bname]
         mag = hamuy_fit(a, v, z, Av)
         return mag
     if src == 'nugent':
         a = coef[src]
-        mag = - a['alf'] * np.log10(v/5.) - a['RI'] * (Av - a['V_I_0']) + a['MI0']
+        mag = - a['alf'] * np.log10(v / 5.) - a['RI'] * (Av - a['V_I_0']) + a['MI0']
         return mag
     if src == 'kasen':
         t = 50.  # day
-        mag = -17.4 - 6.9 * np.log10(v/5.) +3.1*np.log10(t/50)
+        mag = -17.4 - 6.9 * np.log10(v / 5.) + 3.1 * np.log10(t / 50)
         return mag
     return None
 
 
 def hamuy_fit(a, v, z, Av):
     # v /= 5.  # convert to units of 5000 km/c as Hamuy
-    res = Av - a[0] * np.log10(v/5.) + 5 * np.log10(phys.c/1e5 * z) - a[1]
+    res = Av - a[0] * np.log10(v / 5.) + 5 * np.log10(phys.c / 1e5 * z) - a[1]
     return res
 
 
-def scm_fit_bakl(mag, vel, z, Av=0):
+def scm_fit_bakl(mag, vel, z, Av=0.):
     a_init = [5, 0.]
 
     def cost(a, m, v):
         m_fit = hamuy_fit(a, v, z, Av)
-        e = np.sum((m - m_fit)**2) / len(m)
+        e = np.sum((m - m_fit) ** 2) / len(m)
         return e
 
     res = fmin(cost, x0=a_init, args=(mag, vel), disp=0)
@@ -182,7 +184,7 @@ def scm_fit_bakl(mag, vel, z, Av=0):
 
 
 def usage():
-    bands = band.band_get_names().keys()
+    bands = band.band_get_names()
     print "Usage:"
     print "  %s [params]" % __file__
     print "  -b <set_bands>: delimiter '_'. Default: B-V-I_B-V_V-I.\n" \
@@ -192,7 +194,8 @@ def usage():
     print "  -f  force mode: rewrite zeta-files even if it exists"
     # print "  -a  plot the Eastman & Dessart fits"
     print "  -o  options: <fit:fitb:time:ubv:Tnu> - fit E&D: fit bakl:  show time points: plot UBV"
-    print "  -s  write magnitudes to file, default 'False'"
+    # print "  -w  write magnitudes to file, default 'False'"
+    print "  -s  save plot to file, default 'False'"
     print "  -h  print usage"
 
 
@@ -208,10 +211,11 @@ def extract_time(t, times, mags):
     return res
 
 
-def run_scm(bands, distance, im, names, path, t50, t_beg, t_end, z):
+def run_scm(bands, distance, names, path, t50, t_beg, t_end, z):
     res = np.array(np.zeros(len(names)),
                    dtype=np.dtype({'names': ['v'] + bands,
                                    'formats': [np.float] * (1 + len(bands))}))
+    im = 0
     for name in names:
         vels = velocity.compute_vel(name, path, z=z, t_beg=t_beg, t_end=t_end)
         if vels is None:
@@ -310,19 +314,20 @@ def main(name='', path='./'):
     distance = 10.  # pc for Absolute magnitude
     # distance = 10e6  # pc for Absolute magnitude
     z = phys.H0 * (distance / 1e6) / (phys.c / 1e5)  # convert D to Mpc, c to km/c
-    im = 0
     t50 = 50.
     t_beg = max(0., t50 - 10.)
     t_end = t50 + 10.
 
     if len(names) > 0:
-        res = run_scm(bands, distance, im, names, path, t50, t_beg, t_end, z)
+        res = run_scm(bands, distance, names, path, t50, t_beg, t_end, z)
         if len(res) > 0:
-            plot_scm(res, names, bands, z, is_fit=True)
+            fig = plot_scm(res, names, bands, z, is_fit=True)
+            if is_save:
+                fsave = os.path.join(os.path.expanduser('~/'), 'scm_' + '_'.join(bands) + '.pdf')
+                print "Save plot in %s" % fsave
+                fig.savefig(fsave, bbox_inches='tight', format='pdf')
     else:
         print "There are no models in the directory: %s with extension: %s " % (path, model_ext)
-
-
 
 
 if __name__ == '__main__':
