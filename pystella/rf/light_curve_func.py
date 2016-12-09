@@ -392,7 +392,7 @@ def compute_mag(name, path, bands, ext=None, z=0., distance=10., magnification=1
 
 def curves_save(curves, fname):
     """
-       Save curves to CSV-format
+       Save curves to CSV-format. It required for correct operation the common time for all LC.
     :param curves:
     :param fname:
     :return:
