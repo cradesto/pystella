@@ -217,6 +217,10 @@ class StellaHydAbn:
         self.path = path  # path to model files
         self._data_hyd = None
         self._data_chem = None
+        self._time_start = None
+        self._m_tot = None
+        self._r_cen = None
+        self._rho_cen = None
 
     def show_info(self):
         ext = ('hyd', 'abn')
@@ -226,6 +230,26 @@ class StellaHydAbn:
                 print "Exist %s-file: %s" % (e, fname)
             else:
                 print "No %s-file: %s" % (e, fname)
+
+    @property
+    def time_start(self):
+        """ time start"""
+        return self._time_start or 0.
+
+    @property
+    def r_cen(self):
+        """Center radius"""
+        return self._r_cen or 0.
+
+    @property
+    def m_tot(self):
+        """Total mass"""
+        return self._m_tot or 0.
+
+    @property
+    def rho_cen(self):
+        """ Center density"""
+        return self._rho_cen or 0.
 
     @property
     def zone_hyd(self):
@@ -372,6 +396,19 @@ class StellaHydAbn:
             logger.error(' No hyd-data for %s' % self.hyd_file)
             return None
         logger.info(' Load hyd-data from  %s' % self.hyd_file)
+        # read header
+        nzon = 0
+        with open(self.hyd_file, 'r') as f:
+            line = f.readline()
+        if len(line) > 0:
+            a = map(float, line.split())
+            if len(a) == 5:
+                self._time_start, nzon, self._m_tot, self._r_cen, self._rho_cen = a
+            elif len(a) == 4:
+                self._time_start, nzon, self._m_tot, self._r_cen = a
+            elif len(a) == 2:
+                self._time_start, nzon = a
+        # read table data
         dt = self.dtype_hyd()
         self._data_hyd = np.loadtxt(self.hyd_file, comments='#', skiprows=1, dtype=dt)
         return self
@@ -401,8 +438,9 @@ class StellaHydAbn:
 
         dum = np.zeros(self.nzon_hyd)
         logger.info(' Write hyd-data to %s' % fname)
-        with open(fname, 'a') as f:
-            f.write('%d\n' % self.nzon_hyd)
+        with open(fname, 'w') as f:
+            f.write('%12.3e %6d %13.5e %13.5e %13.5e\n'
+                    % (self.time_start, self.nzon_hyd, self.m_tot, self.r_cen, self.rho_cen))
             for _ in zip(self.zone_hyd, dum, self.r, self.rho, self.T, self.V, self.mass, dum):
                 f.write(' %4d %12.4e %18.10e %15.7e %15.7e %15.7e %12.4e %12.4e\n' % _)
         return os.path.isfile(fname)
