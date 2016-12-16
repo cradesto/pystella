@@ -103,16 +103,7 @@ def usage():
     print "  -l  write plot label"
     print "  -h  print usage"
     print "   --- "
-    bands = band.band_get_names()
-    band.Band.load_settings()
-    alias = band.band_get_aliases()
-    print "   Available bands: \n %s" % '-'.join(sorted(bands))
-    print "   Available aliases: "
-    if len(alias) > 0:
-        for k, v in alias.items():
-            print "     %s => %s " % (k, v)
-    else:
-        print "     No aliases."
+    band.print_bands()
 
 
 def lc_wrapper(param, p=None):
@@ -151,6 +142,8 @@ def main(name='', model_ext='.ph'):
     # bshift = None
     bshift = {}
 
+    band.Band.load_settings()
+
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hqwtc:d:p:e:i:b:l:m:vs:x:y:z:")
     except getopt.GetoptError as err:
@@ -182,7 +175,6 @@ def main(name='', model_ext='.ph'):
             continue
         if opt == '-b':
             bands = []
-            band.Band.load_settings()
             for b in str(arg).split('-'):
                 # extract band shift
                 if ':' in b:

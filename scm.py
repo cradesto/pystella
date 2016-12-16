@@ -187,8 +187,7 @@ def usage():
     bands = band.band_get_names()
     print "Usage:"
     print "  %s [params]" % __file__
-    print "  -b <set_bands>: delimiter '_'. Default: B-V-I_B-V_V-I.\n" \
-          "     Available: " + '-'.join(sorted(bands))
+    print "  -b <set_bands>: delimiter '_'. Default: B-V-I_B-V_V-I"
     print "  -i <model name>.  Example: cat_R450_M15_Ni007_E7"
     print "  -p <model path(directory)>, default: ./"
     print "  -f  force mode: rewrite zeta-files even if it exists"
@@ -197,6 +196,8 @@ def usage():
     # print "  -w  write magnitudes to file, default 'False'"
     print "  -s  save plot to file, default 'False'"
     print "  -h  print usage"
+    print "   --- "
+    band.print_bands()
 
 
 def extract_time(t, times, mags):
@@ -243,6 +244,8 @@ def main(name='', path='./'):
     is_fit_bakl = False
     model_ext = '.tt'
     ubv_args = ''
+
+    band.Band.load_settings()
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], "fhstp:i:b:o:")

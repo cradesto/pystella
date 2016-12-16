@@ -132,16 +132,16 @@ def compute_dmdt(mags, bands, is_spline=True, s=0.):
 
 
 def usage():
-    bands = band.band_get_names().keys()
     print "Usage:"
     print "  dmdt.py [params]"
-    print "  -b <set_bands>: delimiter '_'. Default: B-V-I_B-V_V-I.\n" \
-          "     Available: " + '-'.join(sorted(bands))
+    print "  -b <set_bands>: delimiter '-'. Default: 'UVW1-U'.\n"
     print "  -i <model name>.  Example: cat_R450_M15_Ni007_E7"
     print "  -p <model path(directory)>, default: ./"
     print "  -t  plot time points"
     print "  -w  write magnitudes to file, default 'False'"
     print "  -h  print usage"
+
+    band.print_bands()
 
 
 def main(name='', path='./'):
@@ -149,6 +149,8 @@ def main(name='', path='./'):
     is_time_points = False
     z = 0
     distance = 10.  # pc
+
+    band.Band.load_settings()
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hwtp:i:b:")

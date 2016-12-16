@@ -695,11 +695,9 @@ def table_cut_by_col(tbl, xlim, cname):
 
 
 def usage():
-    bands = band.band_get_names()
     print "Usage:"
     print "  zeta.py [params]"
-    print "  -b <set_bands>: delimiter '_'. Default: B-V-I_B-V_V-I.\n" \
-          "     Available: " + '-'.join(sorted(bands))
+    print "  -b <set_bands>: delimiter '_'. Default: B-V-I_B-V_V-I"
     print "  -d <distance> [pc].  Default: 10 pc"
     print "  -i <model name>.  Example: cat_R450_M15_Ni007_E7"
     print "  -p <model path(directory)>, default: ./"
@@ -711,7 +709,9 @@ def usage():
     print "  -w  write magnitudes to file, default 'False'"
     print "  -z <redshift>.  Default: 0"
     print "  -h  print usage"
+    print "  ---  "
 
+    band.print_bands()
 
 def print_coef(theta):
     strs = []

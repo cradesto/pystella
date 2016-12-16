@@ -425,3 +425,40 @@ def band_by_name(name):
     else:
         print "  Error: no band: %s " % name
         return None
+
+
+def print_bands(ncol=5):
+    bands = sorted(band_get_names())
+    print "Available bands:"
+    # print "   Available bands: \n   %s" % '-'.join(sorted(bands))
+    if bands is not None and len(bands) > 0:
+        s = '  '
+        c = bands[0][0]
+        for b in bands:
+            if b[0] != c:
+                print s
+                c = b[0]
+                s = "   %-7s " % b
+            else:
+                s += " %-7s " % b
+        if s != '':
+            print s
+    else:
+        print "You have not load them yet. Try: band.Band.load_settings() "
+
+    alias = band_get_aliases()
+    print "\nAvailable aliases of bands: "
+    if alias is not None and len(alias) > 0:
+        col = 0
+        s = ''
+        for k, v in alias.items():
+            col += 1
+            s += " %3s => %-7s " % (k, v)
+            if col == ncol:
+                print s
+                col = 0
+                s = ''
+        if s != '':
+            print s
+    else:
+        print "     No aliases or you have not load them yet. Try: band.Band.load_settings() "
