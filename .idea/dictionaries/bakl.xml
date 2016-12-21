@@ -21,6 +21,7 @@
       <w>catcopy</w>
       <w>coef</w>
       <w>conv</w>
+      <w>darkorange</w>
       <w>darkseagreen</w>
       <w>darkviolet</w>
       <w>dessart</w>
@@ -76,12 +77,16 @@
       <w>nugent</w>
       <w>nwalkers</w>
       <w>nzon</w>
+      <w>nzone</w>
       <w>oguri</w>
       <w>popov</w>
+      <w>presn</w>
       <w>pystella</w>
+      <w>readheger</w>
       <w>rednova</w>
       <w>refsdal</w>
       <w>rnorm</w>
+      <w>sandybrown</w>
       <w>schlafly</w>
       <w>sdss</w>
       <w>skyblue</w>
@@ -111,6 +116,7 @@
       <w>ubvri</w>
       <w>usno</w>
       <w>vels</w>
+      <w>vname</w>
       <w>wien</w>
       <w>wlrange</w>
       <w>wrkx</w>

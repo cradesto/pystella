@@ -1,6 +1,8 @@
+import os
 from os.path import dirname, abspath, join
 import unittest
-from pystella.model.sn_eve import StellaEve, StellaHydAbn
+from pystella.model import sn_eve
+import matplotlib.pyplot as plt
 
 __author__ = 'bakl'
 
@@ -9,62 +11,79 @@ class SnEveTests(unittest.TestCase):
     def test_eve_load_rho(self):
         name = 'cat_R1000_M15_Ni007'
         path = join(dirname(abspath(__file__)), 'data', 'stella')
-        eve = StellaEve(name, path=path).load_rho()
-        self.assertTrue(eve.is_load_rho, "Rho-file have not been loaded: %s" % eve.rho_file)
+        rho_file = os.path.join(path, name + '.rho')
+
+        presn = sn_eve.load_rho(rho_file)
+        self.assertTrue(presn.nzon > 0, "Rho-file have not been loaded: %s" % rho_file)
 
     def test_eve_el(self):
         name = 'cat_R1000_M15_Ni007'
         path = join(dirname(abspath(__file__)), 'data', 'stella')
-        eve = StellaEve(name, path=path).load()
-        h = eve.lg_el('H')
-        self.assertTrue(len(h) == len(eve.mass), "No data for el: %s" % 'H')
+        rho_file = os.path.join(path, name + '.rho')
 
-    @staticmethod
-    @unittest.skip("just for plot")
-    def test_eve_plot():
+        presn = sn_eve.load_rho(rho_file)
+        h = presn.lg_el('H')
+        self.assertTrue(len(h) == len(presn.m), "No data for el: %s" % 'H')
+
+    # @staticmethod
+    # @unittest.skip("just for plot")
+    def test_eve_plot(self):
         name = 'cat_R1000_M15_Ni007'
         path = join(dirname(abspath(__file__)), 'data', 'stella')
-        eve = StellaEve(name, path=path).load()
-        eve.plot_chem()
+        rho_file = os.path.join(path, name + '.rho')
+        presn = sn_eve.load_rho(rho_file)
+        ax = presn.plot_chem(ylim=(-8,0))
+        plt.show()
 
     def test_eve_load_hyd(self):
         name = 'm030307mhh'
         path = join(dirname(abspath(__file__)), 'data', 'stella')
-        eve = StellaHydAbn(name, path=path).load_hyd()
-        self.assertTrue(eve.is_load_hyd, "hyd-file have not been loaded: %s" % eve.hyd_file)
+        # eve = StellaHydAbn(name, path=path).load_hyd()
+        eve = sn_eve.load_hyd_abn(name, path=path)
+        self.assertTrue(eve.is_set('Rho'), "hyd-file have not been loaded: %s" % name)
 
     def test_eve_write_hyd(self):
         name = 'm030307mhh'
         path = join(dirname(abspath(__file__)), 'data', 'stella')
-        eve = StellaHydAbn(name, path=path).load_hyd()
+        presn = sn_eve.load_hyd_abn(name, path=path)
         fname = 'tmp.hyd'
-        res = eve.write_hyd(fname)
+        res = presn.write_hyd(fname)
         self.assertTrue(res, "Fail to write in %s" % fname)
-
-    def test_eve_load_abn(self):
-        name = 'm030307mhh'
-        path = join(dirname(abspath(__file__)), 'data', 'stella')
-        eve = StellaHydAbn(name, path=path).load_abn()
-        self.assertTrue(eve.is_load_chem, "abn-file have not been loaded: %s" % eve.abn_file)
 
     def test_eve_write_abn(self):
         name = 'm030307mhh'
         path = join(dirname(abspath(__file__)), 'data', 'stella')
-        eve = StellaHydAbn(name, path=path).load_abn()
+        eve = sn_eve.load_hyd_abn(name, path=path)
         fname = 'tmp.abn'
         res = eve.write_abn(fname)
+        self.assertTrue(res, "Fail to write in %s" % fname)
+
+    def test_rho_write_hyd_abn(self):
+        name = 'cat_R1000_M15_Ni007'
+        path = join(dirname(abspath(__file__)), 'data', 'stella')
+        rho_file = os.path.join(path, name + '.rho')
+        presn = sn_eve.load_rho(rho_file)
+
+        fname = 'tmprho.hyd'
+        res = presn.write_hyd(fname)
+        self.assertTrue(res, "Fail to write in %s" % fname)
+        fname = 'tmprho.abn'
+        res = presn.write_abn(fname)
         self.assertTrue(res, "Fail to write in %s" % fname)
 
     def test_eve_load_zones(self):
         name = 'm030307mhh'
         path = join(dirname(abspath(__file__)), 'data', 'stella')
-        eve = StellaHydAbn(name, path=path).load_hyd().load_abn()
+        eve = sn_eve.load_hyd_abn(name, path=path)
 
-        self.assertTrue(eve.nzon_abn == eve.nzon_hyd,
-                        "Zones numbers should be the same in hyd-[%d] and abn-[%d] files." \
-                        % (eve.nzon_hyd, eve.nzon_abn))
+        self.assertTrue(eve.nzon > 0,
+                        "Zones numbers should be more 0 [%d]." % eve.nzon)
 
-        # self.assertAlmostEqual(b.zp, zp, "Zero points of band %s equals %f. Should be %f" % (b, b.zp, zp))
+    def test_eve_load_abn(self):
+        name = 'm030307mhh'
+        path = join(dirname(abspath(__file__)), 'data', 'stella')
+        eve = sn_eve.load_hyd_abn(name, path=path)
+        self.assertTrue(len(eve.el('H')) > 0, "abn-file have not been loaded: %s" % name)
 
 
 def main():

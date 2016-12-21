@@ -7,6 +7,7 @@ import os
 import sys
 from os.path import dirname
 import logging
+import matplotlib.pyplot as plt
 
 import pystella.model.sn_eve as sneve
 
@@ -85,15 +86,14 @@ def main(name=''):
 
     print "Run eve-model %s in %s" % (name, path)
 
-    eve = sneve.StellaEve(name, path=path)
-    if eve.is_rho_data:
-        eve.load()
-        eve.plot_chem(elements=elements, ylim=[-6, 0.], is_save=is_save_plot)
-    else:
-        eve.show_info()
-        logger.error("No chemical data for " + eve.rho_file)
+    # data = sneve.load_eve(name, path=path)
+    rho_file = os.path.join(path, name + '.rho')
+    eve = sneve.load_rho(rho_file)
+    # print "Plot eve-model %s" % name
+    ax = eve.plot_chem(elements=elements, ylim=[-6, 0.], is_save=is_save_plot)
+    ax.grid()
+    plt.show()
 
-    # sneve.StellaEve(name=name, path=path).rho_load().plot_chem(ylim=[-6, 0.])
 
 if __name__ == '__main__':
     main()
