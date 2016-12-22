@@ -5,7 +5,7 @@ from pystella.model.sn_res import StellaRes
 from pystella.model.sn_swd import StellaShockWaveDetail
 from pystella.model.sn_tt import StellaTt
 from pystella.rf.spectrum import SeriesSpectrum, Spectrum
-from pystella.model.sn_eve import StellaEve
+from pystella.model import sn_eve
 
 __author__ = 'bakl'
 
@@ -65,7 +65,7 @@ class Stella:
     def get_eve(self, name, path=None):
         if path is None:
             path = self.path
-        eve = StellaEve(name, path=path)
+        eve = sn_eve.load_rho(os.path.join(path, name+'.rho'))
         return eve
 
     def get_res(self):

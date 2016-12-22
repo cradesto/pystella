@@ -4,6 +4,7 @@ import logging
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 
+from pystella.model.sn_eve import PreSN
 from pystella.util.phys_var import phys
 
 __author__ = 'bakl'
@@ -16,9 +17,9 @@ logger.setLevel(logging.INFO)
 # 0.0d0 1.0d0 2.0d0 6.0d0 8.0d0 10.0d0 12.0d0 14.0d0 16.0d0 18.0d0 20.0d0 22.0d0 24.0d0 26.0d0 28.0d0
 
 snec_elements = map(str.strip, "NN H He C O Ne Mg Si S Ar Ca Ti Cr Fe Ni".split())
-snec_el_colors = dict(NN="yellow", H="blue",   He="cyan", C="darkorange",
-                      O="violet",   Ne="green", Mg="skyblue", Si="olive",
-                      S="indigo",   Ar="brown", Ca="purple", Ti="hotpink",
+snec_el_colors = dict(NN="yellow", H="blue", He="cyan", C="darkorange",
+                      O="violet", Ne="green", Mg="skyblue", Si="olive",
+                      S="indigo", Ar="brown", Ca="purple", Ti="hotpink",
                       Cr="m", Fe='maroon', Ni='magenta')
 
 snec_el_lntypes = dict((k, '--') for k, v in snec_el_colors.items())  # no y-shift
@@ -28,27 +29,35 @@ snec_el_lntypes['O'] = '-'
 snec_el_lntypes['C'] = '-'
 snec_el_lntypes['Ni56'] = '-'
 
-snec_profile_cols = map(str.strip, "i M R T Rho Vel val1 val2".split())
+snec_profile_cols = map(str.strip, "i M R T Rho V val1 val2".split())
 
 
 class Problem:
     def __init__(self, name):
         """Creates a Problem instance.  It's initial conditions for SNEC. Required parameters:  name."""
-        self.name = name
+        self._name = name
         self._chem_file = None
         self._chem = None
         self._profile_file = None
         self._profile = None
 
     @property
+    def name(self):
+        return self._name
+
+    @property
     def chem_file(self):
         return self._chem_file
 
-    # Chemical composition
     @property
     def r(self):
         """radius"""
         return self._chem['R']
+
+    @property
+    def nzon(self):
+        """Number of zones"""
+        return len(self.r)
 
     @property
     def mass(self):
@@ -103,27 +112,33 @@ class Problem:
     @property
     def pmass(self):
         """Mass"""
-        return self._profile['M']
+        return self.hyd('M')
 
     @property
     def pradius(self):
         """Radius"""
-        return self._profile['R']
+        return self.hyd('R')
 
     @property
     def ptemp(self):
         """Temperature"""
-        return self._profile['T']
+        return self.hyd('T')
 
     @property
     def prho(self):
         """Density"""
-        return self._profile['Rho']
+        return self.hyd('Rho')
 
     @property
     def pvel(self):
         """Velocity"""
-        return self._profile['Vel']
+        return self.hyd('V')
+
+    def hyd(self, v):
+        """Hydro data"""
+        if v not in snec_profile_cols:
+            raise ValueError("There is no information about the parameter [%s]. You should set it." % v)
+        return self._profile[v]
 
     def load_profile(self, fname):
         if not os.path.isfile(fname):
@@ -202,8 +217,29 @@ class Problem:
             ax.legend(prop={'size': 9}, loc=loc, ncol=leg_ncol, fancybox=False, frameon=True)
 
         if is_save:
-            fsave = os.path.join(os.path.expanduser('~/'), 'chem_%s.pdf' % self.name)
+            fsave = os.path.join(os.path.expanduser('~/'), 'chem_%s.pdf' % self._name)
             logger.info(" Save plot to %s " % fsave)
             ax.get_figure().savefig(fsave, bbox_inches='tight', format='pdf')
 
         return ax
+
+
+def to_presn(p):
+    if not p.is_profile_load:
+        raise ValueError("There are no data in SNEC problem. "
+                         "Probably, You should run: load_profile and load_chem.")
+    presn = PreSN(p.name, p.nzon)
+    col_map = {'R', 'M', 'T', 'Rho', 'V'}
+    for v in col_map:
+        presn.set_hyd(v, p.hyd(v))
+
+    for e in presn.presn_elements:
+        if e in snec_elements:
+            presn.set_chem(e, p.el(e))
+        else:
+            presn.set_chem(e, np.zeros(presn.nzon))
+
+    # todo check with Viktoriya: in SNEC Ni used Ni as Ni56
+    presn.set_chem('Ni56', presn.el('Ni'))
+
+    return presn

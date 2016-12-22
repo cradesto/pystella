@@ -4,11 +4,13 @@ import unittest
 from pystella.model import sn_eve
 import matplotlib.pyplot as plt
 
+from pystella.model import snec
+
 __author__ = 'bakl'
 
 
 class SnEveTests(unittest.TestCase):
-    def test_eve_load_rho(self):
+    def test_rho_load(self):
         name = 'cat_R1000_M15_Ni007'
         path = join(dirname(abspath(__file__)), 'data', 'stella')
         rho_file = os.path.join(path, name + '.rho')
@@ -16,7 +18,7 @@ class SnEveTests(unittest.TestCase):
         presn = sn_eve.load_rho(rho_file)
         self.assertTrue(presn.nzon > 0, "Rho-file have not been loaded: %s" % rho_file)
 
-    def test_eve_el(self):
+    def test_rho_el(self):
         name = 'cat_R1000_M15_Ni007'
         path = join(dirname(abspath(__file__)), 'data', 'stella')
         rho_file = os.path.join(path, name + '.rho')
@@ -27,22 +29,22 @@ class SnEveTests(unittest.TestCase):
 
     # @staticmethod
     # @unittest.skip("just for plot")
-    def test_eve_plot(self):
+    def test_rho_plot(self):
         name = 'cat_R1000_M15_Ni007'
         path = join(dirname(abspath(__file__)), 'data', 'stella')
         rho_file = os.path.join(path, name + '.rho')
         presn = sn_eve.load_rho(rho_file)
-        ax = presn.plot_chem(ylim=(-8,0))
+        ax = presn.plot_chem(ylim=(1e-12, 1.))
         plt.show()
 
-    def test_eve_load_hyd(self):
+    def test_hyd_load(self):
         name = 'm030307mhh'
         path = join(dirname(abspath(__file__)), 'data', 'stella')
         # eve = StellaHydAbn(name, path=path).load_hyd()
         eve = sn_eve.load_hyd_abn(name, path=path)
         self.assertTrue(eve.is_set('Rho'), "hyd-file have not been loaded: %s" % name)
 
-    def test_eve_write_hyd(self):
+    def test_hyd_write(self):
         name = 'm030307mhh'
         path = join(dirname(abspath(__file__)), 'data', 'stella')
         presn = sn_eve.load_hyd_abn(name, path=path)
@@ -50,7 +52,7 @@ class SnEveTests(unittest.TestCase):
         res = presn.write_hyd(fname)
         self.assertTrue(res, "Fail to write in %s" % fname)
 
-    def test_eve_write_abn(self):
+    def test_abn_write(self):
         name = 'm030307mhh'
         path = join(dirname(abspath(__file__)), 'data', 'stella')
         eve = sn_eve.load_hyd_abn(name, path=path)
@@ -71,7 +73,7 @@ class SnEveTests(unittest.TestCase):
         res = presn.write_abn(fname)
         self.assertTrue(res, "Fail to write in %s" % fname)
 
-    def test_eve_load_zones(self):
+    def test_hyd_abn_load(self):
         name = 'm030307mhh'
         path = join(dirname(abspath(__file__)), 'data', 'stella')
         eve = sn_eve.load_hyd_abn(name, path=path)
@@ -79,11 +81,44 @@ class SnEveTests(unittest.TestCase):
         self.assertTrue(eve.nzon > 0,
                         "Zones numbers should be more 0 [%d]." % eve.nzon)
 
-    def test_eve_load_abn(self):
+    def test_hyd_abn_load_H(self):
         name = 'm030307mhh'
         path = join(dirname(abspath(__file__)), 'data', 'stella')
         eve = sn_eve.load_hyd_abn(name, path=path)
         self.assertTrue(len(eve.el('H')) > 0, "abn-file have not been loaded: %s" % name)
+
+    def test_snec_to_presn(self):
+        path = join(dirname(abspath(__file__)), 'data', 'snec')
+        prb_snec = snec.Problem('s15s7b2').load_chem(os.path.join(path, 's15s7b2_15isotope.dat'))
+        prb_snec.load_profile(os.path.join(path, 's15s7b2.short'))
+
+        presn = snec.to_presn(prb_snec)
+        self.assertTrue(presn.nzon > 0, "Fail to convert snec to presn in %s" % prb_snec.name)
+
+    def test_snec_to_presn_plot(self):
+        path = join(dirname(abspath(__file__)), 'data', 'snec')
+        prb_snec = snec.Problem('s15s7b2').load_chem(os.path.join(path, 's15s7b2_15isotope.dat'))
+        prb_snec.load_profile(os.path.join(path, 's15s7b2.short'))
+
+        presn = snec.to_presn(prb_snec)
+        self.assertTrue(presn.nzon > 0, "Fail to convert snec to presn in %s" % prb_snec.name)
+
+        ax = presn.plot_chem(ylim=(-8,0))
+        plt.show()
+
+    def test_snec_write_hyd_abn(self):
+        path = join(dirname(abspath(__file__)), 'data', 'snec')
+        prb_snec = snec.Problem('s15s7b2').load_chem(os.path.join(path, 's15s7b2_15isotope.dat'))
+        prb_snec.load_profile(os.path.join(path, 's15s7b2.short'))
+
+        presn = snec.to_presn(prb_snec)
+
+        fname = presn.name+'.hyd'
+        res = presn.write_hyd(fname)
+        self.assertTrue(res, "Fail to write in %s" % fname)
+        fname = presn.name+'.abn'
+        res = presn.write_abn(fname)
+        self.assertTrue(res, "Fail to write in %s" % fname)
 
 
 def main():

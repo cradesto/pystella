@@ -19,7 +19,7 @@ class BandTests(unittest.TestCase):
 
     def test_band_by_name(self):
         b = band.band_by_name("BesU")
-        self.assertTrue(b.is_chem_load, "The band should be loaded and with data")
+        self.assertTrue(b.is_load, "The band should be loaded and with data")
 
     def test_aliases_load(self):
         band.Band.load_settings()
@@ -29,7 +29,7 @@ class BandTests(unittest.TestCase):
     def test_aliases(self):
         bo = band.band_by_name("BesU")
         ba = band.band_by_name("U")
-        self.assertTrue(ba.is_chem_load, "The band should be loaded and with data")
+        self.assertTrue(ba.is_load, "The band should be loaded and with data")
         self.assertItemsEqual(expected_seq=bo.wl, actual_seq=ba.wl, msg="The alias wl should be the same as original")
         self.assertItemsEqual(expected_seq=bo.resp_wl, actual_seq=ba.resp_wl,
                               msg="The alias wl should be the same as original")

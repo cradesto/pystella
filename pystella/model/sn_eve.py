@@ -5,6 +5,8 @@ import os
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 
+from pystella.util.phys_var import phys
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -724,9 +726,13 @@ class PreSN(object):
         with open(fname, 'w') as f:
             f.write('{:12.3e} {:6d} {:13.5e} {:13.5e} {:13.5e}\n'
                     .format(self.time_start, self.nzon, self.m_tot, self.r_cen, self.rho_cen))
+            a = '#No. Mr  dM  R  dR  Rho PRE T   V'.split()
+            f.write('           '.join(a)+'\n')
             zones = range(1, self._nzon)
-            for _ in zip(zones, dum, self.r, self.rho, self.T, self.V, self.m, dum):
-                f.write(' %4d %12.4e %18.10e %15.7e %15.7e %15.7e %12.4e %12.4e\n' % _)
+            for _ in zip(zones, self.m/phys.M_sun, dum, self.r, dum, self.rho, dum, self.T, self.V):
+                f.write(' %4d %12.4e %12.4e %12.4e %12.4e %12.4e %12.4e %12.4e %12.4e \n' % _)
+            # for _ in zip(zones, dum, self.r, self.rho, self.T, self.V, self.m, dum):
+            #     f.write(' %4d %12.4e %18.10e %15.7e %15.7e %15.7e %12.4e %12.4e\n' % _)
         return os.path.isfile(fname)
 
     def write_abn(self, fname):
@@ -791,8 +797,9 @@ class PreSN(object):
 
         for el in elements:
             if self.is_set(el):
-                y = self.lg_el(el)
-                # y = self.el(el)
+                # y = self.lg_el(el)
+                y = self.el(el)
+                # y[y<=0] == 1e-15
                 ax.plot(x, y, label='%s' % el, color=eve_colors[el], ls=lntypes[el], linewidth=lw)
 
                 if not is_x_lim:
@@ -809,7 +816,7 @@ class PreSN(object):
 
         ax.set_xlim(xlim)
         #
-        # ax.set_yscale('log')
+        ax.set_yscale('log')
         ax.set_ylim(ylim)
         ax.set_ylabel(r'$log10(X_i)$')
 
@@ -829,33 +836,36 @@ class PreSN(object):
     def is_set(self, name):
         return name in self._loads
 
-    def set_hyd(self, name, vec, is_log=False):
+    def set_hyd(self, name, vec, is_exp=False):
         if len(vec) != self.nzon:
             raise ValueError("The length of vector [%d] should be %d") % (len(vec), self.nzon)
         if name not in self._loads:
             self._loads.append(name)
 
-        if is_log:
+        if is_exp:
             self._data_hyd[name] = 10.**vec
         else:
             self._data_hyd[name] = vec
 
-    def set_chem(self, name, vec, is_log=False):
+    def set_chem(self, name, vec, is_exp=False):
         if len(vec) != self.nzon:
             raise ValueError("The length of vector [%d] should be %d") % (len(vec), self.nzon)
         if name not in self._loads:
             self._loads.append(name)
-        if is_log:
+        if is_exp:
             self._data_chem[name] = 10.**vec
         else:
             self._data_chem[name] = vec
 
 
 # ==============================================
-def load_rho(fname):
+def load_rho(fname, path=None):
+    if path is not None:
+        fname = os.path.join(path, fname)
     if not os.path.isfile(fname):
         logger.error(' No rho-data for %s' % fname)
-        return None
+        raise ValueError(' No rho-data for %s' % fname)
+        # return None
     logger.info(' Load rho-data from  %s' % fname)
     col_names = "zone mass lgR lgTp lgRho lgDm Ni56 H He C N O Ne Na  Mg  Al  Si  S  Ar  Ca  Fe  Ni"
     dt = np.dtype({'names': map(str.strip, col_names.split()), 'formats': np.repeat('f8', len(col_names))})
@@ -869,10 +879,13 @@ def load_rho(fname):
     presn = PreSN(name, nz)
     presn.set_hyd('V', np.zeros(nz))
     for k, v in col_map.items():
-        presn.set_hyd(k, data[v], is_log=v.startswith('lg'))
+        presn.set_hyd(k, data[v], is_exp=v.startswith('lg'))
+
+    # CGS
+    presn.set_hyd('M', presn.m * phys.M_sun)
 
     for ename in PreSN.presn_elements:
-        presn.set_chem(ename, data[ename], is_log=True)
+        presn.set_chem(ename, data[ename], is_exp=True)
 
     return presn
 
@@ -910,7 +923,7 @@ def load_hyd_abn(name, path='.'):
     col_map = {'R', 'M', 'T', 'Rho', 'V'}
     presn = PreSN(name, nz)
     for v in col_map:
-        presn.set_hyd(v, data_hyd[v], is_log=v.startswith('lg'))
+        presn.set_hyd(v, data_hyd[v], is_exp=v.startswith('lg'))
 
     with open(hyd_file, 'r') as f:
         line = f.readline()
@@ -919,13 +932,13 @@ def load_hyd_abn(name, path='.'):
         if len(a) == 5:
             time_start, nzon, m_tot, r_cen, rho_cen = a
             presn.set_par('time_start', time_start)
-            presn.set_par('m_tot', m_tot)
+            presn.set_par('m_tot', m_tot*phys.M_sun)
             presn.set_par('r_cen', r_cen)
             presn.set_par('rho_cen', rho_cen)
         elif len(a) == 4:
             time_start, nzon, m_tot, r_cen = a
             presn.set_par('time_start', time_start)
-            presn.set_par('m_tot', m_tot)
+            presn.set_par('m_tot', m_tot*phys.M_sun)
             presn.set_par('r_cen', r_cen)
         elif len(a) == 2:
             time_start, nzon = a
