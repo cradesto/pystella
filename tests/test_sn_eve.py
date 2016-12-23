@@ -103,7 +103,7 @@ class SnEveTests(unittest.TestCase):
         presn = snec.to_presn(prb_snec)
         self.assertTrue(presn.nzon > 0, "Fail to convert snec to presn in %s" % prb_snec.name)
 
-        ax = presn.plot_chem(ylim=(-8,0))
+        presn.plot_chem(ylim=(1e-10, 1.))
         plt.show()
 
     def test_snec_write_hyd_abn(self):

@@ -60,7 +60,7 @@ class Problem:
         return len(self.r)
 
     @property
-    def mass(self):
+    def m(self):
         """Mass"""
         return self._chem['M']
 
@@ -186,7 +186,7 @@ class Problem:
             ax.set_xlabel(r'R [cm]')
             ax.set_xscale('log')
         else:
-            x = self.mass / phys.M_sun
+            x = self.m / phys.M_sun
             ax.set_xlabel(r'M [$M_\odot$]')
 
         for el in elements:
