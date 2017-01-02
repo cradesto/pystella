@@ -77,7 +77,7 @@ class PreSN(object):
         """Center radius"""
         p = 'r_cen'
         if self.is_set(PreSN.sR):
-            d = self.hyd(PreSN.sR)[0]
+            d = self.hyd(PreSN.sR)[0]/2.  # todo check Rcen
         else:
             d = 0.
         return self.par(p, d)
@@ -189,7 +189,7 @@ class PreSN(object):
         """
         dum = np.zeros(self.nzon)
         logger.info(' Write hyd-data to %s' % fname)
-        zones = range(1, self._nzon)
+        zones = range(1, self._nzon+1)
         with open(fname, 'w') as f:
             f.write('{:12.3e} {:6d} {:13.5e} {:13.5e} {:13.5e}\n'
                     .format(self.time_start, self.nzon, self.m_tot/phys.M_sun, self.r_cen, self.rho_cen))
