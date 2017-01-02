@@ -171,8 +171,7 @@ def plot_swd(ax, b, **kwargs):
 
     rnorm = 1.e14
     if 'rnorm' in kwargs:
-        if kwargs['rnorm'] is not None:
-            rnorm = kwargs['rnorm']
+        rnorm = kwargs['rnorm']
 
         if rnorm == 'sun':
             rnorm = phys.R_sun

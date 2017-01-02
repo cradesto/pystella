@@ -499,19 +499,25 @@ def mags_save(dictionary, bands, fname):
             # writer.writerow(['{:3.4e}'.format(x) for x in row])
 
 
-def plot_shock_details(swd, times, is_legend=True, rnorm=False):
+def plot_shock_details(swd, times, **kwargs):
+    is_legend = kwargs.get('is_legend', True)
+    rnorm = kwargs.get('rnorm', False)
+    vnorm = kwargs.get('vnorm', 1e7)
+    lumnorm = kwargs.get('lumnorm', 1e40)
+    font_size = kwargs.get('font_size', 14)
+
     fig = plt.figure(num=None, figsize=(16, len(times) * 4), dpi=100, facecolor='w', edgecolor='k')
     gs1 = gridspec.GridSpec(len(times), 2)
-    plt.matplotlib.rcParams.update({'font.size': 14})
+    plt.matplotlib.rcParams.update({'font.size': font_size})
 
     i = 0
     for t in times:
         b = swd.block_nearest(t)
         ax = fig.add_subplot(gs1[i, 0])
-        sn_swd.plot_swd(ax, b, is_xlabel=i == len(times) - 1, vnorm=1e7, lumnorm=1e36, rnorm=rnorm,
+        sn_swd.plot_swd(ax, b, is_xlabel=i == len(times) - 1, vnorm=vnorm, lumnorm=lumnorm, rnorm=rnorm,
                         is_legend=is_legend)
         ax2 = fig.add_subplot(gs1[i, 1])
-        sn_swd.plot_swd(ax2, b, is_xlabel=i == len(times) - 1, vnorm=1e7, lumnorm=1e36,
+        sn_swd.plot_swd(ax2, b, is_xlabel=i == len(times) - 1, vnorm=vnorm, lumnorm=lumnorm,
                         is_legend=is_legend, is_ylabel=False)
         i += 1
     plt.show()
