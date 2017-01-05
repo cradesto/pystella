@@ -169,13 +169,14 @@ def plot_swd(ax, b, **kwargs):
     lw = 1.
     x, xlabel = b.M, 'Ejecta Mass [Msun]'
 
-    rnorm = 1.e14
     if 'rnorm' in kwargs:
         rnorm = kwargs['rnorm']
 
         if rnorm == 'sun':
             rnorm = phys.R_sun
             x, xlabel = b.R / rnorm, 'Ejecta Radius, [Rsun]'
+        elif rnorm == 'm':
+            x, xlabel = b.M, 'Ejecta Mass [Msun]'
         else:
             x, xlabel = b.R / rnorm, 'Ejecta Radius, [x10^%d cm]' % int(np.log10(rnorm))
 

@@ -501,8 +501,8 @@ def mags_save(dictionary, bands, fname):
 
 def plot_shock_details(swd, times, **kwargs):
     is_legend = kwargs.get('is_legend', True)
-    rnorm = kwargs.get('rnorm', False)
-    vnorm = kwargs.get('vnorm', 1e7)
+    rnorm = kwargs.get('rnorm', 'm')
+    vnorm = kwargs.get('vnorm', 1e8)
     lumnorm = kwargs.get('lumnorm', 1e40)
     font_size = kwargs.get('font_size', 14)
 

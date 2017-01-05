@@ -229,12 +229,20 @@ class PreSN(object):
                 f.write('%s\n' % s)
         return os.path.isfile(fname)
 
-    def plot_chem(self, x='m', ax=None, elements=None, xlim=None, ylim=None,
-                  leg_loc=3, leg_ncol=4, lw=2, lntypes=None, is_save=False):
-        if elements is None:
-            elements = eve_elements
-        if lntypes is None:
-            lntypes = eve_lntypes
+    def plot_chem(self, x='m', ax=None, xlim=None, ylim=None, **kwargs):
+        elements = kwargs.get('elements', eve_elements)
+        lntypes = kwargs.get('lntypes', eve_lntypes)
+        colors = kwargs.get('colors', eve_colors)
+        loc = kwargs.get('leg_loc', 3)
+        leg_ncol = kwargs.get('leg_ncol', 4)
+        lw = kwargs.get('lw', 2)
+        is_save = kwargs.get('is_save', False)
+    # def plot_chem(self, x='m', ax=None, elements=None, xlim=None, ylim=None,
+    #               leg_loc=3, leg_ncol=4, lw=2, lntypes=None, is_save=False):
+    #     if elements is None:
+    #         elements = eve_elements
+    #     if lntypes is None:
+    #         lntypes = eve_lntypes
 
         is_new_plot = ax is None
         # setup figure
@@ -249,27 +257,27 @@ class PreSN(object):
         is_x_lim = xlim is not None
         is_y_lim = ylim is not None
 
+        if x == 'r':
+            x = self.r
+            ax.set_xlabel(r'R [cm]')
+        elif x == 'm':
+            x = self.m
+            ax.set_xlabel(r'M [$M_\odot$]')
+        else:
+            x = self.r
+            ax.set_xscale('log')
+            ax.set_xlabel(r'R [cm]')
+
         x_min = []
         x_max = []
         y_min = []
         y_max = []
-        if x == 'r':
-            x = self.r
-            ax.set_xlabel(r'R [cm]')
-        if x == 'lgr':
-            x = self.r
-            ax.set_xscale('log')
-            ax.set_xlabel(r'R [cm]')
-        else:
-            x = self.m
-            ax.set_xlabel(r'M [$M_\odot$]')
-
         for el in elements:
             if self.is_set(el):
                 # y = self.lg_el(el)
                 y = self.el(el)
                 # y[y<=0] == 1e-15
-                ax.plot(x, y, label='%s' % el, color=eve_colors[el], ls=lntypes[el], linewidth=lw)
+                ax.plot(x, y, label='%s' % el, color=colors[el], ls=lntypes[el], linewidth=lw)
 
                 if not is_x_lim:
                     x_min.append(np.min(x))
@@ -290,7 +298,7 @@ class PreSN(object):
         ax.set_ylabel(r'$log10(X_i)$')
 
         if is_new_plot:
-            ax.legend(prop={'size': 9}, loc=leg_loc, ncol=leg_ncol, fancybox=False, frameon=True)
+            ax.legend(prop={'size': 9}, loc=loc, ncol=leg_ncol, fancybox=False, frameon=True)
             # ax.legend(prop={'size': 9}, loc=3, ncol=4, fancybox=True, shadow=True)
             # plt.grid()
             # plt.show()

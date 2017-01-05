@@ -174,21 +174,21 @@ class Problem:
         is_x_lim = xlim is not None
         is_y_lim = ylim is not None
 
+        if x == 'r':
+            x = self.r
+            ax.set_xlabel(r'R [cm]')
+        elif x == 'm':
+            x = self.m / phys.M_sun
+            ax.set_xlabel(r'M [$M_\odot$]')
+        else:
+            x = self.r
+            ax.set_xlabel(r'R [cm]')
+            ax.set_xscale('log')
+
         x_min = []
         x_max = []
         y_min = []
         y_max = []
-        if x == 'r':
-            x = self.r
-            ax.set_xlabel(r'R [cm]')
-        if x == 'lgr':
-            x = self.r
-            ax.set_xlabel(r'R [cm]')
-            ax.set_xscale('log')
-        else:
-            x = self.m / phys.M_sun
-            ax.set_xlabel(r'M [$M_\odot$]')
-
         for el in elements:
             y = self.el(el)
             # y = np.log10(self.el(el))
