@@ -157,6 +157,7 @@ class Problem:
         lntypes = kwargs.get('lntypes', snec_el_lntypes)
         colors = kwargs.get('colors', snec_el_colors)
         loc = kwargs.get('leg_loc', 3)
+        font_size = kwargs.get('font_size', 14)
         leg_ncol = kwargs.get('leg_ncol', 4)
         lw = kwargs.get('lw', 2)
         is_save = kwargs.get('is_save', False)
@@ -164,26 +165,30 @@ class Problem:
         is_new_plot = ax is None
         # setup figure
         if is_new_plot:
-            plt.matplotlib.rcParams.update({'font.size': 14})
+            plt.matplotlib.rcParams.update({'font.size': font_size})
             fig = plt.figure(num=None, figsize=(12, 12), dpi=100, facecolor='w', edgecolor='k')
 
             gs1 = gridspec.GridSpec(1, 1)
             gs1.update(wspace=0.1, hspace=0.1, top=None, left=0.1, right=0.98)
             ax = fig.add_subplot(gs1[0, 0])
 
+            if x == 'r':
+                ax.set_xlabel(r'R [cm]')
+            elif x == 'm':
+                ax.set_xlabel(r'M [$M_\odot$]')
+            else:
+                ax.set_xlabel(r'R [cm]')
+                ax.set_xscale('log')
+
         is_x_lim = xlim is not None
         is_y_lim = ylim is not None
 
         if x == 'r':
             x = self.r
-            ax.set_xlabel(r'R [cm]')
         elif x == 'm':
             x = self.m / phys.M_sun
-            ax.set_xlabel(r'M [$M_\odot$]')
         else:
             x = self.r
-            ax.set_xlabel(r'R [cm]')
-            ax.set_xscale('log')
 
         x_min = []
         x_max = []
