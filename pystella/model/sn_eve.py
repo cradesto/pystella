@@ -344,7 +344,7 @@ def load_rho(fname, path=None):
         raise ValueError(' No rho-data for %s' % fname)
         # return None
     logger.info(' Load rho-data from  %s' % fname)
-    col_names = "zone mass lgR lgTp lgRho lgDm Ni56 H He C N O Ne Na  Mg  Al  Si  S  Ar  Ca  Fe  Ni"
+    col_names = "zone mass lgR lgTp lgRho u Ni56 H He C N O Ne Na  Mg  Al  Si  S  Ar  Ca  Fe  Ni"
     dt = np.dtype({'names': map(str.strip, col_names.split()), 'formats': np.repeat('f8', len(col_names))})
 
     data = np.loadtxt(fname, comments='#', skiprows=2, dtype=dt)
@@ -352,7 +352,7 @@ def load_rho(fname, path=None):
     nz = len(data['lgR'])
     ###
     name = os.path.basename(os.path.splitext(fname)[0])
-    col_map = {PreSN.sR: 'lgR', PreSN.sM: 'mass', PreSN.sT: 'lgTp', PreSN.sRho: 'lgRho'}
+    col_map = {PreSN.sR: 'lgR', PreSN.sM: 'mass', PreSN.sT: 'lgTp', PreSN.sRho: 'lgRho', PreSN.sV: 'u'}
     presn = PreSN(name, nz)
     presn.set_hyd('V', np.zeros(nz))
     for k, v in col_map.items():
