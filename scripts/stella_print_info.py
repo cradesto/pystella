@@ -21,6 +21,11 @@ __author__ = 'bakl'
 
 
 class PrintDF:
+    '''
+    Usage:
+    in command line:
+        ~/Sn/Release/python/pystella/scripts/stella_print_info.py  -p ~/Sn/stlmodels/bakl/all/ -m "*Ni0_*" -f name | while read fn; do echo delete: $fn.*; rm -fv $fn.*; done
+    '''
     @staticmethod
     def name(df, columns=None):
         for n in df['name']:
@@ -111,8 +116,6 @@ def main():
         sys.exit(2)
 
     columns = ['name'] + list(StellaResInfo.Params)
-    index = range(len(files))
-    # df = pd.DataFrame(index=index, columns=columns)
     df = pd.DataFrame(columns=(columns))
 
     # get info
@@ -130,8 +133,7 @@ def main():
         i += 1
 
     # sort info
-    df.sort(list(StellaResInfo.Params), ascending=False)
-    # df.sort([StellaResInfo.sRinit, StellaResInfo.sMtot, StellaResInfo.sEburst, StellaResInfo.sMni], ascending=False)
+    df = df.sort(list(StellaResInfo.Params), ascending=False)
 
     # print info
     invert_op = getattr(PrintDF, fformat, None)
