@@ -225,12 +225,13 @@ class StellaResInfo:
     def show(self):
         # print "INFO %s" % self.name
         # print " %40s: R = %7.2f M = %6.2f E = %6.2f " % (self.name, self.R, self.M, self.E)
-        print "| %40s |  %7.2f |  %6.2f | %6.2f |" % (self.name, self.R, self.M, self.E)
+        print "| %40s |  %7.2f |  %6.2f | %6.2f | %6.2f |" % (self.name, self.R, self.M, self.E, self.Mni)
 
     def print_tex(self, o=None, lend=''):
         # print "INFO %s" % self.name
         # print " %40s: R = %7.2f M = %6.2f E = %6.2f " % (self.name, self.R, self.M, self.E)
-        s = " \\mbox{%s} &  %7.2f &  %6.2f & %6.2f \\\ %s " % (self.name, self.R, self.M, self.E, lend)
+        s = " \\mbox{%s} &  %7.2f &  %6.2f & %6.2f & %6.2f \\\ %s " % \
+            (self.name, self.R, self.M, self.E, self.Mni, lend)
         if o is not None and o:
             return s
         else:
