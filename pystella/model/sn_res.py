@@ -234,7 +234,7 @@ class StellaResInfo:
         if o is not None and o:
             return s
         else:
-            print o
+            print s
 
 
 

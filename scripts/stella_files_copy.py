@@ -13,7 +13,7 @@ __author__ = 'bakl'
 stl_exts = ('tt', 'res', 'ph', 'swd')
 
 
-def simplecopy(dir_src, dir_target, ext_ptn, ext, is_force=False):
+def simple_copy(dir_src, dir_target, ext_ptn, ext, is_force=False):
     enew = '.' + ext.replace('.', '')
     eold = '.' + ext_ptn.replace('.', '')
     files = [f for f in listdir(dir_src) if isfile(os.path.join(dir_src, f)) and f.endswith(eold)]
@@ -44,7 +44,7 @@ def catcopy(dir_src, dir_target, ext='tt', exts=stl_exts, is_force=False):
         sys.exit(2)
 
     for e in exts:
-        simplecopy(dir_src, dir_target, ext, e, is_force)
+        simple_copy(dir_src, dir_target, ext, e, is_force)
 
 
 def usage():
@@ -112,7 +112,7 @@ def main():
     if mode == 'cat':
         catcopy(dir_src, dir_target, ext_ptn, exts, is_force)
     else:
-        simplecopy(dir_src, dir_target, ext_ptn, ext, is_force)
+        simple_copy(dir_src, dir_target, ext_ptn, ext, is_force)
 
 
 if __name__ == '__main__':
