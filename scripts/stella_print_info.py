@@ -6,13 +6,56 @@ import os
 import sys
 from os import listdir
 from os.path import isfile, join, dirname
+from types import FunctionType
+
+import pandas as pd
+import numpy as np
 
 ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
 sys.path.append(ROOT_DIRECTORY)
 
 from pystella.model.stella import Stella
+from pystella.model.sn_res import StellaResInfo
 
 __author__ = 'bakl'
+
+
+class PrintDF:
+    @staticmethod
+    def name(df, columns=None):
+        for n in df['name']:
+            print n
+
+    @staticmethod
+    def tex(df, columns, lend=''):
+        frm_header = " \\mbox{{Name}} " + " & \\mbox{{{:s}}} " * (len(columns)-1)
+        print frm_header.format(*columns[1:])
+        frm = " \\mbox{{{:s}}} " + "&  {:6.2f} " * (len(columns) - 1) + " \\\ {:s} "
+        for i, r in df.iterrows():
+            # print(r['name'])
+            s = frm.format(*([r[n] for n in columns] + [lend]))
+            print s
+
+    @staticmethod
+    def display(df, columns):
+        # print "| %40s |  %7.2f |  %6.2f | %6.2f | %6.2f |" % (self.name, self.R, self.M, self.E, self.Mni)
+        frm_header = "{:>40s}" + " | {:>14s}" * (len(columns)-1)
+        print frm_header.format(*(['Name']+columns[1:]))
+        frm = "{:>40s}" + " | {:>14.5f}" * (len(columns) - 1)
+        for i, r in df.iterrows():
+            # print(r['name'])
+            s = frm.format(*([r[n] for n in columns]))
+            print s
+
+    @staticmethod
+    def csv(df, columns=None):
+        df.to_csv(sys.stdout)
+
+    @staticmethod
+    def methods():
+        # return dir(PrintDF)
+        return [func for func in dir(PrintDF) if callable(getattr(PrintDF, func)) and func != 'methods']
+        # return [x for x, y in PrintDF.__dict__.items() if type(y) == FunctionType]
 
 
 def usage():
@@ -20,7 +63,7 @@ def usage():
     print "Usage:"
     print "  %s [params]" % __file__
     print "  -p <directory with models>"
-    print "  -f <format: tex, simple>"
+    print "  -f <format: %s >" % PrintDF.methods()
     print "  -m <mask: reg expression>"
 
 
@@ -28,8 +71,7 @@ def main():
     dir_target = './'
     ext_def = '.res'
     mask = None
-    is_tex = False
-    is_simple = False
+    fformat = 'display'
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], "h:f:m:p:")
@@ -51,12 +93,14 @@ def main():
             continue
         if opt == '-f':
             frm = str(arg).strip().lower()
-            if frm == 'tex':
-                is_tex = True
-            if frm == 'simple':
-                is_simple = True
+            if frm in PrintDF.methods():
+                fformat = frm
+            else:
+                print "No such format: " + frm
+                print "Use: %s " % PrintDF.methods()
+                sys.exit(2)
         if opt == '-m':
-                mask = str(arg).strip()
+            mask = str(arg).strip()
         elif opt == '-h':
             usage()
             sys.exit(2)
@@ -66,6 +110,13 @@ def main():
         print "No res-files in  directory: " + dir_target
         sys.exit(2)
 
+    columns = ['name'] + list(StellaResInfo.Params)
+    index = range(len(files))
+    # df = pd.DataFrame(index=index, columns=columns)
+    df = pd.DataFrame(columns=(columns))
+
+    # get info
+    i = 1
     for f in files:
         # print 'Read: %s' % f
         fname, ext = os.path.splitext(f)
@@ -74,12 +125,18 @@ def main():
                 continue
         stella = Stella(fname, path=dir_target)
         info = stella.get_res().Info
-        if is_tex:
-            info.print_tex(lend=' \hline')
-        elif is_simple:
-            print "%s" % fname
-        else:
-            info.show()
+
+        df.loc[i] = [info.name] + [info.get(k) for k in StellaResInfo.Params]
+        i += 1
+
+    # sort info
+    df.sort(list(StellaResInfo.Params), ascending=False)
+    # df.sort([StellaResInfo.sRinit, StellaResInfo.sMtot, StellaResInfo.sEburst, StellaResInfo.sMni], ascending=False)
+
+    # print info
+    invert_op = getattr(PrintDF, fformat, None)
+    if callable(invert_op):
+        invert_op(df, columns)
 
 
 if __name__ == '__main__':

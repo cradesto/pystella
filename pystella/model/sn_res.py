@@ -115,6 +115,13 @@ class StellaRes:
 
 
 class StellaResInfo:
+    sRinit = 'RADIUS(SOLAR)'
+    sMtot = 'MASS(SOLAR)'
+    sEburst = 'Ebstht'
+    sMni = 'XMNI'
+
+    Params = (sRinit, sMtot, sEburst, sMni)
+
     def __init__(self, name, path='./'):
         """Creates a StellaRes model instance.  Required parameters:  name."""
         self._dict = None
@@ -192,35 +199,38 @@ class StellaResInfo:
 
     @property
     def R(self):
-        return self._dict['RADIUS(SOLAR)']
+        return self.get(StellaResInfo.sRinit)
 
     @property
     def M(self):
-        return self._dict['MASS(SOLAR)']
+        return self.get(StellaResInfo.sMtot)
 
     @property
     def E(self):
-        return self._dict['Ebstht']
+        return self.get(StellaResInfo.sEburst)
 
     @property
     def Mni(self):
-        return self._dict['XMNI']
+        return self.get(StellaResInfo.sMni)
 
     @property
     def TcurA(self):
-        return self._dict['TcurA']
+        return self.get('TcurA')
 
     @property
     def TcurB(self):
-        return self._dict['TcurB']
+        return self.get('TcurB')
 
     @property
     def Rce(self):
-        return self._dict['Rce']
+        return self.get('Rce')
 
     @property
     def Data(self):
         return self._dict
+
+    def get(self, k):
+        return self.Data[k]
 
     def show(self):
         # print "INFO %s" % self.name
