@@ -27,7 +27,7 @@ class TestLightCurve(unittest.TestCase):
         for b in bands:
             curves.add(lc_create(b))
 
-        self.assertItemsEqual(bands, curves.BandNames,
+        self.assertCountEqual(bands, curves.BandNames,
                               msg="Error for band names.\n \
                 Now band is %s but  lc.Band.Name is  %s." % (' '.join(bands), ' '.join(curves.BandNames)))
 

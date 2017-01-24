@@ -20,7 +20,7 @@ def plot(ax, dic=None):
     if len(arg) > 0:
         jd_shift = float(arg.pop(0))
 
-    print "Plot Red Nova  jd_shift=%f  path: %s" % (jd_shift, sn_path)
+    print("Plot Red Nova  jd_shift=%f  path: %s" % (jd_shift, sn_path))
     plot_ubv(ax=ax, path=sn_path, jd_shift=jd_shift)
 
 
@@ -37,7 +37,7 @@ def plot_ubv(ax, path, jd_shift=0., mshift=0.):
                 ls=":", color=bcolor, markersize=7, marker="o")
         ax.errorbar(x, y, yerr=lc.MagErr, color='gray', fmt='.', zorder=1)
 
-    print "jd_shift=%f mshift=%f " % (jd_shift, mshift)
+    print("jd_shift=%f mshift=%f " % (jd_shift, mshift))
 
     curves = read_curves_kurtenkov(path)
     for lc in curves:

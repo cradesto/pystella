@@ -31,9 +31,9 @@ class Stella:
         for e in ext:
             fname = os.path.join(self.path, self.name + '.' + e)
             if os.path.isfile(fname):
-                print "Exist %s-file: %s" % (e, fname)
+                print("Exist %s-file: %s" % (e, fname))
             else:
-                print "No %s-file: %s" % (e, fname)
+                print("No %s-file: %s" % (e, fname))
 
     @property
     def is_any_data(self):
@@ -89,9 +89,10 @@ class Stella:
         finally:
             f.close()
 
-        freqs = [map(float, header1.split())]
+        freqs = [float(x) for x in header1.split()]
         freqs = np.array(freqs).reshape(-1)
-        freqs = np.exp(math.log(10) * freqs)
+        freqs = [10.**nu for nu in freqs]
+        # freqs = np.exp(math.log(10) * freqs)
 
         data = np.loadtxt(fname, comments='!', skiprows=1)
 
@@ -109,7 +110,6 @@ class Stella:
                 k = i
         is_times[0] = True  # times[0] > 0.
         is_times[-1] = True
-        times_thin = times[is_times]
 
         series = SeriesSpectrum(self.name)
         for i in range(len(times)):

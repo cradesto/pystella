@@ -140,7 +140,8 @@ class Popov:
         return np.sqrt(tmp)
 
     def Lbol(self, time):
-        L = np.array(map(self.lum_bol, time))
+        L = np.array([(self.lum_bol(t)) for t in time])
+        # L = np.array(map(self.lum_bol, time))
         return L
 
     def lum_bol(self, time, is_ni=False):

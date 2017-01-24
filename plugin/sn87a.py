@@ -23,12 +23,12 @@ def plot(ax, dic=None):
     if len(arg) > 0:
         mshift = float(arg.pop(0))
 
-    print "Plot Sn 1987A  jd_shift=%f  mshift=%f path: %s" % (jd_shift, mshift, sn_path)
+    print("Plot Sn 1987A  jd_shift=%f  mshift=%f path: %s" % (jd_shift, mshift, sn_path))
     plot_ubv(ax=ax, path=sn_path, jd_shift=jd_shift, mshift=mshift)
 
 
 def plot_vels_sn87a(ax, path, z=0):
-    print "Plot the velocities of Sn 87A "
+    print("Plot the velocities of Sn 87A ")
 
     jd_shift = 2446850  # moment of explosion SN 1987A, Hamuy 1988, doi:10.1086/114613
 

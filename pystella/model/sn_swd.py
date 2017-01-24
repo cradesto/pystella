@@ -63,7 +63,7 @@ class StellaShockWaveDetail:
         # log10(max(UTP*Ty(Km),1.d0)),log10(max(UTP*TpRAD,1.d0)),
         # PLLOG,PLOG,QVLOG,log10(max(eng,1.d-50)),Flum*1.d-40,WRKX(Km);
         colstr = "tday km lgM lgR14 V8 lgT lgTrad lgDm6 lgP7  lgQv lgEng Flum40 cap"
-        cols = map(str.strip, colstr.split())
+        cols = [s.strip() for s in colstr.split()]
         dt = np.dtype({'names': cols, 'formats': [np.float] * len(cols)})
 
         data = np.loadtxt(fname, dtype=dt)
@@ -80,7 +80,7 @@ class StellaShockWaveDetail:
 
     def time_nearest(self, time):
         idx = (np.abs(self.Times - time)).argmin()
-        return idx, self.Times[time]
+        return idx, self.Times[idx]
 
     def block_nearest(self, time):
         idx = (np.abs(self._data['tday'] - time)).argmin()

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 import getopt
 import numpy as np
@@ -32,7 +32,7 @@ markers = {u'D': u'diamond', 6: u'caretup', u's': u'square', u'x': u'x',
 markers = markers.keys()
 
 
-def plot_scm(models_data, mnames, bands, z, xlim=None, is_fit=False):
+def plot_scm(models_data, bands, z, xlim=None, is_fit=False):
     ylim = (1.5, 4.)
 
     # setup figure
@@ -123,7 +123,7 @@ def plot_scm(models_data, mnames, bands, z, xlim=None, is_fit=False):
             if yn is not None:
                 ax.plot(mag_bakl, vel, label='Baklanov', color="orange", ls="--", lw=2)
                 # ax.plot(mag_bakl, vel, marker='o', label='Baklanov', markersize=5, color="blue", ls="")
-            print "Bakl fit for %s: %4.2f, %4.2f" % (bname, a[0], a[1])
+            print("Bakl fit for %s: %4.2f, %4.2f" % (bname, a[0], a[1]))
             # ax.plot(xx, yy, color="orange", ls="--", linewidth=2.5, label='Nugent')
 
     # legend
@@ -134,7 +134,6 @@ def plot_scm(models_data, mnames, bands, z, xlim=None, is_fit=False):
     # plt.grid()
     plt.show()
     return fig
-
 
 
 def scm_fit(v, Av=0, bname=None, z=0.003, src='hamuy'):
@@ -156,7 +155,7 @@ def scm_fit(v, Av=0, bname=None, z=0.003, src='hamuy'):
         return mag
     if src == 'nugent':
         a = coef[src]
-        mag = - a['alf'] * np.log10(v / 5.) - a['RI'] * (Av - a['V_I_0']) + a['MI0']
+        mag = -1. * a['alf'] * np.log10(v / 5.) - a['RI'] * (Av - a['V_I_0']) + a['MI0']
         return mag
     if src == 'kasen':
         t = 50.  # day
@@ -184,19 +183,16 @@ def scm_fit_bakl(mag, vel, z, Av=0.):
 
 
 def usage():
-    bands = band.band_get_names()
-    print "Usage:"
-    print "  %s [params]" % __file__
-    print "  -b <set_bands>: delimiter '_'. Default: B-V-I_B-V_V-I"
-    print "  -i <model name>.  Example: cat_R450_M15_Ni007_E7"
-    print "  -p <model path(directory)>, default: ./"
-    print "  -f  force mode: rewrite zeta-files even if it exists"
-    # print "  -a  plot the Eastman & Dessart fits"
-    print "  -o  options: <fit:fitb:time:ubv:Tnu> - fit E&D: fit bakl:  show time points: plot UBV"
-    # print "  -w  write magnitudes to file, default 'False'"
-    print "  -s  save plot to file, default 'False'"
-    print "  -h  print usage"
-    print "   --- "
+    print("Usage:")
+    print("  %s [params]" % __file__)
+    print("  -b <set_bands>: delimiter '_'. Default: B-V-I_B-V_V-I")
+    print("  -i <model name>.  Example: cat_R450_M15_Ni007_E7")
+    print("  -p <model path(directory)>, default: ./")
+    print("  -f  force mode: rewrite zeta-files even if it exists")
+    print("  -o  options: <fit:fitb:time:ubv:Tnu> - fit E&D: fit bakl:  show time points: plot UBV")
+    print("  -s  save plot to file, default 'False'")
+    print("  -h  print usage")
+    print("   --- ")
     band.print_bands()
 
 
@@ -220,7 +216,7 @@ def run_scm(bands, distance, names, path, t50, t_beg, t_end, z):
     for name in names:
         vels = velocity.compute_vel(name, path, z=z, t_beg=t_beg, t_end=t_end)
         if vels is None:
-            print "No enough data for %s " % name
+            print("No enough data for %s " % name)
             continue
 
         curves = light_curve_func.curves_compute(name, path, bands, z=z, distance=distance,
@@ -231,26 +227,23 @@ def run_scm(bands, distance, names, path, t50, t_beg, t_end, z):
         for bname in bands:
             m = extract_time(t50, curves.get(bname).Time, curves.get(bname).Mag)
             res[im][bname] = m
-        print "Run: %s [%d/%d]" % (name, im + 1, len(names))
+        print("Run: %s [%d/%d]" % (name, im + 1, len(names)))
         im += 1
     res = res[res[:]['v'] > 0]
     return res
 
 
 def main(name='', path='./'):
-    is_silence = False
-    is_fit = False
-    is_plot_ubv = False
-    is_fit_bakl = False
     model_ext = '.tt'
     ubv_args = ''
+    is_save = False
 
     band.Band.load_settings()
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], "fhstp:i:b:o:")
     except getopt.GetoptError as err:
-        print str(err)  # will print something like "option -a not recognized"
+        print(str(err))  # will print something like "option -a not recognized"
         usage()
         sys.exit(2)
 
@@ -276,16 +269,10 @@ def main(name='', path='./'):
             bands = str(arg).split('-')
             for b in bands:
                 if not band.band_is_exist(b):
-                    print 'No such band: ' + b
+                    print('No such band: ' + b)
                     sys.exit(2)
             continue
         if opt == '-o':
-            ops = str(arg).split(':')
-            is_plot_ubv = "ubv" in ops
-            is_plot_Tnu = "Tnu" in ops
-            is_plot_time_points = "time" in ops
-            is_fit = "fit" in ops
-            is_fit_bakl = "fitb" in ops
             ubv_args += " %s %s ".format(opt, arg)
             continue
         if opt == '-s':
@@ -293,13 +280,12 @@ def main(name='', path='./'):
             ubv_args += opt + ' '
             continue
         if opt == '-f':
-            is_force = True
             is_save = True
             continue
         if opt == '-p':
             path = os.path.expanduser(str(arg))
             if not (os.path.isdir(path) and os.path.exists(path)):
-                print "No such directory: " + path
+                print("No such directory: " + path)
                 sys.exit(2)
             continue
         elif opt == '-h':
@@ -324,13 +310,13 @@ def main(name='', path='./'):
     if len(names) > 0:
         res = run_scm(bands, distance, names, path, t50, t_beg, t_end, z)
         if len(res) > 0:
-            fig = plot_scm(res, names, bands, z, is_fit=True)
+            fig = plot_scm(res, bands, z, is_fit=True)
             if is_save:
                 fsave = os.path.join(os.path.expanduser('~/'), 'scm_' + '_'.join(bands) + '.pdf')
-                print "Save plot in %s" % fsave
+                print("Save plot in %s" % fsave)
                 fig.savefig(fsave, bbox_inches='tight', format='pdf')
     else:
-        print "There are no models in the directory: %s with extension: %s " % (path, model_ext)
+        print("There are no models in the directory: %s with extension: %s " % (path, model_ext))
 
 
 if __name__ == '__main__':

@@ -86,7 +86,7 @@ class EmceeTests(unittest.TestCase):
                                      zip(*np.percentile(samples, [16, 50, 84], axis=0)))
 
         def print_v3(v3):
-            print "v = %f + %f - %f" % v3
+            print("v = %f + %f - %f" % v3)
 
         map(print_v3, (m_mcmc, b_mcmc, f_mcmc))
 
@@ -161,7 +161,7 @@ class EmceeTests(unittest.TestCase):
                                      zip(*np.percentile(samples, [16, 50, 84], axis=0)))
 
         def print_v3(v3):
-            print "v = %f + %f - %f" % v3
+            print("v = %f + %f - %f" % v3)
 
         map(print_v3, (m_mcmc, b_mcmc, f_mcmc))
 

@@ -50,7 +50,7 @@ class TestStellaRes(unittest.TestCase):
             res = re.findall(p, line)
             if len(res) > 0:
                 for k, v in res:
-                    print "key: %s  v: %f " % (k, float(v))
+                    print("key: %s  v: %f " % (k, float(v)))
 
     def test_info_parse(self):
         info = self.res.Info.parse()

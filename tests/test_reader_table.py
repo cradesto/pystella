@@ -9,11 +9,11 @@ from pystella.util.reader_table import read_table_header_float, table2curves
 __author__ = 'bakl'
 
 
-def lc_create(band, m=-19, dt=0.):
+def lc_create(b, m=-19, dt=0.):
     n = 10
     time = np.linspace(0. + dt, 200. + dt, n)
     mags = m * np.ones(n)
-    return LightCurve(band, time, mags)
+    return LightCurve(b, time, mags)
 
 
 class TestReaderTable(unittest.TestCase):

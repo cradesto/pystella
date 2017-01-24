@@ -23,7 +23,7 @@ def plot(ax, dic=None):
     if len(arg) > 0:
         m_shift = float(arg.pop(0))
 
-    print "Plot Sn 1987A  jd_shift=%f  mshift=%f path: %s" % (jd_shift, m_shift, sn_path)
+    print("Plot Sn 1987A  jd_shift=%f  mshift=%f path: %s" % (jd_shift, m_shift, sn_path))
     plot_ubv(ax=ax, path=sn_path, jd_shift=jd_shift, mshift=m_shift)
 
 

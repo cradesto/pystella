@@ -1,15 +1,16 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 import getopt
+import os
+import sys
+from os.path import dirname
+
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import numpy as np
-import os
-import sys
 from matplotlib import gridspec
-from os.path import dirname
 from scipy import interpolate
-from scipy.optimize import fmin, minimize
+from scipy.optimize import fmin
 
 import pystella.rf.rad_func as rf
 from pystella.model.stella import Stella
@@ -65,8 +66,8 @@ epm_coef = {
 }
 
 
-def plot_zeta_oneframe(models_dic, set_bands, t_cut=4.9, is_fit=False, is_fit_bakl=False,
-                       is_plot_Tcolor=True, is_plot_Tnu=True, is_time_points=False):
+def plot_zeta_oneframe(models_dic, set_bands, t_cut=4.9, is_fit=False, is_plot_Tcolor=True,
+                       is_plot_Tnu=True, is_time_points=False):
     t_points = [1, 2, 3, 4, 5, 10, 20, 40, 80, 150]
 
     xlim = [0, 25000]
@@ -114,7 +115,7 @@ def plot_zeta_oneframe(models_dic, set_bands, t_cut=4.9, is_fit=False, is_fit_ba
                                     textcoords='offset points', color=bcolor,
                                     arrowprops=dict(arrowstyle='->', shrinkA=0))
                 t_min = z[y[x > 5000.].argmin()]
-                print "t_min( %s) = %f" % (bset, t_min)
+                print("t_min( %s) = %f" % (bset, t_min))
         if is_plot_Tnu:
             z = mdic[bset]['time']
             xTnu = mdic[bset]['Tnu']
@@ -292,21 +293,21 @@ def plot_zeta(models_dic, set_bands, theta_dic, t_cut=4.9,
             if theta_dic is not None:
                 yf = zeta_fit_rev_temp(xx, theta_dic[bset]['v'])
                 bcolor = "orange"
-                ax.plot(xx, yf, color=bcolor,  dashes=[12,6,12,6,3,6], linewidth=2.5, label='Baklanov 16')
+                ax.plot(xx, yf, color=bcolor, dashes=[12, 6, 12, 6, 3, 6], linewidth=2.5, label='Baklanov 16')
 
         # PRINT coef
         for bset in set_bands:
             if is_fit:
                 if zeta_fit_coef_exists(bset, 'dessart'):
-                    print "Dessart zeta-T  %s: %s " % (bset, ' '.join(map(str, zeta_fit_coef(bset, "dessart"))))
+                    print("Dessart zeta-T  %s: %s " % (bset, ' '.join(map(str, zeta_fit_coef(bset, "dessart")))))
                 if zeta_fit_coef_exists(bset, 'eastman'):
-                    print "Eastman zeta-T  %s: %s " % (bset, ' '.join(map(str, zeta_fit_coef(bset, "eastman"))))
+                    print("Eastman zeta-T  %s: %s " % (bset, ' '.join(map(str, zeta_fit_coef(bset, "eastman")))))
                 if zeta_fit_coef_exists(bset, 'hamuy'):
-                    print "Hamuy01 zeta-T  %s: %s " % (bset, ' '.join(map(str, zeta_fit_coef(bset, "hamuy"))))
+                    print("Hamuy01 zeta-T  %s: %s " % (bset, ' '.join(map(str, zeta_fit_coef(bset, "hamuy")))))
                 if zeta_fit_coef_exists(bset, 'bakl'):
-                    print "Baklanov zeta-T %s: %s " % (bset, ' '.join(map(str, zeta_fit_coef(bset, "bakl"))))
+                    print("Baklanov zeta-T %s: %s " % (bset, ' '.join(map(str, zeta_fit_coef(bset, "bakl")))))
                 if theta_dic is not None:
-                    print "     New zeta-T %s: %s " % (bset, ' '.join(map(str, np.round(theta_dic[bset]['v'], 4))))
+                    print("     New zeta-T %s: %s " % (bset, ' '.join(map(str, np.round(theta_dic[bset]['v'], 4)))))
 
             if is_fit_bakl:  # bakl fit
                 # find a_coef
@@ -316,10 +317,10 @@ def plot_zeta(models_dic, set_bands, theta_dic, t_cut=4.9,
                 t_beg, t_end = 5., 110  # None  # 100.
                 a[bset], err[bset] = zeta_fit_coef_my(models_dic, bset, t_beg=t_beg, t_end=t_end)  # todo check t_end
                 # print "%s & %s " % (bset, ', '.join([str(round(x, 4)) for x in a[bset]]))
-                print " Baklan zeta-T  %s: %s : err %f" % (
-                bset, ' '.join([str(round(x, 4)) for x in a[bset]]), err[bset])
+                print(" Baklan zeta-T  %s: %s : err %f" % (
+                    bset, ' '.join([str(round(x, 4)) for x in a[bset]]), err[bset]))
                 # print " Baklan errors  %s: %s " % (bset, ' '.join([str(round(x, 4)) for x in ]))
-                print ""
+                print("")
 
                 # show fit
                 xx = np.linspace(max(100, xlim[0]), xlim[1], num=50)
@@ -568,11 +569,11 @@ def compute_tcolor(name, path, bands, d=rf.pc_to_cm(10.), z=0., t_cut=1.):
     model = Stella(name, path=path)
 
     if not model.is_ph_data:
-        print "No ph-data for: " + str(model)
+        print("No ph-data for: " + str(model))
         return None
 
     if not model.is_tt_data:
-        print "No tt-data for: " + str(model)
+        print("No tt-data for: " + str(model))
         return None
 
     # serial_spec = model.read_series_spectrum(t_diff=1.)
@@ -619,7 +620,7 @@ def fit_bayesian(models_zt, is_debug=True, is_info=False, title=''):
         Tcol = tbl_zt['Tcol']
         zeta = tbl_zt['zeta']
         z_fit = zeta_fit_rev_temp(Tcol, theta)
-        e = 0.01 *zeta
+        e = 0.01 * zeta
         l = -0.5 * np.sum(np.log(2 * np.pi * (e ** 2)) + (zeta - z_fit) ** 2 / e ** 2)
         # print "epsilon: err=%f" % l
         return l
@@ -695,23 +696,23 @@ def table_cut_by_col(tbl, xlim, cname):
 
 
 def usage():
-    print "Usage:"
-    print "  zeta.py [params]"
-    print "  -b <set_bands>: delimiter '_'. Default: B-V-I_B-V_V-I"
-    print "  -d <distance> [pc].  Default: 10 pc"
-    print "  -i <model name>.  Example: cat_R450_M15_Ni007_E7"
-    print "  -p <model path(directory)>, default: ./"
-    print "  -e <model extension> is used to define model name, default: tt "
-    print "  -s  silence mode: no info, no plot"
-    print "  -f  force mode: rewrite zeta-files even if it exists"
-    # print "  -a  plot the Eastman & Dessart fits"
-    print "  -o  options: <fit:fitb:time:ubv:Tnu> - fit E&D: fit bakl:  show time points: plot UBV"
-    print "  -w  write magnitudes to file, default 'False'"
-    print "  -z <redshift>.  Default: 0"
-    print "  -h  print usage"
-    print "  ---  "
+    print("Usage:")
+    print("  zeta.py [params]")
+    print("  -b <set_bands>: delimiter '_'. Default: B-V-I_B-V_V-I")
+    print("  -d <distance> [pc].  Default: 10 pc")
+    print("  -i <model name>.  Example: cat_R450_M15_Ni007_E7")
+    print("  -p <model path(directory)>, default: ./")
+    print("  -e <model extension> is used to define model name, default: tt ")
+    print("  -s  silence mode: no info, no plot")
+    print("  -f  force mode: rewrite zeta-files even if it exists")
+    print("  -o  options: <fit:fitb:time:ubv:Tnu> - fit E&D: fit bakl:  show time points: plot UBV")
+    print("  -w  write magnitudes to file, default 'False'")
+    print("  -z <redshift>.  Default: 0")
+    print("  -h  print usage")
+    print("  ---  ")
 
     band.print_bands()
+
 
 def print_coef(theta):
     strs = []
@@ -746,7 +747,7 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
     try:
         opts, args = getopt.getopt(sys.argv[1:], "fhswtb:d:e:i:p:o:z:")
     except getopt.GetoptError as err:
-        print str(err)  # will print something like "option -a not recognized"
+        print(str(err))  # will print something like "option -a not recognized"
         usage()
         sys.exit(2)
 
@@ -776,7 +777,7 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
             for bset in set_bands:
                 for b in bset.split('-'):
                     if not band.band_is_exist(b):
-                        print 'No such band: ' + b
+                        print('No such band: ' + b)
                         sys.exit(2)
             continue
         if opt == '-z':
@@ -805,7 +806,7 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
         if opt == '-p':
             path = os.path.expanduser(str(arg))
             if not (os.path.isdir(path) and os.path.exists(path)):
-                print "No such directory: " + path
+                print("No such directory: " + path)
                 sys.exit(2)
             continue
         elif opt == '-h':
@@ -821,15 +822,15 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
     if len(names) > 0:
         results = {}  # dict((k, None) for k in names)
         ib = 0
+        is_err = False
         for bset in set_bands:
             ib += 1
             im = 0
             dic = {}
-            print "\nRun: %s [%d/%d], z=%.2f, d=%.2e" % (bset, ib, len(set_bands), z, distance)
+            print("\nRun: %s [%d/%d], z=%.2f, d=%.2e" % (bset, ib, len(set_bands), z, distance))
             for name in names:
-                res = None
                 im += 1
-                print "Run: %s [%d/%d]" % (name, im, len(names))
+                print("Run: %s [%d/%d]" % (name, im, len(names)))
                 is_err = False
                 fname = cache_name(name, path, bset)
                 if not is_force and os.path.exists(fname):
@@ -837,7 +838,7 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
                 else:
                     res = compute_tcolor(name, path, bset.split('-'), d=distance, z=z, t_cut=0.9)
                     if is_save and res is not None:
-                        print "Save Tcolor & Zeta for %s in %s" % (bset, fname)
+                        print("Save Tcolor & Zeta for %s in %s" % (bset, fname))
                         cache_save(res, fname=fname)
 
                 dic[name] = res
@@ -846,14 +847,14 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
                 if abs(res['zeta'][idx] - 1.) <= 1e-3:
                     is_err = True
             if is_err:
-                print " ERROR for %s in %s" % (name, bset)
+                print(" ERROR for %s in %s" % (name, bset))
 
             results[bset] = dic
-            print "Finish: %s" % name
+            print("Finish: %s" % name)
+        results_filter = {}
         if is_fit:
             theta_dic = {}
             im = 0
-            results_flter = {}
             for bset in set_bands:
                 im += 1
                 models = results[bset]
@@ -871,22 +872,23 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
                 #         models_zt_new[mname] = table_cut_by_col(tbl, templim, 'Tcol')
                 #     models = models_zt_new
 
-                print "\nFit: %s [%d/%d]" % (bset, im, len(set_bands))
+                print("\nFit: %s [%d/%d]" % (bset, im, len(set_bands)))
                 theta = fit_bayesian(models, is_debug=True, is_info=is_info, title=bset)
-                results_flter[bset] = models
+                results_filter[bset] = models
                 theta_dic[bset] = theta
                 print_coef(theta)
 
         # fig = plot_zeta(results, set_bands, theta_dic, t_cut=1.9, is_fit=is_fit, is_fit_bakl=is_fit_bakl,
-        fig = plot_zeta(results_flter, set_bands, theta_dic, t_cut=1.9, is_fit=is_fit, is_fit_bakl=is_fit_bakl,
-                        is_plot_Tnu=is_plot_Tnu, is_time_points=is_plot_time_points)
+        fig = plot_zeta(results_filter, set_bands, theta_dic, t_cut=1.9, is_fit=is_fit,
+                        is_fit_bakl=is_fit_bakl, is_plot_Tnu=is_plot_Tnu,
+                        is_time_points=is_plot_time_points)
         if is_save_plot and len(results) > 0:
             fsave = os.path.join(os.path.expanduser('~/'), 'epm_' + '_'.join(set_bands) + '.pdf')
-            print "Save plot in %s" % fsave
+            print("Save plot in %s" % fsave)
             fig.savefig(fsave, bbox_inches='tight', format='pdf')
 
     else:
-        print "There are no models in the directory: %s with extension: %s " % (path, model_ext)
+        print("There are no models in the directory: %s with extension: %s " % (path, model_ext))
 
 
 if __name__ == '__main__':

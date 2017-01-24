@@ -42,7 +42,7 @@ class TestReddening(unittest.TestCase):
         magExpect = lc.Mag + mshift  # Av for e=1.
         curves_reddening(lc, ebv=ebv)
         magRed = lc.Mag
-        res = filter(lambda x: abs(x) > 1e-4, magExpect - magRed)
+        res = list(filter(lambda x: abs(x) > 1e-4, magExpect - magRed))
         self.assertTrue(len(res) == 0,
                         msg="Some mags were shifted more then %f." % mshift)
 
@@ -65,7 +65,7 @@ class TestReddening(unittest.TestCase):
         magExpect = lc.Mag + mshift  # Av for e=1.
         curves_reddening(lc, ebv=ebv, z=z)
         magRed = lc.Mag
-        res = filter(lambda x: abs(x) > 1e-4, magExpect - magRed)
+        res = list(filter(lambda x: abs(x) > 1e-4, magExpect - magRed))
         self.assertTrue(len(res) == 0,
                         msg="Some mags were shifted more then %f." % mshift)
 

@@ -1,21 +1,20 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 import getopt
-import numpy as np
 import os
 import sys
 from os.path import dirname
-from scipy import interpolate
-from scipy.optimize import fmin
 
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib import cm
 from matplotlib import gridspec
 from matplotlib.collections import PolyCollection
 from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.mlab import griddata
-from matplotlib.ticker import LinearLocator
 from mpl_toolkits.mplot3d import Axes3D
+from scipy import interpolate
+from scipy.optimize import fmin
 
 import pystella.rf.rad_func as rf
 from pystella.model.stella import Stella
@@ -224,7 +223,7 @@ def plot_spec_poly(series, moments=None, fcut=1.e-20, is_info=False):
 
         T_cols.append(spec.T_color)
         if is_info:
-            print "time: %f  T_color=%f" % (t, spec.T_color)
+            print("time: %f  T_color=%f" % (t, spec.T_color))
             # print "time: %f  T_wien=%f wl_max=%f" % (t_data[i], spec.temp_wien, spec.wl_flux_max)
 
     Tmap = np.log(T_cols / np.min(T_cols))
@@ -398,19 +397,19 @@ def interval2float(v):
 
 
 def usage():
-    bands = band.band_get_names().keys()
-    print "Usage: show F(t,nu) from ph-file"
-    print "  plot_spec.py [params]"
-    print "  -b <set_bands>: delimiter '_'. Default: B-V.\n" \
-          "     Available: " + '-'.join(sorted(bands))
-    print "  -f  force mode: rewrite tcolor-files even if it exists"
-    print "  -i <model name>.  Example: cat_R450_M15_Ni007_E7"
-    print "  -o  options: [fit] - plot spectral fit in bands"
-    print "  -p <model path(directory)>, default: ./"
-    print "  -s  silence mode: no info, no plot"
-    print "  -t  time interval [day]. Example: 5.:75."
-    print "  -w  wave length interval [A]. Example: 1.:25e3"
-    print "  -h  print usage"
+    bands = band.band_get_names()
+    print("Usage: show F(t,nu) from ph-file")
+    print("  plot_spec.py [params]")
+    print("  -b <set_bands>: delimiter '_'. Default: B-V.\n"
+          "     Available: " + '-'.join(sorted(bands)))
+    print("  -f  force mode: rewrite tcolor-files even if it exists")
+    print("  -i <model name>.  Example: cat_R450_M15_Ni007_E7")
+    print("  -o  options: [fit] - plot spectral fit in bands")
+    print("  -p <model path(directory)>, default: ./")
+    print("  -s  silence mode: no info, no plot")
+    print("  -t  time interval [day]. Example: 5.:75.")
+    print("  -w  wave length interval [A]. Example: 1.:25e3")
+    print("  -h  print usage")
 
 
 def main():
@@ -420,7 +419,7 @@ def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], "fhsup:i:b:o:t:w:")
     except getopt.GetoptError as err:
-        print str(err)  # will print something like "option -a not recognized"
+        print(str(err))  # will print something like "option -a not recognized"
         usage()
         sys.exit(2)
 
@@ -452,7 +451,7 @@ def main():
             for bset in set_bands:
                 for b in bset.split('-'):
                     if not band.band_is_exist(b):
-                        print 'No such band: ' + b
+                        print('No such band: ' + b)
                         sys.exit(2)
             continue
         if opt == '-s':
@@ -472,7 +471,7 @@ def main():
         if opt == '-p':
             path = os.path.expanduser(str(arg))
             if not (os.path.isdir(path) and os.path.exists(path)):
-                print "No such directory: " + path
+                print("No such directory: " + path)
                 sys.exit(2)
             continue
         elif opt == '-h':
@@ -480,13 +479,13 @@ def main():
             sys.exit(2)
 
     if not name:
-        print "No model. Use key -i."
+        print("No model. Use key -i.")
         sys.exit(2)
 
     model = Stella(name, path=path)
 
     if not model.is_ph_data:
-        print "No ph-data for: " + str(model)
+        print("No ph-data for: " + str(model))
         return None
 
     series_spec = model.read_series_spectrum(t_diff=1.05)
@@ -496,11 +495,11 @@ def main():
     if not is_fit:
         plot_spec_poly(series)
         # plot_spec_t(series_spec)
-        print "Plot spectral F(t,nu): " + str(model)
+        print("Plot spectral F(t,nu): " + str(model))
         sys.exit(2)
 
     if not model.is_tt_data:
-        print "No tt-data for: " + str(model)
+        print("No tt-data for: " + str(model))
         return None
 
     tt = model.read_tt_data()
@@ -512,7 +511,7 @@ def main():
     dic_results = {}  # dict((k, None) for k in names)
     it = 0
     for time in times:
-        print "\nRun: %s t=%f [%d/%d]" % (name, time, it, len(times))
+        print("\nRun: %s t=%f [%d/%d]" % (name, time, it, len(times)))
         spec = series.get_spec_by_time(time)
         spec.cut_flux(max(spec.Flux) * .1e-5)  # cut flux
 
@@ -527,7 +526,7 @@ def main():
             # save results
             star.set_Tcol(Tcol, bset)
             star.set_zeta(zeta, bset)
-            print "\nRun: %s Tcol=%f zeta=%f " % (bset, Tcol, zeta)
+            print("\nRun: %s Tcol=%f zeta=%f " % (bset, Tcol, zeta))
 
         dic_results[it] = star
         it += 1

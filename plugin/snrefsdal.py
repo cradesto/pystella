@@ -137,7 +137,7 @@ def plot(ax, dic=None):
     if jd_shift is None:
         jd_shift = float(arg.pop(0)) if arg is not None else -56950
 
-    print "Plot Sn Refsdal %s, glens: %s, path: %s, band_max=%s " % (im, glens, d, band_max)
+    print("Plot Sn Refsdal %s, glens: %s, path: %s, band_max=%s " % (im, glens, d, band_max))
 
     # plot B-V
     if 'bv' in dic:
@@ -151,8 +151,8 @@ def plot(ax, dic=None):
         axVel = dic['ax2']
         if len(arg) > 0:
             z = float(arg.pop(0))
-        print "Plot Sn Refsdal %s velocities: jd_shift=%8.1f t_max( %s) = %8.1f dt_exp = %8.1f" \
-              % (im, jd_shift, band_max, t_lc_max, t_lc_max + jd_shift)
+        print("Plot Sn Refsdal %s velocities: jd_shift=%8.1f t_max( %s) = %8.1f dt_exp = %8.1f"
+              % (im, jd_shift, band_max, t_lc_max, t_lc_max + jd_shift))
         plot_vel(ax=axVel, path=d, jd_shift=jd_shift + t_lc_max, z=z)
 
         # show spectral obs.
@@ -164,8 +164,8 @@ def plot(ax, dic=None):
 
     if False:
         for a, l in coef_glens().items():
-            print '\hline %s  & %s  & %s  & %s  & %s  \\ ' % (
-                a, l['mag']['S1'], l['mag']['S2'], l['mag']['S3'], l['mag']['S4'])
+            print('\hline %s  & %s  & %s  & %s  & %s  \\ ' % (
+                a, l['mag']['S1'], l['mag']['S2'], l['mag']['S3'], l['mag']['S4']))
 
 
 def get_xy(d, b, colS):

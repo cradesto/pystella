@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 import fnmatch
 import getopt
@@ -6,10 +6,8 @@ import os
 import sys
 from os import listdir
 from os.path import isfile, join, dirname
-from types import FunctionType
 
 import pandas as pd
-import numpy as np
 
 ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
 sys.path.append(ROOT_DIRECTORY)
@@ -21,36 +19,36 @@ __author__ = 'bakl'
 
 
 class PrintDF:
-    '''
+    """
     Usage:
     in command line:
         ~/Sn/Release/python/pystella/scripts/stella_print_info.py  -p ~/Sn/stlmodels/bakl/all/ -m "*Ni0_*" -f name | while read fn; do echo delete: $fn.*; rm -fv $fn.*; done
-    '''
+    """
     @staticmethod
     def name(df, columns=None):
         for n in df['name']:
-            print n
+            print(n)
 
     @staticmethod
     def tex(df, columns, lend=''):
         frm_header = " \\mbox{{Name}} " + " & \\mbox{{{:s}}} " * (len(columns)-1)
-        print frm_header.format(*columns[1:])
+        print(frm_header.format(*columns[1:]))
         frm = " \\mbox{{{:s}}} " + "&  {:6.2f} " * (len(columns) - 1) + " \\\ {:s} "
         for i, r in df.iterrows():
             # print(r['name'])
             s = frm.format(*([r[n] for n in columns] + [lend]))
-            print s
+            print(s)
 
     @staticmethod
     def display(df, columns):
         # print "| %40s |  %7.2f |  %6.2f | %6.2f | %6.2f |" % (self.name, self.R, self.M, self.E, self.Mni)
         frm_header = "{:>40s}" + " | {:>14s}" * (len(columns)-1)
-        print frm_header.format(*(['Name']+columns[1:]))
+        print(frm_header.format(*(['Name'] + columns[1:])))
         frm = "{:>40s}" + " | {:>14.5f}" * (len(columns) - 1)
         for i, r in df.iterrows():
             # print(r['name'])
             s = frm.format(*([r[n] for n in columns]))
-            print s
+            print(s)
 
     @staticmethod
     def csv(df, columns=None):
@@ -64,12 +62,12 @@ class PrintDF:
 
 
 def usage():
-    print "Print info from stella res-files"
-    print "Usage:"
-    print "  %s [params]" % __file__
-    print "  -p <directory with models>"
-    print "  -f <format: %s >" % PrintDF.methods()
-    print "  -m <mask: reg expression>"
+    print("Print info from stella res-files")
+    print("Usage:")
+    print("  %s [params]" % __file__)
+    print("  -p <directory with models>")
+    print("  -f <format: %s >" % PrintDF.methods())
+    print("  -m <mask: reg expression>")
 
 
 def main():
@@ -81,7 +79,7 @@ def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], "h:f:m:p:")
     except getopt.GetoptError as err:
-        print str(err)  # will print something like "option -a not recognized"
+        print(str(err))  # will print something like "option -a not recognized"
         usage()
         sys.exit(2)
 
@@ -93,7 +91,7 @@ def main():
         if opt == '-p':
             dir_target = os.path.expanduser(str(arg))
             if not (os.path.isdir(dir_target) and os.path.exists(dir_target)):
-                print "No such directory: " + dir_target
+                print("No such directory: " + dir_target)
                 sys.exit(2)
             continue
         if opt == '-f':
@@ -101,8 +99,8 @@ def main():
             if frm in PrintDF.methods():
                 fformat = frm
             else:
-                print "No such format: " + frm
-                print "Use: %s " % PrintDF.methods()
+                print("No such format: " + frm)
+                print("Use: %s " % PrintDF.methods())
                 sys.exit(2)
         if opt == '-m':
             mask = str(arg).strip()
@@ -112,7 +110,7 @@ def main():
 
     files = [f for f in listdir(dir_target) if isfile(join(dir_target, f)) and f.endswith(ext_def)]
     if len(files) == 0:
-        print "No res-files in  directory: " + dir_target
+        print("No res-files in  directory: " + dir_target)
         sys.exit(2)
 
     columns = ['name'] + list(StellaResInfo.Params)

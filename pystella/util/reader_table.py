@@ -20,7 +20,7 @@ def read_table_header_float(fname, header=None, skip=0):
                     continue
                 header = line
                 break
-    names = map(str.strip, header.split())
+    names = [s for s in header.split()]
     dt = np.dtype({'names': names, 'formats': [np.float64] * len(names)})
     block = np.loadtxt(fname, skiprows=skip+1, dtype=dt)
     return block

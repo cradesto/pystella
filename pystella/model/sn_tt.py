@@ -163,7 +163,7 @@ class StellaTtInfo:
     def show(self):
         # print "INFO %s" % self.name
         # print " %40s: R = %7.2f M = %6.2f E = %6.2f " % (self.name, self.R, self.M, self.E)
-        print "| %40s |  %7.2f |  %6.2f | %6.2f |" % (self._name, self.R, self.M, self.E)
+        print("| %40s |  %7.2f |  %6.2f | %6.2f |" % (self._name, self.R, self.M, self.E))
 
     def print_tex(self, o=None, lend=''):
         # print "INFO %s" % self.name
@@ -172,7 +172,4 @@ class StellaTtInfo:
         if o is not None and o:
             return s
         else:
-            print o
-
-
-
+            print(o)

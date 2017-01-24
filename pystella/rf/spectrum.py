@@ -1,12 +1,9 @@
 import math
 import numpy as np
-try:
-    from scipy import interpolate, integrate
-    from scipy import ndimage
-    from scipy.optimize import fmin, curve_fit
-except:
-    print("WARNING: pystella: failed to import scipy modules.")
 
+from scipy import interpolate, integrate
+from scipy import ndimage
+from scipy.optimize import fmin, curve_fit
 
 import matplotlib.pyplot as plt
 
@@ -46,11 +43,13 @@ class Spectrum(object):
 
     @property
     def Flux_wl(self):  # wavelength of flux [cm]
-        return self.Flux * self.Freq**2 / phys.c  # flux [erg/cm^2/cm) ]
+        return self.Flux * self.Freq ** 2 / phys.c  # flux [erg/cm^2/cm) ]
 
     @property
     def Wl(self):
-        return phys.c / self.Freq
+        return np.array([phys.c/x for x in self.Freq])
+        # return np.array(map(lambda x: phys.c/x, self.Freq))
+        # return phys.c / self.Freq
 
     def plot_spec(self):
         plt.title('Spectrum: ' % self.Name)
@@ -68,6 +67,7 @@ class Spectrum(object):
         Fitting Spectrum by planck function and find the color temperature
         :return:   color temperature
         """
+
         def func(nu, T):
             return np.pi * rf.planck(nu, T, inp="Hz", out="freq")
 
@@ -78,7 +78,6 @@ class Spectrum(object):
     @property
     def temp_wien_interp(self):
         return rf.temp_wien(self.wl_flux_max_interp)
-
 
     @property
     def wl_flux_max_interp(self):
@@ -163,8 +162,8 @@ class Spectrum(object):
         @param smoothPix: size of uniform filter applied to SED, in pixels
 
         """
-        smoothed = ndimage.uniform_filter1d(self.flux, smoothPix)
-        self.flux = smoothed
+        smoothed = ndimage.uniform_filter1d(self._flux, smoothPix)
+        self._flux = smoothed
 
     @staticmethod
     def flux_to_distance(flux, dl):
@@ -192,9 +191,9 @@ class SpectrumPlanck(Spectrum):
     def T(self):
         return self._T
 
-    # def correct_zeta(self, zeta):
-    #     self.zeta = zeta
-    #     self._flux *= zeta ** 2
+        # def correct_zeta(self, zeta):
+        #     self.zeta = zeta
+        #     self._flux *= zeta ** 2
 
 
 class SpectrumDilutePlanck(Spectrum):
@@ -299,6 +298,7 @@ class SeriesSpectrum(object):
     def add(self, t, spec):
         self._times.append(t)
         self._data.append(spec)
+
     # def set_data(self, data):
     #     if data is None or len(data) == 0:
     #         raise ValueError("data must be array with len > 0.")
@@ -321,8 +321,8 @@ class SeriesSpectrum(object):
                 s = self.get_spec(k)
                 freq = s.Freq
                 flux = s.Flux
-                f_l = phys.c / (wl_ab[1]*phys.angs_to_cm)
-                f_h = float("inf") if wl_ab[0] <= 0. else phys.c / (wl_ab[0]*phys.angs_to_cm)
+                f_l = phys.c / (wl_ab[1] * phys.angs_to_cm)
+                f_h = float("inf") if wl_ab[0] <= 0. else phys.c / (wl_ab[0] * phys.angs_to_cm)
                 is_freq = (freq > f_l) & (freq < f_h)
                 ss = Spectrum(s.Name, freq[is_freq], flux=flux[is_freq])
                 res.add(t, ss)
@@ -387,7 +387,6 @@ class SeriesSpectrum(object):
         """
         curves = SetLightCurve(self.name)
         for n in bands:
-
             b = band.band_by_name(n)
             lc = self.flux_to_curve(b, z=z, d=d, magnification=magnification)
             curves.add(lc)
@@ -401,4 +400,3 @@ class SeriesSpectrum(object):
 
         mags['time'] = self.Time * (1. + z)
         return mags
-

@@ -14,7 +14,7 @@ ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
 
 
 def plot_vels_sn87a(ax, z=0):
-    print "Plot the velocities of Sn 87A "
+    print("Plot the velocities of Sn 87A ")
     d = os.path.expanduser('~/Sn/Release/svn_kepler/stella/branches/lucy/run/res/sncurve/sn1987a')
 
     jd_shift = 2446850  # moment of explosion SN 1987A, Hamuy 1988, doi:10.1086/114613
@@ -76,7 +76,6 @@ def plot_vel(ax, vel, xlim=None, ylim=None):
     # t_points = [0.2, 1, 2, 3, 4, 5, 10, 20, 40, 80, 150]
 
     lw = 1.
-    mi = 0
     x_max = []
     y_mid = []
     x = vel['time']
@@ -105,9 +104,9 @@ def compute_vel(name, path, z=0., t_beg=1., t_end=None, t_diff=1.05):
     model = Stella(name, path=path)
     if not model.is_res_data or not model.is_tt_data:
         if not model.is_res_data:
-            print "There are no res-file for %s in the directory: %s " % (name, path)
+            print("There are no res-file for %s in the directory: %s " % (name, path))
         if not model.is_tt_data:
-            print "There are no tt-file for %s in the directory: %s " % (name, path)
+            print("There are no tt-file for %s in the directory: %s " % (name, path))
         return None
 
     if t_end is None:

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
 
@@ -22,16 +22,16 @@ logger.setLevel(logging.INFO)
 
 def usage():
     elements = sneve.eve_elements
-    print "Usage:"
-    print "  eve.py [params]"
-    print "  -b <elements>: string, default: 'H-He-C-O-Si-Fe-Ni-Ni56'.\n" \
-          "     Available: " + '-'.join(elements)
-    print "  -i <model name>.  Example: cat_R450_M15_Ni007"
-    print "  -p <model directory>, default: ./"
-    print "  -s  save plot to pdf-file."
-    print "  -h  print usage"
-    print "  "
-    print "  ipython: sneve.StellaEve(name=name, path=path).rho_load().plot_chem(ylim=[-6, 0.]) \n"
+    print("Usage:")
+    print("  eve.py [params]")
+    print("  -b <elements>: string, default: 'H-He-C-O-Si-Fe-Ni-Ni56'.\n"
+          "     Available: " + '-'.join(elements))
+    print("  -i <model name>.  Example: cat_R450_M15_Ni007")
+    print("  -p <model directory>, default: ./")
+    print("  -s  save plot to pdf-file.")
+    print("  -h  print usage")
+    print("  ")
+    print("  ipython: sneve.StellaEve(name=name, path=path).rho_load().plot_chem(ylim=[-6, 0.]) \n")
 
 
 def main(name=''):
@@ -41,7 +41,7 @@ def main(name=''):
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hsp:i:b:")
     except getopt.GetoptError as err:
-        print str(err)  # will print something like "option -a not recognized"
+        print(str(err))  # will print something like "option -a not recognized"
         usage()
         sys.exit(2)
 
@@ -84,7 +84,7 @@ def main(name=''):
             usage()
             sys.exit(2)
 
-    print "Run eve-model %s in %s" % (name, path)
+    print("Run eve-model %s in %s" % (name, path))
 
     # data = sneve.load_eve(name, path=path)
     rho_file = os.path.join(path, name + '.rho')

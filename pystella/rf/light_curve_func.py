@@ -40,6 +40,7 @@ def lbl(b, band_shift):
         l += '-' + str(abs(shift))
     return l
 
+
 #
 # def plot_curves(ax, curves, band_shift=None, xlim=None, ylim=None,
 #                 colors=lc_colors, ls='-', lw=2):
@@ -92,7 +93,7 @@ def plot_ubv_models(ax, models_dic, bands, band_shift, xlim=None, ylim=None,
     x_max = []
     y_mid = []
     lc_min = {}
-    for mname, mdic in models_dic.iteritems():
+    for mname, mdic in models_dic.items():
         mi += 1
         for bname in bands:
             lc = mdic[bname]
@@ -142,7 +143,7 @@ def plot_models_curves(ax, models_curves, band_shift=None, xlim=None, ylim=None,
     mi, ib = 0, 0
     x_max = []
     y_mid = []
-    for mname, curves in models_curves.iteritems():
+    for mname, curves in models_curves.items():
         mi += 1
         bands = curves.BandNames
         if band_shift is None:
@@ -183,7 +184,7 @@ def plot_models_curves_fixed_bands(ax, models_curves, bands, band_shift=None, xl
     mi, ib = 0, 0
     x_max = []
     y_mid = []
-    for mname, curves in models_curves.iteritems():
+    for mname, curves in models_curves.items():
         mi += 1
         for bname in bands:
             ib += 1
@@ -357,12 +358,12 @@ def compute_mag(name, path, bands, ext=None, z=0., distance=10., magnification=1
     """
     model = Stella(name, path=path)
     if is_show_info:
-        print ''
+        print('')
         model.show_info()
 
     if not model.is_ph_data:
         model.show_info()
-        print "Error: No data for: " + str(model)
+        print("Error: No data for: " + str(model))
         return None
 
     # serial_spec = model.read_serial_spectrum(t_diff=0.)
@@ -373,7 +374,7 @@ def compute_mag(name, path, bands, ext=None, z=0., distance=10., magnification=1
         fname = os.path.join(path, name + '.ubv')
         if is_save:
             mags_save(mags, bands, fname)
-            print "Magnitudes have been saved to " + fname
+            print("Magnitudes have been saved to " + fname)
 
     if is_show_info:
         # print the time of maximum LC
@@ -381,7 +382,7 @@ def compute_mag(name, path, bands, ext=None, z=0., distance=10., magnification=1
         t = mags['time']
         for n in bands:
             t_min = t[t > tmin][mags[n][t > tmin].argmin()]
-            print "t_max(%s) = %f" % (n, t_min)
+            print("t_max(%s) = %f" % (n, t_min))
 
     if ext is not None:  # add extinction
         for n in bands:
@@ -406,7 +407,7 @@ def curves_save(curves, fname):
                 writer.writerow(['{:8.3f}'.format(x) for x in row])
                 # writer.writerow(['{:3.4e}'.format(x) for x in row])
     else:
-        print "Nothing to save: curves.Length=%d" % curves.Length
+        print("Nothing to save: curves.Length=%d" % curves.Length)
 
 
 def curves_compute(name, path, bands, z=0., distance=10., magnification=1.,
@@ -434,7 +435,7 @@ def curves_compute(name, path, bands, z=0., distance=10., magnification=1.,
         raise ValueError("Error: No spectral data for: " + str(model))
 
     if is_show_info:
-        print ''
+        print('')
         model.show_info()
 
     # serial_spec = model.read_serial_spectrum(t_diff=0.)
@@ -451,7 +452,7 @@ def curves_compute(name, path, bands, z=0., distance=10., magnification=1.,
     if is_save:
         fname = os.path.join(path, name + '.ubv')
         curves_save(curves, fname)
-        print "Magnitudes have been saved to " + fname
+        print("Magnitudes have been saved to " + fname)
 
     if is_show_info:
         # print the time of maximum LC
@@ -459,7 +460,7 @@ def curves_compute(name, path, bands, z=0., distance=10., magnification=1.,
         t = curves.TimeDef
         for n in bands:
             t_min = t[t > tmin][curves[n][t > tmin].argmin()]
-            print "t_max(%s) = %f" % (n, t_min)
+            print("t_max(%s) = %f" % (n, t_min))
 
     return curves
 

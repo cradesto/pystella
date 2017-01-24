@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 import getopt
 import numpy as np
@@ -61,7 +61,7 @@ def plot_dmdt(models_dic, bands, is_time_points=True):
                                 arrowprops=dict(arrowstyle='->', shrinkA=0))
 
             if min(y) < -18.:
-                print " Max: %s in %s band " % (mname, bname)
+                print(" Max: %s in %s band " % (mname, bname))
 
     ax.legend(prop={'size': 8})
     ax.set_xlim(xlim)
@@ -84,12 +84,15 @@ def compute_mag(name, path, bands, z=0., distance=10., t_cut=0., t_up=400., tdif
     :param bands: photometric bands
     :param z: redshift, default 0
     :param distance: distance to star in parsec, default 10 pc
+    :param t_cut:
+    :param t_up:
+    :param tdiff:
     :return: dictionary with keys = bands, value = star's magnitudes
     """
     model = Stella(name, path=path)
 
     if not model.is_ph_data:
-        print "No data for: " + str(model)
+        print("No data for: " + str(model))
         return None
 
     # serial_spec = model.read_serial_spectrum(t_diff=0.)
@@ -132,14 +135,14 @@ def compute_dmdt(mags, bands, is_spline=True, s=0.):
 
 
 def usage():
-    print "Usage:"
-    print "  dmdt.py [params]"
-    print "  -b <set_bands>: delimiter '-'. Default: 'UVW1-U'.\n"
-    print "  -i <model name>.  Example: cat_R450_M15_Ni007_E7"
-    print "  -p <model path(directory)>, default: ./"
-    print "  -t  plot time points"
-    print "  -w  write magnitudes to file, default 'False'"
-    print "  -h  print usage"
+    print("Usage:")
+    print("  dmdt.py [params]")
+    print("  -b <set_bands>: delimiter '-'. Default: 'UVW1-U'.\n")
+    print("  -i <model name>.  Example: cat_R450_M15_Ni007_E7")
+    print("  -p <model path(directory)>, default: ./")
+    print("  -t  plot time points")
+    print("  -w  write magnitudes to file, default 'False'")
+    print("  -h  print usage")
 
     band.print_bands()
 
@@ -155,7 +158,7 @@ def main(name='', path='./'):
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hwtp:i:b:")
     except getopt.GetoptError as err:
-        print str(err)  # will print something like "option -a not recognized"
+        print(str(err))  # will print something like "option -a not recognized"
         usage()
         sys.exit(2)
 
@@ -176,12 +179,12 @@ def main(name='', path='./'):
             bands = str(arg).split('-')
             for b in bands:
                 if not band.band_is_exist(b):
-                    print 'No such band: ' + b
+                    print('No such band: ' + b)
                     sys.exit(2)
         elif opt == '-p':
             path = os.path.expanduser(str(arg))
             if not (os.path.isdir(path) and os.path.exists(path)):
-                print "No such directory: " + path
+                print("No such directory: " + path)
                 sys.exit(2)
         elif opt == '-t':
             is_time_points = True
@@ -206,11 +209,11 @@ def main(name='', path='./'):
                                tdiff=0.5)
             dmdt = compute_dmdt(mags, bands,  is_spline=True, s=0.)
             dic_results[name] = dict(m=mags, d=dmdt)
-            print "Finish: %s [%d/%d]" % (name, i, len(names))
+            print("Finish: %s [%d/%d]" % (name, i, len(names)))
         plot_dmdt(dic_results, bands, is_time_points=is_time_points)
 
     else:
-        print "There are no models in the directory: %s with extension: %s " % (path, model_ext)
+        print("There are no models in the directory: %s with extension: %s " % (path, model_ext))
 
 
 if __name__ == '__main__':

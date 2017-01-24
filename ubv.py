@@ -1,14 +1,15 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
-
 
 import getopt
 import os
 import sys
 from os.path import dirname
 
+import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
+matplotlib.rcParams['backend'] = "Qt4Agg"
 
 import pystella.util.callback as cb
 from pystella import velocity as vel
@@ -73,36 +74,36 @@ def plot_all(models_vels, models_dic, bands, call=None, xlim=None, ylim=None,
 
     plt.grid()
 
-    plt.show()
+    plt.show(block=False)
 
     if fsave is not None:
-        print "Save plot to %s " % fsave
+        print("Save plot to %s " % fsave)
         fig.savefig(fsave, bbox_inches='tight')
         # plt.savefig(fsave, format='pdf')
 
 
 def usage():
-    print "Usage:"
-    print "  ubv.py [params]"
-    print "  -b <bands:shift>: string, default: U-B-V-R-I, for example U-B-V-R-I-u-g-i-r-z-UVW1-UVW2.\n" \
-          "     shift: to move lc along y-axe (minus is '_', for example -b R:2-V-I:_4-B:5 "
-    print "  -i <model name>.  Example: cat_R450_M15_Ni007_E7"
-    print "  -p <model directory>, default: ./"
-    print "  -e <extinction, E(B-V)> is used to define A_nu, default: 0 "
-    print "  -c <callback> [plot_tolstov, popov[:R:M:E[FOE]:Mni]]. You can add parameters in format func:params"
-    print "  -d <distance> [pc].  Default: 10 pc"
-    print "  -m <magnification>.  Default: None, used for grav lens"
-    print "  -q  turn off quiet mode: print info and additional plots"
-    print "  -t  plot time points"
-    print "  -s  <file-name> without extension. Save plot to pdf-file. Default: ubv_<file-name>.pdf"
-    print "  -x  <xbeg:xend> - xlim, ex: 0:12. Default: None, used all days."
-    print "  -y  <ybeg:yend> - ylim, ex: 26:21. Default: None, used top-magnitude+-5."
-    print "  -v  plot model velocities."
-    print "  -w  write magnitudes to file, default 'False'"
-    print "  -z <redshift>.  Default: 0"
-    print "  -l  write plot label"
-    print "  -h  print usage"
-    print "   --- "
+    print("Usage:")
+    print("  ubv.py [params]")
+    print("  -b <bands:shift>: string, default: U-B-V-R-I, for example U-B-V-R-I-u-g-i-r-z-UVW1-UVW2.\n"
+          "     shift: to move lc along y-axe (minus is '_', for example -b R:2-V-I:_4-B:5 ")
+    print("  -i <model name>.  Example: cat_R450_M15_Ni007_E7")
+    print("  -p <model directory>, default: ./")
+    print("  -e <extinction, E(B-V)> is used to define A_nu, default: 0 ")
+    print("  -c <callback> [plot_tolstov, popov[:R:M:E[FOE]:Mni]]. You can add parameters in format func:params")
+    print("  -d <distance> [pc].  Default: 10 pc")
+    print("  -m <magnification>.  Default: None, used for grav lens")
+    print("  -q  turn off quiet mode: print info and additional plots")
+    print("  -t  plot time points")
+    print("  -s  <file-name> without extension. Save plot to pdf-file. Default: ubv_<file-name>.pdf")
+    print("  -x  <xbeg:xend> - xlim, ex: 0:12. Default: None, used all days.")
+    print("  -y  <ybeg:yend> - ylim, ex: 26:21. Default: None, used top-magnitude+-5.")
+    print("  -v  plot model velocities.")
+    print("  -w  write magnitudes to file, default 'False'")
+    print("  -z <redshift>.  Default: 0")
+    print("  -l  write plot label")
+    print("  -h  print usage")
+    print("   --- ")
     band.print_bands()
 
 
@@ -115,7 +116,7 @@ def lc_wrapper(param, p=None):
         else:
             p = cb.plugin_path
     c = cb.CallBack(fname, path=p, args=a, load=1)
-    print "Call: %s from %s" % (c.Func, c.FuncFileFull)
+    print("Call: %s from %s" % (c.Func, c.FuncFileFull))
     return c
 
 
@@ -129,7 +130,6 @@ def main(name='', model_ext='.ph'):
 
     label = None
     fsave = None
-    t_diff = 1.00001
     # path = ''
     path = os.getcwd()
     z = 0
@@ -147,7 +147,7 @@ def main(name='', model_ext='.ph'):
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hqwtc:d:p:e:i:b:l:m:vs:x:y:z:")
     except getopt.GetoptError as err:
-        print str(err)  # will print something like "option -a not recognized"
+        print(str(err))  # will print something like "option -a not recognized"
         usage()
         sys.exit(2)
 
@@ -186,7 +186,7 @@ def main(name='', model_ext='.ph'):
                 else:
                     bname = b
                 if not band.band_is_exist(bname):
-                    print 'No such band: ' + bname
+                    print('No such band: ' + bname)
                     sys.exit(2)
                 bands.append(bname)
             continue
@@ -233,14 +233,14 @@ def main(name='', model_ext='.ph'):
         if opt == '-p':
             path = os.path.expanduser(str(arg))
             if not (os.path.isdir(path) and os.path.exists(path)):
-                print "No such directory: " + path
+                print("No such directory: " + path)
                 sys.exit(2)
             continue
         elif opt == '-h':
             usage()
             sys.exit(2)
 
-    print "Plot magnitudes on z=%f at distance=%e [cosmology D(z)=%s Mpc]" % (z, distance, cosmology_D_by_z(z))
+    print("Plot magnitudes on z=%f at distance=%e [cosmology D(z)=%s Mpc]" % (z, distance, cosmology_D_by_z(z)))
 
     names = []
     if name != '':
@@ -275,10 +275,10 @@ def main(name='', model_ext='.ph'):
                 if vels is None:
                     sys.exit("No data for: %s in %s" % (name, path))
                 models_vels[name] = vels
-                print "Finish velocity: %s [%d/%d]" % (name, i, len(names))
+                print("Finish velocity: %s [%d/%d]" % (name, i, len(names)))
             else:
                 models_vels = None
-                print "Finish mags: %s [%d/%d] in %s" % (name, i, len(names), path)
+                print("Finish mags: %s [%d/%d] in %s" % (name, i, len(names), path))
 
         if label is None:
             if callback is not None:
@@ -307,7 +307,7 @@ def main(name='', model_ext='.ph'):
         # plot_all(dic_results, bands, xlim=(-10, 410), callback=callback, is_time_points=is_plot_time_points)
         # plot_all(dic_results, bands,  ylim=(40, 23),  is_time_points=is_plot_time_points)
     else:
-        print "There are no models in the directory: %s with extension: %s " % (path, model_ext)
+        print("There are no models in the directory: %s with extension: %s " % (path, model_ext))
 
 
 if __name__ == '__main__':

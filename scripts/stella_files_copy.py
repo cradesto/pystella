@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
 import getopt
@@ -24,23 +24,23 @@ def simple_copy(dir_src, dir_target, ext_ptn, ext, is_force=False):
         tfull = os.path.abspath(os.path.join(dir_target, s))
         if isfile(os.path.join(dir_src, s)):
             if not isfile(tfull):
-                print 'Copy: %s to %s' % (sfull, tfull)
+                print('Copy: %s to %s' % (sfull, tfull))
                 copyfile(sfull, tfull)
             elif is_force:
-                print 'Force copy: %s to %s' % (sfull, tfull)
+                print('Force copy: %s to %s' % (sfull, tfull))
                 copyfile(sfull, tfull)
             else:
-                print ' File exist:  %s' % tfull
+                print(' File exist:  %s' % tfull)
         else:
-            print '  no file: %s' % sfull
+            print('  no file: %s' % sfull)
 
 
 def catcopy(dir_src, dir_target, ext='tt', exts=stl_exts, is_force=False):
     if not (os.path.isdir(dir_src) and os.path.exists(dir_src)):
-        print "No source directory: " + dir_src
+        print("No source directory: " + dir_src)
         sys.exit(2)
     if not (os.path.isdir(dir_target) and os.path.exists(dir_target)):
-        print "No target directory: " + dir_target
+        print("No target directory: " + dir_target)
         sys.exit(2)
 
     for e in exts:
@@ -48,15 +48,15 @@ def catcopy(dir_src, dir_target, ext='tt', exts=stl_exts, is_force=False):
 
 
 def usage():
-    print "Copy files with the same names as *.tt [see key: -o]"
-    print "Usage:"
-    print "  %s [params]" % __file__
-    print "  -p <source directory with models>"
-    print "  -t <target directory>, default ./"
-    print "  -e <extension to copy>, default: swd or %s" % '-'.join(stl_exts)
-    print "  -m <cat>. if mode is 'cat', then copy %s-files to target.  Default: simple copy" % '-'.join(stl_exts)
-    print "  -o <pattern extension>. Default: tt"
-    print "  -f. Rewrite target file, even exist. Default: missed"
+    print("Copy files with the same names as *.tt [see key: -o]")
+    print("Usage:")
+    print("  %s [params]" % __file__)
+    print("  -p <source directory with models>")
+    print("  -t <target directory>, default ./")
+    print("  -e <extension to copy>, default: swd or %s" % '-'.join(stl_exts))
+    print("  -m <cat>. if mode is 'cat', then copy %s-files to target.  Default: simple copy" % '-'.join(stl_exts))
+    print("  -o <pattern extension>. Default: tt")
+    print("  -f. Rewrite target file, even exist. Default: missed")
 
 
 def main():
@@ -71,7 +71,7 @@ def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], "fe:h:m:o:p:t:")
     except getopt.GetoptError as err:
-        print str(err)  # will print something like "option -a not recognized"
+        print(str(err))  # will print something like "option -a not recognized"
         usage()
         sys.exit(2)
 
@@ -96,13 +96,13 @@ def main():
         if opt == '-p':
             dir_src = os.path.expanduser(str.strip(arg))
             if not (os.path.isdir(dir_src) and os.path.exists(dir_src)):
-                print "No such directory: " + dir_src
+                print("No such directory: " + dir_src)
                 sys.exit(2)
             continue
         if opt == '-t':
             dir_target = os.path.expanduser(str(arg))
             if not (os.path.isdir(dir_target) and os.path.exists(dir_target)):
-                print "No target directory: " + dir_target
+                print("No target directory: " + dir_target)
                 sys.exit(2)
             continue
         elif opt == '-h':

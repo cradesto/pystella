@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 import os
 import sys
@@ -98,19 +98,19 @@ def cache_load(fname, colnames, skiprows=1):
 
 
 def usage():
-    bands = band.band_get_names().keys()
-    print "Usage:"
-    print "  compare_ubv.py [params]"
-    print "  -b <set_bands>: delimiter '_'. Default: u-g-r-i.\n" \
-          "     Available: " + '-'.join(sorted(bands))
-    print "  -i <model name>.  Example: cat_R450_M15_Ni007_E7"
-    print "  -p <model path(directory)>, default: ./"
-    print "  -t  plot time points"
-    print "  -w  write magnitudes to file, default 'False'"
-    print "  -h  print usage"
+    bands = band.band_get_names()
+    print("Usage:")
+    print("  compare_ubv.py [params]")
+    print("  -b <set_bands>: delimiter '_'. Default: u-g-r-i.\n"
+          "     Available: " + '-'.join(sorted(bands)))
+    print("  -i <model name>.  Example: cat_R450_M15_Ni007_E7")
+    print("  -p <model path(directory)>, default: ./")
+    print("  -t  plot time points")
+    print("  -w  write magnitudes to file, default 'False'")
+    print("  -h  print usage")
 
 
-def compare_ABzVSugri(mname, path, bands=['u', 'g', 'r', 'i'], is_plot_time_points=False):
+def compare_ABzVSugri(mname, path, bands=('u', 'g', 'r', 'i'), is_plot_time_points=False):
     names = ['time'] + bands
 
     dic_results = {}
@@ -123,7 +123,7 @@ def compare_ABzVSugri(mname, path, bands=['u', 'g', 'r', 'i'], is_plot_time_poin
     plot_all(dic_results, bands, title=mname, is_time_points=is_plot_time_points)
 
 
-def compare_ttVSubv(mname, path, bands=['U', 'B', 'V', 'R', 'I'], t_cut=1., is_plot_time_points=False):
+def compare_ttVSubv(mname, path, bands=('U', 'B', 'V', 'R', 'I'), t_cut=1., is_plot_time_points=False):
     dic_results = {}
 
     model = Stella(mname, path=path)
@@ -159,7 +159,7 @@ def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hp:i:b:")
     except getopt.GetoptError as err:
-        print str(err)  # will print something like "option -a not recognized"
+        print(str(err))  # will print something like "option -a not recognized"
         usage()
         sys.exit(2)
 
@@ -171,16 +171,13 @@ def main():
             bands = str(arg).split('-')
             for b in bands:
                 if not band.band_is_exist(b):
-                    print 'No such band: ' + b
+                    print('No such band: ' + b)
                     sys.exit(2)
-            continue
-        if opt == '-t':
-            is_plot_time_points = True
             continue
         if opt == '-p':
             path = str(arg)
             if not (os.path.isdir(path) and os.path.exists(path)):
-                print "No such directory: " + path
+                print("No such directory: " + path)
                 sys.exit(2)
             continue
         elif opt == '-h':

@@ -12,7 +12,7 @@ __author__ = 'bakl'
 
 
 class TestPopovModel(unittest.TestCase):
-    @unittest.skip("just for plot")
+    # @unittest.skip("just for plot")
     def test_plot_lc(self):
         n = 100
         start, end = 0.1, 200.
@@ -22,7 +22,7 @@ class TestPopovModel(unittest.TestCase):
         popov.plot_Lbol(time)
         plt.show()
 
-    @unittest.skip("just for plot")
+    # @unittest.skip("just for plot")
     def test_popov_SN87A(self):
         n = 100
         start, end = 0.1, 1200.
@@ -35,7 +35,7 @@ class TestPopovModel(unittest.TestCase):
         sn87a.plot_ubv(ax, path=sn87a.sn_path, jd_shift=jd_shift, mshift=dm)
         plt.show()
 
-    @unittest.skip("just for plot")
+    # @unittest.skip("just for plot")
     def test_popov_SN1999em(self):
         n = 100
         start, end = 0.1, 200.

@@ -36,7 +36,7 @@ class PreSN(object):
     sR = 'R'
     sV = 'V'
     presn_hydro = (sM, sR, sT, sRho, sV)
-    presn_elements = map(str.strip, "H He C N O Ne Na  Mg  Al  Si  S  Ar  Ca  Fe  Ni Ni56".split())
+    presn_elements = "H He C N O Ne Na  Mg  Al  Si  S  Ar  Ca  Fe  Ni Ni56".split()
 
     def __init__(self, name, nzon):
         """Creates a PreSN model instance.  Required parameters:  name, nzon"""
@@ -58,9 +58,9 @@ class PreSN(object):
         return dt
 
     def show_info(self):
-        print "-"*20
-        print " Name: %s    nzon: %d" % (self.name, self.nzon)
-        print " m_tot: {:5.3f} r_cen: {:12.6e}".format(self.m_tot, self.r_cen)
+        print("-" * 20)
+        print(" Name: %s    nzon: %d" % (self.name, self.nzon))
+        print(" m_tot: {:5.3f} r_cen: {:12.6e}".format(self.m_tot, self.r_cen))
 
     @property
     def nzon(self):
@@ -286,9 +286,9 @@ class PreSN(object):
                     y_min.append(np.min(y))
                     y_max.append(np.max(y))
 
-        if not is_x_lim:
+        if not is_x_lim and len(x_min)>0:
             xlim = [np.min(x_min), np.max(x_max)]
-        if not is_y_lim:
+        if not is_y_lim and len(y_min)>0:
             ylim = [np.min(y_min), np.max(y_min)]
 
         ax.set_xlim(xlim)
@@ -345,7 +345,7 @@ def load_rho(fname, path=None):
         # return None
     logger.info(' Load rho-data from  %s' % fname)
     col_names = "zone mass lgR lgTp lgRho u Ni56 H He C N O Ne Na  Mg  Al  Si  S  Ar  Ca  Fe  Ni"
-    dt = np.dtype({'names': map(str.strip, col_names.split()), 'formats': np.repeat('f8', len(col_names))})
+    dt = np.dtype({'names': col_names.split(), 'formats': np.repeat('f8', len(col_names))})
 
     data = np.loadtxt(fname, comments='#', skiprows=2, dtype=dt)
 
@@ -405,7 +405,7 @@ def load_hyd_abn(name, path='.'):
     with open(hyd_file, 'r') as f:
         line = f.readline()
     if len(line) > 0:
-        a = map(float, line.split())
+        a = [float(x) for x in line.split()]
         if len(a) == 5:
             time_start, nzon, m_tot, r_cen, rho_cen = a
             presn.set_par('time_start', time_start)
@@ -431,7 +431,7 @@ def load_hyd_abn(name, path='.'):
     logger.info(' Load abn-data from  %s' % abn_file)
     abn_elements = 'H He C N O Ne Na  Mg  Al  Si  S  Ar  Ca  Fe  Ni Ni56'.split()
     col_names = ("zone dum1 dum2 dum3 " + ' '.join(abn_elements)).split()
-    dt = np.dtype({'names': map(str.strip, col_names), 'formats': np.repeat('f8', len(col_names))})
+    dt = np.dtype({'names': col_names, 'formats': np.repeat('f8', len(col_names))})
     data_chem = np.loadtxt(abn_file, comments='#', dtype=dt)
     for ename in abn_elements:
         presn.set_chem(ename, data_chem[ename])

@@ -30,9 +30,8 @@ class BandTests(unittest.TestCase):
         bo = band.band_by_name("BesU")
         ba = band.band_by_name("U")
         self.assertTrue(ba.is_load, "The band should be loaded and with data")
-        self.assertItemsEqual(expected_seq=bo.wl, actual_seq=ba.wl, msg="The alias wl should be the same as original")
-        self.assertItemsEqual(expected_seq=bo.resp_wl, actual_seq=ba.resp_wl,
-                              msg="The alias wl should be the same as original")
+        self.assertCountEqual(bo.wl, ba.wl, msg="The alias wl should be the same as original")
+        self.assertCountEqual(bo.resp_wl, ba.resp_wl, msg="The alias wl should be the same as original")
 
     def test_available_bands(self):
         bands = ['U', 'B', 'V', 'R', "I"]
@@ -121,7 +120,7 @@ class BandTests(unittest.TestCase):
         f, ab = 1600., 0.88970004336
         m_ab = Flux2MagAB(f * phys.jy_to_erg)
         f_ab = MagAB2Flux(ab) / phys.jy_to_erg
-        print "Flux of Zero points of band u equals %f. m_zp = %f" % (f, m_ab)
+        print("Flux of Zero points of band u equals %f. m_zp = %f" % (f, m_ab))
         self.assertAlmostEqual(f_ab, f, msg="Zero points of band u equals %f. Should be %f" % (f_ab, f), delta=10.05)
         self.assertAlmostEqual(m_ab, ab, msg="Zero points of band u equals %f. Should be %f" % (m_ab, ab), delta=0.003)
 

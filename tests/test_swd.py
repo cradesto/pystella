@@ -38,7 +38,7 @@ class TestStellaShockWaveDetail(unittest.TestCase):
         # self.assertTrue(np.all([b.Tau[i] < b.Tau[i+1] for i in range(0, b.Nzon-1)]),
         #                 "The Tau should be a monotonically increasing function")
 
-    @unittest.skip("just for plot")
+    # @unittest.skip("just for plot")
     def test_block_plot(self):
         self.swd.load()
         time = 2.
@@ -62,7 +62,7 @@ class TestStellaShockWaveDetail(unittest.TestCase):
         # self.assertTrue(np.all([b.Tau[i] < b.Tau[i+1] for i in range(0, b.Nzon-1)]),
         #                 "The Tau should be a monotonically increasing function")
 
-    @unittest.skip("just for plot")
+    # @unittest.skip("just for plot")
     def test_block_plot_many(self):
         self.swd.load()
         times = [1., 2., 3.]

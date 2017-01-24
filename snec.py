@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
 import getopt
@@ -9,14 +9,14 @@ from pystella.model import snec
 
 
 def usage():
-    print "Convert SNEC to STELLA presupernova model."
-    print "Usage:"
-    print "  snec.py  -c <chemfile> -e <profile>"
-    print "  -c <chemfile> "
-    print "  -e <profile> "
-    print "  -p <model directory>, default: ./"
-    print "  -h  print usage"
-    print "   --- "
+    print("Convert SNEC to STELLA presupernova model.")
+    print("Usage:")
+    print("  snec.py  -c <chemfile> -e <profile>")
+    print("  -c <chemfile> ")
+    print("  -e <profile> ")
+    print("  -p <model directory>, default: ./")
+    print("  -h  print usage")
+    print("   --- ")
 
 
 def main():
@@ -27,7 +27,7 @@ def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hc:p:e:")
     except getopt.GetoptError as err:
-        print str(err)
+        print(str(err))
         usage()
         sys.exit(2)
 
@@ -45,7 +45,7 @@ def main():
         if opt == '-p':
             path = os.path.expanduser(str(arg))
             if not (os.path.isdir(path) and os.path.exists(path)):
-                print "No such directory: " + path
+                print("No such directory: " + path)
                 sys.exit(2)
             continue
         elif opt == '-h':
@@ -68,17 +68,17 @@ def main():
     # fname = os.path.join(os.path.dirname(file_profile), presn.name + '.hyd')
     res = presn.write_hyd(fname)
     if res:
-        print "Save in %s" % fname
+        print("Save in %s" % fname)
     else:
-        print "Error while saving in %s" % fname
+        print("Error while saving in %s" % fname)
 
     fname = presn.name + '.abn'
     # fname = os.path.join(os.path.dirname(file_profile), presn.name + '.abn')
     res = presn.write_abn(fname)
     if res:
-        print "Save in %s" % fname
+        print("Save in %s" % fname)
     else:
-        print "Error while saving in %s" % fname
+        print("Error while saving in %s" % fname)
 
 
 if __name__ == '__main__':

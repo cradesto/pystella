@@ -47,9 +47,8 @@ class StellaRes:
         :return:
         """
         fname = os.path.join(self.path, self.name + ".res")
-        nrows = end - start + 1
-        colstr = "ZON M R14 V8 T5 Trad5 lgDm6 lgP7  lgQv lgQRT XHI ENG LUM CAPPA ZON1 n_bar n_e Fe II III"
-        cols = map(str.strip, colstr.split())
+        colstr = "ZON M R14 V8 T5 Trad5 lgDm6   lgP7  lgQv lgQRT XHI ENG LUM CAPPA ZON1 n_bar n_e Fe II III"
+        cols = colstr.split()
         # FORMAT(1X,I3,1P,E9.2,0P,F12.7,F8.4,F10.3,F8.3,4F7.2,1P,4E10.2,I5, 11e10.2);
 
         # delimiter = (4, 9, 12, 8, 10, 8, 7, 7, 7, 7, 10, 10, 10, 10, 5, 10, 10, 10, 10, 10)
@@ -60,8 +59,12 @@ class StellaRes:
         # tmp = [x for x in map(str.strip, col_w.split())]
         # dt = np.dtype(','.join(tmp))
         # dt = np.dtype({'names': cols, 'formats': [np.float64] * len(cols)})
-        with open(fname) as f_in:
-            b = np.genfromtxt(itertools.islice(f_in, start - 1, end),
+        # with open(fname, 'r') as f_in:
+        #     b = np.genfromtxt(itertools.islice(f_in, start - 1, end),
+        #                       names=cols, dtype=dt, delimiter=delimiter)
+        with open(fname, "rb") as f:
+            from itertools import islice
+            b = np.genfromtxt(islice(f, start-1, end),
                               names=cols, dtype=dt, delimiter=delimiter)
 
         # cols = ["z", "m", "r", "rho", "v", "T", "Trad"]
@@ -102,7 +105,7 @@ class StellaRes:
                     break
                 if not is_block and line.lstrip().startswith("OBS.TIME"):
                     header = line
-                    names = map(str.strip, header.split())
+                    names = header.split()
                     t = float(names[1])
                     if t > time:
                         is_block = True
@@ -235,7 +238,7 @@ class StellaResInfo:
     def show(self):
         # print "INFO %s" % self.name
         # print " %40s: R = %7.2f M = %6.2f E = %6.2f " % (self.name, self.R, self.M, self.E)
-        print "| %40s |  %7.2f |  %6.2f | %6.2f | %6.2f |" % (self.name, self.R, self.M, self.E, self.Mni)
+        print("| %40s |  %7.2f |  %6.2f | %6.2f | %6.2f |" % (self.name, self.R, self.M, self.E, self.Mni))
 
     def print_tex(self, o=None, lend=''):
         # print "INFO %s" % self.name
@@ -245,7 +248,4 @@ class StellaResInfo:
         if o is not None and o:
             return s
         else:
-            print s
-
-
-
+            print(s)

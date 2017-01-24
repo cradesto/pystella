@@ -19,6 +19,7 @@
       <w>caretright</w>
       <w>caretup</w>
       <w>catcopy</w>
+      <w>chemfile</w>
       <w>coef</w>
       <w>conv</w>
       <w>darkorange</w>
@@ -82,6 +83,7 @@
       <w>oguri</w>
       <w>popov</w>
       <w>presn</w>
+      <w>presupernova</w>
       <w>pystella</w>
       <w>readheger</w>
       <w>rednova</w>
@@ -102,12 +104,15 @@
       <w>strs</w>
       <w>suprime</w>
       <w>swiftuvot</w>
+      <w>tanaka</w>
+      <w>tbest</w>
       <w>tcol</w>
       <w>tcolor</w>
       <w>tcolors</w>
       <w>tday</w>
       <w>tdiff</w>
       <w>teff</w>
+      <w>tinit</w>
       <w>tion</w>
       <w>tlim</w>
       <w>tmin</w>

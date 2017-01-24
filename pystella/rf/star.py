@@ -179,9 +179,9 @@ class Star:
         nu_b = np.array(b.freq)
         resp_b = np.array(b.resp_fr)
 
-        if min(nu_s) > nu_b[0] or max(nu_s) < nu_b[-1]:
+        if np.min(nu_s) > nu_b[0] or np.max(nu_s) < nu_b[-1]:
             # decrease wave length range of the band
-            f = (min(nu_s) < nu_b) & (nu_b < max(nu_s))
+            f = (np.min(nu_s) < nu_b) & (nu_b < np.max(nu_s))
             # f = map(lambda x: min(nu_s) < x < max(nu_s), nu_b)
             nu_b = nu_b[f]
             resp_b = resp_b[f]

@@ -1,5 +1,5 @@
 import csv
-import os
+
 import numpy as np
 
 __author__ = 'bakl'
@@ -26,4 +26,3 @@ def cache_load(fname):
     dtype = np.dtype({'names': names, 'formats': [np.float64] * len(names)})
     tbl = np.loadtxt(fname, skiprows=1, dtype=dtype)
     return tbl
-

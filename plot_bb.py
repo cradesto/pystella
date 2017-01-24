@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
 import getopt
@@ -12,7 +12,7 @@ from pystella.rf import spectrum, rad_func
 from pystella.util.phys_var import phys
 
 
-def plot_bb(Trad, Tcol, W1, W2, wl_lim=[100, 1e5, 100.]):
+def plot_bb(Trad, Tcol, W1, W2, wl_lim=(100, 1e5, 100.)):
 
     # freq
     # nf, start, end = 100, 10., 1e5
@@ -54,13 +54,13 @@ def plot_bb(Trad, Tcol, W1, W2, wl_lim=[100, 1e5, 100.]):
 
 
 def usage():
-    print "Usage:"
-    print "  plot_bb.py [params]"
-    print "  -c <Tcol1>: color temperature for W*B(tcol)"
-    print "  -r <Tcol2>: color temperature for W*B(Trad)"
-    print "  -w <dilution1>: dilution for W*B(tcol)"
-    print "  -g <dilution2>: dilution for W*B(tcol)"
-    print "  -h  print usage"
+    print("Usage:")
+    print("  plot_bb.py [params]")
+    print("  -c <Tcol1>: color temperature for W*B(tcol)")
+    print("  -r <Tcol2>: color temperature for W*B(Trad)")
+    print("  -w <dilution1>: dilution for W*B(tcol)")
+    print("  -g <dilution2>: dilution for W*B(tcol)")
+    print("  -h  print usage")
 
 
 def main():
@@ -72,7 +72,7 @@ def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], "c:g:r:w:")
     except getopt.GetoptError as err:
-        print str(err)  # will print something like "option -a not recognized"
+        print(str(err))  # will print something like "option -a not recognized"
         usage()
         sys.exit(2)
 

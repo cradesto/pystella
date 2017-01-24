@@ -1,7 +1,6 @@
-import ConfigParser
+from configparser import ConfigParser
 import numpy as np
 import os
-import string
 from os.path import dirname
 from scipy.integrate import simps as integralfunc
 
@@ -123,9 +122,9 @@ class Band(object):
             f = open(self._fname)
             try:
                 lines = [str.strip(line) for line in f.readlines() if not line.startswith('#')]
-                wl = np.array([float(string.split(line)[0]) for line in lines if len(line) > 0])
+                wl = np.array([float(line.split()[0]) for line in lines if len(line) > 0])
 
-                self._resp = np.array([float(string.split(line)[1]) for line in lines if len(line) > 0])
+                self._resp = np.array([float(line.split()[1]) for line in lines if len(line) > 0])
                 self.wl = wl * phys.angs_to_cm
 
                 self._is_load = True
@@ -164,7 +163,7 @@ class Band(object):
 
     @classmethod
     def load_settings(cls):
-        parser = ConfigParser.ConfigParser()
+        parser = ConfigParser()
         parser.optionxform = str
         fini = os.path.join(Band.DirRoot, Band.FileSettings)
         parser.read(fini)
@@ -333,7 +332,7 @@ def band_load_names(path=Band.DirRoot):
     """Find directories with filter.dat """
 
     def ini_to_bands(fini):
-        parser = ConfigParser.ConfigParser()
+        parser = ConfigParser()
         parser.optionxform = str
         parser.read(fini)
         res = {}
@@ -423,31 +422,31 @@ def band_by_name(name):
         # Band.Cache[name] = b
         return b
     else:
-        print "  Error: no band: %s " % name
+        print("  Error: no band: %s " % name)
         return None
 
 
 def print_bands(ncol=5):
     bands = sorted(band_get_names())
-    print "Available bands:"
+    print("Available bands:")
     # print "   Available bands: \n   %s" % '-'.join(sorted(bands))
     if bands is not None and len(bands) > 0:
         s = '  '
         c = bands[0][0]
         for b in bands:
             if b[0] != c:
-                print s
+                print(s)
                 c = b[0]
                 s = "   %-7s " % b
             else:
                 s += " %-7s " % b
         if s != '':
-            print s
+            print(s)
     else:
-        print "You have not load them yet. Try: band.Band.load_settings() "
+        print("You have not load them yet. Try: band.Band.load_settings() ")
 
     alias = band_get_aliases()
-    print "\nAvailable aliases of bands: "
+    print("\nAvailable aliases of bands: ")
     if alias is not None and len(alias) > 0:
         col = 0
         s = ''
@@ -455,10 +454,10 @@ def print_bands(ncol=5):
             col += 1
             s += " %3s => %-7s " % (k, v)
             if col == ncol:
-                print s
+                print(s)
                 col = 0
                 s = ''
         if s != '':
-            print s
+            print(s)
     else:
-        print "     No aliases or you have not load them yet. Try: band.Band.load_settings() "
+        print("     No aliases or you have not load them yet. Try: band.Band.load_settings() ")

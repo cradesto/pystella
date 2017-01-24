@@ -16,7 +16,7 @@ logger.setLevel(logging.INFO)
 # 1.0d0 1.0d0 4.0d0 12.0d0 16.0d0 20.0d0 24.0d0 28.0d0 32.0d0 36.0d0 40.0d0 44.0d0 48.0d0 52.0d0 56.0d0
 # 0.0d0 1.0d0 2.0d0 6.0d0 8.0d0 10.0d0 12.0d0 14.0d0 16.0d0 18.0d0 20.0d0 22.0d0 24.0d0 26.0d0 28.0d0
 
-snec_elements = map(str.strip, "NN H He C O Ne Mg Si S Ar Ca Ti Cr Fe Ni".split())
+snec_elements = "NN H He C O Ne Mg Si S Ar Ca Ti Cr Fe Ni".split()
 snec_el_colors = dict(NN="yellow", H="blue", He="cyan", C="darkorange",
                       O="violet", Ne="green", Mg="skyblue", Si="olive",
                       S="indigo", Ar="brown", Ca="purple", Ti="hotpink",
@@ -29,7 +29,7 @@ snec_el_lntypes['O'] = '-'
 snec_el_lntypes['C'] = '-'
 snec_el_lntypes['Ni56'] = '-'
 
-snec_profile_cols = map(str.strip, "i M R T Rho V val1 val2".split())
+snec_profile_cols = "i M R T Rho V val1 val2".split()
 
 
 class Problem:
@@ -78,7 +78,7 @@ class Problem:
         if el not in snec_elements:
             raise ValueError("There is no such element [%s]." % el)
         if not self.is_chem_load:
-            raise StandardError("SNEC chem-data has not been loaded. Check and load from %s" % self._chem_file)
+            raise Exception("SNEC chem-data has not been loaded. Check and load from %s" % self._chem_file)
         return self._chem[el]
 
     def load_chem(self, fname):
@@ -89,7 +89,7 @@ class Problem:
         logger.info('Load chemical data from  %s' % self.chem_file)
 
         names = ['M', 'R'] + snec_elements
-        print "Names: %s" % ' '.join(names)
+        print("Names: %s" % ' '.join(names))
         dtype = np.dtype({'names': names, 'formats': [np.float64] * len(names)})
         self._chem = np.loadtxt(fname, skiprows=3, dtype=dtype, comments='#')
         return self

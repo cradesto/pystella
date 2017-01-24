@@ -57,19 +57,19 @@ class TestStellaTt(unittest.TestCase):
             res = re.findall(p, line)
             if len(res) > 0:
                 for k, v in res:
-                    print "key: %s  v: %f " % (k, float(v))
+                    print("key: %s  v: %f " % (k, float(v)))
 
     def test_info_parse(self):
         info = self.tt.Info.parse()
         info.show()
 
-        tmp = 1000.
+        tmp = 500.
         self.assertEquals(info.R, tmp, "Radius [%f] should be %f" % (info.R, tmp))
 
         tmp = 15.
         self.assertEquals(info.M, tmp, "Mass [%f] should be %f" % (info.M, tmp))
 
-        tmp = 15.
+        tmp = 12.
         self.assertEquals(info.E, tmp, "Ebstht [%f] should be %f" % (info.E, tmp))
 
     def test_tt_vs_ph(self):
