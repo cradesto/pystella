@@ -40,7 +40,7 @@ def plot_scm(models_data, bands, z, xlim=None, is_fit=False):
     # plt.rc('text', usetex=True)
     # plt.rc('font', family='serif')
     fig = plt.figure(num=len(bands), figsize=(9, 9), dpi=100, facecolor='w', edgecolor='k')
-    gs1 = gridspec.GridSpec(len(bands) / 2 + len(bands) % 2, 2)
+    gs1 = gridspec.GridSpec(len(bands) // 2 + len(bands) % 2, 2)
     # gs1 = gridspec.GridSpec(2, 4, width_ratios=(8, 1, 8, 1))
     gs1.update(wspace=0., hspace=0., left=0.1, right=0.9)
 

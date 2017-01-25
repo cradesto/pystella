@@ -1,0 +1,18 @@
+
+###########
+#  apt-get
+# sudo apt-get install -y python3-pip
+# sudo apt-get install build-essential libssl-dev libffi-dev python-dev
+# sudo apt-get build-dep python3-scipy
+# sudo apt install libpng-dev libfreetype6-dev
+# sudo apt-get install python-matplotlib
+
+
+numpy
+scipy
+Cython
+matplotlib
+corner
+gptools
+pandas
+

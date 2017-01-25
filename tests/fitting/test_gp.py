@@ -377,5 +377,5 @@ class TestFitGaussianProcess(unittest.TestCase):
         # dS1 = np.random.normal(x1, sigX1, 1000)
         # dS2 = np.random.normal(x2, sigX2, 1000)
         fmu, fsig = rel_errors([x2, x1], [sigX2, sigX1], lambda arg: arg[0] / arg[1], num=10000)
-        print 'fmu= %f fsig = %f' % (fmu, fsig)
+        print('fmu= %f fsig = %f' % (fmu, fsig))
 

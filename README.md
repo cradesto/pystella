@@ -40,6 +40,7 @@ also the same could be done with key '-p' without model's name.
 
 #### Install:
 ```bash
+
 >>> git clone https://github.com/baklanovp/pystella.git
 
 >>> cd pystella
@@ -51,6 +52,8 @@ also the same could be done with key '-p' without model's name.
 
 To fit observations using Gaussian process 
 ```bash
+>>> sudo apt-get install -y python3-pip
+>>> pip3 install numpy
 >>> pip install cython
 >>> pip install gptools
 >>> pip install corner

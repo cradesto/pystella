@@ -29,11 +29,11 @@ def myfit(mags, lc, is_verbose=True, xtol=1e-10, ftol=1e-10, gtol=1e-10):
     result = mpfit.mpfit(leastsq, parinfo=parinfo, quiet=quiet, maxiter=200,
                          ftol=ftol, gtol=gtol, xtol=xtol)
     if result.status == 5:
-        print 'Maximum number of iterations exceeded in mangle_spectrum'
+        print('Maximum number of iterations exceeded in mangle_spectrum')
 
     tshift = result.params[0]
     if is_verbose:
-        print "The final tshift are: %f" % tshift
+        print("The final tshift are: %f" % tshift)
     return tshift
 
 
@@ -81,14 +81,14 @@ def popov_fit(lc, R0, M0, Mni0=None, E0=None, dt0=None,
     result = mpfit.mpfit(leastsq, parinfo=parinfo, quiet=quiet, maxiter=200,
                          ftol=ftol, gtol=gtol, xtol=xtol)
     if result.status == 5:
-        print 'Maximum number of iterations exceeded in mangle_spectrum'
+        print('Maximum number of iterations exceeded in mangle_spectrum')
 
     ppv = Popov('test', R=result.params[0], M=result.params[1], Mni=result.params[2], E=result.params[3])
     tshift = result.params[4]
 
     if is_verbose:
-        print "The final params are: R=%f M=%f Mni=%f E=%f; dt = %f " % (
-            result.params[0], result.params[1], result.params[2], result.params[3], tshift)
+        print("The final params are: R=%f M=%f Mni=%f E=%f; dt = %f " % (
+            result.params[0], result.params[1], result.params[2], result.params[3], tshift))
     return ppv, tshift
 
 
@@ -167,7 +167,7 @@ class TestFit(unittest.TestCase):
 
     # @unittest.skip("just for plot")
     def test_fit_popov_SN1987A(self):
-        ##  todo fit M, E, Mni
+        #  todo fit M, E, Mni
         D = 5e4  # pc
         dm = -5. * np.log10(D) + 5  # D = 7.5e6 pc
         # dm = -30.4  # D = 12.e6 pc
@@ -187,5 +187,3 @@ class TestFit(unittest.TestCase):
         ax.plot(x, y, label='%s SN 1987A' % lc.Band.Name,
                 ls=".", color='red', markersize=8, marker="o")
         plt.show()
-
-

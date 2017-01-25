@@ -166,7 +166,7 @@ def plot_zeta(models_dic, set_bands, theta_dic, t_cut=4.9,
     # plt.rc('text', usetex=True)
     # plt.rc('font', family='serif')
     fig = plt.figure(num=len(set_bands), figsize=(9, 9), dpi=100, facecolor='w', edgecolor='k')
-    gs1 = gridspec.GridSpec(len(set_bands) / 2 + len(set_bands) % 2, 2)
+    gs1 = gridspec.GridSpec(len(set_bands) // 2 + len(set_bands) % 2, 2)
     # gs1 = gridspec.GridSpec(2, 4, width_ratios=(8, 1, 8, 1))
     gs1.update(wspace=0., hspace=0., left=0.1, right=0.9)
 
@@ -347,7 +347,7 @@ def plot_fits(set_bands, is_grid=True):
     plt.matplotlib.rcParams.update({'font.size': 14})
     fig = plt.figure(num=len(set_bands), figsize=(9, 9), dpi=100, facecolor='w', edgecolor='k')
     if is_grid:
-        gs1 = gridspec.GridSpec(len(set_bands) / 2 + len(set_bands) % 2, 2)
+        gs1 = gridspec.GridSpec(len(set_bands) // 2 + len(set_bands) % 2, 2)
     else:
         gs1 = gridspec.GridSpec(1, 1)
     gs1.update(wspace=0.3, hspace=0.3, left=0.15, right=0.95)

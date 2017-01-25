@@ -46,7 +46,7 @@ def plot_vels_models(ax, models_dic, xlim=None, ylim=None):
     mi = 0
     x_max = []
     y_mid = []
-    for mname, mdic in models_dic.iteritems():
+    for mname, mdic in models_dic.items():
         mi += 1
         x = mdic['time']
         y = mdic['vel'] / 1e8
