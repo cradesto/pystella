@@ -5,7 +5,7 @@ from scipy import interpolate, integrate
 from scipy import ndimage
 from scipy.optimize import fmin, curve_fit
 
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 import pystella.rf.rad_func as rf
 from pystella.rf import band
@@ -50,16 +50,6 @@ class Spectrum(object):
         return np.array([phys.c/x for x in self.Freq])
         # return np.array(map(lambda x: phys.c/x, self.Freq))
         # return phys.c / self.Freq
-
-    def plot_spec(self):
-        plt.title('Spectrum: ' % self.Name)
-        plt.plot(self.Wl * phys.cm_to_angs, self.Flux_wl)
-        plt.xscale('log')
-        plt.yscale('log')
-        plt.ylabel('Flux')
-        plt.xlabel('Wave [A]')
-        plt.grid()
-        plt.show()
 
     @property
     def T_color(self):

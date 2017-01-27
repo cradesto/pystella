@@ -11,6 +11,7 @@ from pystella.model.stella import Stella
 from pystella.rf import band
 from pystella.rf import extinction
 from pystella.rf.lc import LightCurve
+from pystella.util.phys_var import phys
 
 __author__ = 'bakl'
 
@@ -521,4 +522,15 @@ def plot_shock_details(swd, times, **kwargs):
         sn_swd.plot_swd(ax2, b, is_xlabel=i == len(times) - 1, vnorm=vnorm, lumnorm=lumnorm,
                         is_legend=is_legend, is_ylabel=False)
         i += 1
+    plt.show()
+
+
+def plot_spec(sp):
+    plt.title('Spectrum: ' % sp.Name)
+    plt.plot(sp.Wl * phys.cm_to_angs, sp.Flux_wl)
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.ylabel('Flux')
+    plt.xlabel('Wave [A]')
+    plt.grid()
     plt.show()
