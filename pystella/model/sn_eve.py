@@ -2,8 +2,13 @@ import logging
 import numpy as np
 import os
 
-import matplotlib.pyplot as plt
-from matplotlib import gridspec
+
+try:
+    import matplotlib.pyplot as plt
+    from matplotlib import gridspec
+    is_matplotlib = True
+except:
+    is_matplotlib = False
 
 from pystella.util.phys_var import phys
 
@@ -230,6 +235,8 @@ class PreSN(object):
         return os.path.isfile(fname)
 
     def plot_chem(self, x='m', ax=None, xlim=None, ylim=None, **kwargs):
+        if not is_matplotlib:
+            return
         elements = kwargs.get('elements', eve_elements)
         lntypes = kwargs.get('lntypes', eve_lntypes)
         colors = kwargs.get('colors', eve_colors)

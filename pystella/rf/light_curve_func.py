@@ -1,6 +1,7 @@
 import csv
 import numpy as np
 import os
+import logging
 
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
@@ -14,6 +15,10 @@ from pystella.rf.lc import LightCurve
 from pystella.util.phys_var import phys
 
 __author__ = 'bakl'
+
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 lc_colors = band.bands_colors()
 
@@ -534,3 +539,4 @@ def plot_spec(sp):
     plt.xlabel('Wave [A]')
     plt.grid()
     plt.show()
+
