@@ -74,7 +74,7 @@ def plot_all(models_vels, models_dic, bands, call=None, xlim=None, ylim=None,
 
     plt.grid()
 
-    plt.show(block=False)
+    plt.show(block=True)
 
     if fsave is not None:
         print("Save plot to %s " % fsave)
