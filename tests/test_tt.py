@@ -1,13 +1,12 @@
-import matplotlib.pyplot as plt
 import re
 import unittest
 from os.path import dirname, abspath, join
 
+import matplotlib.pyplot as plt
 import numpy as np
 
 from pystella.model.stella import Stella
-
-from pystella.rf import light_curve_func as lcf
+from pystella.rf import light_curve_plot as lcp
 
 __author__ = 'bakl'
 
@@ -21,7 +20,7 @@ class TestStellaTt(unittest.TestCase):
         self.stella = Stella(name, path=path)
         self.tt = self.stella.get_tt()
 
-    def test_info_parse(self):
+    def test_info_parse_print(self):
         tt_header = """
                               <===== HYDRODYNAMIC RUN OF MODEL cat_R1000_M15_Ni007_E15.prf                                                     =====>
 
@@ -85,7 +84,7 @@ class TestStellaTt(unittest.TestCase):
         plt.matplotlib.rcParams.update({'font.size': 14})
         fig, ax = plt.subplots(1, 1)
 
-        lcf.plot_models_curves_fixed_bands(ax, models_dic, bands, lc_types=lc_types, ylim=(-10, -24))
+        lcp.plot_models_curves_fixed_bands(ax, models_dic, bands, lc_types=lc_types, ylim=(-10, -24))
         # lcf.plot_models_curves(ax, models_dic, bands, lc_types=lc_types, ylim=(-10, -24), xlim=(0, 20))
         plt.legend()
         plt.show()
@@ -104,8 +103,7 @@ class TestStellaTt(unittest.TestCase):
         plt.matplotlib.rcParams.update({'font.size': 14})
         fig, ax = plt.subplots(1, 1)
 
-        # lcf.plot_models_curves_fixed_bands(ax, models_dic, bands=('r','B','V'), lc_types=lc_types, ylim=(-13, -23), lw=3)
-        lcf.plot_models_curves(ax, models_dic, lc_types=lc_types, ylim=(-10, -23), lw=3)
+        lcp.plot_models_curves(ax, models_dic, lc_types=lc_types, ylim=(-10, -23), lw=3)
         plt.legend()
         plt.show()
 
@@ -127,7 +125,7 @@ class TestStellaTt(unittest.TestCase):
         plt.matplotlib.rcParams.update({'font.size': 14})
         fig, ax = plt.subplots(1, 1)
 
-        lcf.plot_models_curves(ax, models_dic, lc_types=lc_types, ylim=(-10, -19), lw=3)
+        lcp.plot_models_curves(ax, models_dic, lc_types=lc_types, ylim=(-10, -19), lw=3)
         # lcf.plot_models_curves_fixed_bands(ax, models_dic, bands=('B', 'V'), lc_types=lc_types, ylim=(-13, -23), lw=3)
         plt.legend()
         plt.show()

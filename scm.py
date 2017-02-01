@@ -13,7 +13,7 @@ from matplotlib import gridspec
 
 from pystella import velocity
 from pystella.rf import band
-from pystella.rf import light_curve_func
+from pystella.rf import light_curve_func as lcf
 from pystella.util.phys_var import phys
 
 __author__ = 'bakl'
@@ -219,7 +219,7 @@ def run_scm(bands, distance, names, path, t50, t_beg, t_end, z):
             print("No enough data for %s " % name)
             continue
 
-        curves = light_curve_func.curves_compute(name, path, bands, z=z, distance=distance,
+        curves = lcf.curves_compute(name, path, bands, z=z, distance=distance,
                                                  t_beg=t_beg, t_end=t_end)
         v = extract_time(t50, vels['time'], vels['vel'])
         res[im]['v'] = v

@@ -6,15 +6,17 @@ import os
 import sys
 from os.path import dirname
 
-import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
-matplotlib.rcParams['backend'] = "Qt4Agg"
+
+# import matplotlib
+# matplotlib.rcParams['backend'] = "Qt4Agg"
 
 import pystella.util.callback as cb
 from pystella import velocity as vel
 from pystella.rf import band
 from pystella.rf import light_curve_func as lcf
+from pystella.rf import light_curve_plot as lcp
 from pystella.util.path_misc import get_model_names
 from pystella.util.phys_var import cosmology_D_by_z
 
@@ -50,7 +52,7 @@ def plot_all(models_vels, models_dic, bands, call=None, xlim=None, ylim=None,
     gs1.update(wspace=0.3, hspace=0.3, left=0.1, right=0.95)
 
     # plot the light curves
-    lcf.plot_ubv_models(axUbv, models_dic, bands, band_shift=band_shift, xlim=xlim, ylim=ylim,
+    lcp.plot_ubv_models(axUbv, models_dic, bands, band_shift=band_shift, xlim=xlim, ylim=ylim,
                         is_time_points=is_time_points)
 
     # plot callback
@@ -268,7 +270,7 @@ def main(name='', model_ext='.ph'):
             if not is_quiet:
                 # z, distance = 0.145, 687.7e6  # pc for comparison with Maria
                 # lcf.plot_bands(mags, bands, title=name, fname='', is_time_points=is_plot_time_points)
-                lcf.plot_bands(curves, bands, title=name, fname='', is_time_points=is_plot_time_points)
+                lcp.plot_bands(curves, bands, title=name, fname='', is_time_points=is_plot_time_points)
 
             if is_vel:
                 vels = vel.compute_vel(name, path, z=z)

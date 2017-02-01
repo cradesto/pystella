@@ -3,3 +3,6 @@ ubv.py
 
 - сделать чтение настроек из конфиг файла, а потом из строки:
 для z, distance, set of bands, options etc.
+
+-- FIX: change
+from pystella.rf import light_curve_plot as lcp

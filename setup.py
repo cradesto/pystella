@@ -17,7 +17,7 @@ setup(
     version="0.1",
     author="Petr Baklanov",
     author_email="baklanovp@gmail.com",
-    description=("To work with supernovae models computed by STELLA."),
+    description="To work with supernovae models computed by STELLA.",
     license="MIT",
     keywords="supernova, light curves",
     url="https://github.com/baklanovp/pystella",
