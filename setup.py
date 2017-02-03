@@ -21,12 +21,12 @@ setup(
     license="MIT",
     keywords="supernova, light curves",
     url="https://github.com/baklanovp/pystella",
-    packages=['pystella', 'pystella.fit', 'pystella.model', 'pystella.rf', 'pystella.util', 'tests'],
+    packages=['pystella', 'pystella.fit', 'pystella.model', 'pystella.rf', 'pystella.util'],
     long_description=read('README.md'),
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Topic :: Scientific/Engineering :: Astronomy",
-        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3.5",
         "License :: OSI Approved :: MIT License",
     ],
 )
