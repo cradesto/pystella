@@ -47,7 +47,7 @@ class Spectrum(object):
 
     @property
     def Wl(self):
-        return np.array([phys.c/x for x in self.Freq])
+        return np.array([phys.c / x for x in self.Freq])
         # return np.array(map(lambda x: phys.c/x, self.Freq))
         # return phys.c / self.Freq
 
@@ -304,9 +304,8 @@ class SeriesSpectrum(object):
         if wl_ab is None:
             wl_ab = (0., float("inf"))
 
-        times = self.Time
         res = SeriesSpectrum(name)
-        for k, t in enumerate(times):
+        for k, t in enumerate(self.Time):
             if t_ab[0] <= t <= t_ab[1]:
                 s = self.get_spec(k)
                 freq = s.Freq
@@ -316,8 +315,36 @@ class SeriesSpectrum(object):
                 is_freq = (freq > f_l) & (freq < f_h)
                 ss = Spectrum(s.Name, freq[is_freq], flux=flux[is_freq])
                 res.add(t, ss)
-
         return res
+
+    def map(self, func, t_ab=None):
+        """Map func under each Spectrum in the array.
+        func=func(t, spec)  - result ander Spectrum,
+        t_ab  - time interval [day]"""
+        if t_ab is None:
+            t_ab = (float("-inf"), float("inf"))
+
+        times = []
+        fvalue = []
+        for k, t in enumerate(self.Time):
+            if t_ab[0] <= t <= t_ab[1]:
+                s = self.get_spec(k)
+                r = func(t, s)
+                times.append(t)
+                fvalue.append(r)
+        return {'t': times, 'v': fvalue}
+
+    def get_T_color(self):
+        def fTcolor(t, s):
+            return s.T_color
+        d = self.map(fTcolor)
+        return np.array(d['v'])
+
+    def get_T_wien(self):
+        def fTcolor(t, s):
+            return s.T_wien
+        d = self.map(fTcolor)
+        return np.array(d['v'])
 
     def get_tspec(self, idx):
         return self.Time[idx], self.get_spec(idx)
