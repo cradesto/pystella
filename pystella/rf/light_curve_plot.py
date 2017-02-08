@@ -355,3 +355,5 @@ def plot_shock_details(swd, times, **kwargs):
                         is_legend=is_legend, is_ylabel=False)
         i += 1
     plt.show()
+    return fig
+
