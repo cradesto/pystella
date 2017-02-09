@@ -22,6 +22,8 @@ setup(
     keywords="supernova, light curves",
     url="https://github.com/baklanovp/pystella",
     packages=['pystella', 'pystella.fit', 'pystella.model', 'pystella.rf', 'pystella.util'],
+#    package_data={'data': ['data']},
+#    include_package_data=True,
     long_description=read('README.md'),
     classifiers=[
         "Development Status :: 3 - Alpha",

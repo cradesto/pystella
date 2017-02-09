@@ -6,3 +6,6 @@ ubv.py
 
 -- FIX: change
 from pystella.rf import light_curve_plot as lcp
+
+-- Setup
+$ python3 setup.py sdist
