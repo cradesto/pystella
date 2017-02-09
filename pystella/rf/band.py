@@ -167,7 +167,8 @@ class Band(object):
         parser.optionxform = str
         fini = os.path.join(Band.DirRoot, Band.FileSettings)
         parser.read(fini)
-        Band.Alias = {k: v for k, v in parser.items('alias')}
+        if 'alias' in parser.sections():
+            Band.Alias = {k: v for k, v in parser.items('alias')}
         return True
 
 
