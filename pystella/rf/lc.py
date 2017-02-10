@@ -38,7 +38,10 @@ class LightCurve(object):
 
     @property
     def MagErr(self):
-        return self._e
+        if self.IsErr:
+            return self._e
+        else:
+            return np.zeros(self.Length)
 
     @property
     def Band(self):
