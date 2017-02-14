@@ -29,7 +29,7 @@ snec_el_lntypes['O'] = '-'
 snec_el_lntypes['C'] = '-'
 snec_el_lntypes['Ni56'] = '-'
 
-snec_profile_cols = "i M R T Rho V val1 val2".split()
+snec_profile_cols = "i M R T Rho V".split()
 
 
 class Problem:
@@ -147,8 +147,9 @@ class Problem:
         self._profile_file = fname
         logger.info('Load profile data from  %s' % self.profile_file)
 
+        use_cols = list(range(0, len(snec_profile_cols)))
         dtype = np.dtype({'names': snec_profile_cols, 'formats': [np.float64] * len(snec_profile_cols)})
-        self._profile = np.loadtxt(self.profile_file, skiprows=1, dtype=dtype)
+        self._profile = np.loadtxt(self.profile_file, skiprows=1, dtype=dtype, usecols=use_cols)
         return self
 
     # Plotting
