@@ -60,7 +60,7 @@ def compute_mag(name, path, bands, ext=None, z=0., distance=10., magnification=1
     return mags
 
 
-def curves_save(curves, fname):
+def curves_save(curves, fname, sep='\t'):
     """
        Save curves to CSV-format. It required for correct operation the common time for all LC.
     :param curves:
@@ -68,8 +68,8 @@ def curves_save(curves, fname):
     :return:
     """
     if curves.Length > 0:
-        with open(fname, 'wb') as f:
-            writer = csv.writer(f, delimiter='\t')
+        with open(fname, 'w') as f:
+            writer = csv.writer(f, delimiter=sep, quotechar='|', quoting=csv.QUOTE_MINIMAL)
             writer.writerow(['{:^8s}'.format(x) for x in ['time'] + curves.BandNames])
             for i, (row) in enumerate(zip(curves.TimeDef, *[curves.get(b).Mag for b in curves.BandNames])):
                 # row = row[-1:] + row[:-1]  # make time first column
