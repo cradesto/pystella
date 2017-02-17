@@ -28,7 +28,7 @@
 
 
 ```bash
->>>./ubv.py  -i cat_R1000_M15_Ni007_E15  -d stella/res/tt  -b U:2-B-V-R:_1 -z 2 -d 16e9
+>>>./ubv.py  -i cat_R1000_M15_Ni007_E15  -p stella/res/tt  -b U:2-B-V-R:_1 -z 2 -d 16e9
 ```
 
 Run script for all *.ph-files in the DIR:
@@ -48,15 +48,22 @@ also the same could be done with key '-p' without model's name.
 >>> ./ubv.py [params]
 ```
 
-### Libraries
+### Install the libraries
+
+To plot light curves
+```bash
+>>> apt-get install python3-matplotlib
+>>> apt-get install python3-tk
+>>> pip3 install numpy
+```
+
 
 To fit observations using Gaussian process 
 ```bash
->>> sudo apt-get install -y python3-pip
->>> pip3 install numpy
->>> pip install cython
->>> pip install gptools
->>> pip install corner
+>>> apt-get install -y python3-pip
+>>> pip3 install cython
+>>> pip3 install gptools
+>>> pip3 install corner
 ```
 
 Acknowledgments:

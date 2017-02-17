@@ -6,11 +6,11 @@ import os
 import sys
 from os.path import dirname
 
+import matplotlib
+# matplotlib.use("Agg")
+matplotlib.rcParams['backend'] = "Qt4Agg"
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
-
-# import matplotlib
-# matplotlib.rcParams['backend'] = "Qt4Agg"
 
 import pystella.util.callback as cb
 from pystella import velocity as vel
@@ -19,6 +19,7 @@ from pystella.rf import light_curve_func as lcf
 from pystella.rf import light_curve_plot as lcp
 from pystella.util.path_misc import get_model_names
 from pystella.util.phys_var import cosmology_D_by_z
+
 
 __author__ = 'bakl'
 
@@ -161,12 +162,6 @@ def main(name='', model_ext='.ph'):
         usage()
         sys.exit(2)
 
-    if not name:
-        for opt, arg in opts:
-            if opt == '-i':
-                name = os.path.splitext(os.path.basename(str(arg)))[0]
-                break
-
     bands = ['U', 'B', 'V', 'R', "I"]
     # bands = ['U', 'B', 'V', 'R', "I", 'UVM2', "UVW1", "UVW2", 'g', "r", "i"]
 
@@ -245,9 +240,15 @@ def main(name='', model_ext='.ph'):
     print("Plot magnitudes on z=%f at distance=%e [cosmology D(z)=%s Mpc]" % (z, distance, cosmology_D_by_z(z)))
 
     names = []
-    if name != '':
+    if not name:
+        for opt, arg in opts:
+            if opt == '-i':
+                name = os.path.splitext(os.path.basename(str(arg)))[0]
+                names.append(name)
+    else:
         names.append(name)
-    else:  # run for all files in the path
+
+    if len(names) == 0:  # run for all files in the path
         names = get_model_names(path, model_ext)
 
     if len(names) > 0:

@@ -19,7 +19,7 @@ markers = {u'D': u'diamond', 6: u'caretup', u's': u'square', u'x': u'x',
            5: u'caretright', u'^': u'triangle_up', u'd': u'thin_diamond', u'h': u'hexagon1',
            u'+': u'plus', u'*': u'star', u'o': u'circle', u'p': u'pentagon', u'3': u'tri_left',
            u'H': u'hexagon2', u'v': u'triangle_down', u'8': u'octagon', u'<': u'triangle_left'}
-markers = markers.keys()
+markers = list(markers.keys())
 
 
 def lbl(b, band_shift):
@@ -81,7 +81,7 @@ def plot_ubv_models(ax, models_dic, bands, band_shift, xlim=None, ylim=None,
 
     t_points = [0.2, 1, 2, 3, 4, 5, 10, 20, 40, 80, 150]
 
-    lw = 2
+    lw = 1.5
     mi = 0
     x_max = []
     y_mid = []
@@ -98,7 +98,7 @@ def plot_ubv_models(ax, models_dic, bands, band_shift, xlim=None, ylim=None,
                 ax.plot(x, y, label='%s  %s' % (lbl(bname, band_shift), mname), color=bcolor, ls="-", linewidth=lw)
             else:
                 ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label='%s  %s' % (lbl(bname, band_shift), mname),
-                        markersize=3, color=bcolor, ls="--", linewidth=lw)
+                        markersize=4, color=bcolor, ls=":", linewidth=lw)
 
             if is_time_points:
                 integers = [np.abs(x - t).argmin() for t in t_points]  # set time points
