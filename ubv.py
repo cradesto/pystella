@@ -135,10 +135,10 @@ def main(name='', model_ext='.ph'):
     fsave = None
     # path = ''
     path = os.getcwd()
-    z = 0
+    z = 0.
     e = 0.
     magnification = 1.
-    distance = 10.  # pc
+    distance = None  # 10.  # pc
     callback = None
     xlim = None
     ylim = None
@@ -237,8 +237,7 @@ def main(name='', model_ext='.ph'):
             usage()
             sys.exit(2)
 
-    print("Plot magnitudes on z=%f at distance=%e [cosmology D(z)=%s Mpc]" % (z, distance, cosmology_D_by_z(z)))
-
+    # Set model names
     names = []
     if not name:
         for opt, arg in opts:
@@ -251,6 +250,19 @@ def main(name='', model_ext='.ph'):
     if len(names) == 0:  # run for all files in the path
         names = get_model_names(path, model_ext)
 
+    # Set distance and redshift
+    if distance is None:
+        if z > 0:
+            distance = cosmology_D_by_z(z)*1e6
+            print("Plot magnitudes on z={0:F}. Use cosmology D(z)={1:E} pc".format(z, distance))
+        else:
+            distance = 10  # pc
+    else:
+        print("Plot magnitudes on z={0:F} at distance={1:E}".format(z, distance))
+        if z > 0:
+            print("  Cosmology D(z)={0:E} Mpc".format(cosmology_D_by_z(z)))
+
+    # Run plotting
     if len(names) > 0:
         models_mags = {}  # dict((k, None) for k in names)
         models_vels = {}  # dict((k, None) for k in names)
