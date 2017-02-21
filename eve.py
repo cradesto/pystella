@@ -7,6 +7,10 @@ import os
 import sys
 from os.path import dirname
 import logging
+
+import matplotlib
+# matplotlib.use("Agg")
+matplotlib.rcParams['backend'] = "Qt4Agg"
 import matplotlib.pyplot as plt
 
 import pystella.model.sn_eve as sneve
@@ -90,7 +94,7 @@ def main(name=''):
     rho_file = os.path.join(path, name + '.rho')
     eve = sneve.load_rho(rho_file)
     # print "Plot eve-model %s" % name
-    ax = eve.plot_chem(elements=elements, ylim=[-6, 0.], is_save=is_save_plot)
+    ax = eve.plot_chem(elements=elements, ylim=(1e-8, 1.), is_save=is_save_plot)
     ax.grid()
     plt.show()
 

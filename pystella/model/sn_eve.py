@@ -2,10 +2,10 @@ import logging
 import numpy as np
 import os
 
-
 try:
     import matplotlib.pyplot as plt
     from matplotlib import gridspec
+
     is_matplotlib = True
 except:
     is_matplotlib = False
@@ -82,7 +82,7 @@ class PreSN(object):
         """Center radius"""
         p = 'r_cen'
         if self.is_set(PreSN.sR):
-            d = self.hyd(PreSN.sR)[0]/2.  # todo check Rcen
+            d = self.hyd(PreSN.sR)[0] / 2.  # todo check Rcen
         else:
             d = 0.
         return self.par(p, d)
@@ -166,7 +166,7 @@ class PreSN(object):
     def par(self, name, d=None):
         return self._params.get(name, d)
 
-    def set_par(self, name,  v):
+    def set_par(self, name, v):
         self._params[name] = v
 
     def lg_el(self, el):
@@ -194,18 +194,18 @@ class PreSN(object):
         """
         dum = np.zeros(self.nzon)
         logger.info(' Write hyd-data to %s' % fname)
-        zones = range(1, self._nzon+1)
+        zones = range(1, self._nzon + 1)
         with open(fname, 'w') as f:
             f.write('{:12.3e} {:6d} {:13.5e} {:13.5e} {:13.5e}\n'
-                    .format(self.time_start, self.nzon, self.m_tot/phys.M_sun, self.r_cen, self.rho_cen))
+                    .format(self.time_start, self.nzon, self.m_tot / phys.M_sun, self.r_cen, self.rho_cen))
             # a = '#No. Mr  dM  R  dR  Rho PRE T   V'.split()
             # f.write('           '.join(a)+'\n')
             # for _ in zip(zones, self.m/phys.M_sun, dum, self.r, dum, self.rho, dum, self.T, self.V):
             #     f.write(' %4d %12.4e %12.4e %12.4e %12.4e %12.4e %12.4e %12.4e %12.4e \n' % _)
             # 'evehyd.trf: idum,dum,Radius(j),RHOeve(j),TMPR(j),VELOC(j), dum,dum; '
             a = '#No. M  R  Rho T   V   dum  dum '.split()
-            f.write('  '+'            '.join(a)+'\n')
-            for _ in zip(zones, self.m/phys.M_sun, self.r, self.rho, self.T, self.V, dum, dum):
+            f.write('  ' + '            '.join(a) + '\n')
+            for _ in zip(zones, self.m / phys.M_sun, self.r, self.rho, self.T, self.V, dum, dum):
                 f.write(' %4d %15.7e %15.7e %15.7e %15.7e %15.7e  %8.1e  %8.1e\n' % _)
         return os.path.isfile(fname)
 
@@ -228,7 +228,7 @@ class PreSN(object):
         with open(fname, 'w') as f:
             # f.write('%d\n' % self.nzon_abn)
             for i in range(self.nzon):
-                s = '%4d  %10.3e %10.3e %10.3e' % (i+1, dum, dum, dum)
+                s = '%4d  %10.3e %10.3e %10.3e' % (i + 1, dum, dum, dum)
                 for ename in PreSN.presn_elements:
                     s += ' %10.3e' % self.el(ename)[i]
                 f.write('%s\n' % s)
@@ -244,12 +244,12 @@ class PreSN(object):
         leg_ncol = kwargs.get('leg_ncol', 4)
         lw = kwargs.get('lw', 2)
         is_save = kwargs.get('is_save', False)
-    # def plot_chem(self, x='m', ax=None, elements=None, xlim=None, ylim=None,
-    #               leg_loc=3, leg_ncol=4, lw=2, lntypes=None, is_save=False):
-    #     if elements is None:
-    #         elements = eve_elements
-    #     if lntypes is None:
-    #         lntypes = eve_lntypes
+        # def plot_chem(self, x='m', ax=None, elements=None, xlim=None, ylim=None,
+        #               leg_loc=3, leg_ncol=4, lw=2, lntypes=None, is_save=False):
+        #     if elements is None:
+        #         elements = eve_elements
+        #     if lntypes is None:
+        #         lntypes = eve_lntypes
 
         is_new_plot = ax is None
         # setup figure
@@ -268,7 +268,7 @@ class PreSN(object):
             x = self.r
             ax.set_xlabel(r'R [cm]')
         elif x == 'm':
-            x = self.m
+            x = self.m / phys.M_sun
             ax.set_xlabel(r'M [$M_\odot$]')
         else:
             x = self.r
@@ -284,7 +284,7 @@ class PreSN(object):
                 # y = self.lg_el(el)
                 y = self.el(el)
                 # y[y<=0] == 1e-15
-                ax.plot(x, y, label='%s' % el, color=colors[el], ls=lntypes[el], linewidth=lw)
+                ax.semilogy(x, y, label='%s' % el, color=colors[el], ls=lntypes[el], linewidth=lw)
 
                 if not is_x_lim:
                     x_min.append(np.min(x))
@@ -293,16 +293,14 @@ class PreSN(object):
                     y_min.append(np.min(y))
                     y_max.append(np.max(y))
 
-        if not is_x_lim and len(x_min)>0:
+        if not is_x_lim and len(x_min) > 0:
             xlim = [np.min(x_min), np.max(x_max)]
-        if not is_y_lim and len(y_min)>0:
+        if not is_y_lim and len(y_min) > 0:
             ylim = [np.min(y_min), np.max(y_min)]
 
         ax.set_xlim(xlim)
-        #
-        ax.set_yscale('log')
         ax.set_ylim(ylim)
-        ax.set_ylabel(r'$log10(X_i)$')
+        ax.set_ylabel(r'$X_i$')
 
         if is_new_plot:
             ax.legend(prop={'size': 9}, loc=loc, ncol=leg_ncol, fancybox=False, frameon=True)
@@ -327,7 +325,7 @@ class PreSN(object):
             self._loads.append(name)
 
         if is_exp:
-            self._data_hyd[name] = 10.**vec
+            self._data_hyd[name] = 10. ** vec
         else:
             self._data_hyd[name] = vec
 
@@ -337,7 +335,7 @@ class PreSN(object):
         if name not in self._loads:
             self._loads.append(name)
         if is_exp:
-            self._data_chem[name] = 10.**vec
+            self._data_chem[name] = 10. ** vec
         else:
             self._data_chem[name] = vec
 
@@ -416,13 +414,13 @@ def load_hyd_abn(name, path='.'):
         if len(a) == 5:
             time_start, nzon, m_tot, r_cen, rho_cen = a
             presn.set_par('time_start', time_start)
-            presn.set_par('m_tot', m_tot*phys.M_sun)
+            presn.set_par('m_tot', m_tot * phys.M_sun)
             presn.set_par('r_cen', r_cen)
             presn.set_par('rho_cen', rho_cen)
         elif len(a) == 4:
             time_start, nzon, m_tot, r_cen = a
             presn.set_par('time_start', time_start)
-            presn.set_par('m_tot', m_tot*phys.M_sun)
+            presn.set_par('m_tot', m_tot * phys.M_sun)
             presn.set_par('r_cen', r_cen)
         elif len(a) == 2:
             time_start, nzon = a
