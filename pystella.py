@@ -1,14 +1,10 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 import os
-import sys
-from cmd import Cmd
-import subprocess
-from os.path import dirname
-# try:
 import readline
-# except ImportError:
-#     readline = None
+import subprocess
+from cmd import Cmd
+from os.path import dirname
 
 
 ROOT_DIRECTORY = dirname(os.path.abspath(__file__))
@@ -39,7 +35,7 @@ class MyPrompt(HistConsole):
             name = 'Please provide a ph-file.'
         else:
             name = args
-        print("Plot, %s" % name)
+        print("ubv %s" % name)
         script = os.path.join(ROOT_DIRECTORY, 'ubv.py')
         subprocess.call("{0} {1}".format(script, args), shell=True)
 
@@ -51,7 +47,7 @@ class MyPrompt(HistConsole):
             name = 'No data. Please provide a rho-file.'
         else:
             name = args
-        print("Plot, %s" % name)
+        print("eve %s" % name)
         script = os.path.join(ROOT_DIRECTORY, 'eve.py')
         subprocess.call("{0} {1}".format(script, args), shell=True)
 
@@ -63,7 +59,7 @@ class MyPrompt(HistConsole):
             name = 'All the passbands.'
         else:
             name = args
-        print("Plot, %s" % name)
+        print("bands %s" % name)
         script = os.path.join(ROOT_DIRECTORY, 'plot_bands.py')
         subprocess.call("{0} {1}".format(script, args), shell=True)
 

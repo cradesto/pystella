@@ -5,7 +5,6 @@ import os
 try:
     import matplotlib.pyplot as plt
     from matplotlib import gridspec
-
     is_matplotlib = True
 except:
     is_matplotlib = False
@@ -17,7 +16,7 @@ logger.setLevel(logging.INFO)
 
 __author__ = 'bakl'
 
-eve_elements = map(str.strip, "Ni56 H He C N O Ne Na  Mg  Al  Si  S  Ar  Ca  Fe  Ni".split())
+eve_elements = "Ni56 H He C N O Ne Na  Mg  Al  Si  S  Ar  Ca  Fe  Ni".split()
 eve_colors = dict(Ni56="red", H="blue", He="cyan", C="darkorange", N="coral",
                   O="violet", Ne="green", Na="sandybrown",
                   Mg="skyblue", Si="olive", Al="lime",
@@ -255,10 +254,10 @@ class PreSN(object):
         # setup figure
         if is_new_plot:
             plt.matplotlib.rcParams.update({'font.size': 14})
-            fig = plt.figure(num=None, figsize=(12, 12), dpi=100, facecolor='w', edgecolor='k')
+            fig = plt.figure(num=None, figsize=(8, 8), dpi=100, facecolor='w', edgecolor='k')
 
             gs1 = gridspec.GridSpec(1, 1)
-            gs1.update(wspace=0.1, hspace=0.1, top=None, left=0.1, right=0.98)
+            gs1.update(wspace=0.1, hspace=0.1, top=0.97, left=0.12, right=0.98)
             ax = fig.add_subplot(gs1[0, 0])
 
         is_x_lim = xlim is not None
@@ -310,6 +309,55 @@ class PreSN(object):
 
         if is_save:
             fsave = os.path.join(os.path.expanduser('~/'), 'chem_%s.pdf' % self.name)
+            logger.info(" Save plot to %s " % fsave)
+            ax.get_figure().savefig(fsave, bbox_inches='tight', format='pdf')
+
+        return ax
+
+    def plot_rho(self, x='m', ax=None, xlim=None, ylim=None, **kwargs):
+        if not is_matplotlib:
+            return
+        lw = kwargs.get('lw', 2)
+        is_save = kwargs.get('is_save', False)
+
+        is_new_plot = ax is None
+        # setup figure
+        if is_new_plot:
+            plt.matplotlib.rcParams.update({'font.size': 14})
+            fig = plt.figure(num=None, figsize=(9, 5), dpi=100, facecolor='w', edgecolor='k')
+
+            gs1 = gridspec.GridSpec(1, 1)
+            gs1.update(wspace=0.1, hspace=0.1, top=None, left=0.13, right=0.98)
+            ax = fig.add_subplot(gs1[0, 0])
+
+        is_x_lim = xlim is not None
+        is_y_lim = ylim is not None
+
+        if x == 'r':
+            x = self.r
+            ax.set_xlabel(r'R [cm]')
+        elif x == 'm':
+            x = self.m / phys.M_sun
+            ax.set_xlabel(r'M [$M_\odot$]')
+        else:
+            x = self.r
+            ax.set_xscale('log')
+            ax.set_xlabel(r'R [cm]')
+
+        y = self.rho
+        ax.semilogy(x, y, color='black', ls='-', linewidth=lw)
+
+        if not is_x_lim and len(x) > 0:
+            xlim = [np.min(x), np.max(x)]
+        if not is_y_lim and len(y) > 0:
+            ylim = [np.min(y), np.max(y)]
+
+        ax.set_xlim(xlim)
+        ax.set_ylim(ylim)
+        ax.set_ylabel(r'$\rho, [g/cm^3]$ ')
+
+        if is_save:
+            fsave = os.path.join(os.path.expanduser('~/'), 'rho_%s.pdf' % self.name)
             logger.info(" Save plot to %s " % fsave)
             ax.get_figure().savefig(fsave, bbox_inches='tight', format='pdf')
 
