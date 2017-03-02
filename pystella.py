@@ -52,6 +52,18 @@ class MyPrompt(HistConsole):
         subprocess.call("{0} {1}".format(script, args), shell=True)
 
     @staticmethod
+    def do_swd(args):
+        """Plot  Stella Shock Wave Details. For help type 'eve -h'.
+        """
+        if len(args) == 0:
+            name = 'No data. Please provide a swd-file.'
+        else:
+            name = args
+        print("swd %s" % name)
+        script = os.path.join(ROOT_DIRECTORY, 'swd.py')
+        subprocess.call("{0} {1}".format(script, args), shell=True)
+
+    @staticmethod
     def do_bands(args):
         """Plot passbands. For help type 'bands -h'.
         """
@@ -77,4 +89,4 @@ class MyPrompt(HistConsole):
 if __name__ == '__main__':
     prompt = MyPrompt()
     prompt.prompt = '> '
-    prompt.cmdloop('Starting prompt...')
+    prompt.cmdloop('Starting prompt...  For help type "help"')

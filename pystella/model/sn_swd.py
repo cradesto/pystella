@@ -58,7 +58,7 @@ class StellaShockWaveDetail:
         Load datd from swd-file
         :return:
         """
-        fname = os.path.abspath(os.path.join(self._path, self._name + ".swd"))
+        fname = os.path.expanduser(os.path.join(self._path, self._name + ".swd"))
         # tout, Km,log10(AMPR),log10(UR*Ry(Km)),Uy(Km)*1.D+6/(UTIME*CRAP),
         # log10(max(UTP*Ty(Km),1.d0)),log10(max(UTP*TpRAD,1.d0)),
         # PLLOG,PLOG,QVLOG,log10(max(eng,1.d-50)),Flum*1.d-40,WRKX(Km);
@@ -165,6 +165,14 @@ class BlockSwd:
 
 
 # ==================================================================
+def isfloat(value):
+    try:
+        float(value)
+        return True
+    except:
+        return False
+
+
 def plot_swd(ax, b, **kwargs):
     lw = 1.
     x, xlabel = b.M, 'Ejecta Mass [Msun]'
@@ -177,8 +185,8 @@ def plot_swd(ax, b, **kwargs):
             x, xlabel = b.R / rnorm, 'Ejecta Radius, [Rsun]'
         elif rnorm == 'm':
             x, xlabel = b.M, 'Ejecta Mass [Msun]'
-        else:
-            x, xlabel = b.R / rnorm, 'Ejecta Radius, [x10^%d cm]' % int(np.log10(rnorm))
+        elif isfloat(rnorm):
+            x, xlabel = b.R / float(rnorm), r'Ejecta Radius, [$\times 10^{%d}$ cm]' % int(np.log10(float(rnorm)))
 
     y = np.log10(b.Rho)
     ax.plot(x, y, label='Rho', color='black', ls="-", linewidth=lw)
@@ -201,9 +209,9 @@ def plot_swd(ax, b, **kwargs):
         ax.set_xlabel(xlabel)
     if 'is_ylabel' in kwargs:
         if kwargs['is_ylabel']:
-            ax.set_ylabel('log10(Rho)')
+            ax.set_ylabel(r'$log_{10}(\rho)$')
     else:
-        ax.set_ylabel('log10(Rho)')
+        ax.set_ylabel(r'$log_{10}(\rho)$')
 
     # Right axe
     ax2 = ax.twinx()
@@ -220,13 +228,13 @@ def plot_swd(ax, b, **kwargs):
         lumnorm = kwargs['lumnorm']
     # y2 = np.ma.log10(b.Lum)
     y2 = np.ma.log10(b.Lum) - np.log10(lumnorm)
-    ax2.plot(x, y2, color='orange', ls="-", label='Lum%d' % int(np.log10(lumnorm)))
+    ax2.plot(x, y2, color='orange', ls="-", label='Lum{0:d}'.format(int(np.log10(lumnorm))))
 
     vnorm = 1.e8
     if 'vnorm' in kwargs:
         vnorm = kwargs['vnorm']
     y2 = b.Vel / vnorm
-    ax2.plot(x, y2, 'b-', label='V%d' % int(np.log10(vnorm)))
+    ax2.plot(x, y2, 'b-', label='V{0:d}'.format(int(np.log10(vnorm))))
 
     # for tl in ax2.get_yticklabels():
     #     tl.set_color('r')
