@@ -55,7 +55,7 @@ def main():
 
     parser.add_argument('--rnorm',
                         required=False,
-                        default=1e8,
+                        default='m',
                         dest="rnorm",
                         help="Radius normalization, example: 'm' or 'sun' or 1e13")
 
