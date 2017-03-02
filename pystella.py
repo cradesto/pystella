@@ -53,7 +53,7 @@ class MyPrompt(HistConsole):
 
     @staticmethod
     def do_swd(args):
-        """Plot  Stella Shock Wave Details. For help type 'eve -h'.
+        """Plot  Stella Shock Wave Details. For help type 'swd -h'.
         """
         if len(args) == 0:
             name = 'No data. Please provide a swd-file.'
