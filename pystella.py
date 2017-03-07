@@ -29,7 +29,7 @@ class MyPrompt(HistConsole):
 
     @staticmethod
     def do_ubv(args):
-        """Plot Stella Light Curves. For help type 'ubv -h'.
+        """Plot Stella Light Curves. For detailed help type 'ubv -h'.
         """
         if len(args) == 0:
             name = 'Please provide a ph-file.'
@@ -41,7 +41,7 @@ class MyPrompt(HistConsole):
 
     @staticmethod
     def do_eve(args):
-        """Plot Stella Light Curves. For help type 'eve -h'.
+        """Plot Stella Light Curves. For detailed help type 'eve -h'.
         """
         if len(args) == 0:
             name = 'No data. Please provide a rho-file.'
@@ -53,7 +53,7 @@ class MyPrompt(HistConsole):
 
     @staticmethod
     def do_swd(args):
-        """Plot  Stella Shock Wave Details. For help type 'swd -h'.
+        """Plot  Stella Shock Wave Details. For detailed help type 'swd -h'.
         """
         if len(args) == 0:
             name = 'No data. Please provide a swd-file.'
@@ -65,7 +65,7 @@ class MyPrompt(HistConsole):
 
     @staticmethod
     def do_bands(args):
-        """Plot passbands. For help type 'bands -h'.
+        """Plot passbands. For detailed help type 'bands -h'.
         """
         if len(args) == 0:
             name = 'All the passbands.'

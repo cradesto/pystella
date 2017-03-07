@@ -338,9 +338,47 @@ def plot_shock_details(swd, times, **kwargs):
     rnorm = kwargs.get('rnorm', 'm')
     vnorm = kwargs.get('vnorm', 1e8)
     lumnorm = kwargs.get('lumnorm', 1e40)
-    font_size = kwargs.get('font_size', 14)
+    font_size = kwargs.get('font_size', 12)
 
-    fig = plt.figure(num=None, figsize=(16, len(times) * 4), dpi=100, facecolor='w', edgecolor='k')
+    # fig = plt.figure(num=None, figsize=(12, len(times) * 4), dpi=100, facecolor='w', edgecolor='k')
+    gs1 = gridspec.GridSpec(len(times), 2)
+    plt.matplotlib.rcParams.update({'font.size': font_size})
+
+    # i = 0
+    # for t in times:
+    #     ax = fig.add_subplot(gs1[i, 0])
+    #     sn_swd.plot_swd(ax, b, is_xlabel=i == len(times) - 1, vnorm=vnorm, lumnorm=lumnorm, rnorm=rnorm,
+    #                     is_legend=is_legend)
+    #     ax2 = fig.add_subplot(gs1[i, 1])
+    #     sn_swd.plot_swd(ax2, b, is_xlabel=i == len(times) - 1, vnorm=vnorm, lumnorm=lumnorm,
+    #                     is_legend=is_legend, is_ylabel=False)
+    #     i += 1
+    # plt.show()
+
+    nrow = len(times)
+    ncol = 2
+    fig = plt.figure(figsize=(12, nrow*4))
+    for i, t in enumerate(times):
+        b = swd.block_nearest(t)
+        ax = fig.add_subplot(nrow, ncol, ncol*i+1)
+        sn_swd.plot_swd(ax, b, is_xlabel=(i == len(times) - 1), vnorm=vnorm, lumnorm=lumnorm, rnorm=rnorm,
+                        is_legend=False, is_yrlabel=False, text_posy=0.93)
+        ax2 = fig.add_subplot(nrow, ncol, ncol*i+2)
+        sn_swd.plot_swd(ax2, b, is_xlabel=(i == len(times) - 1), vnorm=vnorm, lumnorm=lumnorm, rnorm='m',
+                        is_legend=is_legend, is_yllabel=False, text_posy=0.93)
+    fig.subplots_adjust(wspace=0, hspace=0)
+    plt.show()
+    return fig
+
+
+def plot_shock_details_old(swd, times, **kwargs):
+    is_legend = kwargs.get('is_legend', True)
+    rnorm = kwargs.get('rnorm', 'm')
+    vnorm = kwargs.get('vnorm', 1e8)
+    lumnorm = kwargs.get('lumnorm', 1e40)
+    font_size = kwargs.get('font_size', 12)
+
+    fig = plt.figure(num=None, figsize=(12, len(times) * 4), dpi=100, facecolor='w', edgecolor='k')
     gs1 = gridspec.GridSpec(len(times), 2)
     plt.matplotlib.rcParams.update({'font.size': font_size})
 
@@ -356,4 +394,3 @@ def plot_shock_details(swd, times, **kwargs):
         i += 1
     plt.show()
     return fig
-

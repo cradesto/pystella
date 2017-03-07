@@ -191,33 +191,31 @@ class Problem:
         else:
             x = self.r
 
-        x_min = []
-        x_max = []
         y_min = []
         y_max = []
         for el in elements:
             y = self.el(el)
             # y = np.log10(self.el(el))
-            ax.plot(x, y, label='%s' % el, color=colors[el], ls=lntypes[el], linewidth=lw)
+            ax.semilogy(x, y, label='%s' % el, color=colors[el], ls=lntypes[el], linewidth=lw)
             # ax.plot(x, y, label='%s' % el, color=colors[el], marker='o', ls=':', markersize=3)
 
-            if not is_x_lim:
-                x_min.append(np.min(x))
-                x_max.append(np.max(x))
             if not is_y_lim:
                 y_min.append(np.min(y))
                 y_max.append(np.max(y))
 
-        if not is_x_lim:
-            xlim = [np.min(x_min), np.max(x_max)]
         if not is_y_lim:
             ylim = [np.min(y_min), np.max(y_min)]
 
+        if not is_x_lim:
+            xlim = np.min(x), np.max(x)
+
         ax.set_xlim(xlim)
 
-        ax.set_yscale('log')
+        # ax.set_yscale('log')
+        # ax.set_ylim(ylim)
+        # ax.set_ylabel(r'$log10(X_i)$')
         ax.set_ylim(ylim)
-        ax.set_ylabel(r'$log10(X_i)$')
+        ax.set_ylabel(r'$X_i$')
 
         if is_new_plot:
             ax.legend(prop={'size': 9}, loc=loc, ncol=leg_ncol, fancybox=False, frameon=True)

@@ -14,6 +14,7 @@ from matplotlib import gridspec
 
 from pystella.model import sn_swd
 from pystella.model.stella import Stella
+from pystella.rf import light_curve_plot as lcp
 
 matplotlib.rcParams['backend'] = "Qt4Agg"
 import matplotlib.pyplot as plt
@@ -55,7 +56,7 @@ def main():
 
     parser.add_argument('--rnorm',
                         required=False,
-                        default='mx`',
+                        default='m',
                         dest="rnorm",
                         help="Radius normalization, example: 'm' or 'sun' or 1e13")
 
@@ -73,12 +74,13 @@ def main():
                         dest="lumnorm",
                         help="Luminously normalization, example: 1e40")
 
+    d = '1:4:15:65'
     parser.add_argument('-t', '--time',
                         required=False,
                         type=str,
-                        default='2:10:50',
+                        default=d,
                         dest="times",
-                        help="Plot shock wave snap for selected time moments. \n   Available: {0}".format('-'.join(sneve.eve_elements)))
+                        help="Plot shock wave snap for selected time moments. Default: {0}".format('2:10:50'))
 
     args, unknownargs = parser.parse_known_args()
 
@@ -105,21 +107,24 @@ def main():
     stella = Stella(name, path=path)
     swd = stella.get_swd().load()
 
+    lcp.plot_shock_details(swd, times=times, vnorm=args.vnorm, rnorm=args.rnorm,
+                           lumnorm=args.lumnorm, is_legend=False)
+
     # times = [1., 2., 3.]
-
-    fig = plt.figure(num=None, figsize=(8, 3*len(times)), dpi=100, facecolor='w', edgecolor='k')
-    gs1 = gridspec.GridSpec(len(times), 1)
-    plt.matplotlib.rcParams.update({'font.size': 14})
-
-    i = 0
-    for t in times:
-        ax = fig.add_subplot(gs1[i, 0])
-        b = swd.block_nearest(t)
-        sn_swd.plot_swd(ax, b, is_xlabel=i == len(times) - 1, rnorm=args.rnorm, vnorm=args.vnorm, lumnorm=args.lumnorm, is_legend=False)
-        # ax.grid()
-        i += 1
-
-    plt.show()
+    #
+    # fig = plt.figure(num=None, figsize=(8, 3*len(times)), dpi=100, facecolor='w', edgecolor='k')
+    # gs1 = gridspec.GridSpec(len(times), 1)
+    # plt.matplotlib.rcParams.update({'font.size': 14})
+    #
+    # i = 0
+    # for t in times:
+    #     ax = fig.add_subplot(gs1[i, 0])
+    #     b = swd.block_nearest(t)
+    #     sn_swd.plot_swd(ax, b, is_xlabel=i == len(times) - 1, rnorm=args.rnorm, vnorm=args.rnorm, lumnorm=args.lumnorm, is_legend=False)
+    #     # ax.grid()
+    #     i += 1
+    #
+    # plt.show()
 
 
 if __name__ == '__main__':

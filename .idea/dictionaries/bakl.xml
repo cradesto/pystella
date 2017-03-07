@@ -54,6 +54,7 @@
       <w>integralfunc</w>
       <w>ipmu</w>
       <w>irow</w>
+      <w>islim</w>
       <w>jacobian</w>
       <w>kait</w>
       <w>kurtenkov</w>
@@ -129,6 +130,7 @@
       <w>vels</w>
       <w>viktoriya</w>
       <w>vname</w>
+      <w>vnorm</w>
       <w>wien</w>
       <w>wlrange</w>
       <w>wrkx</w>
@@ -139,6 +141,7 @@
       <w>xstart</w>
       <w>yaxis</w>
       <w>yerr</w>
+      <w>ylabel</w>
       <w>ylim</w>
       <w>ylims</w>
       <w>yyerr</w>

@@ -174,48 +174,59 @@ def isfloat(value):
 
 
 def plot_swd(ax, b, **kwargs):
+    is_legend = kwargs.get('is_legend', True)
+    islim = kwargs.get('islim', False)
+    is_xlabel = kwargs.get('is_xlabel', True)
+    is_yllabel = kwargs.get('is_yllabel', True)
+    is_yrlabel = kwargs.get('is_yrlabel', True)
+    rnorm = kwargs.get('rnorm', 'm')
+    text_posy = kwargs.get('text_posy', 1.01)
+
+    vnorm = kwargs.get('vnorm',  1.e8)
+    lumnorm = kwargs.get('lumnorm',  1.e40)
+
     lw = 1.
-    x, xlabel = b.M, 'Ejecta Mass [Msun]'
 
-    if 'rnorm' in kwargs:
-        rnorm = kwargs['rnorm']
-
-        if rnorm == 'sun':
-            rnorm = phys.R_sun
-            x, xlabel = b.R / rnorm, 'Ejecta Radius, [Rsun]'
-        elif rnorm == 'm':
-            x, xlabel = b.M, 'Ejecta Mass [Msun]'
-        elif isfloat(rnorm):
-            x, xlabel = b.R / float(rnorm), r'Ejecta Radius, [$\times 10^{%d}$ cm]' % int(np.log10(float(rnorm)))
+    if rnorm == 'sun':
+        rnorm = phys.R_sun
+        x, xlabel = b.R / rnorm, 'Ejecta Radius, [Rsun]'
+    elif isfloat(rnorm):
+        x, xlabel = b.R / float(rnorm), r'Ejecta Radius, [$\times 10^{%d}$ cm]' % int(np.log10(float(rnorm)))
+    else:
+        x, xlabel = b.M, 'Ejecta Mass [Msun]'
 
     y = np.log10(b.Rho)
     ax.plot(x, y, label='Rho', color='black', ls="-", linewidth=lw)
-    ax.text(.5, 1.01, '%5.2f days' % b.Time, horizontalalignment='center', transform=ax.transAxes)
+    ax.text(.5, text_posy, '%5.2f days' % b.Time, horizontalalignment='center', transform=ax.transAxes)
+    # ax.text(.5, 1.01, '%5.2f days' % b.Time, horizontalalignment='center', transform=ax.transAxes)
 
     if 'xlim' in kwargs:
         xlim = kwargs['xlim']
     else:
-        xlim = [min(x), max(x) * 1.1]
+        xlim = [min(x), max(x) * 1.2]
 
     if 'ylim' in kwargs:
         ylim = kwargs['ylim']
     else:
         ylim = [np.min(y), np.max(y) + 2]
 
-    if 'is_xlabel' in kwargs:
-        if kwargs['is_xlabel']:
-            ax.set_xlabel(xlabel)
-    else:
+    if is_xlabel:
         ax.set_xlabel(xlabel)
-    if 'is_ylabel' in kwargs:
-        if kwargs['is_ylabel']:
-            ax.set_ylabel(r'$log_{10}(\rho)$')
     else:
-        ax.set_ylabel(r'$log_{10}(\rho)$')
+        ax.set_xticklabels([])
 
     # Right axe
     ax2 = ax.twinx()
     ax2.set_ylim((0., 10.))
+
+    if is_yllabel:
+        ax.set_ylabel(r'$\log_{10}(\rho)$')
+    else:
+        ax.set_yticklabels([])
+    if is_yrlabel:
+        ax2.set_ylabel('T, Vel, Lum, Tau')
+    else:
+        ax2.set_yticklabels([])
 
     y2 = b.Tau
     ax2.plot(x, y2, 'g-', label='tau')
@@ -223,30 +234,18 @@ def plot_swd(ax, b, **kwargs):
     y2 = np.log10(b.T)
     ax2.plot(x, y2, 'r-', label='T')
 
-    lumnorm = 1.e40
-    if 'lumnorm' in kwargs:
-        lumnorm = kwargs['lumnorm']
-    # y2 = np.ma.log10(b.Lum)
     y2 = np.ma.log10(b.Lum) - np.log10(lumnorm)
     ax2.plot(x, y2, color='orange', ls="-", label='Lum{0:d}'.format(int(np.log10(lumnorm))))
 
-    vnorm = 1.e8
-    if 'vnorm' in kwargs:
-        vnorm = kwargs['vnorm']
     y2 = b.Vel / vnorm
     ax2.plot(x, y2, 'b-', label='V{0:d}'.format(int(np.log10(vnorm))))
 
-    # for tl in ax2.get_yticklabels():
-    #     tl.set_color('r')
-    is_legend = True
-    if 'is_legend' in kwargs:
-        is_legend = kwargs['is_legend']
     if is_legend:
         ax.legend(loc=2, prop={'size': 9})
-        ax2.legend(prop={'size': 9})
-    ax2.set_ylabel('T, Vel, Lum, Tau')
+        ax2.legend(loc=1, prop={'size': 9})
 
-    ax.set_xlim(xlim)
-    ax.set_ylim(ylim)
+    if islim:
+        ax.set_xlim(xlim)
+        ax.set_ylim(ylim)
 
     # ax.grid()

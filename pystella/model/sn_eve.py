@@ -260,22 +260,24 @@ class PreSN(object):
             gs1.update(wspace=0.1, hspace=0.1, top=0.97, left=0.12, right=0.98)
             ax = fig.add_subplot(gs1[0, 0])
 
+            if x == 'r':
+                ax.set_xlabel(r'R [cm]')
+            elif x == 'm':
+                ax.set_xlabel(r'M [$M_\odot$]')
+            else:
+                ax.set_xscale('log')
+                ax.set_xlabel(r'R [cm]')
+
         is_x_lim = xlim is not None
         is_y_lim = ylim is not None
 
         if x == 'r':
             x = self.r
-            ax.set_xlabel(r'R [cm]')
         elif x == 'm':
             x = self.m / phys.M_sun
-            ax.set_xlabel(r'M [$M_\odot$]')
         else:
             x = self.r
-            ax.set_xscale('log')
-            ax.set_xlabel(r'R [cm]')
 
-        x_min = []
-        x_max = []
         y_min = []
         y_max = []
         for el in elements:
@@ -283,21 +285,19 @@ class PreSN(object):
                 # y = self.lg_el(el)
                 y = self.el(el)
                 # y[y<=0] == 1e-15
-                ax.semilogy(x, y, label='%s' % el, color=colors[el], ls=lntypes[el], linewidth=lw)
+                ax.semilogy(x, y, label='{0}'.format(el), color=colors[el], ls=lntypes[el], linewidth=lw)
 
-                if not is_x_lim:
-                    x_min.append(np.min(x))
-                    x_max.append(np.max(x))
                 if not is_y_lim:
                     y_min.append(np.min(y))
                     y_max.append(np.max(y))
 
-        if not is_x_lim and len(x_min) > 0:
-            xlim = [np.min(x_min), np.max(x_max)]
         if not is_y_lim and len(y_min) > 0:
             ylim = [np.min(y_min), np.max(y_min)]
 
+        if not is_x_lim:
+            xlim = np.min(x), np.max(x)
         ax.set_xlim(xlim)
+
         ax.set_ylim(ylim)
         ax.set_ylabel(r'$X_i$')
 
