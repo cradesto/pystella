@@ -369,15 +369,21 @@ def plot_shock_details(swd, times, **kwargs):
         # plot mass
         ax2 = fig.add_subplot(nrow, ncol, ncol*i+2)
         sn_swd.plot_swd(ax2, b, is_xlabel=(i == len(times) - 1), vnorm=vnorm, lumnorm=lumnorm,
-                        rnorm='m', is_legend=is_legend, is_yllabel=False, text_posy=0.92, is_day=False)
+                        rnorm='m', is_legend=True, is_yllabel=False, text_posy=0.92, is_day=False)
 
     # for i, t in list(reversed(list(enumerate(times)))):
     # Set limits
     # ylim = None
     for i, t in enumerate(times):
         ax = fig.add_subplot(nrow, ncol, ncol*i+1)
+        ax2 = fig.add_subplot(nrow, ncol, ncol*i+2)
         ax.set_xlim(xlim)
         ax.set_ylim(ylim)
+        ax2.set_ylim(ylim)
+
+        # if is_legend:
+        #     ax.legend(loc=1, prop={'size': 8})
+        #     ax2.legend(loc=2, prop={'size': 8})
 
     fig.subplots_adjust(wspace=0, hspace=0)
     plt.show()

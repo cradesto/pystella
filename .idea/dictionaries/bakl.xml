@@ -94,6 +94,7 @@
       <w>rednova</w>
       <w>refsdal</w>
       <w>rnorm</w>
+      <w>rsun</w>
       <w>sandybrown</w>
       <w>schlafly</w>
       <w>sdss</w>
@@ -145,6 +146,8 @@
       <w>ylabel</w>
       <w>ylim</w>
       <w>ylims</w>
+      <w>yllabel</w>
+      <w>yrlabel</w>
       <w>yyerr</w>
       <w>ztdata</w>
     </words>

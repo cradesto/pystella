@@ -185,8 +185,8 @@ def plot_swd(ax, b, **kwargs):
     rnorm = kwargs.get('rnorm', 'm')
     text_posy = kwargs.get('text_posy', 1.01)
 
-    vnorm = kwargs.get('vnorm',  1.e8)
-    lumnorm = kwargs.get('lumnorm',  1.e40)
+    vnorm = kwargs.get('vnorm', 1.e8)
+    lumnorm = kwargs.get('lumnorm', 1.e40)
 
     lw = 1.
 
@@ -209,7 +209,7 @@ def plot_swd(ax, b, **kwargs):
         ax.plot(x, y, label='Rho', color='black', ls="-", linewidth=lw)
 
     if is_day:
-        ax.text(.5, text_posy, '%5.2f days' % b.Time, horizontalalignment='center',
+        ax.text(.05, text_posy, '%5.2f days' % b.Time, horizontalalignment='left',
                 transform=ax.transAxes)
     # ax.text(.5, 1.01, '%5.2f days' % b.Time, horizontalalignment='center', transform=ax.transAxes)
 
@@ -258,6 +258,5 @@ def plot_swd(ax, b, **kwargs):
     if is_legend:
         ax.legend(loc=2, prop={'size': 8})
         ax2.legend(loc=1, prop={'size': 8}, ncol=2)
-
 
     ax.grid(linestyle=':')
