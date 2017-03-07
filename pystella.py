@@ -89,4 +89,4 @@ class MyPrompt(HistConsole):
 if __name__ == '__main__':
     prompt = MyPrompt()
     prompt.prompt = '> '
-    prompt.cmdloop('Starting prompt...  For help type "help"')
+    prompt.cmdloop('Let''s study a supernova ... \n type "help" for help ')

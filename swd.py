@@ -56,7 +56,7 @@ def main():
 
     parser.add_argument('--rnorm',
                         required=False,
-                        default='m',
+                        default='lgr',  # 1e14,
                         dest="rnorm",
                         help="Radius normalization, example: 'm' or 'sun' or 1e13")
 
@@ -103,12 +103,12 @@ def main():
         sys.exit(2)
 
     times = list(map(float, args.times.split(':')))
-    print("Run swd-model %s in %s for %s moments" % (name, path, args.times))
+    print("Run swd-model %s %s for %s moments" % (path, name, args.times))
     stella = Stella(name, path=path)
     swd = stella.get_swd().load()
 
     lcp.plot_shock_details(swd, times=times, vnorm=args.vnorm, rnorm=args.rnorm,
-                           lumnorm=args.lumnorm, is_legend=False)
+                           lumnorm=args.lumnorm, is_legend=True)
 
     # times = [1., 2., 3.]
     #

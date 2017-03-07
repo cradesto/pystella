@@ -76,6 +76,7 @@
       <w>ncol</w>
       <w>ndim</w>
       <w>nfreq</w>
+      <w>nrow</w>
       <w>nsteps</w>
       <w>ntimes</w>
       <w>nugent</w>
