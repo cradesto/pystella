@@ -340,19 +340,20 @@ def plot_shock_details(swd, times, **kwargs):
     lumnorm = kwargs.get('lumnorm', 1e40)
     font_size = kwargs.get('font_size', 12)
 
-    # fig = plt.figure(num=None, figsize=(12, len(times) * 4), dpi=100, facecolor='w', edgecolor='k')
-    # gs1 = gridspec.GridSpec(len(times), 2)
-    plt.matplotlib.rcParams.update({'font.size': font_size})
-
     xlim = None
     ylim = None
     nrow = len(times)
     ncol = 2
     fig = plt.figure(figsize=(12, nrow*4))
+    plt.matplotlib.rcParams.update({'font.size': font_size})
+    # fig = plt.figure(num=None, figsize=(12, len(times) * 4), dpi=100, facecolor='w', edgecolor='k')
+    # gs1 = gridspec.GridSpec(len(times), 2)
+
     for i, t in enumerate(times):
         b = swd.block_nearest(t)
         # plot radius
         ax = fig.add_subplot(nrow, ncol, ncol*i+1)
+        # plot swd(radius)
         sn_swd.plot_swd(ax, b, is_xlabel=(i == len(times) - 1), vnorm=vnorm, lumnorm=lumnorm,
                         rnorm=rnorm, is_legend=False, is_yrlabel=False, text_posy=0.92)
         x = ax.get_xlim()
@@ -366,21 +367,21 @@ def plot_shock_details(swd, times, **kwargs):
         else:
             ylim = (min(y[0], ylim[0]), max(y[1], ylim[1]))
 
-        # plot mass
-        ax2 = fig.add_subplot(nrow, ncol, ncol*i+2)
-        sn_swd.plot_swd(ax2, b, is_xlabel=(i == len(times) - 1), vnorm=vnorm, lumnorm=lumnorm,
-                        rnorm='m', is_legend=is_legend, is_yllabel=False, text_posy=0.92, is_day=False)
-
     # for i, t in list(reversed(list(enumerate(times)))):
-    # Set limits
     # ylim = None
     for i, t in enumerate(times):
+        # plot mass
+        b = swd.block_nearest(t)
+        ax2 = fig.add_subplot(nrow, ncol, ncol*i+2)
+        sn_swd.plot_swd(ax2, b, is_xlabel=(i == len(times) - 1), vnorm=vnorm, lumnorm=lumnorm,
+                        rnorm='m', is_legend=i==0, is_yllabel=False, text_posy=0.92, is_day=False)
+        # Set limits
         ax = fig.add_subplot(nrow, ncol, ncol*i+1)
         ax.set_xlim(xlim)
         ax.set_ylim(ylim)
+        ax2.set_ylim(ylim)
 
     fig.subplots_adjust(wspace=0, hspace=0)
-    plt.show()
     return fig
 
 

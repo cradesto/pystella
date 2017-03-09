@@ -2,23 +2,18 @@
 # -*- coding: utf-8 -*-
 
 import argparse
+import logging
 import os
 import sys
-from os.path import dirname, join, abspath
-import logging
+from os.path import dirname
 
 import matplotlib
 
-# matplotlib.use("Agg")
-from matplotlib import gridspec
-
-from pystella.model import sn_swd
 from pystella.model.stella import Stella
 from pystella.rf import light_curve_plot as lcp
 
 matplotlib.rcParams['backend'] = "Qt4Agg"
 import matplotlib.pyplot as plt
-import pystella.model.sn_eve as sneve
 
 __author__ = 'bakl'
 
@@ -27,16 +22,6 @@ logging.basicConfig()
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
-
-def usage():
-    print("Usage:")
-    print("  swd.py [params]")
-    print("  -t <bands:shift>: string, default: 1:10:50.")
-    print("  -i <model name>.  Example: cat_R450_M15_Ni007_E7")
-    print("  -p <model directory>, default: ./")
-    print("  -h  print usage")
-    print("   --- ")
 
 
 def main():
@@ -82,6 +67,16 @@ def main():
                         dest="times",
                         help="Plot shock wave snap for selected time moments. Default: {0}".format('2:10:50'))
 
+    parser.add_argument('-c', action='store_const', dest='constant_value',
+                        const='value-to-store',
+                        help='Store a constant value')
+
+    parser.add_argument('-s', '--save',
+                        action='store_const',
+                        const=True,
+                        dest="is_save",
+                        help="To save plot to pdf-file. Default: False".format('2:10:50'))
+
     args, unknownargs = parser.parse_known_args()
 
     name = None
@@ -107,24 +102,14 @@ def main():
     stella = Stella(name, path=path)
     swd = stella.get_swd().load()
 
-    lcp.plot_shock_details(swd, times=times, vnorm=args.vnorm, rnorm=args.rnorm,
-                           lumnorm=args.lumnorm, is_legend=True)
+    fig = lcp.plot_shock_details(swd, times=times, vnorm=args.vnorm, rnorm=args.rnorm,
+                                 lumnorm=args.lumnorm, is_legend=True)
 
-    # times = [1., 2., 3.]
-    #
-    # fig = plt.figure(num=None, figsize=(8, 3*len(times)), dpi=100, facecolor='w', edgecolor='k')
-    # gs1 = gridspec.GridSpec(len(times), 1)
-    # plt.matplotlib.rcParams.update({'font.size': 14})
-    #
-    # i = 0
-    # for t in times:
-    #     ax = fig.add_subplot(gs1[i, 0])
-    #     b = swd.block_nearest(t)
-    #     sn_swd.plot_swd(ax, b, is_xlabel=i == len(times) - 1, rnorm=args.rnorm, vnorm=args.rnorm, lumnorm=args.lumnorm, is_legend=False)
-    #     # ax.grid()
-    #     i += 1
-    #
-    # plt.show()
+    plt.show()
+    if args.is_save:
+        fsave = os.path.expanduser("~/swd_{0}_t{1}.pdf".format(name, str.replace(args.times, ':', '-')))
+        print("Save plot to {0}".format(fsave))
+        fig.savefig(fsave, bbox_inches='tight')
 
 
 if __name__ == '__main__':

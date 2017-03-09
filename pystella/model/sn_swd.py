@@ -245,7 +245,7 @@ def plot_swd(ax, b, **kwargs):
     ax2.plot(x, y2, 'g-', label='tau')
 
     y2 = np.log10(b.T)
-    ax2.plot(x, y2, 'r-', label='T')
+    ax2.plot(x, y2, 'r-', label=r'$\log(T)$')
 
     y2 = np.ma.log10(b.Lum) - np.log10(lumnorm)
     y22 = np.ma.log10(-b.Lum) - np.log10(lumnorm)
