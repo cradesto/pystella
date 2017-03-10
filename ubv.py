@@ -8,7 +8,8 @@ from os.path import dirname
 
 import matplotlib
 # matplotlib.use("Agg")
-matplotlib.rcParams['backend'] = "Qt4Agg"
+# matplotlib.rcParams['backend'] = "TkAgg"
+#matplotlib.rcParams['backend'] = "Qt4Agg"
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 
@@ -39,8 +40,9 @@ def plot_all(models_vels, models_dic, bands, call=None, xlim=None, ylim=None,
     is_vel = models_vels is not None
 
     # setup figure
-    plt.matplotlib.rcParams.update({'font.size': 14})
-    fig = plt.figure(num=None, figsize=(12, 12), dpi=100, facecolor='w', edgecolor='k')
+    plt.matplotlib.rcParams.update({'font.size': 12})
+    fig = plt.figure(figsize=(12, 12))
+#    fig = plt.figure(num=None, figsize=(12, 12), dpi=100, facecolor='w', edgecolor='k')
 
     if is_vel:
         gs1 = gridspec.GridSpec(4, 1)
@@ -77,7 +79,8 @@ def plot_all(models_vels, models_dic, bands, call=None, xlim=None, ylim=None,
 
     plt.grid()
 
-    plt.show(block=True)
+    plt.show()
+#    plt.show(block=True)
 
     if fsave is not None:
         print("Save plot to %s " % fsave)
