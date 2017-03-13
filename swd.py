@@ -12,7 +12,8 @@ import matplotlib
 from pystella.model.stella import Stella
 from pystella.rf import light_curve_plot as lcp
 
-matplotlib.rcParams['backend'] = "Qt4Agg"
+# matplotlib.rcParams['backend'] = "TkAgg"
+# matplotlib.rcParams['backend'] = "Qt4Agg"
 import matplotlib.pyplot as plt
 
 __author__ = 'bakl'

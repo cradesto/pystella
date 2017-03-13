@@ -10,7 +10,8 @@ import logging
 import matplotlib
 
 # matplotlib.use("Agg")
-matplotlib.rcParams['backend'] = "Qt4Agg"
+# matplotlib.rcParams['backend'] = "TkAgg"
+# matplotlib.rcParams['backend'] = "Qt4Agg"
 import matplotlib.pyplot as plt
 import pystella.model.sn_eve as sneve
 
