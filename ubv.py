@@ -96,7 +96,8 @@ def usage():
     print("  -i <model name>.  Example: cat_R450_M15_Ni007_E7")
     print("  -p <model directory>, default: ./")
     print("  -e <extinction, E(B-V)> is used to define A_nu, default: 0 ")
-    print("  -c <callback> [plot_tolstov, popov[:R:M:E[FOE]:Mni]]. You can add parameters in format func:params")
+    print("  -c <callback> [lcobs:fname:marker:dt:dm, popov[:R:M:E[FOE]:Mni]]. "
+          "You can add parameters in format func:params")
     print("  -d <distance> [pc].  Default: 10 pc")
     print("  -m <magnification>.  Default: None, used for grav lens")
     print("  -q  turn off quiet mode: print info and additional plots")
@@ -121,6 +122,7 @@ def lc_wrapper(param, p=None):
             p = os.getcwd()
         else:
             p = cb.plugin_path
+    print("Call: {} from {}".format(fname, p))
     c = cb.CallBack(fname, path=p, args=a, load=1)
     print("Call: %s from %s" % (c.Func, c.FuncFileFull))
     return c

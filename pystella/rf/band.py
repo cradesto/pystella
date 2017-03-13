@@ -11,6 +11,7 @@ __author__ = 'bakl'
 
 
 # see bands: http://svo2.cab.inta-csic.es/theory/fps3/index.php?mode=browse&gname=GALEX
+# see personal page Brad Tucker: http://www.mso.anu.edu.au/~brad/filters.html
 
 
 class Band(object):
