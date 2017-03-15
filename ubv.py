@@ -276,8 +276,9 @@ def main(name='', model_ext='.ph'):
             i += 1
             # mags = lcf.compute_mag(name, path, bands, ext=ext, z=z, distance=distance, magnification=magnification,
             #                        t_diff=t_diff, is_show_info=not is_quiet, is_save=is_save_mags)
-            curves = lcf.curves_compute(name, path, bands, z=z, distance=distance, magnification=magnification,
-                                        is_save=is_save_mags)
+            curves = lcf.curves_compute(name, path, bands, z=z, distance=distance,
+                                        magnification=magnification)
+
             if is_extinction:
                 lcf.curves_reddening(curves, ebv=e, z=z)
             # lcf.plot_curves(curves)
@@ -285,7 +286,12 @@ def main(name='', model_ext='.ph'):
             # models_mags[name] = mags
             models_mags[name] = curves
 
-            if not is_quiet:
+            if is_save_mags:
+                fname = os.path.join(path, name + '.ubv')
+                lcf.curves_save(curves, fname)
+                print("Magnitudes have been saved to " + fname)
+
+            if not (is_save_mags or is_quiet):
                 # z, distance = 0.145, 687.7e6  # pc for comparison with Maria
                 # lcf.plot_bands(mags, bands, title=name, fname='', is_time_points=is_plot_time_points)
                 lcp.plot_bands(curves, bands, title=name, fname='', is_time_points=is_plot_time_points)
@@ -307,25 +313,26 @@ def main(name='', model_ext='.ph'):
             else:
                 label = "z=%4.2f D=%6.2e mu=%3.1f ebv=%4.2f" % (z, distance, magnification, e)
 
-        if is_save_plot:
-            if len(fsave) == 0:
-                if is_vel:
-                    fsave = "ubv_vel_%s" % name
-                else:
-                    fsave = "ubv_%s" % name
+        if not is_save_mags:
+            if is_save_plot:
+                if len(fsave) == 0:
+                    if is_vel:
+                        fsave = "ubv_vel_%s" % name
+                    else:
+                        fsave = "ubv_%s" % name
 
-            if is_extinction and e > 0:
-                fsave = "%s_e0%2d" % (fsave, int(e * 100))  # bad formula for name
+                if is_extinction and e > 0:
+                    fsave = "%s_e0%2d" % (fsave, int(e * 100))  # bad formula for name
 
-            d = os.path.expanduser('~/')
-            # d = '/home/bakl/Sn/my/conf/2016/snrefsdal/img'
-            fsave = os.path.join(d, fsave) + '.pdf'
+                d = os.path.expanduser('~/')
+                # d = '/home/bakl/Sn/my/conf/2016/snrefsdal/img'
+                fsave = os.path.join(d, fsave) + '.pdf'
 
-        plot_all(models_vels, models_mags, bands, call=callback, xlim=xlim, ylim=ylim,
-                 is_time_points=is_plot_time_points, title=label, fsave=fsave, bshift=bshift)
-        # plot_all(dic_results, bands,  xlim=(-10, 410), is_time_points=is_plot_time_points)
-        # plot_all(dic_results, bands, xlim=(-10, 410), callback=callback, is_time_points=is_plot_time_points)
-        # plot_all(dic_results, bands,  ylim=(40, 23),  is_time_points=is_plot_time_points)
+            plot_all(models_vels, models_mags, bands, call=callback, xlim=xlim, ylim=ylim,
+                     is_time_points=is_plot_time_points, title=label, fsave=fsave, bshift=bshift)
+            # plot_all(dic_results, bands,  xlim=(-10, 410), is_time_points=is_plot_time_points)
+            # plot_all(dic_results, bands, xlim=(-10, 410), callback=callback, is_time_points=is_plot_time_points)
+            # plot_all(dic_results, bands,  ylim=(40, 23),  is_time_points=is_plot_time_points)
     else:
         print("There are no models in the directory: %s with extension: %s " % (path, model_ext))
 

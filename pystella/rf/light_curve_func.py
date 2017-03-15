@@ -80,7 +80,7 @@ def curves_save(curves, fname, sep='\t'):
 
 
 def curves_compute(name, path, bands, z=0., distance=10., magnification=1.,
-                   t_beg=0., t_end=None, is_show_info=False, is_save=False):
+                   t_beg=0., t_end=None, is_show_info=False):
     """
         Compute magnitude in bands for the 'name' model.
     :param name: the name of a model and data files
@@ -92,7 +92,6 @@ def curves_compute(name, path, bands, z=0., distance=10., magnification=1.,
     :param t_end:
     :param t_beg:
     :param is_show_info: flag to write some information, default True
-    :param is_save: flag to save result in file, default False
     :return: dictionary with keys = bands, value = star's magnitudes
     """
     if len(bands) == 0:
@@ -117,11 +116,6 @@ def curves_compute(name, path, bands, z=0., distance=10., magnification=1.,
     #     # time = serial_spec.times * (1. + z)
     #     # lc = LightCurve(b, time, mags)
     #     curves.add(lc)
-
-    if is_save:
-        fname = os.path.join(path, name + '.ubv')
-        curves_save(curves, fname)
-        print("Magnitudes have been saved to " + fname)
 
     if is_show_info:
         # print the time of maximum LC
