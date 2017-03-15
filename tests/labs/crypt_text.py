@@ -13,7 +13,7 @@ def decrypt_text(crypt_text, dic_key):
     mapping = {k: '<%s>' % i for i, k in zip(range(len(dic_key)), dic_key.keys())}
 
     # заменить все ключи на теги: <1>
-    for k, v in mapping.iteritems():
+    for k, v in mapping.items():
         crypt_text = crypt_text.replace(k, v)
 
     # заменить все вхождения ключей в текст на их значение
@@ -25,10 +25,10 @@ def decrypt_text(crypt_text, dic_key):
 
 
 def usage():
-    print "Usage:"
-    print "  %s [params]" % basename(__file__)
-    print "  -k <keys>: string, default: a-b_b_c_c-d"
-    print "  -i <text file name>.  Example: puzzle_25.txt"
+    print("Usage:")
+    print("  %s [params]" % basename(__file__))
+    print("  -k <keys>: string, default: a-b_b_c_c-d")
+    print("  -i <text file name>.  Example: puzzle_25.txt")
 
 
 def main():
@@ -39,7 +39,7 @@ def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], "i:k:")
     except getopt.GetoptError as err:
-        print str(err)  # will print something like "option -a not recognized"
+        print(str(err))  # will print something like "option -a not recognized"
         usage()
         sys.exit(2)
 
@@ -57,17 +57,17 @@ def main():
         if opt == '-i':
             fname = os.path.expanduser(str(arg))
             if not isfile(fname):
-                print "No such file: " + fname
+                print("No such file: " + fname)
                 sys.exit(2)
             continue
 
     with open(fname, 'r') as f:
         read_text = f.read()
-        f.closed
 
     # key = {'a': 'b', 'b': 'c'}
     res = decrypt_text(read_text.decode('utf-8').lower(), mapping)
-    print res
+    print(res)
+
 
 
 if __name__ == '__main__':

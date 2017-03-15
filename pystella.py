@@ -40,6 +40,18 @@ class MyPrompt(HistConsole):
         subprocess.call("{0} {1}".format(script, args), shell=True)
 
     @staticmethod
+    def do_spec(args):
+        """Plot Stella Light Curves. For detailed help type 'spec -h'.
+        """
+        if len(args) == 0:
+            name = 'Please provide a ph-file.'
+        else:
+            name = args
+        print("spec %s" % name)
+        script = os.path.join(ROOT_DIRECTORY, 'plot_spec.py')
+        subprocess.call("{0} {1}".format(script, args), shell=True)
+
+    @staticmethod
     def do_eve(args):
         """Plot Stella Light Curves. For detailed help type 'eve -h'.
         """

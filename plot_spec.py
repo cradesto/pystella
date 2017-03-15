@@ -280,7 +280,7 @@ def plot_spec_t(series, wl_lim=None, moments=None):
     z = spec_array.flatten()
 
     # filters
-    is_z = z > np.max(z)*1.e-20
+    is_z = z > np.max(z) * 1.e-20
     is_y = (y > wl_lim[0]) & (y < wl_lim[1])
 
     is_good = is_y & is_z
@@ -350,7 +350,7 @@ def plot_spec_t(series, wl_lim=None, moments=None):
 
 
 def planck_fit(star, bset):
-    sp = spectrum.SpectrumDilutePlanck(star.Freq, star.get_Tcol(bset), star.get_zeta(bset)**2)
+    sp = spectrum.SpectrumDilutePlanck(star.Freq, star.get_Tcol(bset), star.get_zeta(bset) ** 2)
     star_bb = Star("bb", sp)
     star_bb.set_radius_ph(star.radius_ph)
     star_bb.set_distance(star.distance)
@@ -359,7 +359,7 @@ def planck_fit(star, bset):
 
 def epsilon(x, freq, mag, bands, radius, dist):
     temp_color, zeta = x
-    sp = spectrum.SpectrumDilutePlanck(freq, temp_color, zeta**2)
+    sp = spectrum.SpectrumDilutePlanck(freq, temp_color, zeta ** 2)
 
     star = Star("bb", sp)
     star.set_radius_ph(radius)
@@ -389,7 +389,7 @@ def interval2float(v):
     elif len(a) == 2 and len(a[1]) == 0:
         return float(a[0]), float("inf")
     elif len(a) == 2:
-        return map(np.float, str(v).split(':'))
+        return list(map(np.float, str(v).split(':')))
     elif len(a) == 1:
         return float(v[0])
     else:
@@ -409,15 +409,40 @@ def usage():
     print("  -s  silence mode: no info, no plot")
     print("  -t  time interval [day]. Example: 5.:75.")
     print("  -w  wave length interval [A]. Example: 1.:25e3")
+    print("  -a  write flux to magAB")
     print("  -h  print usage")
+
+
+def write_magAB(series, d=10):
+    """
+    Write SED in AB mag
+    :param series:
+    :param d: distance [pc]
+    :return:
+    """
+    print("times: {0} freqs: {1}  [{1}]".format(len(series.Time), len(series.get_spec(0).Freq), series.Name))
+    print("{0}".format(' '.join(map(str, series.get_spec(0).Freq))))
+    for i, t in enumerate(series.Time):
+        spec = series.get_spec(i)
+        # freq = s.Freq
+        # flux = spec.Flux
+        # mAB = rf.Flux2MagAB(flux)
+        star = Star("%s: %f" % (series.Name, t), spec=spec, is_flux_eq_luminosity=True)
+        star.set_distance(d*phys.pc)
+        # print("{0}  {1} ".format(t, '  '.join(map(str, star.Flux))))
+        print("{0}  {1} ".format(t, '  '.join(map(str, star.FluxAB))))
+        # print("{0}  {1} ".format(t, '  '.join(map(str, flux))))
+        # print("{0}  {1} ".format(t, '  '.join(map(str, mAB))))
 
 
 def main():
     is_silence = False
     is_fit = False
+    is_magAB = False
+    fsave = None
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "fhsup:i:b:o:t:w:")
+        opts, args = getopt.getopt(sys.argv[1:], "afhsup:i:b:o:t:w:")
     except getopt.GetoptError as err:
         print(str(err))  # will print something like "option -a not recognized"
         usage()
@@ -453,6 +478,9 @@ def main():
                     if not band.band_is_exist(b):
                         print('No such band: ' + b)
                         sys.exit(2)
+            continue
+        if opt == '-a':
+            is_magAB = True
             continue
         if opt == '-s':
             is_silence = True
@@ -492,6 +520,13 @@ def main():
     # series = series_spec  #.copy(t_ab=(0., 25e3), wl_ab=(1., 25e3))
     series = series_spec.copy(t_ab=t_ab, wl_ab=wl_ab)
 
+    if is_magAB:
+        if fsave is None or len(fsave) == 0:
+            fsave = "magAB_%s" % name
+        print("Save series to %s " % fsave)
+        write_magAB(series)
+        sys.exit(2)
+
     if not is_fit:
         plot_spec_poly(series)
         # plot_spec_t(series_spec)
@@ -509,8 +544,8 @@ def main():
 
     distance = rf.pc_to_cm(10.)  # pc for Absolute magnitude
     dic_results = {}  # dict((k, None) for k in names)
-    it = 0
-    for time in times:
+    # it = 0
+    for it, time in enumerate(times):
         print("\nRun: %s t=%f [%d/%d]" % (name, time, it, len(times)))
         spec = series.get_spec_by_time(time)
         spec.cut_flux(max(spec.Flux) * .1e-5)  # cut flux
@@ -529,7 +564,8 @@ def main():
             print("\nRun: %s Tcol=%f zeta=%f " % (bset, Tcol, zeta))
 
         dic_results[it] = star
-        it += 1
+        # it += 1
+
     if not is_silence:
         plot_spec(dic_results, times, set_bands, is_planck=True, is_filter=True)
 

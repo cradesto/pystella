@@ -209,7 +209,7 @@ class SpectrumDilutePlanck(Spectrum):
 class SeriesSpectrum(object):
     def __init__(self, name):
         """Creates a Series of Spectrum instance."""
-        self.name = name
+        self._name = name
         self._nfreq = None
         # self._wl = None  # waves
         self._freq = None
@@ -218,6 +218,10 @@ class SeriesSpectrum(object):
 
     def get_spec(self, idx):
         return self._data[idx]
+
+    @property
+    def Name(self):
+        return self._name
 
     @property
     def is_time(self):
@@ -298,7 +302,7 @@ class SeriesSpectrum(object):
         """Copy SeriesSpectrum with times and wave lengths lying inside time and wave intervals.
         t_ab  - time interval [day],
         wl_ab - wave length interval [A]"""
-        name = self.name if nm is None else nm
+        name = self.Name if nm is None else nm
         if t_ab is None:
             t_ab = (float("-inf"), float("inf"))
         if wl_ab is None:
@@ -360,7 +364,7 @@ class SeriesSpectrum(object):
             return None
 
         mags = np.zeros(len(self.Time))
-        for k in range(len(self.Time)):
+        for k, t in enumerate(self.Time):
             star = Star(k, self.get_spec(k))
             star.set_distance(d)
             star.set_redshift(z)

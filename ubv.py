@@ -28,7 +28,7 @@ ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
 
 
 def plot_all(models_vels, models_dic, bands, call=None, xlim=None, ylim=None,
-             is_time_points=False, title='', fsave=None, bshift=None):
+             is_time_points=False, title='', bshift=None):
     colors = band.bands_colors()
     band_shift = dict((k, 0) for k, v in colors.items())  # no y-shift
     if bshift is not None:
@@ -78,14 +78,9 @@ def plot_all(models_vels, models_dic, bands, call=None, xlim=None, ylim=None,
         axVel.legend(prop={'size': 8}, loc=4)
 
     plt.grid()
-
     plt.show()
 #    plt.show(block=True)
-
-    if fsave is not None:
-        print("Save plot to %s " % fsave)
-        fig.savefig(fsave, bbox_inches='tight')
-        # plt.savefig(fsave, format='pdf')
+    return fig
 
 
 def usage():
@@ -328,9 +323,14 @@ def main(name='', model_ext='.ph'):
                 # d = '/home/bakl/Sn/my/conf/2016/snrefsdal/img'
                 fsave = os.path.join(d, fsave) + '.pdf'
 
-            plot_all(models_vels, models_mags, bands, call=callback, xlim=xlim, ylim=ylim,
-                     is_time_points=is_plot_time_points, title=label, fsave=fsave, bshift=bshift)
-            # plot_all(dic_results, bands,  xlim=(-10, 410), is_time_points=is_plot_time_points)
+            fig = plot_all(models_vels, models_mags, bands, call=callback, xlim=xlim, ylim=ylim,
+                           is_time_points=is_plot_time_points, title=label, bshift=bshift)
+            if fsave is not None:
+                print("Save plot to %s " % fsave)
+                fig.savefig(fsave, bbox_inches='tight')
+                # plt.savefig(fsave, format='pdf')
+
+                # plot_all(dic_results, bands,  xlim=(-10, 410), is_time_points=is_plot_time_points)
             # plot_all(dic_results, bands, xlim=(-10, 410), callback=callback, is_time_points=is_plot_time_points)
             # plot_all(dic_results, bands,  ylim=(40, 23),  is_time_points=is_plot_time_points)
     else:
