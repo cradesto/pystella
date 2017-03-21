@@ -406,7 +406,7 @@ class SeriesSpectrum(object):
         :param magnification:
         :return:
         """
-        curves = SetLightCurve(self.name)
+        curves = SetLightCurve(self.Name)
         for n in bands:
             b = band.band_by_name(n)
             lc = self.flux_to_curve(b, z=z, d=d, magnification=magnification)
