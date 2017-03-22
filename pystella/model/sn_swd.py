@@ -65,8 +65,8 @@ class StellaShockWaveDetail:
         colstr = "tday km lgM lgR14 V8 lgT lgTrad lgDm6 lgP7  lgQv lgEng Flum40 cap"
         cols = [s.strip() for s in colstr.split()]
         dt = np.dtype({'names': cols, 'formats': [np.float] * len(cols)})
-
         data = np.loadtxt(fname, dtype=dt)
+
         self._nzon = int(np.max(data['km']))
         times = np.unique(data['tday'])
         if data['tday'][0] != 0.:
@@ -85,6 +85,12 @@ class StellaShockWaveDetail:
     def block_nearest(self, time):
         idx = (np.abs(self._data['tday'] - time)).argmin()
         b = idx
+        e = b + self._nzon
+        block = self._data[:][b:e]
+        return BlockSwd(self._data['tday'][idx], block)
+
+    def __getitem__(self, idx):
+        b = idx*self._nzon
         e = b + self._nzon
         block = self._data[:][b:e]
         return BlockSwd(self._data['tday'][idx], block)

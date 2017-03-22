@@ -16,6 +16,20 @@ logger.setLevel(logging.INFO)
 # plot both results
 
 
+def read_pystella_swd_uph(fname, path=None):
+    if path is not None:
+        fname = os.path.join(path, fname)
+    if not os.path.isfile(fname):
+        logger.error(' No uph-data for %s' % fname)
+        raise ValueError(' No uph-data for %s' % fname)
+    # return None
+    logger.info(' Load uph-data from  %s' % fname)
+    col_names = "time zone R V "
+    dt = np.dtype({'names': col_names.split(), 'formats': np.repeat('f8', len(col_names))})
+    data = np.loadtxt(fname, comments='#', dtype=dt)
+    return data
+
+
 def read_uph(fname, path=None):
     if path is not None:
         fname = os.path.join(path, fname)
@@ -46,11 +60,12 @@ def read_ph_swd(fname, path=None):
 
 def usage():
     print("Usage:")
-    print("  plot_uph.py ph-swd-file  uph-file")
+    print("  plot_uph.py  uph-file ph-swd-pystella   ph-swd-file ")
 
 
 def main():
     lw = 2
+    fname_pystella = None  # 's15s7b2v1z532E1.swd.ph'
     fname_swd = None  # 's15s7b2v1z532E1.swd.ph'
     fname_uph = None  # 'uph_s15s7b2v1z532E1.txt'
 
@@ -61,7 +76,11 @@ def main():
         usage()
         sys.exit(2)
 
-    if len(args) > 1:
+    if len(args) > 2:
+        fname_uph = args[0]
+        fname_pystella = args[1]
+        fname_swd = args[2]
+    elif len(args) > 1:
         fname_uph = args[0]
         fname_swd = args[1]
     elif len(args) > 0:
@@ -92,6 +111,13 @@ def main():
         x = dswd['time']
         y = dswd['V']
         ax.plot(x, y, label=fname_uph, color='orange', ls="--", linewidth=lw)
+
+    # read and plot uph-data
+    if fname_pystella is not None:
+        dswd = read_pystella_swd_uph(fname_pystella)
+        x = dswd['time']
+        y = dswd['V']
+        ax.plot(x, y, label=fname_pystella, color='red', ls=":", linewidth=lw)
 
     ax.legend()
     plt.show()
