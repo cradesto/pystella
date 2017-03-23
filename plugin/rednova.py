@@ -92,14 +92,14 @@ def read_curves_master(path=sn_path):
 def read_curves_kurtenkov(path=sn_path):
     jd = 2457000
     lc_data = np.loadtxt(os.path.join(path, 'lrn_aa26564-15_p5.csv'), skiprows=2, usecols=(0, 1, 2, 3),
-                         dtype=[('JD', '<f4'), ('b', 'S1'), ('mag', '<f4'), ('err', '<f4')])
+                         dtype=[('JD', '<f4'), ('b', '|S1'), ('mag', '<f4'), ('err', '<f4')])
 
     # mshift = 24.43  # Distance Module to M31
     curves = SetLightCurve('Red Nova')
 
     bnames = np.unique(lc_data['b'])
     for i, n in enumerate(bnames):
-        b = band.band_by_name(n)
+        b = band.band_by_name(n.decode("utf-8"))
         d = lc_data[lc_data['b'] == n, ]
         time = d['JD'] + jd
         mags = d['mag']
