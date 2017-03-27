@@ -7,6 +7,7 @@ import os
 
 from pystella.rf import band
 from pystella.rf.lc import SetLightCurve, LightCurve
+from pystella.util.reader_table import read_table_header_float, table2curves
 
 sn_path = os.path.expanduser('~/Sn/Release/svn_kepler/stella/branches/lucy/run/res/sncurve/rednovaM31')
 
@@ -24,7 +25,8 @@ def plot(ax, dic=None):
     plot_ubv(ax=ax, path=sn_path, jd_shift=jd_shift)
 
 
-def plot_ubv(ax, path, jd_shift=0., mshift=0.):
+def plot_ubv(ax, path, jd_shift=0., mshift=0., **kwargs):
+    markersize = kwargs.pop('markersize', 6)
     path = os.path.expanduser(path)
 
     colors = band.bands_colors()
@@ -34,8 +36,8 @@ def plot_ubv(ax, path, jd_shift=0., mshift=0.):
         y = lc.Mag  # todo + mshift
         bcolor = colors[lc.Band.Name]
         ax.plot(x, y, label='%s Master' % lc.Band.Name,
-                ls=":", color=bcolor, markersize=7, marker="o")
-        ax.errorbar(x, y, yerr=lc.MagErr, color='gray', fmt='.', zorder=1)
+                ls="", color=bcolor, markersize=markersize, marker="o")
+        ax.errorbar(x, y, yerr=lc.MagErr, color=bcolor, fmt='.', zorder=1)
 
     print("jd_shift=%f mshift=%f " % (jd_shift, mshift))
 
@@ -45,8 +47,17 @@ def plot_ubv(ax, path, jd_shift=0., mshift=0.):
         y = lc.Mag + mshift
         bcolor = colors[lc.Band.Name]
         ax.plot(x, y, label='%s Kurtenkov' % lc.Band.Name,
-                ls=":", color=bcolor, markersize=7, marker="*")
-        ax.errorbar(x, y, yerr=lc.MagErr, color='gray', fmt='.', zorder=1)
+                ls="", color=bcolor, markersize=markersize, marker="x")
+        ax.errorbar(x, y, yerr=lc.MagErr, color=bcolor, fmt='.', zorder=1)
+
+    curves_wil = read_curves_williams(path)
+    for lc in curves_wil:
+        x = lc.Time + jd_shift
+        y = lc.Mag + mshift
+        bcolor = colors[lc.Band.Name]
+        ax.plot(x, y, label='%s Williams' % lc.Band.Name,
+                ls="", color=bcolor, markersize=markersize, marker="+")
+        ax.errorbar(x, y, yerr=lc.MagErr, color=bcolor, fmt='.', zorder=1)
 
 
 def read_curves_master_abs_mag(path=sn_path):
@@ -116,4 +127,12 @@ def read_curves_kurtenkov(path=sn_path):
         # lc.mshift = -mshift
         curves.add(lc)
 
+    return curves
+
+
+def read_curves_williams(path=sn_path):
+    # jd0 = 2457000.
+    tbl = read_table_header_float(os.path.join(path, 'williams_lnrm31.txt'))
+    # tbl['time'] -= jd0
+    curves = table2curves('LRN Williams', tbl)
     return curves
