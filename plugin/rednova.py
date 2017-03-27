@@ -26,39 +26,46 @@ def plot(ax, dic=None):
 
 
 def plot_ubv(ax, path, jd_shift=0., mshift=0., **kwargs):
-    markersize = kwargs.pop('markersize', 6)
+    markersize = kwargs.pop('markersize', 7)
+    is_mas = kwargs.pop('is_mas', True)
+    is_kur = kwargs.pop('is_kur', True)
+    is_wil = kwargs.pop('is_wil', True)
     path = os.path.expanduser(path)
 
+    print("Plot RedNova: jd_shift=%f mshift=%f " % (jd_shift, mshift))
     colors = band.bands_colors()
-    curves = read_curves_master(path)
-    for lc in curves:
-        x = lc.Time + jd_shift
-        y = lc.Mag  # todo + mshift
-        bcolor = colors[lc.Band.Name]
-        ax.plot(x, y, label='%s Master' % lc.Band.Name,
-                ls="", color=bcolor, markersize=markersize, marker="o")
-        ax.errorbar(x, y, yerr=lc.MagErr, color=bcolor, fmt='.', zorder=1)
+    
+    if is_mas:
+        curves = read_curves_master(path)
+        for lc in curves:
+            x = lc.Time + jd_shift
+            y = lc.Mag  # todo + mshift
+            bcolor = colors[lc.Band.Name]
+            ax.plot(x, y, label='%s Master' % lc.Band.Name,
+                    ls="", color=bcolor, markersize=markersize, marker="o")
+            ax.errorbar(x, y, yerr=lc.MagErr, color=bcolor, fmt='.', zorder=1)
 
-    print("jd_shift=%f mshift=%f " % (jd_shift, mshift))
+    if is_kur:
+        curves = read_curves_kurtenkov(path)
+        for lc in curves:
+            x = lc.Time + jd_shift
+            y = lc.Mag + mshift
+            bcolor = colors[lc.Band.Name]
+            ax.plot(x, y, label='%s Kurtenkov' % lc.Band.Name,
+                    ls="", color=bcolor, markersize=markersize, marker="x")
+            ax.errorbar(x, y, yerr=lc.MagErr, color=bcolor, fmt='.', zorder=1)
 
-    curves = read_curves_kurtenkov(path)
-    for lc in curves:
-        x = lc.Time + jd_shift
-        y = lc.Mag + mshift
-        bcolor = colors[lc.Band.Name]
-        ax.plot(x, y, label='%s Kurtenkov' % lc.Band.Name,
-                ls="", color=bcolor, markersize=markersize, marker="x")
-        ax.errorbar(x, y, yerr=lc.MagErr, color=bcolor, fmt='.', zorder=1)
 
-    curves_wil = read_curves_williams(path)
-    for lc in curves_wil:
-        x = lc.Time + jd_shift
-        y = lc.Mag + mshift
-        bcolor = colors[lc.Band.Name]
-        ax.plot(x, y, label='%s Williams' % lc.Band.Name,
-                ls="", color=bcolor, markersize=markersize, marker="+")
-        ax.errorbar(x, y, yerr=lc.MagErr, color=bcolor, fmt='.', zorder=1)
-
+    if is_wil:            
+        curves_wil = read_curves_williams(path)
+        for lc in curves_wil:
+            x = lc.Time + jd_shift
+            y = lc.Mag + mshift
+            bcolor = colors[lc.Band.Name]
+            ax.plot(x, y, label='%s Williams' % lc.Band.Name,
+                    ls="", color=bcolor, markersize=markersize, marker="+")
+            ax.errorbar(x, y, yerr=lc.MagErr, color=bcolor, fmt='.', zorder=1)
+        
 
 def read_curves_master_abs_mag(path=sn_path):
     jd = 2457036

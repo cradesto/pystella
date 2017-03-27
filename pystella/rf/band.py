@@ -218,7 +218,7 @@ def bands_colors():
         F105W="magenta", F435W="skyblue", F606W="cyan", F125W="g", F140W="orange", F160W="r", F814W="blue",
         Kepler="magenta",
         g="olive", r="red", i="plum", u="darkslateblue", z="chocolate",
-        Sdssg="olive", Sdssr="red", Sdssi="magenta", Sdssu="blue", Sdssz="chocolate",
+        Sdssg="olive", Sdssr="pink", Sdssi="magenta", Sdssu="blue", Sdssz="chocolate",
         PS1g="olive", PS1r="red", PS1i="magenta", PS1u="blue", PS1z="chocolate", PS1y="cyan", PS1w="orange",
         y='y', Y='y', w='tomato')
     colors[Band.NameBol] = 'black'
