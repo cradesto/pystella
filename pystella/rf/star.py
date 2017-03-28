@@ -166,14 +166,15 @@ class Star:
         a = integrate.simps(flux_spline * band.resp_wl * wl_b, wl_b) / (phys.c * phys.cm_to_angs) / phys.h
         return a
 
-    def _response_nu(self, b, is_b_spline=True):
+    def _response_nu(self, b):
         """
         Compute response flux using provided spectral band.
         see: http://www.astro.ljmu.ac.uk/~ikb/research/mags-fluxes/
         :param b:  photometric band
-        :param is_b_spline:  the method of interpolation
         :return:
         """
+        from pystella.util.math import log_interp1d
+
         nu_s = self.Freq
         # sort
         sorti = np.argsort(nu_s)
@@ -191,13 +192,16 @@ class Star:
             resp_b = resp_b[f]
             # raise ValueError("Spectrum must be wider then band: " + str(band))
 
-        if is_b_spline:
-            tck = interpolate.splrep(nu_s, flux, s=0)
-            flux_spline = interpolate.splev(nu_b, tck, der=0)
-            if np.any(flux_spline < 0.):
-                flux_spline = np.interp(nu_b, nu_s, flux, 0, 0)  # One-dimensional linear interpolation.
-        else:
-            flux_spline = np.interp(nu_b, nu_s, flux, 0, 0)  # One-dimensional linear interpolation.
+        # if is_b_spline:
+        #     tck = interpolate.splrep(nu_s, flux, s=0)
+        #     flux_spline = interpolate.splev(nu_b, tck, der=0)
+        #     if np.any(flux_spline < 0.):
+        #         flux_spline = np.interp(nu_b, nu_s, flux, 0, 0)  # One-dimensional linear interpolation.
+        # else:
+        #     flux_spline = np.interp(nu_b, nu_s, flux, 0, 0)  # One-dimensional linear interpolation.
+
+        log_interp = log_interp1d(nu_s, flux)
+        flux_spline = log_interp(nu_b)
 
         a = integrate.simps(flux_spline * resp_b / nu_b, nu_b)
         return a

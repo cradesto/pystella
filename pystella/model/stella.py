@@ -158,3 +158,24 @@ class Stella:
         #     return block
         # else:
         #     return None
+
+
+def show_info(path, cond=lambda i: True):
+    """Print information list about models in the path
+    :param path: working directory
+    :param cond: condition function, like lambda i: 30 < i.M < 1000 and i.R > 100
+    :return: None
+   """
+    from os import listdir
+    from os.path import isfile, join
+
+    files = [f for f in listdir(path) if isfile(join(path, f)) and f.endswith('.tt')]
+    for f in files:
+        # print 'Read: %s' % f
+        name, ext = os.path.splitext(f)
+        stella = Stella(name, path=path)
+        info = stella.get_tt().Info
+        #         print(info.Data)
+        if cond(info):
+            # #         if 30 < info.R < 40:
+            info.show()

@@ -58,6 +58,7 @@ target/
 
 # PyCharm
 .idea/
+!.idea/dictionaries/bakl.xml
 
 test_mags_UBVRI.txt
 emacs.desktop

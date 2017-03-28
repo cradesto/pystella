@@ -41,9 +41,10 @@ def plot_ubv(ax, path, jd_shift=0., mshift=0., **kwargs):
             x = lc.Time + jd_shift
             y = lc.Mag  # todo + mshift
             bcolor = colors[lc.Band.Name]
-            ax.plot(x, y, label='%s Master' % lc.Band.Name,
-                    ls="", color=bcolor, markersize=markersize, marker="o")
-            ax.errorbar(x, y, yerr=lc.MagErr, color=bcolor, fmt='.', zorder=1)
+            # ax.plot(x, y, label='%s Master' % lc.Band.Name,
+            #         ls="", color=bcolor, markersize=markersize, marker="o")
+            ax.errorbar(x, y, yerr=lc.MagErr, label='%s Master' % lc.Band.Name,
+                        color=bcolor, fmt='o', fillstyle='none', ecolor=bcolor, mec=bcolor, zorder=1)
 
     if is_kur:
         curves = read_curves_kurtenkov(path)
@@ -51,10 +52,10 @@ def plot_ubv(ax, path, jd_shift=0., mshift=0., **kwargs):
             x = lc.Time + jd_shift
             y = lc.Mag + mshift
             bcolor = colors[lc.Band.Name]
-            ax.plot(x, y, label='%s Kurtenkov' % lc.Band.Name,
-                    ls="", color=bcolor, markersize=markersize, marker="x")
-            ax.errorbar(x, y, yerr=lc.MagErr, color=bcolor, fmt='.', zorder=1)
-
+            # ax.plot(x, y, label='%s Kurtenkov' % lc.Band.Name,
+            #         ls="", color=bcolor, markersize=markersize, marker="x")
+            ax.errorbar(x, y, yerr=lc.MagErr,  label='%s Kurtenkov' % lc.Band.Name,
+                        color=bcolor, fmt='.')
 
     if is_wil:            
         curves_wil = read_curves_williams(path)
@@ -62,9 +63,10 @@ def plot_ubv(ax, path, jd_shift=0., mshift=0., **kwargs):
             x = lc.Time + jd_shift
             y = lc.Mag + mshift
             bcolor = colors[lc.Band.Name]
-            ax.plot(x, y, label='%s Williams' % lc.Band.Name,
-                    ls="", color=bcolor, markersize=markersize, marker="+")
-            ax.errorbar(x, y, yerr=lc.MagErr, color=bcolor, fmt='.', zorder=1)
+            # ax.plot(x, y, label='%s Williams' % lc.Band.Name,
+            #         ls="", color=bcolor, markersize=markersize, marker="+")
+            ax.errorbar(x, y, yerr=lc.MagErr, label='%s Williams' % lc.Band.Name,
+                        color=bcolor,  fmt='d', fillstyle='none')
         
 
 def read_curves_master_abs_mag(path=sn_path):

@@ -188,6 +188,7 @@ def plot_swd(ax, b, **kwargs):
     is_yllabel = kwargs.get('is_yllabel', True)
     is_yrlabel = kwargs.get('is_yrlabel', True)
     is_day = kwargs.get('is_day', True)
+    is_grid = kwargs.get('is_grid', False)
     rnorm = kwargs.get('rnorm', 'm')
     text_posy = kwargs.get('text_posy', 1.01)
 
@@ -198,15 +199,15 @@ def plot_swd(ax, b, **kwargs):
 
     if rnorm == 'sun':
         rnorm = phys.R_sun
-        x, xlabel = b.R / rnorm, 'Ejecta Radius, [Rsun]'
+        x, xlabel = b.R / rnorm, r'Ejecta Radius, [$\mathtt{R}_\odot$]'
     elif rnorm == 'lgr':
         x, xlabel = b.R, r'Ejecta Radius, [cm]'
     elif rnorm == 'm':
-        x, xlabel = b.M, 'Ejecta Mass [Msun]'
+        x, xlabel = b.M,  r'Ejecta Mass [$\mathtt{M}_\odot$]'
     elif isfloat(rnorm):
         x, xlabel = b.R / float(rnorm), r'Ejecta Radius, [$\times 10^{%d}$ cm]' % int(np.log10(float(rnorm)))
     else:
-        x, xlabel = b.M, 'Ejecta Mass [Msun]'
+        x, xlabel = b.M, r'Ejecta Mass [$\mathtt{M}_\odot$]'
 
     y = np.log10(b.Rho)
     if rnorm == 'lgr':
@@ -248,10 +249,10 @@ def plot_swd(ax, b, **kwargs):
 
     # y2 = b.Tau
     y2 = np.ma.masked_where(b.Tau <= 0., b.Tau)
-    ax2.plot(x, y2, 'g-', label='tau')
+    ax2.plot(x, y2, 'r-', label='tau')
 
     y2 = np.log10(b.T)
-    ax2.plot(x, y2, 'r-', label=r'$\log(T)$')
+    ax2.plot(x, y2, 'g-', label=r'$\log(T)$')
 
     y2 = np.ma.log10(b.Lum) - np.log10(lumnorm)
     y22 = np.ma.log10(-b.Lum) - np.log10(lumnorm)
@@ -265,4 +266,5 @@ def plot_swd(ax, b, **kwargs):
         ax.legend(loc=2, prop={'size': 8})
         ax2.legend(loc=1, prop={'size': 8}, ncol=2)
 
-    ax.grid(linestyle=':')
+    if is_grid:
+        ax.grid(linestyle=':')

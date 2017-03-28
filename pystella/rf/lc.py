@@ -85,6 +85,10 @@ class SetLightCurve(object):
     def Name(self):
         return self._name
 
+    @Name.setter
+    def Name(self, v):
+        self._name = v
+
     @property
     def Set(self):
         return self._set

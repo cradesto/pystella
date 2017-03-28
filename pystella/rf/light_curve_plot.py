@@ -300,9 +300,11 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname='', **k
         y = lc.Mag
         bname = lc.Band.Name
         if is_line:
-            ax.plot(x, y, label='%s' % bname, color=colors[bname], ls=ls[bname], linewidth=linewidth)
+            ax.plot(x, y, label='{0} {1}'.format(bname, curves.Name),
+                    color=colors[bname], ls=ls[bname], linewidth=linewidth)
         else:
-            ax.plot(x, y, label='%s' % bname, color=colors[bname], ls=None, marker=lt[bname], markersize=markersize)
+            ax.plot(x, y, label='{0} {1}'.format(bname, curves.Name),
+                    color=colors[bname], ls=None, marker=lt[bname], markersize=markersize)
 
         if is_xlim:
             xlim[0] = min(xlim[0], np.min(x))
@@ -339,6 +341,7 @@ def plot_shock_details(swd, times, **kwargs):
     vnorm = kwargs.get('vnorm', 1e8)
     lumnorm = kwargs.get('lumnorm', 1e40)
     font_size = kwargs.get('font_size', 12)
+    is_grid = kwargs.get('is_grid', False)
 
     xlim = None
     ylim = None
@@ -355,7 +358,8 @@ def plot_shock_details(swd, times, **kwargs):
         ax = fig.add_subplot(nrow, ncol, ncol*i+1)
         # plot swd(radius)
         sn_swd.plot_swd(ax, b, is_xlabel=(i == len(times) - 1), vnorm=vnorm, lumnorm=lumnorm,
-                        rnorm=rnorm, is_legend=False, is_yrlabel=False, text_posy=0.92)
+                        rnorm=rnorm, is_legend=False, is_yrlabel=False, text_posy=0.92,
+                        is_grid=is_grid)
         x = ax.get_xlim()
         if xlim is None:
             xlim = x

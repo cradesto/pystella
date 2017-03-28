@@ -6,10 +6,9 @@ import os
 import sys
 from os.path import dirname
 
-import matplotlib
 # matplotlib.use("Agg")
 # matplotlib.rcParams['backend'] = "TkAgg"
-#matplotlib.rcParams['backend'] = "Qt4Agg"
+# matplotlib.rcParams['backend'] = "Qt4Agg"
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 
@@ -20,7 +19,6 @@ from pystella.rf import light_curve_func as lcf
 from pystella.rf import light_curve_plot as lcp
 from pystella.util.path_misc import get_model_names
 from pystella.util.phys_var import cosmology_D_by_z
-
 
 __author__ = 'bakl'
 
@@ -321,7 +319,8 @@ def main(name='', model_ext='.ph'):
 
                 d = os.path.expanduser('~/')
                 # d = '/home/bakl/Sn/my/conf/2016/snrefsdal/img'
-                fsave = os.path.join(d, fsave) + '.pdf'
+
+                fsave = os.path.join(d, os.path.splitext(fsave)[0]) + '.pdf'
 
             fig = plot_all(models_vels, models_mags, bands, call=callback, xlim=xlim, ylim=ylim,
                            is_time_points=is_plot_time_points, title=label, bshift=bshift)
