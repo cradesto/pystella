@@ -28,6 +28,18 @@ class HistConsole(Cmd):
 class MyPrompt(HistConsole):
 
     @staticmethod
+    def do_ls(args):
+        """Show Stella models. For detailed help type 'ls -h'.
+        """
+        # if len(args) == 0:
+        #     name = 'Please provide a path to stella models.'
+        # else:
+        #     name = args
+        # print("ls %s" % name)
+        script = os.path.join(ROOT_DIRECTORY, 'ls.py')
+        subprocess.call("{0} {1}".format(script, args), shell=True)
+
+    @staticmethod
     def do_ubv(args):
         """Plot Stella Light Curves. For detailed help type 'ubv -h'.
         """

@@ -26,3 +26,32 @@ def cache_load(fname):
     dtype = np.dtype({'names': names, 'formats': [np.float64] * len(names)})
     tbl = np.loadtxt(fname, skiprows=1, dtype=dtype)
     return tbl
+
+
+def list_to_table(l, col=4):
+    table = []
+    row = []
+    for i, x in enumerate(l):
+        row.append(x)
+        if len(row) % col == 0:
+            table.append(row)
+            row = []
+    if len(row) > 0:
+        table.append(row)
+    return table
+
+
+def print_table(tbl):
+    # col_width = [max(len(x) for x in col) for col in zip(*tbl)]
+    col_width = []
+    for line in tbl:
+        for i, x in enumerate(line):
+            if i >= len(col_width):
+                col_width.append(len(x))
+            else:
+                col_width[i] = max(col_width[i], len(x))
+    for line in tbl:
+        print("  ".join("{:{}}".format(x, col_width[i])
+                        for i, x in enumerate(line)))
+        # print("| " + " | ".join("{:{}}".format(x, col_width[i])
+        #                         for i, x in enumerate(line)) + " |")

@@ -9,6 +9,8 @@ from pystella.model import sn_eve
 
 __author__ = 'bakl'
 
+stella_extensions = ('tt', 'swd', 'lbol', 'res', 'dat', 'ph', "mrt")
+
 
 class Stella:
     def __init__(self, name, path='./', info=False):
@@ -27,8 +29,8 @@ class Stella:
         # return "%s" % self.name
 
     def show_info(self):
-        ext = ('tt', 'ph', 'res', 'swd')
-        for e in ext:
+        # ext = ('tt', 'ph', 'res', 'swd')
+        for e in stella_extensions:
             fname = os.path.join(self.path, self.name + '.' + e)
             if os.path.isfile(fname):
                 print("Exist %s-file: %s" % (e, fname))
@@ -65,7 +67,7 @@ class Stella:
     def get_eve(self, name, path=None):
         if path is None:
             path = self.path
-        eve = sn_eve.load_rho(os.path.join(path, name+'.rho'))
+        eve = sn_eve.load_rho(os.path.join(path, name + '.rho'))
         return eve
 
     def get_res(self):
@@ -91,7 +93,7 @@ class Stella:
 
         freqs = [float(x) for x in header1.split()]
         freqs = np.array(freqs).reshape(-1)
-        freqs = [10.**nu for nu in freqs]
+        freqs = [10. ** nu for nu in freqs]
         # freqs = np.exp(math.log(10) * freqs)
 
         data = np.loadtxt(fname, comments='!', skiprows=1)
@@ -118,7 +120,7 @@ class Stella:
                 if is_nfrus:
                     nfrus = int(data[i, 1])  # exact number of used (saved) freqs
                     freqs = freqs[:nfrus]
-                    fl = np.array(data[i, 3:nfrus+3])
+                    fl = np.array(data[i, 3:nfrus + 3])
                 else:
                     fl = np.array(data[i, 3:])
                 fl[fl < 0] = 0.
@@ -158,6 +160,30 @@ class Stella:
         #     return block
         # else:
         #     return None
+
+
+def stella_ls(path, pattern='*', exts=stella_extensions):
+    """Print information list about models in the path
+    :param path: working directory
+    :param pattern:  pathname, which must be a string containing a path specification. 
+    :param exts: set of extensions
+    :return: None
+   """
+    from os import listdir
+    from os.path import isfile, join
+    import fnmatch
+
+    files = [f for f in listdir(path) if isfile(join(path, f)) and fnmatch.fnmatch(f, pattern)]
+    models = {}
+    for f in files:
+        name, ext = os.path.splitext(f)
+        ext = ext.replace('.', '')
+        if ext in exts:
+            if name in models.keys():
+                models[name] += ' ' + ext
+            else:
+                models[name] = ext
+    return models
 
 
 def show_info(path, cond=lambda i: True):

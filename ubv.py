@@ -75,7 +75,7 @@ def plot_all(models_vels, models_dic, bands, call=None, xlim=None, ylim=None,
         # vel.plot_vels_sn87a(axVel, z=1.49)
         axVel.legend(prop={'size': 8}, loc=4)
 
-    plt.grid()
+    plt.grid(linestyle=':')
     plt.show()
 #    plt.show(block=True)
     return fig

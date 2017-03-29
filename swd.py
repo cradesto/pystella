@@ -92,41 +92,35 @@ def plot_uph(uph, label='', lw=2):
     return fig
 
 
-def main():
+def get_parser():
     parser = argparse.ArgumentParser(description='Process Stella Shock Wave Details.')
-
     parser.add_argument('-i', '--input',
                         required=False,
                         dest="name",
                         help="Model name, example: cat_R450_M15_Ni007")
-
     parser.add_argument('-p', '--path',
                         required=False,
                         type=str,
                         default='./',
                         dest="path",
                         help="Model directory")
-
     parser.add_argument('--rnorm',
                         required=False,
                         default='lgr',  # 1e14,
                         dest="rnorm",
                         help="Radius normalization, example: 'm' or 'sun' or 1e13")
-
     parser.add_argument('--vnorm',
                         required=False,
                         type=float,
                         default=1e8,
                         dest="vnorm",
                         help="Velocity normalization, example: 1e8")
-
     parser.add_argument('--lumnorm',
                         required=False,
                         type=float,
                         default=1e40,
                         dest="lumnorm",
                         help="Luminously normalization, example: 1e40")
-
     d = '1:4:15:65'
     parser.add_argument('-t', '--time',
                         required=False,
@@ -134,27 +128,27 @@ def main():
                         default=d,
                         dest="times",
                         help="Plot shock wave snap for selected time moments. Default: {0}".format('2:10:50'))
-
     parser.add_argument('-c', action='store_const', dest='constant_value',
                         const='value-to-store',
                         help='Store a constant value')
-
     parser.add_argument('--uph', action='store_const', dest='is_uph',
                         const=True,
                         help='To compute the photospheric velocity')
-
     parser.add_argument('-s', '--save',
                         action='store_const',
                         const=True,
                         dest="is_save",
                         help="To save plot to pdf-file. Default: False".format('2:10:50'))
-
     parser.add_argument('-w', '--write',
                         action='store_const',
                         const=True,
                         dest="is_write",
                         help="To write the data to txt-file.")
+    return parser
 
+
+def main():
+    parser = get_parser()
     args, unknownargs = parser.parse_known_args()
 
     name = None
