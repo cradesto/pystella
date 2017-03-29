@@ -9,7 +9,7 @@ from pystella.model import sn_eve
 
 __author__ = 'bakl'
 
-stella_extensions = ('tt', 'swd', 'lbol', 'res', 'dat', 'ph', "mrt")
+stella_extensions = ('tt', 'swd', 'lbol', 'res', 'dat', 'ph', "mrt", 'eve', 'rho', 'xni')
 
 
 class Stella:

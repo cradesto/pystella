@@ -111,7 +111,9 @@ def lc_wrapper(param, p=None):
     a = param.split(':')
     fname = a.pop(0)
     if p is None:
-        if os.path.isfile(os.path.join(os.getcwd(), fname + '.py')):
+        if os.path.isfile(fname + '.py'):
+            p, fname = os.path.split(fname)
+        elif os.path.isfile(os.path.join(os.getcwd(), fname + '.py')):
             p = os.getcwd()
         else:
             p = cb.plugin_path
@@ -146,7 +148,7 @@ def main(name='', model_ext='.ph'):
     band.Band.load_settings()
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hqwtc:d:p:e:i:b:l:m:vs:x:y:z:")
+        opts, args = getopt.getopt(sys.argv[1:], "hqwtc:d:p:e:g:i:b:l:m:vs:x:y:z:")
     except getopt.GetoptError as err:
         print(str(err))  # will print something like "option -a not recognized"
         usage()
