@@ -5,7 +5,7 @@ import readline
 import subprocess
 from cmd import Cmd
 from os.path import dirname
-
+import numpy as np
 
 ROOT_DIRECTORY = dirname(os.path.abspath(__file__))
 
@@ -23,6 +23,20 @@ class HistConsole(Cmd):
         if readline:
             readline.set_history_length(hist_file_size)
             readline.write_history_file(hist_file)
+
+    @staticmethod
+    def do_h(args):
+        """Show history
+        :type args: number of commands
+        """
+        try:
+            lim = int(args)
+        except:
+            lim = 10
+
+        hlen = readline.get_current_history_length()
+        for i in np.arange(max(0, hlen-lim), hlen):
+            print("{0}: {1}".format(i, readline.get_history_item(i)))
 
 
 class MyPrompt(HistConsole):
