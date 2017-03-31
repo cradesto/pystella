@@ -1,6 +1,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from itertools import cycle
+
 from matplotlib import gridspec
+# from matplotlib import colors as mcolors
+# import seaborn as sns
 
 from pystella.model import sn_swd
 from pystella.rf import band
@@ -11,9 +15,11 @@ lc_colors = band.bands_colors()
 
 lc_lntypes = dict(U="-", B="-", V="-", R="-", I="-",
                   UVM2="-.", UVW1="-.", UVW2="-.",
-                  F125W="--", F160W="-.", F140W="--", F105W="-.", F435W="--", F606W="-.", F814W="--",
+                  F125W=":", F160W="-.", F140W="--", F105W="-.", F435W="--", F606W="-.", F814W="--",
                   u="--", g="--", r="--", i="--", z="--",
                   bol='-')
+
+lines = ["-", "--", "-.", ":"]
 
 markers = {u'D': u'diamond', 6: u'caretup', u's': u'square', u'x': u'x',
            5: u'caretright', u'^': u'triangle_up', u'd': u'thin_diamond', u'h': u'hexagon1',
@@ -74,12 +80,22 @@ def lbl(b, band_shift):
 #     return lc_min
 
 
-def plot_ubv_models(ax, models_dic, bands, band_shift, xlim=None, ylim=None,
-                    colors=lc_colors, is_time_points=False):
+def plot_ubv_models(ax, models_dic, bands, **kwargs):
+    # bshift=None, xlim=None, ylim=None, colors=lc_colors, is_time_points=False):
+    xlim = kwargs.get('xlim', None)
+    ylim = kwargs.get('xlim', None)
+    bshift = kwargs.get('xlim', None)
+    is_time_points = kwargs.get('is_time_points', False)
+
     is_compute_x_lim = xlim is None
     is_compute_y_lim = ylim is None
 
     t_points = [0.2, 1, 2, 3, 4, 5, 10, 20, 40, 80, 150]
+    colors = band.bands_colors()
+    band_shift = dict((k, 0) for k, v in colors.items())  # no y-shift
+    if bshift is not None:
+        for k, v in bshift.items():
+            band_shift[k] = v
 
     lw = 1.5
     mi = 0
@@ -123,6 +139,73 @@ def plot_ubv_models(ax, models_dic, bands, band_shift, xlim=None, ylim=None,
     ax.set_ylim(ylim)
 
     return lc_min
+
+
+def plot_models_band(ax, models_dic, bname, **kwargs):
+    # , xlim=None, ylim=None,colors=lc_colors, is_time_points=False):
+    xlim = kwargs.get('xlim', None)
+    ylim = kwargs.get('xlim', None)
+    sep = kwargs.get('sep', 'm')  # line separator
+
+    is_compute_x_lim = xlim is None
+    is_compute_y_lim = ylim is None
+
+    lw = 1.5
+    mi = 0
+    x_max = []
+    y_mid = []
+    lc_min = {}
+
+    dashes = get_dashes(len(models_dic))
+
+    dashes_cycler = cycle(dashes)
+
+    for mname, mdic in models_dic.items():
+        mi += 1
+        lc = mdic[bname]
+        x = lc.Time
+        y = lc.Mag
+        # bcolor = colors[mi % len(colors)]
+
+        if len(models_dic) == 1:
+            ax.plot(x, y, label='%s  %s' % (bname, mname), ls="-", linewidth=lw)
+        else:
+            if sep == 'm':
+                ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label='%s  %s' % (bname, mname),
+                        markersize=4, ls=":", linewidth=lw)
+            else:
+                ax.plot(x, y, label='%s  %s' % (bname, mname), dashes=next(dashes_cycler), linewidth=lw)
+                # ax.plot(x, y, label='%s  %s' % (bname, mname), ls=lines[mi % (len(lines) - 1)], linewidth=lw)
+
+        idx = np.argmin(y)
+        lc_min[bname] = (x[idx], y[idx])
+        if is_compute_x_lim:
+            x_max.append(np.max(x))
+        if is_compute_y_lim:
+            y_mid.append(np.min(y))
+
+    if is_compute_x_lim:
+        xlim = [-10, np.max(x_max) + 10.]
+    if is_compute_y_lim:
+        ylim = [np.min(y_mid) + 7., np.min(y_mid) - 2.]
+
+    ax.set_xlim(xlim)
+    ax.invert_yaxis()
+    ax.set_ylim(ylim)
+
+    return lc_min
+
+
+def get_dashes(nums):
+    dashes = []
+    for i in range(nums):
+        if i < 5:
+            dashes.append((4, 1 + int(i / 2)))
+        elif i < 10:
+            dashes.append((i - 3, 1 + int(i / 2), 2, 1 + i))
+        else:
+            dashes.append((i - 8, 1, 2, 1 + int(i / 2), 2, 1 + i))
+    return dashes
 
 
 def plot_models_curves(ax, models_curves, band_shift=None, xlim=None, ylim=None, lc_types=None, colors=lc_colors,
@@ -347,7 +430,7 @@ def plot_shock_details(swd, times, **kwargs):
     ylim = None
     nrow = len(times)
     ncol = 2
-    fig = plt.figure(figsize=(12, nrow*4))
+    fig = plt.figure(figsize=(12, nrow * 4))
     plt.matplotlib.rcParams.update({'font.size': font_size})
     # fig = plt.figure(num=None, figsize=(12, len(times) * 4), dpi=100, facecolor='w', edgecolor='k')
     # gs1 = gridspec.GridSpec(len(times), 2)
@@ -355,7 +438,7 @@ def plot_shock_details(swd, times, **kwargs):
     for i, t in enumerate(times):
         b = swd.block_nearest(t)
         # plot radius
-        ax = fig.add_subplot(nrow, ncol, ncol*i+1)
+        ax = fig.add_subplot(nrow, ncol, ncol * i + 1)
         # plot swd(radius)
         sn_swd.plot_swd(ax, b, is_xlabel=(i == len(times) - 1), vnorm=vnorm, lumnorm=lumnorm,
                         rnorm=rnorm, is_legend=False, is_yrlabel=False, text_posy=0.92,
@@ -376,11 +459,11 @@ def plot_shock_details(swd, times, **kwargs):
     for i, t in enumerate(times):
         # plot mass
         b = swd.block_nearest(t)
-        ax2 = fig.add_subplot(nrow, ncol, ncol*i+2)
+        ax2 = fig.add_subplot(nrow, ncol, ncol * i + 2)
         sn_swd.plot_swd(ax2, b, is_xlabel=(i == len(times) - 1), vnorm=vnorm, lumnorm=lumnorm,
-                        rnorm='m', is_legend=i==0, is_yllabel=False, text_posy=0.92, is_day=False)
+                        rnorm='m', is_legend=i == 0, is_yllabel=False, text_posy=0.92, is_day=False)
         # Set limits
-        ax = fig.add_subplot(nrow, ncol, ncol*i+1)
+        ax = fig.add_subplot(nrow, ncol, ncol * i + 1)
         ax.set_xlim(xlim)
         ax.set_ylim(ylim)
         ax2.set_ylim(ylim)

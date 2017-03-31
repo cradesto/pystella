@@ -14,15 +14,18 @@ sn_path = os.path.expanduser('~/Sn/Release/svn_kepler/stella/branches/lucy/run/r
 
 def plot(ax, dic=None):
     arg = []
+    bnames = None
     if dic is not None and 'args' in dic:
         arg = dic['args']
+        # bnames = dic.get('bnames', None)
+        # bcolors = dic.get('bcolors', None)
 
     jd_shift = 0.
     if len(arg) > 0:
         jd_shift = float(arg.pop(0))
 
     print("Plot Red Nova  jd_shift=%f  path: %s" % (jd_shift, sn_path))
-    plot_ubv(ax=ax, path=sn_path, jd_shift=jd_shift)
+    plot_ubv(ax=ax, path=sn_path, jd_shift=jd_shift, **dic)
 
 
 def plot_ubv(ax, path, jd_shift=0., mshift=0., **kwargs):
@@ -30,44 +33,54 @@ def plot_ubv(ax, path, jd_shift=0., mshift=0., **kwargs):
     is_mas = kwargs.pop('is_mas', True)
     is_kur = kwargs.pop('is_kur', True)
     is_wil = kwargs.pop('is_wil', True)
+    bnames_fix = kwargs.pop('bnames', None)
+    colors = kwargs.pop('bcolors', band.bands_colors())
     path = os.path.expanduser(path)
 
     print("Plot RedNova: jd_shift=%f mshift=%f " % (jd_shift, mshift))
-    colors = band.bands_colors()
-    
+
+    def plot_lc(cs, band_names, lbl, fmt):
+        if band_names is None:
+            band_names = cs.BandNames
+        for lc in cs:
+            if lc.Band.Name in band_names:
+                x = lc.Time + jd_shift
+                y = lc.Mag  # todo + mshift
+                bcolor = colors[lc.Band.Name]
+                # ax.plot(x, y, label='%s Master' % lc.Band.Name,
+                #         ls="", color=bcolor, markersize=markersize, marker="o")
+                ax.errorbar(x, y, yerr=lc.MagErr, label=lbl % lc.Band.Name,
+                            color=bcolor, fmt=fmt, fillstyle='none', ecolor=bcolor,
+                            mec=bcolor, markersize=markersize, zorder=1)
+
     if is_mas:
-        curves = read_curves_master(path)
-        for lc in curves:
-            x = lc.Time + jd_shift
-            y = lc.Mag  # todo + mshift
-            bcolor = colors[lc.Band.Name]
-            # ax.plot(x, y, label='%s Master' % lc.Band.Name,
-            #         ls="", color=bcolor, markersize=markersize, marker="o")
-            ax.errorbar(x, y, yerr=lc.MagErr, label='%s Master' % lc.Band.Name,
-                        color=bcolor, fmt='o', fillstyle='none', ecolor=bcolor, mec=bcolor, zorder=1)
+        curves_mst = read_curves_master(path)
+        plot_lc(curves_mst, bnames_fix, lbl='%s Master', fmt='o')
 
     if is_kur:
-        curves = read_curves_kurtenkov(path)
-        for lc in curves:
-            x = lc.Time + jd_shift
-            y = lc.Mag + mshift
-            bcolor = colors[lc.Band.Name]
-            # ax.plot(x, y, label='%s Kurtenkov' % lc.Band.Name,
-            #         ls="", color=bcolor, markersize=markersize, marker="x")
-            ax.errorbar(x, y, yerr=lc.MagErr,  label='%s Kurtenkov' % lc.Band.Name,
-                        color=bcolor, fmt='.')
+        curves_kur = read_curves_kurtenkov(path)
+        plot_lc(curves_kur, bnames_fix, lbl='%s Kurtenkov', fmt='.')
+        # for lc in curves:
+        #     x = lc.Time + jd_shift
+        #     y = lc.Mag + mshift
+        #     bcolor = colors[lc.Band.Name]
+        #     # ax.plot(x, y, label='%s Kurtenkov' % lc.Band.Name,
+        #     #         ls="", color=bcolor, markersize=markersize, marker="x")
+        #     ax.errorbar(x, y, yerr=lc.MagErr,  label='%s Kurtenkov' % lc.Band.Name,
+        #                 color=bcolor, fmt='.')
 
     if is_wil:            
         curves_wil = read_curves_williams(path)
-        for lc in curves_wil:
-            x = lc.Time + jd_shift
-            y = lc.Mag + mshift
-            bcolor = colors[lc.Band.Name]
-            # ax.plot(x, y, label='%s Williams' % lc.Band.Name,
-            #         ls="", color=bcolor, markersize=markersize, marker="+")
-            ax.errorbar(x, y, yerr=lc.MagErr, label='%s Williams' % lc.Band.Name,
-                        color=bcolor,  fmt='d', fillstyle='none')
-        
+        plot_lc(curves_wil, bnames_fix, lbl='%s Williams', fmt='d')
+        # for lc in curves_wil:
+        #     x = lc.Time + jd_shift
+        #     y = lc.Mag + mshift
+        #     bcolor = colors[lc.Band.Name]
+        #     # ax.plot(x, y, label='%s Williams' % lc.Band.Name,
+        #     #         ls="", color=bcolor, markersize=markersize, marker="+")
+        #     ax.errorbar(x, y, yerr=lc.MagErr, label='%s Williams' % lc.Band.Name,
+        #                 color=bcolor,  fmt='d', fillstyle='none')
+
 
 def read_curves_master_abs_mag(path=sn_path):
     jd = 2457036

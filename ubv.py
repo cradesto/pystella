@@ -9,6 +9,7 @@ from os.path import dirname
 # matplotlib.use("Agg")
 # matplotlib.rcParams['backend'] = "TkAgg"
 # matplotlib.rcParams['backend'] = "Qt4Agg"
+import math
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 
@@ -25,13 +26,49 @@ __author__ = 'bakl'
 ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
 
 
-def plot_all(models_vels, models_dic, bands, call=None, xlim=None, ylim=None,
-             is_time_points=False, title='', bshift=None):
-    colors = band.bands_colors()
-    band_shift = dict((k, 0) for k, v in colors.items())  # no y-shift
-    if bshift is not None:
-        for k, v in bshift.items():
-            band_shift[k] = v
+def plot_grid(models_dic, bnames, call=None, **kwargs):
+    title = kwargs.get('title', '')
+    # setup figure
+    plt.matplotlib.rcParams.update({'font.size': kwargs.get('fontsize', 12)})
+    fig, axs = plt.subplots(int(math.ceil(len(bnames)/2)), 2, sharex='col', sharey='row',
+                            figsize=(8, 8))
+    plt.subplots_adjust(wspace=0, hspace=0)
+
+    for i, bname in enumerate(bnames):
+        icol = i % 2
+        irow = int(i / 2)
+        ax = axs[irow, icol]
+        lcp.plot_models_band(ax, models_dic, bname, **kwargs)
+
+        # plot callback
+        if call is not None:
+            call.plot(ax, {'bnames': [bname], 'bcolors': {bname: 'black'}, 'markersize': 9})
+
+        if icol == 0:
+            ax.set_ylabel('Magnitude')
+        if irow == int(len(bnames)/2)-1:
+            ax.set_xlabel('Time [days]')
+
+        ax.legend(prop={'size': 8}, loc=4)
+        props = dict(facecolor='wheat')
+        # props = dict(boxstyle='round', facecolor='white')
+        # props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+        ax.text(.95, .9, bname, horizontalalignment='right', transform=ax.transAxes, bbox=props)
+
+        if kwargs.get('is_grid', False):
+            ax.grid(linestyle=':')
+
+    if title:
+        plt.title(title)
+
+    # fig.tight_layout()
+    plt.show()
+    return fig
+
+
+def plot_all(models_vels, models_dic, bnames, call=None, **kwargs):
+    # xlim = None, ylim = None,  is_time_points = False, title = '', bshift = None
+    title = kwargs.get('title', '')
     # band_shift['UVW1'] = 3
     # band_shift['UVW2'] = 5
     # band_shift['i'] = -1
@@ -53,8 +90,9 @@ def plot_all(models_vels, models_dic, bands, call=None, xlim=None, ylim=None,
     gs1.update(wspace=0.3, hspace=0.3, left=0.1, right=0.95)
 
     # plot the light curves
-    lcp.plot_ubv_models(axUbv, models_dic, bands, band_shift=band_shift, xlim=xlim, ylim=ylim,
-                        is_time_points=is_time_points)
+    lcp.plot_ubv_models(axUbv, models_dic, bnames, **kwargs)
+    # lcp.plot_ubv_models(axUbv, models_dic, bands, band_shift=band_shift, xlim=xlim, ylim=ylim,
+    #                     is_time_points=is_time_points)
 
     # plot callback
     if call is not None:
@@ -92,6 +130,8 @@ def usage():
     print("  -c <callback> [lcobs:fname:marker:dt:dm, popov[:R:M:E[FOE]:Mni]]. "
           "You can add parameters in format func:params")
     print("  -d <distance> [pc].  Default: 10 pc")
+    print("-g <single, grid, gridm, gridl> Select plot view.  single [default] = all models in one figure"
+          ", grid = for each band separate figure.")
     print("  -m <magnification>.  Default: None, used for grav lens")
     print("  -q  turn off quiet mode: print info and additional plots")
     print("  -t  plot time points")
@@ -130,6 +170,8 @@ def main(name='', model_ext='.ph'):
     is_plot_time_points = False
     is_extinction = False
     is_vel = False
+    view_opts = ('single', 'grid', 'gridl', 'gridm')
+    opt_grid = view_opts[0]
 
     label = None
     fsave = None
@@ -162,7 +204,7 @@ def main(name='', model_ext='.ph'):
         usage()
         sys.exit(2)
 
-    bands = ['U', 'B', 'V', 'R', "I"]
+    bnames = ['U', 'B', 'V', 'R', "I"]
     # bands = ['U', 'B', 'V', 'R', "I", 'UVM2', "UVW1", "UVW2", 'g', "r", "i"]
 
     for opt, arg in opts:
@@ -171,7 +213,7 @@ def main(name='', model_ext='.ph'):
             is_extinction = True
             continue
         if opt == '-b':
-            bands = []
+            bnames = []
             for b in str(arg).split('-'):
                 # extract band shift
                 if ':' in b:
@@ -185,7 +227,7 @@ def main(name='', model_ext='.ph'):
                 if not band.band_is_exist(bname):
                     print('No such band: ' + bname)
                     sys.exit(2)
-                bands.append(bname)
+                bnames.append(bname)
             continue
         if opt == '-c':
             c = lc_wrapper(str(arg))
@@ -195,6 +237,12 @@ def main(name='', model_ext='.ph'):
             continue
         if opt == '-q':
             is_quiet = False
+            continue
+        if opt == '-g':
+            opt_grid = str.strip(arg).lower()
+            if opt_grid not in view_opts:
+                print('No such view option: {0}. Can be '.format(opt_grid, '|'.join(view_opts)))
+                sys.exit(2)
             continue
         if opt == '-s':
             is_save_plot = True
@@ -271,7 +319,7 @@ def main(name='', model_ext='.ph'):
             i += 1
             # mags = lcf.compute_mag(name, path, bands, ext=ext, z=z, distance=distance, magnification=magnification,
             #                        t_diff=t_diff, is_show_info=not is_quiet, is_save=is_save_mags)
-            curves = lcf.curves_compute(name, path, bands, z=z, distance=distance,
+            curves = lcf.curves_compute(name, path, bnames, z=z, distance=distance,
                                         magnification=magnification)
 
             if is_extinction:
@@ -289,7 +337,7 @@ def main(name='', model_ext='.ph'):
             if not (is_save_mags or is_quiet):
                 # z, distance = 0.145, 687.7e6  # pc for comparison with Maria
                 # lcf.plot_bands(mags, bands, title=name, fname='', is_time_points=is_plot_time_points)
-                lcp.plot_bands(curves, bands, title=name, fname='', is_time_points=is_plot_time_points)
+                lcp.plot_bands(curves, bnames, title=name, fname='', is_time_points=is_plot_time_points)
 
             if is_vel:
                 vels = vel.compute_vel(name, path, z=z)
@@ -324,8 +372,15 @@ def main(name='', model_ext='.ph'):
 
                 fsave = os.path.join(d, os.path.splitext(fsave)[0]) + '.pdf'
 
-            fig = plot_all(models_vels, models_mags, bands, call=callback, xlim=xlim, ylim=ylim,
-                           is_time_points=is_plot_time_points, title=label, bshift=bshift)
+            if opt_grid in view_opts[1:]:
+                sep = opt_grid[:-1]
+                if sep == 'd':
+                    sep = 'l'  # line separator
+                fig = plot_grid(models_mags, bnames, call=callback, xlim=xlim, ylim=ylim,
+                                sep=sep, is_grid=False)
+            else:
+                fig = plot_all(models_vels, models_mags, bnames, call=callback, xlim=xlim, ylim=ylim,
+                               is_time_points=is_plot_time_points, title=label, bshift=bshift)
             if fsave is not None:
                 print("Save plot to %s " % fsave)
                 fig.savefig(fsave, bbox_inches='tight')
