@@ -29,29 +29,24 @@ markers = {u'D': u'diamond', 6: u'caretup', u's': u'square', u'x': u'x',
            5: u'caretright', u'^': u'triangle_up', u'd': u'thin_diamond', u'h': u'hexagon1',
            u'+': u'plus', u'*': u'star', u'o': u'circle', u'p': u'pentagon', u'3': u'tri_left',
            u'H': u'hexagon2', u'v': u'triangle_down', u'8': u'octagon', u'<': u'triangle_left'}
-markers = markers.keys()
+markers = list(markers.keys())
 
 
-def plot_scm(models_data, bands, z, xlim=None, is_fit=False):
-    ylim = (1.5, 4.)
-
+def plot_scm(models_data, bands, z, is_fit=True, xlim=None,  ylim=None):
     # setup figure
     plt.matplotlib.rcParams.update({'font.size': 14})
     # plt.rc('text', usetex=True)
     # plt.rc('font', family='serif')
     fig = plt.figure(num=len(bands), figsize=(9, 9), dpi=100, facecolor='w', edgecolor='k')
     gs1 = gridspec.GridSpec(len(bands) // 2 + len(bands) % 2, 2)
-    # gs1 = gridspec.GridSpec(2, 4, width_ratios=(8, 1, 8, 1))
     gs1.update(wspace=0., hspace=0., left=0.1, right=0.9)
 
     ax_cache = {}
 
     # create the grid of figures
-    ib = 0
-    for bname in bands:
-        ib += 1
-        icol = (ib - 1) % 2
-        irow = (ib - 1) / 2
+    for ib, bname in enumerate(bands):
+        icol = ib % 2
+        irow = ib // 2
         ax = fig.add_subplot(gs1[irow, icol])
         ax_cache[bname] = ax
         # ax.legend(prop={'size': 6})
@@ -72,7 +67,8 @@ def plot_scm(models_data, bands, z, xlim=None, is_fit=False):
         # ax.xaxis.set_ticks(np.arange(5000, xend, (xend - xstart) / 4.))
         # ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%d'))
         # y
-        ax.set_ylim(ylim)
+        if ylim is not None:
+            ax.set_ylim(ylim)
         # ax.set_yticks(np.arange(0.5, ylim[1], 0.5))
         # ax.text(.5, .9, bset, horizontalalignment='center', transform=ax.transAxes)
         # ax.set_title(bset)
@@ -81,59 +77,59 @@ def plot_scm(models_data, bands, z, xlim=None, is_fit=False):
     # plot data
     mi = 0
     vel = models_data['v'] / 1e8  # convert to 1000 km/c
-    for bname in bands:
+    for ib, bname in enumerate(bands):
         ax = ax_cache[bname]
         x = models_data[bname]
         bcolor = _colors[ib % (len(_colors) - 1)]
         ax.plot(x, vel, marker=markers[mi % (len(markers) - 1)], label='Models',
                 markersize=5, color=bcolor, ls="", linewidth=1.5)
         # выбросы todo сделать относительно фита
-
-    if is_fit:
-        yh = np.linspace(ylim[0], ylim[1], num=50)
-        # hamuy
-        for bname in bands:
-            ax = ax_cache[bname]
-            xx = scm_fit(yh, Av=0, bname=bname, z=z, src='hamuy')
-            if yh is not None:
-                ax.plot(xx, yh, color="darkviolet", ls="--", linewidth=2.5, label='Hamuy')
-        # kasen
-        for bname in bands:
-            ax = ax_cache[bname]
-            xx = scm_fit(yh, Av=0, bname=bname, z=z, src='hamuy')
-            if yh is not None:
-                ax.plot(xx, yh, color="red", ls="--", linewidth=2.5, label='Kasen')
-        # nugent
-        yn = np.linspace(ylim[0], ylim[1], num=len(models_data['V']))
-        for bname in bands:
-            ax = ax_cache[bname]
-            V_I = models_data['V'] - models_data['I']  # todo make for any bands
-            xn = scm_fit(yn, Av=V_I, src='nugent')
-            if yn is not None:
-                ax.plot(xn, yn, label='Nugent', color="blue", ls="--")
-                # ax.plot(xn, yn, marker='x', label='Nugent', markersize=5, color="blue", ls="")
-                # ax.plot(xx, yy, color="orange", ls="--", linewidth=2.5, label='Nugent')
-        # bakl
-        for bname in bands:
+    # bakl
+        if is_fit:
             ax = ax_cache[bname]
             mag = models_data[bname]
             Av = 0.
             a = scm_fit_bakl(mag, vel, z=z, Av=Av)
             mag_bakl = hamuy_fit(a, vel, z, Av)
-            if yn is not None:
-                ax.plot(mag_bakl, vel, label='Baklanov', color="orange", ls="--", lw=2)
-                # ax.plot(mag_bakl, vel, marker='o', label='Baklanov', markersize=5, color="blue", ls="")
+            # sort
+            sorti = np.argsort(mag_bakl)
+            xb = mag_bakl[sorti]
+            yb = vel[sorti]
+            # if mag_bakl is not None:
+            ax.plot(xb, yb, label='Baklanov', color="orange", ls="-", lw=2)
+            # ax.plot(mag_bakl, vel, marker='o', label='Baklanov', markersize=5, color="blue", ls="")
             print("Bakl fit for %s: %4.2f, %4.2f" % (bname, a[0], a[1]))
-            # ax.plot(xx, yy, color="orange", ls="--", linewidth=2.5, label='Nugent')
-
-    # legend
-    for bname in bands:
-        ax_cache[bname].legend(prop={'size': 6})
 
     # plt.title('; '.join(set_bands) + ' filter response')
     # plt.grid()
-    plt.show()
-    return fig
+    return fig, ax_cache
+
+
+def plot_scm_fit(ax_cache, bands, models_data, z):
+    # hamuy
+    for bname in bands:
+        ax = ax_cache[bname]
+        ylim = ax.get_ylim()
+        yh = np.linspace(ylim[0], ylim[1], num=50)
+        xx = scm_fit(yh, Av=0, bname=bname, z=z, src='hamuy')
+        if yh is not None:
+            ax.plot(xx, yh, color="darkviolet", ls="--", linewidth=2.5, label='Hamuy')
+    # kasen
+    for bname in bands:
+        ax = ax_cache[bname]
+        xx = scm_fit(yh, Av=0, bname=bname, z=z, src='kasen')
+        if yh is not None:
+            ax.plot(xx, yh, color="red", ls="--", linewidth=2.5, label='Kasen')
+    # nugent
+    yn = np.linspace(ylim[0], ylim[1], num=len(models_data['V']))
+    for bname in bands:
+        ax = ax_cache[bname]
+        V_I = models_data['V'] - models_data['I']  # todo make for any bands
+        xn = scm_fit(yn, Av=V_I, src='nugent')
+        if yn is not None:
+            ax.plot(xn, yn, label='Nugent', color="blue", ls="--")
+            # ax.plot(xn, yn, marker='x', label='Nugent', markersize=5, color="blue", ls="")
+            # ax.plot(xx, yy, color="orange", ls="--", linewidth=2.5, label='Nugent')
 
 
 def scm_fit(v, Av=0, bname=None, z=0.003, src='hamuy'):
@@ -182,18 +178,6 @@ def scm_fit_bakl(mag, vel, z, Av=0.):
     return res
 
 
-def usage():
-    print("Usage:")
-    print("  %s [params]" % __file__)
-    print("  -b <set_bands>: delimiter '_'. Default: B-V-I_B-V_V-I")
-    print("  -i <model name>.  Example: cat_R450_M15_Ni007_E7")
-    print("  -p <model path(directory)>, default: ./")
-    print("  -f  force mode: rewrite zeta-files even if it exists")
-    print("  -o  options: <fit:fitb:time:ubv:Tnu> - fit E&D: fit bakl:  show time points: plot UBV")
-    print("  -s  save plot to file, default 'False'")
-    print("  -h  print usage")
-    print("   --- ")
-    band.print_bands()
 
 
 def extract_time(t, times, mags):
@@ -212,15 +196,14 @@ def run_scm(bands, distance, names, path, t50, t_beg, t_end, z):
     res = np.array(np.zeros(len(names)),
                    dtype=np.dtype({'names': ['v'] + bands,
                                    'formats': [np.float] * (1 + len(bands))}))
-    im = 0
-    for name in names:
+    for im, name in enumerate(names):
         vels = velocity.compute_vel(name, path, z=z, t_beg=t_beg, t_end=t_end)
         if vels is None:
             print("No enough data for %s " % name)
             continue
 
         curves = lcf.curves_compute(name, path, bands, z=z, distance=distance,
-                                                 t_beg=t_beg, t_end=t_end)
+                                    t_beg=t_beg, t_end=t_end)
         v = extract_time(t50, vels['time'], vels['vel'])
         res[im]['v'] = v
         # dic_results[name]['v'] = v
@@ -228,15 +211,28 @@ def run_scm(bands, distance, names, path, t50, t_beg, t_end, z):
             m = extract_time(t50, curves.get(bname).Time, curves.get(bname).Mag)
             res[im][bname] = m
         print("Run: %s [%d/%d]" % (name, im + 1, len(names)))
-        im += 1
     res = res[res[:]['v'] > 0]
     return res
 
 
+def usage():
+    print("Usage:")
+    print("  %s [params]" % __file__)
+    print("  -b <set_bands>: delimiter '-'. Default: V-I")
+    print("  -i <model name>.  Example: cat_R450_M15_Ni007_E7")
+    print("  -p <model path(directory)>, default: ./")
+    print("  -f  force mode: rewrite zeta-files even if it exists")
+    print("  -o  options: <fit:nofit> - fit or no fit. ")
+    print("  -s  save plot to file, default 'False'")
+    print("  -h  print usage")
+    print("   --- ")
+    # band.print_bands()
+
+
 def main(name='', path='./'):
     model_ext = '.tt'
-    ubv_args = ''
     is_save = False
+    is_fit = True
 
     band.Band.load_settings()
 
@@ -272,12 +268,8 @@ def main(name='', path='./'):
                     print('No such band: ' + b)
                     sys.exit(2)
             continue
-        if opt == '-o':
-            ubv_args += " %s %s ".format(opt, arg)
-            continue
         if opt == '-s':
             is_save = True
-            ubv_args += opt + ' '
             continue
         if opt == '-f':
             is_save = True
@@ -310,11 +302,24 @@ def main(name='', path='./'):
     if len(names) > 0:
         res = run_scm(bands, distance, names, path, t50, t_beg, t_end, z)
         if len(res) > 0:
-            fig = plot_scm(res, bands, z, is_fit=True)
+            fig, ax_cache = plot_scm(res, bands, z)
+            # fig, ax_cache = plot_scm(res, bands, z, ylim=(1.5, 4.))
+
+            if all(x in bands for x in ('V', 'I')):  # fit works only for 'V', 'I'
+                # if len(bands) == 2 and all(x in bands for x in ('V', 'I')):  # fit works only for 'V', 'I'
+                plot_scm_fit(ax_cache, ('V', 'I'), res, z)
+
+            # legend
+            for bname in bands:
+                ax_cache[bname].legend(prop={'size': 6})
+
+            plt.show()
+
             if is_save:
                 fsave = os.path.join(os.path.expanduser('~/'), 'scm_' + '_'.join(bands) + '.pdf')
                 print("Save plot in %s" % fsave)
                 fig.savefig(fsave, bbox_inches='tight', format='pdf')
+
     else:
         print("There are no models in the directory: %s with extension: %s " % (path, model_ext))
 
