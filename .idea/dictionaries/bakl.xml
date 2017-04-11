@@ -23,6 +23,7 @@
       <w>catcopy</w>
       <w>chemfile</w>
       <w>coef</w>
+      <w>comovingdist</w>
       <w>conv</w>
       <w>cycler</w>
       <w>darkorange</w>
@@ -67,6 +68,7 @@
       <w>lcobs</w>
       <w>lims</w>
       <w>lntypes</w>
+      <w>lumdist</w>
       <w>lumnorm</w>
       <w>markersize</w>
       <w>masamune</w>

@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 from matplotlib import gridspec
 
 from pystella import velocity
+from pystella.model.stella import Stella
 from pystella.rf import band
 from pystella.rf import light_curve_func as lcf
 from pystella.util.phys_var import phys
@@ -32,7 +33,7 @@ markers = {u'D': u'diamond', 6: u'caretup', u's': u'square', u'x': u'x',
 markers = list(markers.keys())
 
 
-def plot_scm(models_data, bands, z, is_fit=True, xlim=None,  ylim=None):
+def plot_scm(models_data, bands, z, is_fit=True, xlim=None, ylim=None):
     # setup figure
     plt.matplotlib.rcParams.update({'font.size': 14})
     # plt.rc('text', usetex=True)
@@ -84,7 +85,7 @@ def plot_scm(models_data, bands, z, is_fit=True, xlim=None,  ylim=None):
         ax.plot(x, vel, marker=markers[mi % (len(markers) - 1)], label='Models',
                 markersize=5, color=bcolor, ls="", linewidth=1.5)
         # выбросы todo сделать относительно фита
-    # bakl
+        # bakl
         if is_fit:
             ax = ax_cache[bname]
             mag = models_data[bname]
@@ -143,7 +144,8 @@ def scm_fit(v, Av=0, bname=None, z=0.003, src='hamuy'):
     :return: magnitude
     """
     coef = {'hamuy': {'V': [6.504, 1.294], 'I': [5.820, 1.797]},
-            'nugent': {'alf': 6.69, 'V_I_0': 0.53, 'RI': 1.36, 'MI0': -17.49}
+            'nugent': {'alf': 6.69, 'V_I_0': 0.53, 'RI': 1.36, 'MI0': -17.49},
+            # 'nugent': {'alf': 6.69, 'V_I_0': 0.53, 'RI': 0., 'MI0': -17.49}
             }
     if src == 'hamuy':
         a = coef[src][bname]
@@ -178,8 +180,6 @@ def scm_fit_bakl(mag, vel, z, Av=0.):
     return res
 
 
-
-
 def extract_time(t, times, mags):
     if t < times[0] or t > times[-1]:
         raise ValueError("Time (%f) should be in range [%f, %f]" % (t, times[0], times[-1]))
@@ -202,11 +202,11 @@ def run_scm(bands, distance, names, path, t50, t_beg, t_end, z):
             print("No enough data for %s " % name)
             continue
 
-        curves = lcf.curves_compute(name, path, bands, z=z, distance=distance,
-                                    t_beg=t_beg, t_end=t_end)
         v = extract_time(t50, vels['time'], vels['vel'])
         res[im]['v'] = v
         # dic_results[name]['v'] = v
+        curves = lcf.curves_compute(name, path, bands, z=z, distance=distance,
+                                    t_beg=t_beg, t_end=t_end)
         for bname in bands:
             m = extract_time(t50, curves.get(bname).Time, curves.get(bname).Mag)
             res[im][bname] = m

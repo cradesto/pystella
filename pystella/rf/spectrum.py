@@ -1,3 +1,4 @@
+import logging
 import math
 import numpy as np
 
@@ -14,6 +15,9 @@ from pystella.rf.star import Star
 from pystella.util.phys_var import phys
 
 __author__ = 'bakl'
+
+logger = logging.getLogger(__name__)
+# logger.setLevel(logging.INFO)
 
 
 class Spectrum(object):
@@ -47,7 +51,7 @@ class Spectrum(object):
 
     @property
     def Wl(self):
-        return np.array([phys.c / x for x in self.Freq])
+        return Spectrum.freq2wl(self.Freq)
         # return np.array(map(lambda x: phys.c/x, self.Freq))
         # return phys.c / self.Freq
 
@@ -165,6 +169,21 @@ class Spectrum(object):
         """
         return flux / (4 * np.pi * dl ** 2)
 
+    @staticmethod
+    def freq2wl(f):
+        return np.array([phys.c / x for x in f])
+
+    @staticmethod
+    def wl2freq(l):
+        return np.array([phys.c / x for x in l])
+
+    @staticmethod
+    def from_lambda(name, lmd, flux):
+        freq = Spectrum.wl2freq(lmd)
+        # flux = flux_freq * freq ** 2 / phys.c
+        flux_freq = flux/freq**2 * phys.c
+        return Spectrum(name, freq, flux_freq)
+
 
 class SpectrumPlanck(Spectrum):
     """
@@ -236,7 +255,7 @@ class SeriesSpectrum(object):
         return np.array(self._times)
 
     @property
-    def IdxMax(self):
+    def Length(self):
         return len(self.Time)
 
     @property
@@ -359,9 +378,9 @@ class SeriesSpectrum(object):
 
     def flux_to_mags(self, b, z=0., d=0., magnification=1.):
         if b is None:
-            return None
+            raise ValueError("Band must be defined.")
         if not self.is_time:
-            return None
+            return ValueError("No spectral time points.")
 
         mags = np.zeros(len(self.Time))
         for k, t in enumerate(self.Time):
@@ -377,13 +396,36 @@ class SeriesSpectrum(object):
 
         return mags
 
+    def to_mags(self, b, z=0., d=0., magnification=1.):
+        if b is None:
+            raise ValueError("Band must be defined.")
+        if not self.is_time:
+            return ValueError("No spectral time points.")
+
+        # mags = np.zeros(len(self.Time))
+        mags = {}
+        for k, t in enumerate(self.Time):
+            star = Star(k, self.get_spec(k))
+            star.set_distance(d)
+            star.set_redshift(z)
+            star.set_magnification(magnification)
+            # mag = star.flux_to_mag(b)
+            try:
+                mag = star.magAB(b)
+                mags[t] = mag
+            except ValueError as ex:
+                logger.error("Could not compute mag {} for band {} at {} due to {}.".
+                             format(self.Name, b.Name, t, ex))
+        return mags
+
     def flux_to_curve(self, b, z=0., d=0., magnification=1.):
         if b is None:
             raise ValueError("Band must be defined.")
         if not self.is_time:
             return ValueError("No spectral time points.")
 
-        mags = self.flux_to_mags(b, z, d, magnification)
+        mags = self.to_mags(b, z, d, magnification)
+        # mags = self.flux_to_mags(b, z, d, magnification)
         # for k in range(len(self.Time)):
         #     star = Star(k, self.get_spec(k))
         #     star.set_distance(d)
@@ -393,8 +435,9 @@ class SeriesSpectrum(object):
         #     mag = star.flux_to_magAB(b)
         #     mags[k] = mag
 
-        time = self.Time * (1. + z)
-        lc = LightCurve(b, time, mags)
+        time = np.array(list(mags.keys()))
+        time *= (1. + z)
+        lc = LightCurve(b, time, np.array(list(mags.values())))
         return lc
 
     def flux_to_curves(self, bands, z=0., d=rf.pc_to_cm(10.), magnification=1.):
@@ -407,10 +450,14 @@ class SeriesSpectrum(object):
         :return:
         """
         curves = SetLightCurve(self.Name)
-        for n in bands:
-            b = band.band_by_name(n)
-            lc = self.flux_to_curve(b, z=z, d=d, magnification=magnification)
-            curves.add(lc)
+        for bname in bands:
+            b = band.band_by_name(bname)
+            try:
+                lc = self.flux_to_curve(b, z=z, d=d, magnification=magnification)
+                curves.add(lc)
+            except ValueError as ex:
+                logger.error("Could not compute light curve {} for band {} due to {}.".
+                             format(self.Name, bname, ex))
         return curves
 
     def mags_bands(self, bands, z=0., d=rf.pc_to_cm(10.), magnification=1.):

@@ -8,7 +8,10 @@ class LightCurve(object):
     def __init__(self, b, time, mags, errs=None, tshift=0):
         """Creates a Light Curve instance.  Required parameters:  b (band), time, mags."""
         if isinstance(b, str):  # convert band-name to band instance
-            self._b = band.band_by_name(b)
+            if band.band_is_exist(b):
+                self._b = band.band_by_name(b)
+            else:
+                raise ValueError("No such band: {}".format(b))
         else:
             self._b = b
         self._t = np.array(time, copy=True)  # [days]

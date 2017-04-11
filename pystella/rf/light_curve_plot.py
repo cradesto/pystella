@@ -347,14 +347,16 @@ def plot_bands(dict_mags, bands, title='', fname='', distance=10., xlim=(-10, 20
 
 
 def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname='', **kwargs):
-    is_line = 'ls' in kwargs or 'lt' not in kwargs
-    ls = kwargs.pop('ls', {lc.Band.Name: '-' for lc in curves})
-    lt = kwargs.pop('lt', {lc.Band.Name: 'o' for lc in curves})
-    colors = kwargs.pop('colors', lc_colors)
-    linewidth = kwargs.pop('linewidth', 2.0)
-    markersize = kwargs.pop('markersize', 5)
-    rect = kwargs.pop('rect', (0.1, 0.3, 0.8, 0.65))
-    fontsize = kwargs.pop('fontsize', 18)
+    ls = kwargs.get('ls', {lc.Band.Name: '-' for lc in curves})
+    is_line = kwargs.get('is_line', True)
+    if 'lt' in kwargs:
+        is_line = False
+    lt = kwargs.get('lt', {lc.Band.Name: 'o' for lc in curves})
+    colors = kwargs.get('colors', lc_colors)
+    linewidth = kwargs.get('linewidth', 2.0)
+    markersize = kwargs.get('markersize', 5)
+    rect = kwargs.get('rect', (0.1, 0.3, 0.8, 0.65))
+    fontsize = kwargs.get('fontsize', 18)
 
     is_new_fig = ax is None
     if is_new_fig:
@@ -387,7 +389,7 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname='', **k
                     color=colors[bname], ls=ls[bname], linewidth=linewidth)
         else:
             ax.plot(x, y, label='{0} {1}'.format(bname, curves.Name),
-                    color=colors[bname], ls=None, marker=lt[bname], markersize=markersize)
+                    color=colors[bname], ls='', marker=lt[bname], markersize=markersize)
 
         if is_xlim:
             xlim[0] = min(xlim[0], np.min(x))

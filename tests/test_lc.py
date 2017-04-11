@@ -1,15 +1,17 @@
 import numpy as np
 import unittest
 
+from pystella.rf.band import Band
 from pystella.rf.lc import SetLightCurve, LightCurve
 
 __author__ = 'bakl'
 
 
-def lc_create(band, m=-19, dt=0.):
+def lc_create(bname, m=-19, dt=0.):
     n = 10
     time = np.linspace(0.+dt, 200.+dt, n)
     mags = m * np.ones(n)
+    band = Band(bname)
     return LightCurve(band, time, mags)
 
 

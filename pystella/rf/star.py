@@ -187,10 +187,13 @@ class Star:
         if np.min(nu_s) > nu_b[0] or np.max(nu_s) < nu_b[-1]:
             # decrease wave length range of the band
             f = (np.min(nu_s) < nu_b) & (nu_b < np.max(nu_s))
+
             # f = map(lambda x: min(nu_s) < x < max(nu_s), nu_b)
             nu_b = nu_b[f]
+            if len(nu_b) < 3:
+                raise ValueError("Spectrum must be wider then band: {}. You have just {} points in the filter "
+                                 "wavelength range".format(b.Name, len(nu_b)))
             resp_b = resp_b[f]
-            # raise ValueError("Spectrum must be wider then band: " + str(band))
 
         # if is_b_spline:
         #     tck = interpolate.splrep(nu_s, flux, s=0)
