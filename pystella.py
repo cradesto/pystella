@@ -42,14 +42,23 @@ class HistConsole(Cmd):
 class MyPrompt(HistConsole):
 
     @staticmethod
+    def do_snespace(args):
+        """Plot SN using json-file from https://sne. For detailed help type 'snespace -h'.
+        """
+        script = os.path.join(ROOT_DIRECTORY, 'sne_space.py')
+        subprocess.call("{0} {1}".format(script, args), shell=True)
+
+    @staticmethod
+    def do_snec(args):
+        """Convert SNEC models to  Stella models. For detailed help type 'snec -h'.
+        """
+        script = os.path.join(ROOT_DIRECTORY, 'snec.py')
+        subprocess.call("{0} {1}".format(script, args), shell=True)
+
+    @staticmethod
     def do_ls(args):
         """Show Stella models. For detailed help type 'ls -h'.
         """
-        # if len(args) == 0:
-        #     name = 'Please provide a path to stella models.'
-        # else:
-        #     name = args
-        # print("ls %s" % name)
         script = os.path.join(ROOT_DIRECTORY, 'ls.py')
         subprocess.call("{0} {1}".format(script, args), shell=True)
 

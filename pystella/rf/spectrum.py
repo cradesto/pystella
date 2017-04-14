@@ -51,7 +51,7 @@ class Spectrum(object):
 
     @property
     def Wl(self):
-        return Spectrum.freq2wl(self.Freq)
+        return rf.val_to_wl(self.Freq)
         # return np.array(map(lambda x: phys.c/x, self.Freq))
         # return phys.c / self.Freq
 
@@ -169,19 +169,19 @@ class Spectrum(object):
         """
         return flux / (4 * np.pi * dl ** 2)
 
-    @staticmethod
-    def freq2wl(f):
-        return np.array([phys.c / x for x in f])
+    # @staticmethod
+    # def freq2wl(f):
+    #     return np.array([phys.c / x for x in f])
+    #
+    # @staticmethod
+    # def wl2freq(l):
+    #     return np.array([phys.c / x for x in l])
 
     @staticmethod
-    def wl2freq(l):
-        return np.array([phys.c / x for x in l])
-
-    @staticmethod
-    def from_lambda(name, lmd, flux):
-        freq = Spectrum.wl2freq(lmd)
+    def from_lambda(name, lmd, flux, u_lmd="A"):
+        freq = rf.val_to_hz(np.asarray(lmd), inp=u_lmd)  # Spectrum.wl2freq(lmd)
         # flux = flux_freq * freq ** 2 / phys.c
-        flux_freq = flux/freq**2 * phys.c
+        flux_freq = np.asarray(flux)/freq**2 * phys.c
         return Spectrum(name, freq, flux_freq)
 
 
@@ -396,7 +396,7 @@ class SeriesSpectrum(object):
 
         return mags
 
-    def to_mags(self, b, z=0., d=0., magnification=1.):
+    def to_mags(self, b, z=0., d=None, magnification=1.):
         if b is None:
             raise ValueError("Band must be defined.")
         if not self.is_time:

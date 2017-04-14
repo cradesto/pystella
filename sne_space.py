@@ -140,20 +140,25 @@ class SneSpace:
             lmd = []
             flux = []
             for x in tbl:
-                l, f = x
-                lmd.append(float(l)*phys.angs_to_cm)
-                flux.append(float(f))
+                lmd.append(float(x[0]))
+                flux.append(float(x[1]))
             if len(lmd) > 0:
-                sp = Spectrum.from_lambda(name, lmd, flux)
+                sp = Spectrum.from_lambda(name, lmd, flux, u_lmd="A")
                 return sp
             return None
 
         for i, item in enumerate(self.spectra):
             tbl = item
+            # filter bad spectra
+            if "u_fluxes" not in tbl:
+                continue
+            # if tbl["u_fluxes"].lower() == 'Uncalibrated'.lower():
+            #     continue
             # tbl = pandas.DataFrame.from_dict(item)
             if 'time' in tbl:
                 t = float(tbl['time'])
                 name = tbl['filename']
+                # take flux in "erg/s/cm^2/Angstrom" ?
                 spec = to_pystella_spec(name, tbl['data'])
                 if spec is not None:
                     series.add(t, spec)
@@ -162,7 +167,7 @@ class SneSpace:
 
 
 def get_parser():
-    parser = argparse.ArgumentParser(description='Process Stella Shock Wave Details.')
+    parser = argparse.ArgumentParser(description='Plot SN using json-file from https://sne.')
     parser.add_argument('-i', '--input',
                         required=False,
                         dest="fname",
