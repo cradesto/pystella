@@ -130,7 +130,7 @@ def usage():
     print("  -c <callback> [lcobs:fname:marker:dt:dm, popov[:R:M:E[FOE]:Mni]]. "
           "You can add parameters in format func:params")
     print("  -d <distance> [pc].  Default: 10 pc")
-    print("-g <single, grid, gridm, gridl> Select plot view.  single [default] = all models in one figure"
+    print("  -g <single, grid, gridm, gridl> Select plot view.  single [default] = all models in one figure"
           ", grid = for each band separate figure.")
     print("  -m <magnification>.  Default: None, used for grav lens")
     print("  -q  turn off quiet mode: print info and additional plots")
@@ -185,7 +185,7 @@ def main(name='', model_ext='.ph'):
     xlim = None
     ylim = None
     # bshift = None
-    bshift = {}
+    bshift = None
 
     band.Band.load_settings()
 
@@ -218,6 +218,7 @@ def main(name='', model_ext='.ph'):
                 # extract band shift
                 if ':' in b:
                     bname, shift = b.split(':')
+                    bshift = {}
                     if '_' in shift:
                         bshift[bname] = -float(shift.replace('_', ''))
                     else:

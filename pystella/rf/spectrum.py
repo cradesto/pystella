@@ -403,7 +403,8 @@ class SeriesSpectrum(object):
             return ValueError("No spectral time points.")
 
         # mags = np.zeros(len(self.Time))
-        mags = {}
+        times = []
+        mags = []
         for k, t in enumerate(self.Time):
             star = Star(k, self.get_spec(k))
             star.set_distance(d)
@@ -412,11 +413,12 @@ class SeriesSpectrum(object):
             # mag = star.flux_to_mag(b)
             try:
                 mag = star.magAB(b)
-                mags[t] = mag
+                times.append(t)
+                mags.append(mag)
             except ValueError as ex:
                 logger.error("Could not compute mag {} for band {} at {} due to {}.".
                              format(self.Name, b.Name, t, ex))
-        return mags
+        return times, mags
 
     def flux_to_curve(self, b, z=0., d=0., magnification=1.):
         if b is None:
@@ -424,7 +426,7 @@ class SeriesSpectrum(object):
         if not self.is_time:
             return ValueError("No spectral time points.")
 
-        mags = self.to_mags(b, z, d, magnification)
+        times, mags = self.to_mags(b, z, d, magnification)
         # mags = self.flux_to_mags(b, z, d, magnification)
         # for k in range(len(self.Time)):
         #     star = Star(k, self.get_spec(k))
@@ -435,9 +437,8 @@ class SeriesSpectrum(object):
         #     mag = star.flux_to_magAB(b)
         #     mags[k] = mag
 
-        time = np.array(list(mags.keys()))
-        time *= (1. + z)
-        lc = LightCurve(b, time, np.array(list(mags.values())))
+        times = (1. + z) * np.array(times)
+        lc = LightCurve(b, times, mags)
         return lc
 
     def flux_to_curves(self, bands, z=0., d=rf.pc_to_cm(10.), magnification=1.):

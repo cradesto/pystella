@@ -83,8 +83,8 @@ def lbl(b, band_shift):
 def plot_ubv_models(ax, models_dic, bands, **kwargs):
     # bshift=None, xlim=None, ylim=None, colors=lc_colors, is_time_points=False):
     xlim = kwargs.get('xlim', None)
-    ylim = kwargs.get('xlim', None)
-    bshift = kwargs.get('xlim', None)
+    ylim = kwargs.get('ylim', None)
+    bshift = kwargs.get('bshift', None)
     is_time_points = kwargs.get('is_time_points', False)
 
     is_compute_x_lim = xlim is None
