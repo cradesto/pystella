@@ -85,6 +85,10 @@ def plot_ubv_models(ax, models_dic, bands, **kwargs):
     xlim = kwargs.get('xlim', None)
     ylim = kwargs.get('ylim', None)
     bshift = kwargs.get('bshift', None)
+    ls1 = kwargs.get('ls1', "-")
+    ls_multi = kwargs.get('ls_multi', ":")
+    lw = kwargs.get('lw', 2)
+    markersize = kwargs.get('markersize', 6)
     is_time_points = kwargs.get('is_time_points', False)
 
     is_compute_x_lim = xlim is None
@@ -97,7 +101,6 @@ def plot_ubv_models(ax, models_dic, bands, **kwargs):
         for k, v in bshift.items():
             band_shift[k] = v
 
-    lw = 1.5
     mi = 0
     x_max = []
     y_mid = []
@@ -111,10 +114,10 @@ def plot_ubv_models(ax, models_dic, bands, **kwargs):
             bcolor = colors[bname]
 
             if len(models_dic) == 1:
-                ax.plot(x, y, label='%s  %s' % (lbl(bname, band_shift), mname), color=bcolor, ls="-", linewidth=lw)
+                ax.plot(x, y, label='%s  %s' % (lbl(bname, band_shift), mname), color=bcolor, ls=ls1, linewidth=lw)
             else:
                 ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label='%s  %s' % (lbl(bname, band_shift), mname),
-                        markersize=4, color=bcolor, ls=":", linewidth=lw)
+                        markersize=markersize, color=bcolor, ls=ls_multi, linewidth=lw)
 
             if is_time_points:
                 integers = [np.abs(x - t).argmin() for t in t_points]  # set time points
