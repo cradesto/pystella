@@ -40,46 +40,6 @@ def lbl(b, band_shift):
     return l
 
 
-#
-# def plot_curves(ax, curves, band_shift=None, xlim=None, ylim=None,
-#                 colors=lc_colors, ls='-', lw=2):
-#     is_compute_x_lim = xlim is None
-#     is_compute_y_lim = ylim is None
-#
-#     bands = curves.BandNames
-#     if band_shift is None:
-#         band_shift = dict((bname, 0) for bname in bands)  # no y-shift
-#
-#     x_max = []
-#     y_mid = []
-#     lc_min = {}
-#
-#     for bname in bands:
-#         lc = curves[bname]
-#         x = lc.Time
-#         y = lc.Mag + band_shift[bname]
-#         bcolor = colors[bname]
-#         ax.plot(x, y, label='%s  %s' % (lbl(bname, band_shift), curves.Name), color=bcolor, ls=ls, linewidth=lw)
-#
-#         idx = np.argmin(y)
-#         lc_min[bname] = (x[idx], y[idx])
-#         if is_compute_x_lim:
-#             x_max.append(np.max(x))
-#         if is_compute_y_lim:
-#             y_mid.append(np.min(y))
-#
-#     if is_compute_x_lim:
-#         xlim = [-10, np.max(x_max) + 10.]
-#     if is_compute_y_lim:
-#         ylim = [np.min(y_mid) + 7., np.min(y_mid) - 2.]
-#
-#     ax.set_xlim(xlim)
-#     ax.invert_yaxis()
-#     ax.set_ylim(ylim)
-#
-#     return lc_min
-
-
 def plot_ubv_models(ax, models_dic, bands, **kwargs):
     # bshift=None, xlim=None, ylim=None, colors=lc_colors, is_time_points=False):
     xlim = kwargs.get('xlim', None)
@@ -115,6 +75,9 @@ def plot_ubv_models(ax, models_dic, bands, **kwargs):
 
             if len(models_dic) == 1:
                 ax.plot(x, y, label='%s  %s' % (lbl(bname, band_shift), mname), color=bcolor, ls=ls1, linewidth=lw)
+            elif len(models_dic) <= len(lines):
+                ax.plot(x, y, label='%s  %s' % (lbl(bname, band_shift), mname), color=bcolor, ls=lines[mi-1],
+                        linewidth=lw)
             else:
                 ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label='%s  %s' % (lbl(bname, band_shift), mname),
                         markersize=markersize, color=bcolor, ls=ls_multi, linewidth=lw)
