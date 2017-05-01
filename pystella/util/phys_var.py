@@ -13,6 +13,9 @@ class phys:
     sigma_SB = 5.6704e-5  # erg cm^-2 s^-1 K^-4, Stefan-Boltzman Constant
     H0 = 68  # Hubble constant [km/c/Mpc]
 
+    echarg = 4.8032042000e-10
+    avogar = 6.0221419900e+23
+
     # conversions
     angs_to_cm = 1.e-8
     cm_to_angs = 1. / angs_to_cm
@@ -32,6 +35,7 @@ class phys:
     FOE = 1.e51  # ergs
 
     d2s = 24.*60.*60.  # convert days to seconds
+    ev2erg = 1.6021764630e-12  # convert eV to erg
 
 
 def cosmology_D_by_z(z):
