@@ -40,7 +40,7 @@ markers = {u'D': u'diamond', 6: u'caretup', u's': u'square', u'x': u'x',
            5: u'caretright', u'^': u'triangle_up', u'd': u'thin_diamond', u'h': u'hexagon1',
            u'+': u'plus', u'*': u'star', u'o': u'circle', u'p': u'pentagon', u'3': u'tri_left',
            u'H': u'hexagon2', u'v': u'triangle_down', u'8': u'octagon', u'<': u'triangle_left'}
-markers = markers.keys()
+markers = list(markers.keys())
 
 
 def plot_spec(dic_stars, times, set_bands, is_planck=False, is_filter=False):
@@ -72,15 +72,15 @@ def plot_spec(dic_stars, times, set_bands, is_planck=False, is_filter=False):
             # y = star.FluxWlObs
             bcolor = _colors[it % (len(_colors) - 1)]
             ax.plot(x, y, marker=markers[it % (len(markers) - 1)],
-                    label='%.0f: %0.2e, %0.2f' % (times[it], star.get_Tcol(bset), star.get_zeta(bset)),
-                    markersize=5, color=bcolor, ls="", linewidth=1.5)
+                    label=r'$%4.0f^d: T=%7.1e\,K, \zeta=%0.2f$' % (times[it], star.get_Tcol(bset), star.get_zeta(bset)),
+                    markersize=5, color=bcolor, ls="--", linewidth=1.5)
             if is_planck:
                 star_bb = planck_fit(star, bset)
                 xx = star_bb.Wl * phys.cm_to_angs
                 yy = star_bb.FluxAB
                 # yy = star_bb.FluxWlObs
                 if yy is not None:
-                    ax.plot(xx, yy, color=bcolor, ls="-", linewidth=2.5)
+                    ax.plot(xx, yy, color=bcolor, ls=":", linewidth=2.5)
                     # ax.plot(xx, yy, color=bcolor, ls="--", linewidth=2.5, label='Planck')
         if is_filter:
             if bset in ax2_cache:
@@ -91,17 +91,18 @@ def plot_spec(dic_stars, times, set_bands, is_planck=False, is_filter=False):
                 ax2_cache[bset] = ax2
             ax2.yaxis.tick_right()
             ax2.yaxis.set_label_position("right")
-            ax2.set_ylabel(r'AB Magnitudes')
+            ax2.set_ylabel(r'Filter transmission')
             # ax2.set_ylabel("Filter Response")
             bands = bset.split('-')
             for n in bands:
                 b = band.band_by_name(n)
                 xx = b.wl * phys.cm_to_angs
                 yy = b.resp_wl
-                ax2.plot(xx, yy, color=colors_band[n], ls="--", linewidth=1.5, label=n)
+                # ax2.plot(xx, yy, color=colors_band[n], ls="--", linewidth=1.5, label=n)
+                ax2.fill_between(xx, 0, yy, color=colors_band[n], alpha=0.2)
             ax2.set_xscale('log')
             ax2.set_xlim(xlim)
-            ax2.legend(prop={'size': 9}, loc=2, borderaxespad=0.)
+            ax2.legend(prop={'size': 9}, loc=2, borderaxespad=0., fontsize='large')
 
     ib = 0
     for bset in set_bands:
@@ -121,10 +122,11 @@ def plot_spec(dic_stars, times, set_bands, is_planck=False, is_filter=False):
         #     ax2 = ax2_cache[bset]
         #     ax2.legend(prop={'size': 9}, loc=4)
         # else:
-        ax.legend(prop={'size': 9}, loc=4, borderaxespad=0.)
+        ax.legend(prop={'size': 11}, loc=4, borderaxespad=0.)
     # plt.title('; '.join(set_bands) + ' filter response')
     plt.grid()
     plt.show()
+    return fig
 
 
 def color_map_temp():
@@ -406,7 +408,7 @@ def usage():
     print("  -i <model name>.  Example: cat_R450_M15_Ni007_E7")
     print("  -o  options: [fit] - plot spectral fit in bands")
     print("  -p <model path(directory)>, default: ./")
-    print("  -s  silence mode: no info, no plot")
+    print("  -s <file-name> without extension. Save plot to pdf-file. Default: spec_<file-name>.pdf")
     print("  -t  time interval [day]. Example: 5.:75.")
     print("  -w  wave length interval [A]. Example: 1.:25e3")
     print("  -a  write flux to magAB")
@@ -436,7 +438,7 @@ def write_magAB(series, d=10):
 
 
 def main():
-    is_silence = False
+    is_save_plot = False
     is_fit = False
     is_magAB = False
     fsave = None
@@ -450,6 +452,7 @@ def main():
 
     name = ''
     path = os.getcwd()
+    band.Band.load_settings()
     # name = 'cat_R500_M15_Ni006_E12'
 
     if not name:
@@ -483,7 +486,9 @@ def main():
             is_magAB = True
             continue
         if opt == '-s':
-            is_silence = True
+            is_save_plot = True
+            if len(arg) > 0:
+                fsave = str(arg).strip()
             continue
         if opt == '-w':
             wl_ab = interval2float(arg)
@@ -491,6 +496,8 @@ def main():
             continue
         if opt == '-t':
             t_ab = interval2float(arg)
+            if len(t_ab) > 1:
+                times = t_ab
             continue
         if opt == '-o':
             ops = str(arg).split(':')
@@ -566,8 +573,15 @@ def main():
         dic_results[it] = star
         # it += 1
 
-    if not is_silence:
-        plot_spec(dic_results, times, set_bands, is_planck=True, is_filter=True)
+    fig = plot_spec(dic_results, times, set_bands, is_planck=True, is_filter=True)
+    if is_save_plot:
+        if fsave is None or len(fsave) == 0:
+             fsave = "spec_%s" % name
+        d = os.path.expanduser('~/')
+        fsave = os.path.join(d, os.path.splitext(fsave)[0]) + '.pdf'
+
+        print("Save plot to %s " % fsave)
+        fig.savefig(fsave, bbox_inches='tight')
 
 
 if __name__ == '__main__':

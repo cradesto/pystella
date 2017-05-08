@@ -141,6 +141,7 @@ def usage():
     print("  -v  plot model velocities.")
     print("  -w  write magnitudes to file, default 'False'")
     print("  -z <redshift>.  Default: 0")
+    print("  --dt=<t_diff>  time difference between two spectra")
     print("  -l  write plot label")
     print("  -h  print usage")
     print("   --- ")
@@ -172,6 +173,7 @@ def main(name='', model_ext='.ph'):
     is_vel = False
     view_opts = ('single', 'grid', 'gridl', 'gridm')
     opt_grid = view_opts[0]
+    t_diff = 1.01
 
     label = None
     fsave = None
@@ -190,7 +192,7 @@ def main(name='', model_ext='.ph'):
     band.Band.load_settings()
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hqwtc:d:p:e:g:i:b:l:m:vs:x:y:z:")
+        opts, args = getopt.getopt(sys.argv[1:], "hqwtc:d:p:e:g:i:b:l:m:vs:x:y:z:", longopts='dt')
     except getopt.GetoptError as err:
         print(str(err))  # will print something like "option -a not recognized"
         usage()
@@ -235,6 +237,9 @@ def main(name='', model_ext='.ph'):
             if callback is not None:
                 c = cb.CallBackArray((callback, c))
             callback = c
+            continue
+        if opt == '--dt':
+            t_diff = float(arg)
             continue
         if opt == '-q':
             is_quiet = False
@@ -321,7 +326,7 @@ def main(name='', model_ext='.ph'):
             # mags = lcf.compute_mag(name, path, bands, ext=ext, z=z, distance=distance, magnification=magnification,
             #                        t_diff=t_diff, is_show_info=not is_quiet, is_save=is_save_mags)
             curves = lcf.curves_compute(name, path, bnames, z=z, distance=distance,
-                                        magnification=magnification)
+                                        magnification=magnification, t_diff=t_diff)
 
             if is_extinction:
                 lcf.curves_reddening(curves, ebv=e, z=z)

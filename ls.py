@@ -65,9 +65,10 @@ def main():
             stella = Stella(mdl, path=path)
             if stella.is_tt_data:
                 info = stella.get_tt().Info
-                info.show(comment=' {0}'.format(exts))
+                info.show(comment='{0}'.format(exts))
             else:
-                print("{0} No tt.".format(stella))
+                print("| %40s |  %26s |  %s" % (stella.name, ' ', exts))
+                # print("{0} No tt.".format(stella))
     else:
         print('Models: {0} in {1}'.format(len(models), path))
         tbl = list_to_table(models.keys())
