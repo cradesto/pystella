@@ -314,6 +314,9 @@ def plot_bands(dict_mags, bands, title='', fname='', distance=10., xlim=(-10, 20
 
 def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname='', **kwargs):
     ls = kwargs.get('ls', {lc.Band.Name: '-' for lc in curves})
+    if isinstance(ls, str):
+        c = ls.strip()
+        ls = {lc.Band.Name: c for lc in curves}
     is_line = kwargs.get('is_line', True)
     if 'lt' in kwargs:
         is_line = False
@@ -323,11 +326,12 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname='', **k
     markersize = kwargs.get('markersize', 5)
     rect = kwargs.get('rect', (0.1, 0.3, 0.8, 0.65))
     fontsize = kwargs.get('fontsize', 18)
+    figsize = kwargs.get('figsize', (20,10))
 
     is_new_fig = ax is None
     if is_new_fig:
         plt.matplotlib.rcParams.update({'font.size': 14})
-        fig = plt.figure()
+        fig = plt.figure(figsize=figsize)
         # fig = plt.figure(num=None, figsize=(7, 11), dpi=100, facecolor='w', edgecolor='k')
         # ax = fig.add_axes()
         ax = fig.add_axes(rect)

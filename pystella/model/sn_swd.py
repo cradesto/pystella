@@ -95,6 +95,58 @@ class StellaShockWaveDetail:
         block = self._data[:][b:e]
         return BlockSwd(self._data['tday'][idx], block)
 
+    def evolution(self, var, nz):
+        """Return the time evolution VAR in zone NZ"""
+        if nz < 1 or nz > self.Nzon:
+            raise ValueError('NZ should be in range: 0 - {}'.format(self.Nzon))
+
+        if var not in vars(BlockSwd):
+            raise ValueError('var should be property of BlockSwd, like Zon, M, R, Vel, T, Trad, Rho, Lum, Cappa, M')
+
+        x = []
+        y = []
+        for idx, time in enumerate(self.Times):
+            b = self.block_nearest(time)
+            v = getattr(b, var)[nz]
+            x.append(time)
+            y.append(v)
+        return x, y
+
+    def taus(self):
+        """Compute tau for each moment of time
+        Return: 2d-array[i,k], where i - time index, k - zone index.
+        """
+        taus = np.zeros((self.Ntimes, self.Nzon))
+        for i, time in enumerate(self.Times):
+            s = self[i]
+            # tau = s.Tau
+            taus[i, :] = s.Tau[:]
+            # for k in range(self.Nzon-1, 1, -1):
+            #     tau += s.Cappa[k] * s.Rho[k] * (s.R[k] - s.R[k-1])
+            #     taus[i, k] = tau
+        return taus
+
+    def params_ph(self, tau_ph=2. / 3., cols=['R', 'M', 'T', 'V', 'Rho']):
+        res = {k: np.zeros(self.Ntimes) for k in ['time', 'zone']+cols}
+        taus = self.taus()
+        for i, time in enumerate(self.Times):
+            s = self[i]
+            kph = 1  # todo check the default value
+            for k in range(self.Nzon-1, 1, -1):
+                if taus[i][k] >= tau_ph:
+                    kph = k
+                    break
+            res['time'][i] = time
+            res['zone'][i] = kph
+            for v in cols:
+                res[v][i] = getattr(s, v)[kph]
+            # res['R'][i] = s.R[kph]
+            # res['M'][i] = s.M[kph]
+            # res['T'][i] = s.T[kph]
+            # res['V'][i] = s.Vel[kph] / 1e8  # to 1000 km/s
+
+        return res
+
 
 class BlockSwd:
     """
@@ -126,11 +178,11 @@ class BlockSwd:
         return self.R / phys.R_sun  # [Rsun]
 
     @property
-    def Vel(self):
+    def V(self):
         return self._block['V8'] * 1e8  # [cm/s]
 
     @property
-    def Vel8(self):
+    def V8(self):
         return self._block['V8']  # [1000 km/s]
 
     @property
@@ -259,7 +311,7 @@ def plot_swd(ax, b, **kwargs):
     ax2.plot(x, y2, color='orange', ls="-", label='Lum{0:d}'.format(int(np.log10(lumnorm))))
     ax2.plot(x, y22, color='brown', ls="--", label='-Lum{0:d}'.format(int(np.log10(lumnorm))))
 
-    y2 = b.Vel / vnorm
+    y2 = b.V / vnorm
     ax2.plot(x, y2, 'b-', label='V{0:d}'.format(int(np.log10(vnorm))))
 
     if is_legend:

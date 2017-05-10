@@ -26,38 +26,6 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-def uph_compute_tau(swd):
-    """Compute tau for each moment of time
-    Return: 2d-array[i,k], where i - time index, k - zone index.
-    """
-    taus = np.zeros((swd.Ntimes, swd.Nzon))
-    for i, time in enumerate(swd.Times):
-        s = swd[i]
-        tau = 0.
-        for k in range(swd.Nzon-1, 1, -1):
-            tau += s.Cappa[k] * s.Rho[k] * (s.R[k] - s.R[k-1])
-            taus[i, k] = tau
-    return taus
-
-
-def uph_find_uph(swd, taus, tau_ph=2. / 3.):
-    col = ('time', 'R', 'V', 'zone')
-    res = {k: np.zeros(swd.Ntimes) for k in col}
-    # res = {'time': [], 'R': [], 'V': []}
-    for i, time in enumerate(swd.Times):
-        s = swd[i]
-        kph = 1  # todo check the default value
-        for k in range(swd.Nzon-1, 1, -1):
-            if taus[i][k] >= tau_ph:
-                kph = k
-                break
-        res['time'][i] = time
-        res['zone'][i] = kph
-        res['R'][i] = s.R[kph]
-        res['V'][i] = s.Vel[kph] / 1e8  # to 1000 km/s
-
-    return res
-
 
 def uph_save(dictionary, fname, sep='\t'):
     """

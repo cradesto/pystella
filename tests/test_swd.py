@@ -79,6 +79,30 @@ class TestStellaShockWaveDetail(unittest.TestCase):
             i += 1
         plt.show()
 
+    def test_swd_evolution_exeption_nz(self):
+        def func():
+            self.swd.load()
+            t, y = self.swd.evolution('Rho', self.swd.Nzon+1)
+
+        self.assertRaises(ValueError, func)
+
+    def test_swd_evolution_exeption_val(self):
+        def func():
+            self.swd.load()
+            t, y = self.swd.evolution('bad_value', self.swd.Nzon+1)
+
+        self.assertRaises(ValueError, func)
+
+    def test_swd_evolution(self):
+        self.swd.load()
+        t, y = self.swd.evolution('Rho', 20)
+        self.assertCountEqual(t, self.swd.Times, "The times should be the same size.")
+
+    def test_swd_params_ph(self):
+        self.swd.load()
+        params_ph = self.swd.params_ph()
+        self.assertCountEqual(params_ph['time'], self.swd.Times, "The times should be the same size.")
+
 
 def main():
     unittest.main()

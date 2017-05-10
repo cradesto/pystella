@@ -483,9 +483,11 @@ def load_hyd_abn(name, path='.'):
 
     logger.info(' Load abn-data from  %s' % abn_file)
     abn_elements = 'H He C N O Ne Na  Mg  Al  Si  S  Ar  Ca  Fe  Ni Ni56'.split()
+    abn_elements_iso = 'H He C N O Ne Na  Mg  Al  Si  S  Ar  Ca  Fe  Ni Ni56 Fe52 Cr48'.split()
     col_names = ("zone dum1 dum2 dum3 " + ' '.join(abn_elements)).split()
     dt = np.dtype({'names': col_names, 'formats': np.repeat('f8', len(col_names))})
     data_chem = np.loadtxt(abn_file, comments='#', dtype=dt)
+
     for ename in abn_elements:
         presn.set_chem(ename, data_chem[ename])
 
