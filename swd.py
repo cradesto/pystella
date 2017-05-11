@@ -5,17 +5,18 @@ import argparse
 import csv
 import logging
 import os
+import subprocess
 import sys
 from os.path import dirname
+
+# matplotlib.rcParams['backend'] = "TkAgg"
+# matplotlib.rcParams['backend'] = "Qt4Agg"
+import matplotlib.pyplot as plt
 
 import numpy as np
 
 from pystella.model.stella import Stella
 from pystella.rf import light_curve_plot as lcp
-
-# matplotlib.rcParams['backend'] = "TkAgg"
-# matplotlib.rcParams['backend'] = "Qt4Agg"
-import matplotlib.pyplot as plt
 
 __author__ = 'bakl'
 
@@ -24,7 +25,6 @@ logging.basicConfig()
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
 
 
 def uph_save(dictionary, fname, sep='\t'):
@@ -102,6 +102,12 @@ def get_parser():
     parser.add_argument('--uph', action='store_const', dest='is_uph',
                         const=True,
                         help='To compute the photospheric velocity')
+    parser.add_argument('--mult', action='store_const', dest='is_mult',
+                        const=True,
+                        help='To make cartoon for evolution. Use: '
+                             + "ffmpeg -framerate 4 -i img%%04d.png -c:v libx264 -r 30 out.mp4 "
+                             + r'convert -quality 100 img*.png out.mp4 ')
+    # .format("ffmpeg -framerate 4 -i img%%04d.png -c:v libx264 -r 30 out.mp4 "))
     parser.add_argument('-s', '--save',
                         action='store_const',
                         const=True,
@@ -115,7 +121,25 @@ def get_parser():
     return parser
 
 
+def make_cartoon(swd, times, vnorm, rnorm, lumnorm, is_legend, fout='out.mp4'):
+    time = np.ma.masked_outside(swd.Times, times[0], times[-1])
+    # time = np.exp(np.linspace(np.log(times[0]), np.log(times[-1]), 50))
+    for i, t in enumerate(time.compressed()):
+        fig = lcp.plot_shock_details(swd, times=[t], vnorm=vnorm, rnorm=rnorm,
+                                     lumnorm=lumnorm, is_legend=is_legend)
+        fsave = os.path.expanduser("img{0:04d}.png".format(i))
+        print("Save plot to {0} at t={1}".format(fsave, t))
+        fig.savefig(fsave, bbox_inches='tight')
+        plt.close(fig)
+        plt.clf()
+    print("Convert images to movie: {0}".format(fout))
+    subprocess.call("convert -delay 1x2 -quality 100 img*.png {0}".format(fout), shell=True)
+    print("Done")
+    # os.subprocess.call("ffmpeg -f image2 -r 1/5 -i img%04d.png -vcodec mpeg4 -y {}".format(fout), shell=False)
+
+
 def main():
+    is_legend = True
     parser = get_parser()
     args, unknownargs = parser.parse_known_args()
 
@@ -144,8 +168,8 @@ def main():
 
     if args.is_uph:
         logger.info(' Compute and print uph')
-        taus = uph_compute_tau(swd)
-        duph = uph_find_uph(swd, taus)
+        # taus = swd.taus()
+        duph = swd.params_ph()  # uph_find_uph(swd, taus)
         # print uph
         print(duph.keys())
         for row in zip(*duph.values()):
@@ -161,10 +185,12 @@ def main():
                 fsave = os.path.expanduser("~/uph_{0}.pdf".format(name))
                 print("Save plot to {0}".format(fsave))
                 fig.savefig(fsave, bbox_inches='tight')
-
+    elif args.is_mult:
+        make_cartoon(swd, times, vnorm=args.vnorm, rnorm=args.rnorm,
+                     lumnorm=args.lumnorm, is_legend=is_legend)
     else:
         fig = lcp.plot_shock_details(swd, times=times, vnorm=args.vnorm, rnorm=args.rnorm,
-                                     lumnorm=args.lumnorm, is_legend=True)
+                                     lumnorm=args.lumnorm, is_legend=is_legend)
 
         plt.show()
         if args.is_save:

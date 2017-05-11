@@ -60,12 +60,17 @@ def main():
 
     if args.is_long:
         print("| %40s |  %7s |  %6s | %6s |  %s" % ('Name', 'R', 'M', 'E', 'comment'))
-        print("| %40s |  %7s |  %6s | %6s |  %s" % ('-'*40, '-'*7, '-'*6, '-'*6, '-'*7))
+        print("| %40s |  %7s |  %6s | %6s |  %s" % ('-' * 40, '-' * 7, '-' * 6, '-' * 6, '-' * 7))
         for mdl, exts in models.items():
             stella = Stella(mdl, path=path)
             if stella.is_tt_data:
                 info = stella.get_tt().Info
-                info.show(comment='{0}'.format(exts))
+                try:
+                    info.show(comment='{0}'.format(exts))
+                except KeyError as ex:
+                    print("| %40s |  %7s |  %6s | %6s | %s  | KeyError: %s" % (info.Name, '', '', '', exts, ex))
+                except:
+                    print("| %40s |  %7s |  %6s | %6s | %s  | Unexpected error: %s" % (info.Name, '', '', '', exts, sys.exc_info()[0]))
             else:
                 print("| %40s |  %26s |  %s" % (stella.name, ' ', exts))
                 # print("{0} No tt.".format(stella))
