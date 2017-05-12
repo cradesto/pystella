@@ -15,14 +15,23 @@ hist_file_size = 1000
 
 
 class HistConsole(Cmd):
+    @property
+    def hfile(self):
+        local = '.pystella_history'
+        if os.path.exists(local):
+            fname = local
+        else:
+            fname = hist_file
+        return fname
+
     def preloop(self):
-        if readline and os.path.exists(hist_file):
-            readline.read_history_file(hist_file)
+        if readline and os.path.exists(self.hfile):
+            readline.read_history_file(self.hfile)
 
     def postloop(self):
         if readline:
             readline.set_history_length(hist_file_size)
-            readline.write_history_file(hist_file)
+            readline.write_history_file(self.hfile)
 
     @staticmethod
     def do_h(args):
