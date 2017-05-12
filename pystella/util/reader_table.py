@@ -26,8 +26,15 @@ def read_table_header_float(fname, header=None, skip=0):
     return block
 
 
-def table2curves(name, tbl, bands=None):
-    time = tbl['time']
+def table2curves(name, tbl, bands=None, colt=('time', 'JD', 'MJD')):
+    # time = None
+    for nm in colt:
+        if nm in tbl.dtype.names:
+            time = tbl[nm]
+            break
+    else:
+        raise ValueError("THe table should contain a column with name in {0}", ', '.join(colt))
+
     curves = SetLightCurve(name)
 
     if bands is None:
@@ -40,12 +47,12 @@ def table2curves(name, tbl, bands=None):
         mask = np.where(mag != 0)  # filter out values not equal 0
         t = time[mask]
         m = mag[mask]
-        err_name = 'err'+bname
-        if err_name in tbl.dtype.names:
-            err = tbl[err_name]
-            e = err[mask]
-            lc = LightCurve(b, t, m, e)
-            # lc = LightCurve(b, time, mag, err)
+        for err_name in ('err'+bname, 'err_'+bname):
+            if err_name in tbl.dtype.names:
+                err = tbl[err_name]
+                e = err[mask]
+                lc = LightCurve(b, t, m, e)
+                break
         else:
             lc = LightCurve(b, t, m)
         curves.add(lc)

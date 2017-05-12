@@ -28,6 +28,7 @@ def plot(ax, dic=None):
 
     if len(arg) > 0:
         fname = arg.pop(0)
+        fname = os.path.expanduser(fname)
     if len(arg) > 0:
         marker = arg.pop(0)
     if len(arg) > 0:

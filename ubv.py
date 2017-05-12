@@ -66,7 +66,7 @@ def plot_grid(models_dic, bnames, call=None, **kwargs):
     return fig
 
 
-def plot_all(models_vels, models_dic, bnames, call=None, **kwargs):
+def plot_all(models_vels, models_dic, bnames, d=10, call=None, **kwargs):
     # xlim = None, ylim = None,  is_time_points = False, title = '', bshift = None
     title = kwargs.get('title', '')
     # band_shift['UVW1'] = 3
@@ -101,6 +101,7 @@ def plot_all(models_vels, models_dic, bnames, call=None, **kwargs):
     # finish plot
     axUbv.set_ylabel('Magnitude')
     axUbv.set_xlabel('Time [days]')
+    axUbv.minorticks_on()
 
     axUbv.legend(prop={'size': 8}, loc=4)
     # ax.set_title(bset)
@@ -113,7 +114,13 @@ def plot_all(models_vels, models_dic, bnames, call=None, **kwargs):
         # vel.plot_vels_sn87a(axVel, z=1.49)
         axVel.legend(prop={'size': 8}, loc=4)
 
-    plt.grid(linestyle=':')
+    # show right axes in absolute magnitudes
+    if d > 10:
+        dm = -5.*math.log10(d/10.)
+        axUbvR = axUbv.twinx()
+        axUbvR.set_ylim([x+dm for x in axUbv.get_ylim()])
+        axUbvR.minorticks_on()
+    axUbv.grid(linestyle=':')
     plt.show()
 #    plt.show(block=True)
     return fig
@@ -385,7 +392,7 @@ def main(name='', model_ext='.ph'):
                 fig = plot_grid(models_mags, bnames, call=callback, xlim=xlim, ylim=ylim,
                                 sep=sep, is_grid=False)
             else:
-                fig = plot_all(models_vels, models_mags, bnames, call=callback, xlim=xlim, ylim=ylim,
+                fig = plot_all(models_vels, models_mags, bnames, d=distance, call=callback, xlim=xlim, ylim=ylim,
                                is_time_points=is_plot_time_points, title=label, bshift=bshift)
             if fsave is not None:
                 print("Save plot to %s " % fsave)
