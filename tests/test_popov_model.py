@@ -2,7 +2,7 @@ import numpy as np
 import unittest
 import matplotlib.pyplot as plt
 
-
+from pystella.fit.fit_mcmc import fit_lc_bayesian_1d
 from pystella.model.popov import Popov
 from plugin import sn87a
 from plugin import sn1999em
@@ -48,15 +48,40 @@ class TestPopovModel(unittest.TestCase):
         sn1999em.plot_ubv(ax, path=sn1999em.sn_path, jd_shift=jd_shift, mshift=dm)
         plt.show()
 
-    @unittest.skip("just for plot")
+    # @unittest.skip("just for plot")
     def test_popov_rednova(self):
         n = 100
         start, end = 0.1, 90.
-        jd_shift = 10.
-        dm = 24.38  # D = 7.5e5 pc
+        jd_shift = -2500000+42963.
+        dm = -24.38  # D = 7.5e5 pc
         # dm = -30.4  # D = 12.e6 pc
         time = np.exp(np.linspace(np.log(start), np.log(end), n))
-        popov = Popov('test', R=35., M=6., Mni=0., E=0.008)
+        popov = Popov('test', R=35., M=1., Mni=0., E=0.002)
         ax = popov.plot_Lbol(time)
-        rednova.plot_ubv(ax, path=rednova.sn_path, jd_shift=jd_shift, mshift=-dm)
+        rednova.plot_ubv(ax, path=rednova.sn_path, jd_shift=jd_shift, mshift=dm)
+        plt.show()
+
+    # @unittest.skip("just for plot")
+    def test_popov_SN1999em_emcee(self):
+        n = 100
+        start, end = 0.1, 200.
+        jd_shift = 20.
+        dm = -29.38  # D = 7.5e6 pc
+        # dm = -30.4  # D = 12.e6 pc
+        time = np.exp(np.linspace(np.log(start), np.log(end), n))
+        popov = Popov('test', R=450., M=15., Mni=0.04, E=0.7)
+        lc_m = popov.LCBol(time)
+
+        # ax = popov.plot_Lbol(time)
+        # sn1999em.plot_ubv(ax, path=sn1999em.sn_path, jd_shift=jd_shift, mshift=dm)
+        # plt.show()
+        curves_o = sn1999em.read_curves()
+        lc_o = curves_o.get('V')
+        lc_o.mshift = dm
+        print("Run: find tshift with bayesian: obs band %s with %s ..." % (lc_o.Band.Name, popov))
+        tshift, tsigma = fit_lc_bayesian_1d(lc_o, lc_m, is_debug=True, is_plot=True)
+        print("Result: tshift= %s tsigma= %s ..." % (tshift, tsigma))
+
+        ax = popov.plot_Lbol(time)
+        sn1999em.plot_ubv(ax, path=sn1999em.sn_path, jd_shift=-tshift, mshift=dm)
         plt.show()

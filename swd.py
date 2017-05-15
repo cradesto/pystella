@@ -60,6 +60,23 @@ def plot_uph(uph, label='', lw=2):
     return fig
 
 
+def make_cartoon(swd, times, vnorm, rnorm, lumnorm, is_legend, fout='out.mp4'):
+    time = np.ma.masked_outside(swd.Times, times[0], times[-1])
+    # time = np.exp(np.linspace(np.log(times[0]), np.log(times[-1]), 50))
+    for i, t in enumerate(time.compressed()):
+        fig = lcp.plot_shock_details(swd, times=[t], vnorm=vnorm, rnorm=rnorm,
+                                     lumnorm=lumnorm, is_legend=is_legend)
+        fsave = os.path.expanduser("img{0:04d}.png".format(i))
+        print("Save plot to {0} at t={1}".format(fsave, t))
+        fig.savefig(fsave, bbox_inches='tight')
+        plt.close(fig)
+        plt.clf()
+    print("Convert images to movie: {0}".format(fout))
+    subprocess.call("convert -delay 1x2 -quality 100 img*.png {0}".format(fout), shell=True)
+    print("Done")
+    # os.subprocess.call("ffmpeg -f image2 -r 1/5 -i img%04d.png -vcodec mpeg4 -y {}".format(fout), shell=False)
+
+
 def get_parser():
     parser = argparse.ArgumentParser(description='Process Stella Shock Wave Details.')
     parser.add_argument('-i', '--input',
@@ -119,23 +136,6 @@ def get_parser():
                         dest="is_write",
                         help="To write the data to txt-file.")
     return parser
-
-
-def make_cartoon(swd, times, vnorm, rnorm, lumnorm, is_legend, fout='out.mp4'):
-    time = np.ma.masked_outside(swd.Times, times[0], times[-1])
-    # time = np.exp(np.linspace(np.log(times[0]), np.log(times[-1]), 50))
-    for i, t in enumerate(time.compressed()):
-        fig = lcp.plot_shock_details(swd, times=[t], vnorm=vnorm, rnorm=rnorm,
-                                     lumnorm=lumnorm, is_legend=is_legend)
-        fsave = os.path.expanduser("img{0:04d}.png".format(i))
-        print("Save plot to {0} at t={1}".format(fsave, t))
-        fig.savefig(fsave, bbox_inches='tight')
-        plt.close(fig)
-        plt.clf()
-    print("Convert images to movie: {0}".format(fout))
-    subprocess.call("convert -delay 1x2 -quality 100 img*.png {0}".format(fout), shell=True)
-    print("Done")
-    # os.subprocess.call("ffmpeg -f image2 -r 1/5 -i img%04d.png -vcodec mpeg4 -y {}".format(fout), shell=False)
 
 
 def main():

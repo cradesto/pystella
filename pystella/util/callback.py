@@ -16,13 +16,16 @@ def lc_wrapper(param, path=plugin_path):
 
 
 class CallBack(object):
-    def __init__(self, fname, path='./', args=None, load=1):
+    def __init__(self, fname, path='./', args=None, method=None, load=1):
         self._func = None
         self._path = path
         self._fname = fname
         self._args = args
         if fname is not None and load == 1:
-            self._func = self.find_func
+            if method is None:
+                self._func = self.find_func
+            else:
+                self._func = self.find_method(method)
 
     @property
     def Path(self):
@@ -92,14 +95,46 @@ class CallBack(object):
 
         if not method and os.path.isfile(self.FuncFileFull):  # find in files
             sys.path.append(self.Path)
-            py_mod = __import__(self.FileName, fromlist=['run', 'plot'])
+            py_mod = __import__(self.FileName, fromlist=['run', 'plot', 'load'])
             if hasattr(py_mod, 'run'):
                 method = getattr(__import__(self.FileName), 'run')
+            if hasattr(py_mod, 'load'):
+                method_load = getattr(__import__(self.FileName), 'load')
             elif hasattr(py_mod, 'plot'):
                 method = getattr(__import__(self.FileName), 'plot')
 
         if not method:
             raise Exception("Method %s not implemented" % self._fname)
+
+        return method
+
+    def find_method(self, method_name):
+        method = None
+        if os.path.isfile(self.FuncFileFull):  # find in files
+            sys.path.append(self.Path)
+            py_mod = __import__(self.FileName, fromlist=[method_name])
+            if hasattr(py_mod, method_name):
+                method = getattr(__import__(self.FileName), method_name)
+
+        if not method:
+            raise Exception("Method %s not implemented" % self._fname)
+
+        return method
+
+    @property
+    def find_load(self):
+        possibles = globals().copy()
+        possibles.update(locals())
+        method = possibles.get(self.FileName)
+
+        if not method and os.path.isfile(self.FuncFileFull):  # find in files
+            sys.path.append(self.Path)
+            py_mod = __import__(self.FileName, fromlist=['load'])
+            if hasattr(py_mod, 'load'):
+                method_load = getattr(__import__(self.FileName), 'load')
+
+        if not method:
+            raise Exception("Method load in %s not implemented" % self._fname)
 
         return method
 
@@ -117,6 +152,13 @@ class CallBack(object):
 
     def run(self):
         self._func(self._args)
+
+    def load(self, dic=None):
+        if dic is None:
+            dic = {}
+        if self._args is not None:
+            dic['args'] = self._args[:]
+        return self._func(dic)
 
 
 class CallBackArray(CallBack):

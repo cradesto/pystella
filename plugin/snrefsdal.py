@@ -137,7 +137,7 @@ def plot(ax, dic=None):
     if jd_shift is None:
         jd_shift = float(arg.pop(0)) if arg is not None else -56950
 
-    print("Plot Sn Refsdal %s, glens: %s, path: %s, band_max=%s " % (im, glens, d, band_max))
+    print("Plot Sn Refsdal %s, glens: %s, jd_shift: %f, path: %s, band_max=%s " % (im, glens, jd_shift,     d, band_max))
 
     # plot B-V
     if 'bv' in dic:
@@ -145,6 +145,8 @@ def plot(ax, dic=None):
     elif ax is not None:  # plot ubv
         t_lc_max = plot_ubv(ax=ax, path=d, jd_shift=jd_shift, band_max=band_max, glens=glens, image=im, bnames=bnames,
                             is_lens_shift=is_lens_shift)
+    else:
+        print("Error: ax is not defined")
 
     # plot velocities
     if 'ax2' in dic and dic['ax2'] is not None:

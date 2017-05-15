@@ -45,7 +45,7 @@ def plot_ubv(ax, path, jd_shift=0., mshift=0., **kwargs):
         for lc in cs:
             if lc.Band.Name in band_names:
                 x = lc.Time + jd_shift
-                y = lc.Mag  # todo + mshift
+                y = lc.Mag + mshift
                 bcolor = colors[lc.Band.Name]
                 # ax.plot(x, y, label='%s Master' % lc.Band.Name,
                 #         ls="", color=bcolor, markersize=markersize, marker="o")
