@@ -15,4 +15,5 @@ matplotlib
 corner
 gptools
 pandas
+ipython
 

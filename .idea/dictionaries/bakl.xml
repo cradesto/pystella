@@ -86,6 +86,7 @@
       <w>ncol</w>
       <w>ndim</w>
       <w>nfreq</w>
+      <w>nmax</w>
       <w>nrow</w>
       <w>nsteps</w>
       <w>ntimes</w>
@@ -100,6 +101,7 @@
       <w>popov</w>
       <w>presn</w>
       <w>presupernova</w>
+      <w>prog</w>
       <w>pystella</w>
       <w>readheger</w>
       <w>rednova</w>
@@ -153,6 +155,7 @@
       <w>xlabel</w>
       <w>xlim</w>
       <w>xlims</w>
+      <w>xronfictd</w>
       <w>xstart</w>
       <w>yaxis</w>
       <w>yerr</w>
