@@ -43,6 +43,7 @@
       <w>fini</w>
       <w>fjac</w>
       <w>fname</w>
+      <w>fout</w>
       <w>freqs</w>
       <w>fsave</w>
       <w>fvalue</w>
@@ -77,6 +78,7 @@
       <w>matplotlib</w>
       <w>mcmc</w>
       <w>mdic</w>
+      <w>mlines</w>
       <w>mname</w>
       <w>monospace</w>
       <w>mshift</w>

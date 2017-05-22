@@ -242,7 +242,8 @@ class PreSN(object):
         loc = kwargs.get('leg_loc', 3)
         leg_ncol = kwargs.get('leg_ncol', 4)
         lw = kwargs.get('lw', 2)
-        is_save = kwargs.get('is_save', False)
+        marker = kwargs.get('marker', None)
+        markersize = kwargs.get('markersize', 4)
         # def plot_chem(self, x='m', ax=None, elements=None, xlim=None, ylim=None,
         #               leg_loc=3, leg_ncol=4, lw=2, lntypes=None, is_save=False):
         #     if elements is None:
@@ -257,16 +258,18 @@ class PreSN(object):
             fig = plt.figure(num=None, figsize=(8, 8), dpi=100, facecolor='w', edgecolor='k')
 
             gs1 = gridspec.GridSpec(1, 1)
-            gs1.update(wspace=0.1, hspace=0.1, top=0.97, left=0.12, right=0.98)
+            # gs1.update(wspace=0.1, hspace=0.1, top=0.97, left=0.12, right=0.98)
+            gs1.update(wspace=0.1, hspace=0.1, top=0.97, left=0.12, right=0.87)
             ax = fig.add_subplot(gs1[0, 0])
 
-            if x == 'r':
-                ax.set_xlabel(r'R [cm]')
-            elif x == 'm':
-                ax.set_xlabel(r'M [$M_\odot$]')
-            else:
-                ax.set_xscale('log')
-                ax.set_xlabel(r'R [cm]')
+            if is_new_plot:
+                if x == 'r':
+                    ax.set_xlabel(r'R [cm]')
+                elif x == 'm':
+                    ax.set_xlabel(r'M [$M_\odot$]')
+                else:
+                    ax.set_xscale('log')
+                    ax.set_xlabel(r'R [cm]')
 
         is_x_lim = xlim is not None
         is_y_lim = ylim is not None
@@ -285,7 +288,8 @@ class PreSN(object):
                 # y = self.lg_el(el)
                 y = self.el(el)
                 # y[y<=0] == 1e-15
-                ax.semilogy(x, y, label='{0}'.format(el), color=colors[el], ls=lntypes[el], linewidth=lw)
+                ax.semilogy(x, y, label='{0}'.format(el), color=colors[el], ls=lntypes[el], linewidth=lw
+                            , marker=marker, markersize=markersize)
 
                 if not is_y_lim:
                     y_min.append(np.min(y))
@@ -296,29 +300,27 @@ class PreSN(object):
 
         if not is_x_lim:
             xlim = np.min(x), np.max(x)
-        ax.set_xlim(xlim)
 
-        ax.set_ylim(ylim)
-        ax.set_ylabel(r'$X_i$')
+        if is_x_lim or not is_new_plot:
+            ax.set_xlim(xlim)
+
+        if is_y_lim or not is_new_plot:
+            ax.set_ylim(ylim)
 
         if is_new_plot:
-            ax.legend(prop={'size': 9}, loc=loc, ncol=leg_ncol, fancybox=False, frameon=True)
+            ax.set_ylabel(r'$X_i$')
+            ax.legend(prop={'size': 9}, loc=loc, ncol=leg_ncol, fancybox=False, frameon=True, markerscale=0)
             # ax.legend(prop={'size': 9}, loc=3, ncol=4, fancybox=True, shadow=True)
             # plt.grid()
             # plt.show()
-
-        if is_save:
-            fsave = os.path.join(os.path.expanduser('~/'), 'chem_%s.pdf' % self.name)
-            logger.info(" Save plot to %s " % fsave)
-            ax.get_figure().savefig(fsave, bbox_inches='tight', format='pdf')
-
         return ax
 
     def plot_rho(self, x='m', ax=None, xlim=None, ylim=None, **kwargs):
         if not is_matplotlib:
             return
         lw = kwargs.get('lw', 2)
-        is_save = kwargs.get('is_save', False)
+        ls = kwargs.get('ls', '-')
+        color = kwargs.get('color', 'black')
 
         is_new_plot = ax is None
         # setup figure
@@ -329,6 +331,7 @@ class PreSN(object):
             gs1 = gridspec.GridSpec(1, 1)
             gs1.update(wspace=0.1, hspace=0.1, top=None, left=0.13, right=0.98)
             ax = fig.add_subplot(gs1[0, 0])
+            ax.set_ylabel(r'$\rho, [g/cm^3]$ ')
 
         is_x_lim = xlim is not None
         is_y_lim = ylim is not None
@@ -345,21 +348,16 @@ class PreSN(object):
             ax.set_xlabel(r'R [cm]')
 
         y = self.rho
-        ax.semilogy(x, y, color='black', ls='-', linewidth=lw)
+        ax.semilogy(x, y, color=color, ls=ls, linewidth=lw)
 
         if not is_x_lim and len(x) > 0:
             xlim = [np.min(x), np.max(x)]
         if not is_y_lim and len(y) > 0:
             ylim = [np.min(y), np.max(y)]
 
-        ax.set_xlim(xlim)
-        ax.set_ylim(ylim)
-        ax.set_ylabel(r'$\rho, [g/cm^3]$ ')
-
-        if is_save:
-            fsave = os.path.join(os.path.expanduser('~/'), 'rho_%s.pdf' % self.name)
-            logger.info(" Save plot to %s " % fsave)
-            ax.get_figure().savefig(fsave, bbox_inches='tight', format='pdf')
+        if is_new_plot:
+            ax.set_xlim(xlim)
+            ax.set_ylim(ylim)
 
         return ax
 

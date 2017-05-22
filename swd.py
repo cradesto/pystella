@@ -56,21 +56,22 @@ def plot_uph(uph, label='', lw=2):
     y = uph['V']
     ax.plot(x, y, label=label, color='blue', ls="-", linewidth=lw)
     ax.legend()
-    plt.show()
     return fig
 
 
-def make_cartoon(swd, times, vnorm, rnorm, lumnorm, is_legend, fout='out.mp4'):
+def make_cartoon(swd, times, vnorm, rnorm, lumnorm, is_legend, fout=None):
     time = np.ma.masked_outside(swd.Times, times[0], times[-1])
     # time = np.exp(np.linspace(np.log(times[0]), np.log(times[-1]), 50))
     for i, t in enumerate(time.compressed()):
         fig = lcp.plot_shock_details(swd, times=[t], vnorm=vnorm, rnorm=rnorm,
                                      lumnorm=lumnorm, is_legend=is_legend)
-        fsave = os.path.expanduser("img{0:04d}.png".format(i))
+        fsave = os.path.expanduser("img{0}{1:04d}.png".format(swd.Name,i))
         print("Save plot to {0} at t={1}".format(fsave, t))
         fig.savefig(fsave, bbox_inches='tight')
         plt.close(fig)
         plt.clf()
+    if fout is None:
+        fout = 'video_{0}.mp4'.format(swd.Name)
     print("Convert images to movie: {0}".format(fout))
     subprocess.call("convert -delay 1x2 -quality 100 img*.png {0}".format(fout), shell=True)
     print("Done")
@@ -79,10 +80,14 @@ def make_cartoon(swd, times, vnorm, rnorm, lumnorm, is_legend, fout='out.mp4'):
 
 def get_parser():
     parser = argparse.ArgumentParser(description='Process Stella Shock Wave Details.')
-    parser.add_argument('-i', '--input',
-                        required=False,
-                        dest="name",
-                        help="Model name, example: cat_R450_M15_Ni007")
+
+    parser.add_argument('-i', '--input', action='append', nargs=1,
+                        metavar='Model name', help='Key -i can be used multiple times')
+    # parser.add_argument('-i', '--input',
+    #                     required=False,
+    #                     dest="input",
+    #                     help="Model name, example: cat_R450_M15_Ni007")
+
     parser.add_argument('-p', '--path',
                         required=False,
                         type=str,
@@ -143,61 +148,84 @@ def main():
     parser = get_parser()
     args, unknownargs = parser.parse_known_args()
 
-    name = None
-    if len(unknownargs) > 0:
-        path, name = os.path.split(unknownargs[0])
-        path = os.path.expanduser(path)
-        name = name.replace('.swd', '')
+    if args.path:
+        pathDef = os.path.expanduser(args.path)
     else:
-        if args.path:
-            path = args.path
-        else:
-            path = ROOT_DIRECTORY
-        if args.name is not None:
-            name = os.path.splitext(os.path.basename(args.name))[0]
+        pathDef = os.getcwd()
+    #
+    # name = None
+    # if len(unknownargs) > 0:
+    #     path, name = os.path.split(unknownargs[0])
+    #     path = os.path.expanduser(path)
+    #     name = name.replace('.swd', '')
+    # else:
+    #     if args.path:
+    #         path = args.path
+    #     else:
+    #         path = ROOT_DIRECTORY
+    #     if args.name is not None:
+    #         name = os.path.splitext(os.path.basename(args.name))[0]
 
-    if name is None:
+    # Set model names
+    names = []
+    if args.input:
+        for nm in args.input:
+            names.append(nm[0])  # remove extension
+    else:
+        if len(unknownargs) > 0:
+            names.append(unknownargs[0])
+
+    if len(names) == 0:
         # logger.error(" No data. Use key '-i' ")
         parser.print_help()
         sys.exit(2)
 
     times = list(map(float, args.times.split(':')))
-    print("Run swd-model %s %s for %s moments" % (path, name, args.times))
-    stella = Stella(name, path=path)
-    swd = stella.get_swd().load()
 
-    if args.is_uph:
-        logger.info(' Compute and print uph')
-        # taus = swd.taus()
-        duph = swd.params_ph()  # uph_find_uph(swd, taus)
-        # print uph
-        print(duph.keys())
-        for row in zip(*duph.values()):
-            print(['{:12f}'.format(x) for x in row])
-        # save uph
-        if args.is_write:
-            fsave = os.path.join(path, "{0}.uph".format(name))
-            print("Save uph to {0}".format(fsave))
-            uph_save(duph, fsave)
+    for nm in names:
+        path, name = os.path.split(nm)
+        if len(path) == 0:
+            path = pathDef
+        name = name.replace('.swd', '')  # remove extension
+
+        print("Run swd-model %s %s for %s moments" % (path, name, args.times))
+        stella = Stella(name, path=path)
+        swd = stella.get_swd().load()
+
+        if args.is_uph:
+            logger.info(' Compute and print uph')
+            # taus = swd.taus()
+            duph = swd.params_ph()  # uph_find_uph(swd, taus)
+            # print uph
+            print(duph.keys())
+            for row in zip(*duph.values()):
+                print(['{:12f}'.format(x) for x in row])
+            # save uph
+            if args.is_write:
+                fsave = os.path.join(path, "{0}.uph".format(name))
+                print("Save uph to {0}".format(fsave))
+                uph_save(duph, fsave)
+            else:
+                fig = plot_uph(duph, label=name)
+                plt.show(block=False)
+                if args.is_save:
+                    fsave = os.path.expanduser("~/uph_{0}.pdf".format(name))
+                    print("Save plot to {0}".format(fsave))
+                    fig.savefig(fsave, bbox_inches='tight')
+        elif args.is_mult:
+            make_cartoon(swd, times, vnorm=args.vnorm, rnorm=args.rnorm,
+                         lumnorm=args.lumnorm, is_legend=is_legend)
         else:
-            fig = plot_uph(duph, label=name)
+            fig = lcp.plot_shock_details(swd, times=times, vnorm=args.vnorm, rnorm=args.rnorm,
+                                         lumnorm=args.lumnorm, is_legend=is_legend)
+
+            plt.show(block=False)
             if args.is_save:
-                fsave = os.path.expanduser("~/uph_{0}.pdf".format(name))
+                fsave = os.path.expanduser("~/swd_{0}_t{1}.pdf".format(name, str.replace(args.times, ':', '-')))
                 print("Save plot to {0}".format(fsave))
                 fig.savefig(fsave, bbox_inches='tight')
-    elif args.is_mult:
-        make_cartoon(swd, times, vnorm=args.vnorm, rnorm=args.rnorm,
-                     lumnorm=args.lumnorm, is_legend=is_legend)
-    else:
-        fig = lcp.plot_shock_details(swd, times=times, vnorm=args.vnorm, rnorm=args.rnorm,
-                                     lumnorm=args.lumnorm, is_legend=is_legend)
 
-        plt.show()
-        if args.is_save:
-            fsave = os.path.expanduser("~/swd_{0}_t{1}.pdf".format(name, str.replace(args.times, ':', '-')))
-            print("Save plot to {0}".format(fsave))
-            fig.savefig(fsave, bbox_inches='tight')
-
+    plt.show()
 
 if __name__ == '__main__':
     main()
