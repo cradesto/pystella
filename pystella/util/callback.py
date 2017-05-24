@@ -98,10 +98,10 @@ class CallBack(object):
             py_mod = __import__(self.FileName, fromlist=['run', 'plot', 'load'])
             if hasattr(py_mod, 'run'):
                 method = getattr(__import__(self.FileName), 'run')
-            if hasattr(py_mod, 'load'):
-                method_load = getattr(__import__(self.FileName), 'load')
             elif hasattr(py_mod, 'plot'):
                 method = getattr(__import__(self.FileName), 'plot')
+            if hasattr(py_mod, 'load'):
+                method_load = getattr(__import__(self.FileName), 'load')
 
         if not method:
             raise Exception("Method %s not implemented" % self._fname)

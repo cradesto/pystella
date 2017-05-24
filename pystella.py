@@ -84,6 +84,18 @@ class MyPrompt(HistConsole):
         subprocess.call("{0} {1}".format(script, args), shell=True)
 
     @staticmethod
+    def do_obs(args):
+        """Plot Observed Light Curves. For detailed help type 'obs -h'.
+        """
+        if len(args) == 0:
+            name = 'Please provide a obs. data. You may use "lcobs:fname:marker:dt:dm" '
+        else:
+            name = args
+        print("obs %s" % name)
+        script = os.path.join(ROOT_DIRECTORY, 'obs.py')
+        subprocess.call("{0} {1}".format(script, args), shell=True)
+
+    @staticmethod
     def do_spec(args):
         """Plot Stella Light Curves. For detailed help type 'spec -h'.
         """

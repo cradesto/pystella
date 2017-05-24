@@ -5,10 +5,10 @@
 import os
 
 from pystella.rf import band
-from pystella.util.reader_table import read_table_header_float, table2curves
+from pystella.util.reader_table import read_table_header_float, table2curves, read_obs_table_header
 
 
-def plot(ax, dic=None):
+def plot(ax, dic=None, mag_lim=30.):
     """
     Plot points from dat-files. Format fname:marker:jd_shift:mshift
     Header should be:  time  U [errU]  B [errB]  ...
@@ -39,16 +39,18 @@ def plot(ax, dic=None):
     print("Plot {0} [{1}]  jd_shift={2}  mshift={3}".format(fname, marker, jd_shift, mshift))
 
     # read data
-    tbl = read_table_header_float(fname)
+    tbl = read_obs_table_header(fname)
+    # tbl = read_table_header_float(fname)
     curves = table2curves(os.path.basename(fname), tbl)
 
     # plot data
     for lc in curves:
         bname = lc.Band.Name
-        x = lc.Time + jd_shift
-        y = lc.Mag + mshift
+        is_good = lc.Mag < (mag_lim-mshift)
+        x = lc.Time[is_good] + jd_shift
+        y = lc.Mag[is_good] + mshift
         if lc.IsErr:
-            yyerr = abs(lc.MagErr)
+            yyerr = abs(lc.MagErr[is_good])
             ax.errorbar(x, y, label='{0} {1}'.format(bname, fname), yerr=yyerr, fmt=marker,
                         color=colors[bname], ls='')
         else:

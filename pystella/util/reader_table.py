@@ -1,5 +1,6 @@
 import numpy as np
 import logging
+import collections
 
 from pystella.rf import band
 from pystella.rf.lc import SetLightCurve, LightCurve
@@ -23,6 +24,46 @@ def read_table_header_float(fname, header=None, skip=0):
     names = [s for s in header.split()]
     dt = np.dtype({'names': names, 'formats': [np.float64] * len(names)})
     block = np.loadtxt(fname, skiprows=skip+1, dtype=dt, comments='#')
+    return block
+
+
+def read_obs_table_header(fname, header=None, skip=0, colt=('time', 'JD', 'MJD')):
+    if header is None:
+        i = 0
+        with open(fname, "r") as f:
+            for line in f:
+                i += 1
+                if i <= skip:
+                    continue
+                header = line
+                break
+    cols_names = header.split()
+    cols = {i: nm for i, nm in enumerate(cols_names)}
+
+    is_time = False
+    cols_curves = {}
+    for k, v in cols.items():
+        # time
+        if not is_time and v in colt:
+            cols_curves[k] = v
+            is_time = True
+        # band
+        elif band.band_is_exist(v):
+            cols_curves[k] = v
+            # band error
+            for err_name in ('err' + v, 'err_' + v):
+                for i, bn in cols.items():
+                    if err_name == bn:
+                        cols_curves[i] = err_name
+
+    names = []
+    usecols = []
+    od = collections.OrderedDict(sorted(cols_curves.items()))
+    for k, v in od.items():
+        names.append(v)
+        usecols.append(k)
+    dt = np.dtype({'names': names, 'formats': [np.float64] * len(names)})
+    block = np.loadtxt(fname, skiprows=skip+1, dtype=dt, comments='#', usecols=usecols)
     return block
 
 
