@@ -8,7 +8,7 @@ from pystella.rf import band
 from pystella.util.reader_table import read_table_header_float, table2curves, read_obs_table_header
 
 
-def plot(ax, dic=None, mag_lim=30.):
+def plot(ax, dic={}, mag_lim=30.):
     """
     Plot points from dat-files. Format fname:marker:jd_shift:mshift
     Header should be:  time  U [errU]  B [errB]  ...
@@ -16,16 +16,16 @@ def plot(ax, dic=None, mag_lim=30.):
     :param dic:
     :return:
     """
-    marker_size = 8
-    colors = band.bands_colors()
+    # colors = band.bands_colors()
     fname = None
     jd_shift = 0.
     mshift = 0.
     marker = 'o'
-    arg = []
-    if dic is not None and 'args' in dic:
-        arg = dic['args']
+    markersize = dic.get('markersize', 9)
+    bnames = dic.get('bnames', None)
+    bcolors = dic.get('bcolors', band.bands_colors())
 
+    arg = dic.get('args', [])
     if len(arg) > 0:
         fname = arg.pop(0)
         fname = os.path.expanduser(fname)
@@ -43,6 +43,12 @@ def plot(ax, dic=None, mag_lim=30.):
     # tbl = read_table_header_float(fname)
     curves = table2curves(os.path.basename(fname), tbl)
 
+    # filter bands
+    if bnames is not None:
+        bands = curves.BandNames
+        for b in bands:
+            if b not in bnames:
+                curves.rm(b)
     # plot data
     for lc in curves:
         bname = lc.Band.Name
@@ -52,10 +58,10 @@ def plot(ax, dic=None, mag_lim=30.):
         if lc.IsErr:
             yyerr = abs(lc.MagErr[is_good])
             ax.errorbar(x, y, label='{0} {1}'.format(bname, fname), yerr=yyerr, fmt=marker,
-                        color=colors[bname], ls='')
+                        color=bcolors[bname], ls='')
         else:
-            ax.plot(x, y, label='{0} {1}'.format(bname, fname), color=colors[bname], ls='',
-                    marker=marker, markersize=marker_size)
+            ax.plot(x, y, label='{0} {1}'.format(bname, fname), color=bcolors[bname], ls='',
+                    marker=marker, markersize=markersize)
 
 
 def load(dic=None):

@@ -43,6 +43,7 @@
       <w>fini</w>
       <w>fjac</w>
       <w>fname</w>
+      <w>fontsize</w>
       <w>fout</w>
       <w>freqs</w>
       <w>fsave</w>
@@ -86,10 +87,12 @@
       <w>mtot</w>
       <w>nburn</w>
       <w>ncol</w>
+      <w>ncols</w>
       <w>ndim</w>
       <w>nfreq</w>
       <w>nmax</w>
       <w>nrow</w>
+      <w>nrows</w>
       <w>nsteps</w>
       <w>ntimes</w>
       <w>nugent</w>
