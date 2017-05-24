@@ -136,7 +136,7 @@ def main():
     band.Band.load_settings()
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hqc:g:b:l:sx:y:")
+        opts, args = getopt.getopt(sys.argv[1:], "hqc:g:b:l:s:x:y:")
     except getopt.GetoptError as err:
         print(str(err))  # will print something like "option -a not recognized"
         usage()
@@ -202,12 +202,6 @@ def main():
         usage()
         sys.exit(2)
 
-    if is_save_plot:
-        if len(fsave) == 0:
-            fsave = "ubv_obs"
-        d = os.path.expanduser('~/')
-        fsave = os.path.join(d, os.path.splitext(fsave)[0]) + '.pdf'
-
     if opt_grid in view_opts[1:]:
         sep = opt_grid[:-1]
         if sep == 'd':
@@ -219,7 +213,11 @@ def main():
     plt.show()
     # plt.show(block=False)
 
-    if fsave is not None:
+    if is_save_plot:
+        if fsave is None or len(fsave) == 0:
+            fsave = "ubv_obs"
+        d = os.path.expanduser('~/')
+        fsave = os.path.join(d, os.path.splitext(fsave)[0]) + '.pdf'
         print("Save plot to %s " % fsave)
         fig.savefig(fsave, bbox_inches='tight')
 
