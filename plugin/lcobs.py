@@ -89,7 +89,7 @@ def load(dic=None):
     # read data
     tbl = read_table_header_float(fname)
     curves = table2curves(os.path.basename(fname), tbl)
-    curves.tshift = jd_shift
-    curves.mshift = mshift
+    curves.set_tshift(jd_shift)
+    curves.set_mshift(mshift)
     return curves
 

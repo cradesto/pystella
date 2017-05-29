@@ -171,3 +171,11 @@ class SetLightCurve(object):
                 return lc
         return None
 
+    def set_tshift(self, tshift):
+        for n, lc in self.Set.items():
+            lc.tshift = tshift
+
+    def set_mshift(self, mshift):
+        for n, lc in self.Set.items():
+            lc.mshift = mshift
+

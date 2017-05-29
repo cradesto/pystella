@@ -13,9 +13,6 @@ from pystella.fit.fit_mcmc import fit_curves_bayesian_2d, fit_lc_bayesian_1d
 from pystella.rf import band
 from pystella.rf import light_curve_func as lcf
 
-# matplotlib.rcParams['backend'] = "TkAgg"
-# matplotlib.rcParams['backend'] = "Qt4Agg"
-
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -94,6 +91,19 @@ def get_parser():
     return parser
 
 
+def plot_curves(curves, curves_o):
+    from pystella.rf import light_curve_plot as lcp
+    # matplotlib.rcParams['backend'] = "TkAgg"
+    # matplotlib.rcParams['backend'] = "Qt4Agg"
+    from matplotlib import pyplot as plt
+
+    ax = lcp.curves_plot(curves)
+
+    lt = {lc.Band.Name: 'o' for lc in curves_o}
+    lcp.curves_plot(curves_o, ax, lt=lt, xlim=(-10,300))
+    plt.show()
+
+
 def main():
     is_legend = True
     is_debug = True
@@ -168,6 +178,11 @@ def main():
 
     print(""" Results: """)
     print(" time shift  = {0:.2f}+/-{1:.4f}".format(tshift, tsigma))
+
+    curves_o.set_tshift(tshift)
+    curves.set_tshift(0.)
+
+    plot_curves(curves, curves_o)
     # print(" dm_abs      = {0:.4f}+/-{1:.4f}".format(dm, dmsigma))
 
 

@@ -6,19 +6,30 @@ from scipy import interpolate
 # from matplotlib import pyplot as plt
 
 
-def fit_lc_bayesian_1d(lc_o, lc_m, is_debug=True, is_plot=True):
+def fit_lc_bayesian_1d(lc_o, lc_m, err_mdl=0.1, is_debug=True, is_plot=True):
+    from sklearn.metrics import mean_squared_error
+    from scipy.stats import norm
+
     def log_prior(theta):
+        if theta[0] < -400:
+            return 0
+        if theta[0] > 400:
+            return 0
         return 1  # flat prior
 
     def log_likelihood_t(theta, lc_o, lc_m):
         t = lc_o.Time
         mo = lc_o.Mag
-        e = lc_o.MagErr
-        lc_m.tshift = theta[0]
-        tck = interpolate.splrep(lc_m.Time, lc_m.Mag, s=0)
-        m_mdl = interpolate.splev(t, tck, der=0)
-        return -0.5 * np.sum(np.log(2 * np.pi * (e ** 2))
-                             + (mo - m_mdl) ** 2 / e ** 2)
+        e = np.sqrt(lc_o.MagErr**2 + err_mdl**2)
+        lc_m.tshift = -theta[0]
+        # tck = interpolate.splrep(lc_m.Time, lc_m.Mag, s=0)
+        # m_mdl = interpolate.splev(t, tck, der=0)
+        m_mdl = np.interp(t, lc_m.Time, lc_m.Mag, 0, 0)  # One-dimensional linear interpolation.
+        # diff = mo-m_mdl
+        rms = np.sqrt(mean_squared_error(mo, m_mdl))
+        return -rms
+        # return -0.5 * np.sum(np.log(2 * np.pi * (e ** 2))
+        #                      + (mo - m_mdl) ** 2 / e ** 2)
 
     def log_posterior(theta, lc_o, lc_m):
         return log_prior(theta) + log_likelihood_t(theta, lc_o, lc_m)
