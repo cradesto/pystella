@@ -122,8 +122,9 @@ def plot_scm_fit(ax_cache, bands, models_data, z):
         if yh is not None:
             ax.plot(xx, yh, color="red", ls="--", linewidth=2.5, label='Kasen')
     # nugent
-    yn = np.linspace(ylim[0], ylim[1], num=len(models_data['V']))
-    for bname in bands:
+    bname = 'I'
+    if bname in bands:
+        yn = np.linspace(ylim[0], ylim[1], num=len(models_data['V']))
         ax = ax_cache[bname]
         V_I = models_data['V'] - models_data['I']  # todo make for any bands
         xn = scm_fit(yn, Av=V_I, src='nugent')
