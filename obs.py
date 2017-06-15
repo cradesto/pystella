@@ -25,7 +25,7 @@ def plot_grid(call, bnames, xlim=None, ylim=None, **kwargs):
     title = kwargs.get('title', '')
     markersize = kwargs.get('markersize', 9)
     # setup figure
-    plt.matplotlib.rcParams.update({'font.size': kwargs.get('fontsize', 12)})
+    plt.matplotlib.rcParams.update({'font.size': kwargs.get('fontsize', 14)})
 
     nrows = math.ceil(len(bnames)/2)
     ncols = 1 if len(bnames) == 1 else 2
