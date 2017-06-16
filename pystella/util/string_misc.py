@@ -6,7 +6,20 @@ __author__ = 'bakl'
 
 
 def str2bool(v):
-    return v.lower() in ("yes", "true", "t", "1")
+    return v.lower() in ("yes", "true", "t", 'y', "1")
+
+
+def str2interval(arg, llim=0., rlim=float('inf'), sep=':'):
+    if sep in arg:
+        if str.endswith(arg, sep):
+            xlim = [float(arg[:-1]), rlim]
+        elif str.startswith(arg, sep):
+            xlim = [llim, float(arg[1:])]
+        else:
+            xlim = list(map(float, arg.split(sep)))
+    else:
+        xlim = [llim, float(arg)]
+    return xlim
 
 
 def cache_save(tbl, fname):

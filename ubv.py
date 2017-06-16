@@ -20,6 +20,7 @@ from pystella.rf import light_curve_func as lcf
 from pystella.rf import light_curve_plot as lcp
 from pystella.util.path_misc import get_model_names
 from pystella.util.phys_var import cosmology_D_by_z
+from pystella.util.string_misc import str2interval
 
 __author__ = 'bakl'
 
@@ -283,10 +284,10 @@ def main(name='', model_ext='.ph'):
             label = str.strip(arg)
             continue
         if opt == '-x':
-            xlim = map(float, str(arg).split(':'))
+            xlim = str2interval(arg, llim=0, rlim=float('inf'))
             continue
         if opt == '-y':
-            ylim = map(float, str(arg).split(':'))
+            ylim = str2interval(arg, llim=-10, rlim=-22)
             continue
         if opt == '-p':
             path = os.path.expanduser(str(arg))
@@ -404,6 +405,7 @@ def main(name='', model_ext='.ph'):
             # plot_all(dic_results, bands,  ylim=(40, 23),  is_time_points=is_plot_time_points)
     else:
         print("There are no models in the directory: %s with extension: %s " % (path, model_ext))
+
 
 
 if __name__ == '__main__':

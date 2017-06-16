@@ -110,7 +110,7 @@ def plot_ubv_models(ax, models_dic, bands, **kwargs):
 def plot_models_band(ax, models_dic, bname, **kwargs):
     # , xlim=None, ylim=None,colors=lc_colors, is_time_points=False):
     xlim = kwargs.get('xlim', None)
-    ylim = kwargs.get('xlim', None)
+    ylim = kwargs.get('ylim', None)
     sep = kwargs.get('sep', 'm')  # line separator
 
     is_compute_x_lim = xlim is None
@@ -118,6 +118,7 @@ def plot_models_band(ax, models_dic, bname, **kwargs):
 
     lw = 1.5
     mi = 0
+    x_min = []
     x_max = []
     y_mid = []
     lc_min = {}
@@ -145,18 +146,24 @@ def plot_models_band(ax, models_dic, bname, **kwargs):
 
         idx = np.argmin(y)
         lc_min[bname] = (x[idx], y[idx])
-        if is_compute_x_lim:
-            x_max.append(np.max(x))
+        x_min.append(np.min(x))
+        x_max.append(np.max(x))
         if is_compute_y_lim:
             y_mid.append(np.min(y))
 
+    # x-axe
     if is_compute_x_lim:
         xlim = [-10, np.max(x_max) + 10.]
+    elif xlim[0] == float('-inf'):
+        xlim[0] = np.min(x_min)
+    elif xlim[1] == float('inf'):
+        xlim[1] = np.max(x_max)
+    ax.set_xlim(xlim)
+
+    # y-axe
+    ax.invert_yaxis()
     if is_compute_y_lim:
         ylim = [np.min(y_mid) + 7., np.min(y_mid) - 2.]
-
-    ax.set_xlim(xlim)
-    ax.invert_yaxis()
     ax.set_ylim(ylim)
 
     return lc_min
