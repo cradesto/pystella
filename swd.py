@@ -42,9 +42,9 @@ def uph_save(dictionary, fname, sep='\t'):
             writer.writerow(['{:8.3e}'.format(x) for x in row])
 
 
-def plot_uph(uph, vnorm=1.e8, label='', lw=2):
+def plot_uph(uph, vnorm=1.e8, label='', lw=2, fontsize=18):
     # setup plot
-    plt.matplotlib.rcParams.update({'font.size': 12})
+    plt.matplotlib.rcParams.update({'font.size': fontsize})
     fig = plt.figure(figsize=(8, 8))
 
     ax = fig.add_subplot(1, 1, 1)
