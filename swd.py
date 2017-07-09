@@ -42,18 +42,18 @@ def uph_save(dictionary, fname, sep='\t'):
             writer.writerow(['{:8.3e}'.format(x) for x in row])
 
 
-def plot_uph(uph, label='', lw=2):
+def plot_uph(uph, vnorm=1.e8, label='', lw=2):
     # setup plot
     plt.matplotlib.rcParams.update({'font.size': 12})
     fig = plt.figure(figsize=(8, 8))
 
     ax = fig.add_subplot(1, 1, 1)
     ax.set_xlabel('Time [day]')
-    ax.set_ylabel(r'Photospheric Velocity [$\times 10^3$ km/s]')
+    ax.set_ylabel(r'Photospheric Velocity [$\times 10^{0}$ km/s]'.format(int(np.log10(vnorm/1e5))))
     #    ax.set_title(fname_uph)
 
     x = uph['time']
-    y = uph['V']
+    y = uph['V'] / vnorm
     ax.plot(x, y, label=label, color='blue', ls="-", linewidth=lw)
     ax.legend()
     return fig
@@ -206,7 +206,7 @@ def main():
                 print("Save uph to {0}".format(fsave))
                 uph_save(duph, fsave)
             else:
-                fig = plot_uph(duph, label=name)
+                fig = plot_uph(duph, vnorm=args.vnorm, label=name)
                 plt.show(block=False)
                 if args.is_save:
                     fsave = os.path.expanduser("~/uph_{0}.pdf".format(name))
