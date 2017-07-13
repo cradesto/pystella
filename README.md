@@ -1,8 +1,15 @@
 # pystella
 
+## Command shell
+
+  Run the script "<path-to-pystella>/pystella.py>" in the directory with models.
+  See help if needed.
+
+
 ## Flux from ph-files to the bands
 
 #### Usage:
+
 
   ubv.py [params]
 
