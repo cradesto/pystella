@@ -69,4 +69,4 @@ To fit observations using Gaussian process
 Acknowledgments:
     Some of the passbands was taken from  SNPY (see http://csp.obs.carnegiescience.edu/data/snpy/) and
     SnCosmost (see https://github.com/srodney/sncosmost).
-     Open source and education licenses have been generously provided by Jetbrains PyCharm and CLion.
+  Special thanks to JetBrains for open source and education licenses of PyCharm/Clion.
