@@ -2,7 +2,7 @@
 
 ## Command shell
 
-  Run the script "<path-to-pystella>/pystella.py>" in the directory with models.
+  Run the script "PATH-to-PYSTELLA/pystella.py" in the directory with models.
   See help if needed.
 
 
