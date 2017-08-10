@@ -7,11 +7,27 @@ __author__ = 'bakl'
 ROOT_DIRECTORY = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 plugin_path = os.path.join(ROOT_DIRECTORY, 'plugin')
 
+#
+# def lc_wrapper(param, path=plugin_path):
+#     a = param.split(':')
+#     func = a.pop(0)
+#     c = CallBack(func, path=path, args=a, load=1)
+#     return c
 
-def lc_wrapper(param, path=plugin_path):
+
+def lc_wrapper(param, p=None, method='plot'):
     a = param.split(':')
-    func = a.pop(0)
-    c = CallBack(func, path=path, args=a, load=1)
+    fname = a.pop(0)
+    if p is None:
+        if os.path.isfile(fname + '.py'):
+            p, fname = os.path.split(fname)
+        elif os.path.isfile(os.path.join(os.getcwd(), fname + '.py')):
+            p = os.getcwd()
+        else:
+            p = plugin_path
+    # print("Call: {} from {}".format(fname, p))
+    c = CallBack(fname, path=p, args=a, method=method, load=1)
+    print("Call: %s from %s" % (c.Func, c.FuncFileFull))
     return c
 
 

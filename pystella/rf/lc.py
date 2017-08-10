@@ -25,7 +25,11 @@ class LightCurve(object):
 
     @property
     def Time(self):
-        return self._t + self._tshift
+        return self.T + self.tshift
+
+    @property
+    def T(self):
+        return self._t
 
     @property
     def Length(self):
@@ -33,7 +37,11 @@ class LightCurve(object):
 
     @property
     def Mag(self):
-        return self._m + self._mshift
+        return self.M + self.mshift
+
+    @property
+    def M(self):
+        return self._m
 
     @property
     def IsErr(self):
@@ -54,15 +62,6 @@ class LightCurve(object):
     def tshift(self):
         return self._tshift
 
-    @property
-    def tmin(self):
-        return np.min(self._t)
-
-    @property
-    def t_lcmax(self):
-        idx = np.argmin(self.Mag)
-        return self.Time[idx]
-
     @tshift.setter
     def tshift(self, shift):
         self._tshift = shift
@@ -74,6 +73,23 @@ class LightCurve(object):
     @mshift.setter
     def mshift(self, shift):
         self._mshift = shift
+
+    @property
+    def tmin(self):
+        return np.min(self._t)
+
+    @property
+    def TimeMin(self):
+        return np.min(self.Time)
+
+    @property
+    def TimeMax(self):
+        return np.max(self.Time)
+
+    @property
+    def TimeLcMax(self):
+        idx = np.argmin(self.Mag)
+        return self.Time[idx]
 
 
 class SetLightCurve(object):
@@ -178,4 +194,3 @@ class SetLightCurve(object):
     def set_mshift(self, mshift):
         for n, lc in self.Set.items():
             lc.mshift = mshift
-

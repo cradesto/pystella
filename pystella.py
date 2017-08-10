@@ -49,7 +49,6 @@ class HistConsole(Cmd):
 
 
 class MyPrompt(HistConsole):
-
     @staticmethod
     def do_snespace(args):
         """Plot SN using json-file from https://sne. For detailed help type 'snespace -h'.
@@ -176,5 +175,7 @@ class MyPrompt(HistConsole):
 
 if __name__ == '__main__':
     prompt = MyPrompt()
-    prompt.prompt = 'pystella> '
+    prompt.prompt = '\x01\u001b[35m\x02' + 'pystella>' + '\x01\u001b[0m\x02'
+    # prompt.prompt = '\x1b[1;35;47m' + 'pystella>' + '\x1b[0m'
+    # prompt.prompt = "pystella>"
     prompt.cmdloop('Let''s study a supernova ... \n type "help" for help ')

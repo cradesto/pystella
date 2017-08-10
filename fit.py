@@ -9,7 +9,7 @@ import sys
 import numpy as np
 
 import pystella.util.callback as cb
-from pystella.fit.fit_mcmc import fit_curves_bayesian_2d, fit_lc_bayesian_1d
+from pystella.fit.fit_mcmc import FitLcMcmc
 from pystella.rf import band
 from pystella.rf import light_curve_func as lcf
 
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-def lc_wrapper(param, p=None):
+def old_lc_wrapper(param, p=None):
     a = param.split(':')
     fname = a.pop(0)
     if p is None:
@@ -34,17 +34,17 @@ def lc_wrapper(param, p=None):
     return c
 
 
-def rel_errors(mu,sig, func, num=10000):
+def rel_errors(mu, sig, func, num=10000):
     x_norm = []
-    for x, s in zip(mu,sig):
+    for x, s in zip(mu, sig):
         x_norm.append(np.random.normal(x, s, num))
-#     x_norm = np.random.normal(mu,sig, num)
+    #     x_norm = np.random.normal(mu,sig, num)
     f_dist = func(x_norm)
     return np.mean(f_dist), np.std(f_dist)
 
 
 def m_mu(x):
-    return 10**(-x*0.4)
+    return 10 ** (-x * 0.4)
 
 
 def get_parser():
@@ -100,7 +100,7 @@ def plot_curves(curves, curves_o):
     ax = lcp.curves_plot(curves)
 
     lt = {lc.Band.Name: 'o' for lc in curves_o}
-    lcp.curves_plot(curves_o, ax, lt=lt, xlim=(-10,300))
+    lcp.curves_plot(curves_o, ax, lt=lt, xlim=(-10, 300))
     plt.show()
 
 
@@ -150,7 +150,7 @@ def main():
         distance = float(args.distance)
 
     if args.call:
-        callback = lc_wrapper(str(args.call))
+        callback = cb.lc_wrapper(str(args.call), method='load')
     else:
         print('No obs data. Use key: -c: ')
         parser.print_help()
@@ -171,7 +171,8 @@ def main():
     # curves_o = curves_o.tmin
     # res = fit_curves_bayesian_2d(curves_o, curves, is_debug=is_debug, is_info=True)
 
-    tshift, tsigma = fit_lc_bayesian_1d(curves_o.get('V'), curves.get('V'), is_debug=is_debug)
+    fitter = FitLcMcmc()
+    tshift, tsigma = fitter.fit(curves_o.get('V'), curves.get('V'))
 
     # tshift, tsigma = res['dt']
     # dm, dmsigma = res['dm']

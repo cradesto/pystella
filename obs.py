@@ -136,7 +136,7 @@ def usage():
     band.print_bands()
 
 
-def lc_wrapper(param, p=None):
+def old_lc_wrapper(param, p=None):
     a = param.split(':')
     fname = a.pop(0)
     if p is None:
@@ -199,7 +199,7 @@ def main():
                 bnames.append(bname)
             continue
         if opt == '-c':
-            c = lc_wrapper(str(arg))
+            c = cb.lc_wrapper(str(arg))
             if callback is not None:
                 c = cb.CallBackArray((callback, c))
             callback = c
