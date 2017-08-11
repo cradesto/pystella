@@ -7,6 +7,7 @@ from scipy import interpolate
 from pystella.model.popov import Popov
 from plugin import sn1999em, sn87a, rednova
 from pystella.fit import mpfit
+from pystella.util.phys_var import phys
 
 __author__ = 'bakl'
 
@@ -37,8 +38,7 @@ def myfit(mags, lc, is_verbose=True, xtol=1e-10, ftol=1e-10, gtol=1e-10):
     return tshift
 
 
-def popov_fit(lc, R0, M0, Mni0=None, E0=None, dt0=None,
-              is_verbose=True, xtol=1e-10, ftol=1e-10, gtol=1e-10):
+def popov_fit(lc, R0, M0, Mni0=None, E0=None, dt0=None, is_verbose=True, xtol=1e-10, ftol=1e-10, gtol=1e-10):
     if is_verbose:
         quiet = 0
     else:
@@ -51,7 +51,7 @@ def popov_fit(lc, R0, M0, Mni0=None, E0=None, dt0=None,
         l_dt = p[4]
         t = time + l_dt
         m = mdl.MagBol(t)
-        res = (lc.Mag - m)
+        res = (lc.Mag - m)**2 / m
         w = np.exp(-(max(abs(lc.Mag)) - abs(lc.Mag))*2)  # weight
         w = 1.
         # w = w / max(w)
@@ -66,9 +66,9 @@ def popov_fit(lc, R0, M0, Mni0=None, E0=None, dt0=None,
                # , {'value': dt0,  'limited': [1, 1], 'limits': [-200., 250.]}
                ]
     if Mni0 is not None:
-        parinfo.append({'value': Mni0, 'limited': [1, 1], 'limits': [0.0000001, 0.00001]})
+        parinfo.append({'value': Mni0, 'limited': [1, 1], 'limits': [0., 15.]})
     else:
-        parinfo.append({'value': 0., 'fixed': 1})
+        parinfo.append({'value': 0.01, 'fixed': 1})
     if E0 is not None:
         parinfo.append({'value': E0,   'limited': [1, 1], 'limits': [0.01, 5.]})
     else:
@@ -130,7 +130,14 @@ class TestFit(unittest.TestCase):
         # lc.tshift = -lc.tmin
 
         # fit
-        ppv, tshift = popov_fit(lc, R0=1000., M0=10., Mni0=0.01, E0=1., dt0=0.)
+        ppv, tshift = popov_fit(lc, R0=1200., M0=10., Mni0=0.01, E0=1., dt0=0.)
+        # print
+        txt = '{0:10} {1:.4e} R_sun\n'.format('R:', ppv.R0 / phys.R_sun) + \
+              '{0:10} {1:.4e} M_sun\n'.format('Mtot:', ppv.Mtot / phys.M_sun) + \
+              '{0:10} {1:.4e} M_sun\n'.format('Mni:', ppv.Mni / phys.M_sun) + \
+              '{0:10} {1} ergs\n'.format('Etot:', ppv.Etot) + \
+              '{0:10} {1} d'.format('tshift:', tshift)
+        print(txt)
         # plot model
         # time = lc.Time - tshift
         ax = ppv.plot_Lbol(lc.Time)
@@ -140,7 +147,7 @@ class TestFit(unittest.TestCase):
         # x = lc.Time + jd_shift + res
         y = lc.Mag
         ax.plot(x, y, label='%s SN 1999em' % lc.Band.Name,
-                ls=".", color='red', markersize=8, marker="o")
+                ls="", color='red', markersize=8, marker="o")
         plt.show()
 
     # @unittest.skip("just for plot")
@@ -162,7 +169,7 @@ class TestFit(unittest.TestCase):
         # x = lc.Time + jd_shift + res
         y = lc.Mag
         ax.plot(x, y, label='%s M31LRN ' % lc.Band.Name,
-                ls=".", color='red', markersize=8, marker="o")
+                ls="", color='red', markersize=8, marker="o")
         plt.show()
 
     # @unittest.skip("just for plot")
@@ -185,5 +192,5 @@ class TestFit(unittest.TestCase):
         # x = lc.Time + jd_shift + res
         y = lc.Mag
         ax.plot(x, y, label='%s SN 1987A' % lc.Band.Name,
-                ls=".", color='red', markersize=8, marker="o")
+                ls="", color='red', markersize=8, marker="o")
         plt.show()
