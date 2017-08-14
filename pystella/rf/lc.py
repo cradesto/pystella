@@ -91,6 +91,25 @@ class LightCurve(object):
         idx = np.argmin(self.Mag)
         return self.Time[idx]
 
+    def copy(self, tlim=None):
+        if tlim is not None:
+            is_good = np.where((self.Time >= tlim[0]) & (self.Time <= tlim[1]))
+            time = self.T[is_good]
+            mags = self.M[is_good]
+            errs = None
+            if self.IsErr:
+                errs = self.MagErr[is_good]
+        else:
+            time = self.T
+            mags = self.M
+            errs = None
+            if self.IsErr:
+                errs = self.MagErr
+
+        lc = LightCurve(self.Band, time, mags, errs)
+        lc.tshift = self.tshift
+        lc.mshift = self.mshift
+
 
 class SetLightCurve(object):
     """Set of the Light Curves"""

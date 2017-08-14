@@ -1,9 +1,12 @@
 import numpy as np
 import unittest
 import matplotlib.pyplot as plt
+from os.path import dirname, abspath, join
 
 from scipy import interpolate
 
+from pystella.fit.fit_mcmc import FitLcMcmc
+from pystella.fit.fit_mpfit import FitMPFit
 from pystella.model.popov import Popov
 from plugin import sn1999em, sn87a, rednova
 from pystella.fit import mpfit
@@ -193,4 +196,45 @@ class TestFit(unittest.TestCase):
         y = lc.Mag
         ax.plot(x, y, label='%s SN 1987A' % lc.Band.Name,
                 ls="", color='red', markersize=8, marker="o")
+        plt.show()
+
+    # @unittest.skip("just for plot")
+    def test_fit_Stella_SN1999em(self):
+        from pystella.rf import light_curve_func as lcf
+        from pystella.rf import light_curve_plot as lcp
+        # matplotlib.rcParams['backend'] = "TkAgg"
+        # matplotlib.rcParams['backend'] = "Qt4Agg"
+        # from matplotlib import pyplot as plt
+        # Get observations
+        D = 11.5e6  # pc
+        dm = -5. * np.log10(D) + 5
+        # dm = -30.4  # D = 12.e6 pc
+        curves_obs = sn1999em.read_curves()
+
+        lc_o = curves_obs.get('V')
+        lc_o.mshift = dm
+        # lc.tshift = -lc.tmin
+
+        # Get model
+        name = 'cat_R500_M15_Ni006_E12'
+        path = join(dirname(dirname(abspath(__file__))), 'data', 'stella')
+
+        curves_mdl = lcf.curves_compute(name, path, curves_obs.BandNames)
+
+        # fit
+        # fitter = FitLcMcmc()
+        fitter = FitMPFit(is_debug=True)
+        res = fitter.fit(lc_o, curves_mdl.get('V'))
+
+        # print
+        txt = '{0:10} {1:.4e} R_sun\n'.format('tshift:', res.tshift) + \
+              '{0:10} {1:.4e} M_sun\n'.format('tsigma:', res.tsigma)
+        print(txt)
+        # plot model
+        curves_obs.set_tshift(res.tshift)
+        curves_mdl.set_tshift(0.)
+        ax = lcp.curves_plot(curves_mdl)
+
+        lt = {lc.Band.Name: 'o' for lc in curves_obs}
+        lcp.curves_plot(curves_obs, ax, lt=lt, xlim=(-10, 300))
         plt.show()

@@ -10,8 +10,11 @@ import numpy as np
 
 import pystella.util.callback as cb
 from pystella.fit.fit_mcmc import FitLcMcmc
+from pystella.fit.fit_mpfit import FitMPFit
 from pystella.rf import band
 from pystella.rf import light_curve_func as lcf
+
+# from pystella.rf import light_curve_plot as lcp
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -38,7 +41,7 @@ def rel_errors(mu, sig, func, num=10000):
     x_norm = []
     for x, s in zip(mu, sig):
         x_norm.append(np.random.normal(x, s, num))
-    #     x_norm = np.random.normal(mu,sig, num)
+    # x_norm = np.random.normal(mu,sig, num)
     f_dist = func(x_norm)
     return np.mean(f_dist), np.std(f_dist)
 
@@ -66,7 +69,13 @@ def get_parser():
                         type=float,
                         default=10,
                         dest="distance",
-                        help="Distance to model [pc].  Default: 10 pc")
+                        help="Distance to the model [pc].  Default: 10 pc")
+    parser.add_argument('-z',
+                        required=False,
+                        type=float,
+                        default=0,
+                        dest="redshift",
+                        help="Redshift for the model .  Default: 0")
     parser.add_argument('-i', '--input',
                         required=False,
                         dest="name",
@@ -156,34 +165,43 @@ def main():
         parser.print_help()
         sys.exit(2)
 
+    # Get observations
+    curves_o = callback.load()
+
+    if len(bnames) == 0:
+        bnames = curves_o.BandNames
+
+    # Get models
     if args.times:
         times = list(map(float, args.times.split(':')))
 
     if times is not None:
         print("Run fitting for model %s %s for %s moments" % (path, name, args.times))
-        curves = lcf.curves_compute(name, path, bnames, z=z, distance=distance,
-                                    t_beg=times[0], t_end=times[1], t_diff=t_diff)
+        curves_mdl = lcf.curves_compute(name, path, bnames, z=args.redshift, distance=distance,
+                                        t_beg=times[0], t_end=times[1], t_diff=t_diff)
     else:
         print("Run fitting for model %s %s " % (path, name))
-        curves = lcf.curves_compute(name, path, bnames, z=z, distance=distance, t_diff=t_diff)
+        curves_mdl = lcf.curves_compute(name, path, bnames, z=z, distance=distance, t_diff=t_diff)
 
-    curves_o = callback.load()
     # curves_o = curves_o.tmin
     # res = fit_curves_bayesian_2d(curves_o, curves, is_debug=is_debug, is_info=True)
 
-    fitter = FitLcMcmc()
-    tshift, tsigma = fitter.fit(curves_o.get('V'), curves.get('V'))
-
+    # fitter = FitLcMcmc()
+    # tshift, tsigma = fitter.fit(curves_o.get('V'), curves.get('V'))
+    # fitter = FitLcMcmc()
+    fitter = FitMPFit(is_debug=True)
+    bname = bnames[0]
+    res = fitter.fit(curves_o.get(bname), curves_mdl.get(bname))
     # tshift, tsigma = res['dt']
     # dm, dmsigma = res['dm']
 
     print(""" Results: """)
-    print(" time shift  = {0:.2f}+/-{1:.4f}".format(tshift, tsigma))
+    print("Band: {0} time shift  = {1:.2f}+/-{2:.4f}".format(bname, res.tshift, res.tsigma))
 
-    curves_o.set_tshift(tshift)
-    curves.set_tshift(0.)
+    curves_o.set_tshift(res.tshift)
+    # curves.set_tshift(0.)
 
-    plot_curves(curves, curves_o)
+    plot_curves(curves_mdl, curves_o)
     # print(" dm_abs      = {0:.4f}+/-{1:.4f}".format(dm, dmsigma))
 
 

@@ -83,6 +83,18 @@ class MyPrompt(HistConsole):
         subprocess.call("{0} {1}".format(script, args), shell=True)
 
     @staticmethod
+    def do_fit(args):
+        """Fit with Stella  Obs Light Curves. For detailed help type 'fit -h'.
+        """
+        if len(args) == 0:
+            name = 'Please provide a ph-file.'
+        else:
+            name = args
+        print("fit %s" % name)
+        script = os.path.join(ROOT_DIRECTORY, 'fit.py')
+        subprocess.call("{0} {1}".format(script, args), shell=True)
+
+    @staticmethod
     def do_obs(args):
         """Plot Observed Light Curves. For detailed help type 'obs -h'.
         """

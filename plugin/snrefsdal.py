@@ -370,3 +370,35 @@ def read_curves(path=path_data, image='S1', bnames=None):
         lc = LightCurve(bname, time, mags, errs=yerr)
         curves.add(lc)
     return curves
+
+
+def load(dic=None):
+    """
+    Load points from dat-files.
+    :return SetLightCurves:
+    """
+    tshift = 0.
+    mshift = 0.
+    arg = []
+    image = 'S1'
+    path = path_data
+    if dic is not None and 'args' in dic:
+        arg = dic['args']
+
+    if len(arg) > 0:
+        image = arg.pop(0)
+    if len(arg) > 0:
+        tshift = float(arg.pop(0))
+    if len(arg) > 0:
+        mshift = float(arg.pop(0))
+    if len(arg) > 0:
+        path = arg.pop(0)
+        path = os.path.expanduser(path)
+
+    print("Load image: {0} jd_shift={1}  mshift={2} path={3}".format(image, tshift, mshift, path))
+
+    # read data
+    curves = read_curves(path=path, image=image, bnames=None)
+    curves.set_tshift(tshift)
+    curves.set_mshift(mshift)
+    return curves
