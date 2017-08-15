@@ -333,7 +333,7 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname='', **k
     markersize = kwargs.get('markersize', 5)
     rect = kwargs.get('rect', (0.1, 0.3, 0.8, 0.65))
     fontsize = kwargs.get('fontsize', 18)
-    figsize = kwargs.get('figsize', (20,10))
+    figsize = kwargs.get('figsize', (20, 10))
 
     is_new_fig = ax is None
     if is_new_fig:
@@ -365,8 +365,15 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname='', **k
             ax.plot(x, y, label='{0} {1}'.format(bname, curves.Name),
                     color=colors[bname], ls=ls[bname], linewidth=linewidth)
         else:
-            ax.plot(x, y, label='{0} {1}'.format(bname, curves.Name),
-                    color=colors[bname], ls='', marker=lt[bname], markersize=markersize)
+            if lc.IsErr:
+                yyerr = abs(lc.MagErr)
+                ax.errorbar(x, y, label='{0} {1}'.format(bname, fname), yerr=yyerr, fmt=lt[bname],
+                            color=colors[bname], ls='')
+            else:
+                # ax.plot(x, y, label='{0} {1}'.format(bname, fname), color=bcolors[bname], ls='',
+                #         marker=marker, markersize=markersize)
+                ax.plot(x, y, label='{0} {1}'.format(bname, curves.Name),
+                        color=colors[bname], ls='', marker=lt[bname], markersize=markersize)
 
         if is_xlim:
             xlim[0] = min(xlim[0], np.min(x))

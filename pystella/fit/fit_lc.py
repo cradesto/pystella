@@ -5,7 +5,10 @@ class FitLc:
         self._tshift = 0.
         self._tsigma = 0.
 
-    def fit(self, lc_m, lc_o):
+    def fit_lc(self, lc_o, lc_m):
+        pass
+
+    def fit_curves(self, curves_o, curves_m):
         pass
 
     @property

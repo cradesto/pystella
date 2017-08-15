@@ -199,7 +199,7 @@ class TestFit(unittest.TestCase):
         plt.show()
 
     # @unittest.skip("just for plot")
-    def test_fit_Stella_SN1999em(self):
+    def test_fit_lc_Stella_SN1999em(self):
         from pystella.rf import light_curve_func as lcf
         from pystella.rf import light_curve_plot as lcp
         # matplotlib.rcParams['backend'] = "TkAgg"
@@ -210,10 +210,7 @@ class TestFit(unittest.TestCase):
         dm = -5. * np.log10(D) + 5
         # dm = -30.4  # D = 12.e6 pc
         curves_obs = sn1999em.read_curves()
-
-        lc_o = curves_obs.get('V')
-        lc_o.mshift = dm
-        # lc.tshift = -lc.tmin
+        curves_obs.set_mshift(dm)
 
         # Get model
         name = 'cat_R500_M15_Ni006_E12'
@@ -224,15 +221,54 @@ class TestFit(unittest.TestCase):
         # fit
         # fitter = FitLcMcmc()
         fitter = FitMPFit(is_debug=True)
-        res = fitter.fit(lc_o, curves_mdl.get('V'))
+        lc_o = curves_obs.get('V')
+        res = fitter.fit_lc(lc_o, curves_mdl.get(lc_o.Band.Name))
 
         # print
-        txt = '{0:10} {1:.4e} R_sun\n'.format('tshift:', res.tshift) + \
-              '{0:10} {1:.4e} M_sun\n'.format('tsigma:', res.tsigma)
+        txt = '{0:10} {1:.4e} \n'.format('tshift:', res.tshift) + \
+              '{0:10} {1:.4e} \n'.format('tsigma:', res.tsigma)
         print(txt)
         # plot model
         curves_obs.set_tshift(res.tshift)
-        curves_mdl.set_tshift(0.)
+        # curves_mdl.set_tshift(0.)
+        ax = lcp.curves_plot(curves_mdl)
+
+        lt = {lc.Band.Name: 'o' for lc in curves_obs}
+        lcp.curves_plot(curves_obs, ax, lt=lt, xlim=(-10, 300))
+        plt.show()
+
+    # @unittest.skip("just for plot")
+    def test_fit_curves_Stella_SN1999em(self):
+        from pystella.rf import light_curve_func as lcf
+        from pystella.rf import light_curve_plot as lcp
+        # matplotlib.rcParams['backend'] = "TkAgg"
+        # matplotlib.rcParams['backend'] = "Qt4Agg"
+        # from matplotlib import pyplot as plt
+        # Get observations
+        D = 11.5e6  # pc
+        dm = -5. * np.log10(D) + 5
+        # dm = -30.4  # D = 12.e6 pc
+        curves_obs = sn1999em.read_curves()
+        curves_obs.set_mshift(dm)
+
+        # Get model
+        name = 'cat_R500_M15_Ni006_E12'
+        path = join(dirname(dirname(abspath(__file__))), 'data', 'stella')
+
+        curves_mdl = lcf.curves_compute(name, path, curves_obs.BandNames)
+
+        # fit
+        # fitter = FitLcMcmc()
+        fitter = FitMPFit(is_debug=True)
+        res = fitter.fit_curves(curves_obs, curves_mdl)
+
+        # print
+        txt = '{0:10} {1:.4e} \n'.format('tshift:', res.tshift) + \
+              '{0:10} {1:.4e} \n'.format('tsigma:', res.tsigma)
+        print(txt)
+        # plot model
+        curves_obs.set_tshift(res.tshift)
+        # curves_mdl.set_tshift(0.)
         ax = lcp.curves_plot(curves_mdl)
 
         lt = {lc.Band.Name: 'o' for lc in curves_obs}

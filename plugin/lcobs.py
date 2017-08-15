@@ -5,6 +5,7 @@
 import os
 
 from pystella.rf import band
+from pystella.rf.lc import SetLightCurve, LightCurve
 from pystella.util.reader_table import read_table_header_float, table2curves, read_obs_table_header
 
 
@@ -17,10 +18,10 @@ def plot(ax, dic={}, mag_lim=30.):
     :return:
     """
     # colors = band.bands_colors()
-    fname = None
-    jd_shift = 0.
-    mshift = 0.
-    marker = 'o'
+    fname = dic.get('fname', None)
+    jd_shift = dic.get('jd_shift', 0.)
+    mshift = dic.get('mshift', 0.)
+    marker = dic.get('marker', 'o')
     markersize = dic.get('markersize', 9)
     bnames = dic.get('bnames', None)
     bcolors = dic.get('bcolors', band.bands_colors())
@@ -72,9 +73,11 @@ def load(dic=None):
     fname = None
     jd_shift = 0.
     mshift = 0.
+    mag_lim = 30.
     arg = []
     if dic is not None and 'args' in dic:
         arg = dic['args']
+        mag_lim = dic.get('mag_lim', 30.)
 
     if len(arg) > 0:
         fname = arg.pop(0)
@@ -89,7 +92,20 @@ def load(dic=None):
     # read data
     tbl = read_table_header_float(fname)
     curves = table2curves(os.path.basename(fname), tbl)
-    curves.set_tshift(jd_shift)
-    curves.set_mshift(mshift)
-    return curves
+
+    # remove bad data
+    res_curves = SetLightCurve(curves.Name)
+    for lc_orig in curves:
+        is_good = lc_orig.Mag < mag_lim
+        t = lc_orig.Time[is_good]
+        m = lc_orig.Mag[is_good]
+        e = None
+        if lc_orig.IsErr:
+            e = lc_orig.MagErr[is_good]
+        lc = LightCurve(lc_orig.Band, t, m, e)
+        res_curves.add(lc)
+
+    res_curves.set_tshift(jd_shift)
+    res_curves.set_mshift(mshift)
+    return res_curves
 

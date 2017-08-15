@@ -11,7 +11,7 @@ class FitLcMcmc(FitLc):
     def __init__(self, is_debug=False):
         super().__init__(is_debug=is_debug)
 
-    def fit(self, lc_o, lc_m):
+    def fit_lc(self, lc_o, lc_m):
         t, tsigma = self.fit_lc_bayesian_1d(lc_o, lc_m, is_debug=super().is_debug)
         self.tshift = t
         self.tsigma = tsigma

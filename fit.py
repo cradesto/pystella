@@ -9,12 +9,10 @@ import sys
 import numpy as np
 
 import pystella.util.callback as cb
-from pystella.fit.fit_mcmc import FitLcMcmc
 from pystella.fit.fit_mpfit import FitMPFit
 from pystella.rf import band
 from pystella.rf import light_curve_func as lcf
-
-# from pystella.rf import light_curve_plot as lcp
+from pystella.rf.band import band_is_exist
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -106,8 +104,7 @@ def plot_curves(curves, curves_o):
     # matplotlib.rcParams['backend'] = "Qt4Agg"
     from matplotlib import pyplot as plt
 
-    ax = lcp.curves_plot(curves)
-
+    ax = lcp.curves_plot(curves, figsize=(12,8))
     lt = {lc.Band.Name: 'o' for lc in curves_o}
     lcp.curves_plot(curves_o, ax, lt=lt, xlim=(-10, 300))
     plt.show()
@@ -169,7 +166,7 @@ def main():
     curves_o = callback.load()
 
     if len(bnames) == 0:
-        bnames = curves_o.BandNames
+        bnames = [bn for bn in curves_o.BandNames if band_is_exist(bn)]
 
     # Get models
     if args.times:
@@ -189,16 +186,24 @@ def main():
     # fitter = FitLcMcmc()
     # tshift, tsigma = fitter.fit(curves_o.get('V'), curves.get('V'))
     # fitter = FitLcMcmc()
+    print(""" Fitting: """)
     fitter = FitMPFit(is_debug=True)
-    bname = bnames[0]
-    res = fitter.fit(curves_o.get(bname), curves_mdl.get(bname))
-    # tshift, tsigma = res['dt']
-    # dm, dmsigma = res['dm']
 
-    print(""" Results: """)
-    print("Band: {0} time shift  = {1:.2f}+/-{2:.4f}".format(bname, res.tshift, res.tsigma))
+    tshift = 0.
+    is_lc_only = False
+    if is_lc_only:
+        for bname in bnames:
+            res = fitter.fit_lc(curves_o.get(bname), curves_mdl.get(bname))
+            print("Band: {0} time shift  = {1:.2f}+/-{2:.4f}".format(bname, res.tshift, res.tsigma))
+            tshift = 0.5 * (tshift + res.tshift)  # todo change
+    else:
+        res = fitter.fit_curves(curves_o, curves_mdl)
+        print("Curves: time shift  = {:.2f}+/-{:.4f}".format(res.tshift, res.tsigma))
+        tshift = res.tshift
 
-    curves_o.set_tshift(res.tshift)
+    print("Result: time shift  = {:.2f}".format(tshift))
+    # print("Result: {0} time shift  = {1:.2f}+/-{2:.4f}".format(tshift))
+    curves_o.set_tshift(tshift)
     # curves.set_tshift(0.)
 
     plot_curves(curves_mdl, curves_o)
