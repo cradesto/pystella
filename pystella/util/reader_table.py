@@ -27,16 +27,22 @@ def read_table_header_float(fname, header=None, skip=0):
     return block
 
 
-def read_obs_table_header(fname, header=None, skip=0, colt=('time', 'JD', 'MJD')):
+def read_obs_table_header(fname, header=None, skip=0, colt=('time', 'JD', 'MJD'), is_out=True):
     if header is None:
-        i = 0
         with open(fname, "r") as f:
+            i = 0
             for line in f:
                 i += 1
+                if is_out:
+                    print(line.strip())
                 if i <= skip:
                     continue
                 header = line
                 break
+            # print first lines
+            if is_out:
+                line = f.readline().strip()
+                print(line)
     cols_names = header.split()
     cols = {i: nm for i, nm in enumerate(cols_names)}
 

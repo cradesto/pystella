@@ -6,18 +6,21 @@ import os
 
 from pystella.rf import band
 from pystella.rf.lc import SetLightCurve, LightCurve
-from pystella.util.reader_table import read_table_header_float, table2curves, read_obs_table_header
+from pystella.util.reader_table import table2curves, read_obs_table_header
 
 
-def plot(ax, dic={}, mag_lim=30.):
+def plot(ax, dic=None, mag_lim=30.):
     """
     Plot points from dat-files. Format fname:marker:jd_shift:mshift
     Header should be:  time  U [errU]  B [errB]  ...
     :param ax:
     :param dic:
+    :param mag_lim:
     :return:
     """
     # colors = band.bands_colors()
+    if dic is None:
+        dic = {}
     fname = dic.get('fname', None)
     jd_shift = dic.get('jd_shift', 0.)
     mshift = dic.get('mshift', 0.)
@@ -90,7 +93,8 @@ def load(dic=None):
     print("Load {0} jd_shift={1}  mshift={2}".format(fname, jd_shift, mshift))
 
     # read data
-    tbl = read_table_header_float(fname)
+    # tbl = read_table_header_float(fname)
+    tbl = read_obs_table_header(fname)
     curves = table2curves(os.path.basename(fname), tbl)
 
     # remove bad data
@@ -108,4 +112,3 @@ def load(dic=None):
     res_curves.set_tshift(jd_shift)
     res_curves.set_mshift(mshift)
     return res_curves
-

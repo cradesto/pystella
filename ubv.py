@@ -173,7 +173,7 @@ def old_lc_wrapper(param, p=None):
 
 
 def main(name='', model_ext='.ph'):
-    is_quiet = True
+    is_quiet = False
     is_save_mags = False
     is_save_plot = False
     is_plot_time_points = False
@@ -250,7 +250,7 @@ def main(name='', model_ext='.ph'):
             t_diff = float(arg)
             continue
         if opt == '-q':
-            is_quiet = False
+            is_quiet = True
             continue
         if opt == '-g':
             opt_grid = str.strip(arg).lower()
@@ -331,16 +331,11 @@ def main(name='', model_ext='.ph'):
         i = 0
         for name in names:
             i += 1
-            # mags = lcf.compute_mag(name, path, bands, ext=ext, z=z, distance=distance, magnification=magnification,
-            #                        t_diff=t_diff, is_show_info=not is_quiet, is_save=is_save_mags)
             curves = lcf.curves_compute(name, path, bnames, z=z, distance=distance,
                                         magnification=magnification, t_diff=t_diff)
-
             if is_extinction:
                 lcf.curves_reddening(curves, ebv=e, z=z)
-            # lcf.plot_curves(curves)
-            # exit()
-            # models_mags[name] = mags
+
             models_mags[name] = curves
 
             if is_save_mags:
@@ -348,10 +343,11 @@ def main(name='', model_ext='.ph'):
                 lcf.curves_save(curves, fname)
                 print("Magnitudes have been saved to " + fname)
 
-            if not (is_save_mags or is_quiet):
-                # z, distance = 0.145, 687.7e6  # pc for comparison with Maria
-                # lcf.plot_bands(mags, bands, title=name, fname='', is_time_points=is_plot_time_points)
-                lcp.plot_bands(curves, bnames, title=name, fname='', is_time_points=is_plot_time_points)
+            # if not is_quiet:
+            #     # z, distance = 0.145, 687.7e6  # pc for comparison with Maria
+            #     # lcf.plot_bands(mags, bands, title=name, fname='', is_time_points=is_plot_time_points)
+            #     # lcp.plot_bands(curves, bnames, title=name, fname='', is_time_points=is_plot_time_points)
+            #     lcp.curves_plot(curves, title=name, fname='', is_time_points=is_plot_time_points)
 
             if is_vel:
                 vels = vel.compute_vel(name, path, z=z)
@@ -370,7 +366,16 @@ def main(name='', model_ext='.ph'):
             else:
                 label = "z=%4.2f D=%6.2e mu=%3.1f ebv=%4.2f" % (z, distance, magnification, e)
 
-        if not is_save_mags:
+        if not is_quiet:
+            if opt_grid in view_opts[1:]:
+                sep = opt_grid[:-1]
+                if sep == 'd':
+                    sep = 'l'  # line separator
+                fig = plot_grid(models_mags, bnames, call=callback, xlim=xlim, ylim=ylim,
+                                sep=sep, is_grid=False)
+            else:
+                fig = plot_all(models_vels, models_mags, bnames, d=distance, call=callback, xlim=xlim, ylim=ylim,
+                               is_time_points=is_plot_time_points, title=label, bshift=bshift)
             if is_save_plot:
                 if len(fsave) == 0:
                     if is_vel:
@@ -382,32 +387,13 @@ def main(name='', model_ext='.ph'):
                     fsave = "%s_e0%2d" % (fsave, int(e * 100))  # bad formula for name
 
                 d = os.path.expanduser('~/')
-                # d = '/home/bakl/Sn/my/conf/2016/snrefsdal/img'
-
                 fsave = os.path.join(d, os.path.splitext(fsave)[0]) + '.pdf'
 
-            if opt_grid in view_opts[1:]:
-                sep = opt_grid[:-1]
-                if sep == 'd':
-                    sep = 'l'  # line separator
-                fig = plot_grid(models_mags, bnames, call=callback, xlim=xlim, ylim=ylim,
-                                sep=sep, is_grid=False)
-            else:
-                fig = plot_all(models_vels, models_mags, bnames, d=distance, call=callback, xlim=xlim, ylim=ylim,
-                               is_time_points=is_plot_time_points, title=label, bshift=bshift)
-            if fsave is not None:
                 print("Save plot to %s " % fsave)
-                fig.savefig(fsave, bbox_inches='tight')
-                # plt.savefig(fsave, format='pdf')
-
-                # plot_all(dic_results, bands,  xlim=(-10, 410), is_time_points=is_plot_time_points)
-            # plot_all(dic_results, bands, xlim=(-10, 410), callback=callback, is_time_points=is_plot_time_points)
-            # plot_all(dic_results, bands,  ylim=(40, 23),  is_time_points=is_plot_time_points)
+                fig.savefig(fsave, bbox_inches='tight', format='pdf')
     else:
         print("There are no models in the directory: %s with extension: %s " % (path, model_ext))
 
 
-
 if __name__ == '__main__':
     main()
-    # main(name="cat_R1000_M15_Ni007_E15")

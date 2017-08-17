@@ -90,7 +90,7 @@ def get_parser():
                         default=None,
                         dest="times",
                         help="The range of fitting in model LC. Default: None (all points). Format: {0}".format('2:50'))
-    parser.add_argument('-w', '--write',
+    parser.add_argument('-q', '--write',
                         action='store_const',
                         const=True,
                         dest="is_write",
