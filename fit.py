@@ -50,8 +50,7 @@ def m_mu(x):
 
 def get_parser():
     parser = argparse.ArgumentParser(description='Process light curve fitting.')
-    print("  -b <bands:shift>: string, default: U-B-V-R-I, for example U-B-V-R-I-u-g-i-r-z-UVW1-UVW2.\n"
-          "     shift: to move lc along y-axe (minus is '_', for example -b R:2-V-I:_4-B:5 ")
+    print(" Observational data could be loaded with plugin, ex: -c lcobs:filedata:tshift:mshift")
 
     parser.add_argument('-b', '--band',
                         required=False,
@@ -76,7 +75,7 @@ def get_parser():
                         help="Redshift for the model .  Default: 0")
     parser.add_argument('-i', '--input',
                         required=False,
-                        dest="name",
+                        dest="input",
                         help="Model name, example: cat_R450_M15_Ni007")
     parser.add_argument('-p', '--path',
                         required=False,
@@ -90,11 +89,11 @@ def get_parser():
                         default=None,
                         dest="times",
                         help="The range of fitting in model LC. Default: None (all points). Format: {0}".format('2:50'))
-    parser.add_argument('-q', '--write',
+    parser.add_argument('-q', '--quiet',
                         action='store_const',
                         const=True,
-                        dest="is_write",
-                        help="To write the data to txt-file.")
+                        dest="is_quiet",
+                        help="Just show result, no plots, no info")
     return parser
 
 
@@ -111,11 +110,7 @@ def plot_curves(curves, curves_o):
 
 
 def main():
-    is_legend = True
-    is_debug = True
     t_diff = 1.01
-
-    callback = None
     times = None
     z = 0.
     distance = 10  # pc
@@ -136,8 +131,8 @@ def main():
             path = os.path.expanduser(args.path)
         else:
             path = os.getcwd()
-        if args.name is not None:
-            name = os.path.splitext(os.path.basename(args.name))[0]
+        if args.input is not None:
+            name = os.path.splitext(os.path.basename(args.input))[0]  # remove extension
 
     if name is None:
         parser.print_help()
@@ -163,7 +158,7 @@ def main():
         sys.exit(2)
 
     # Get observations
-    curves_o = callback.load()
+    curves_o = callback.load({'is_debug': not args.is_quiet})
 
     if len(bnames) == 0:
         bnames = [bn for bn in curves_o.BandNames if band_is_exist(bn)]
@@ -186,8 +181,9 @@ def main():
     # fitter = FitLcMcmc()
     # tshift, tsigma = fitter.fit(curves_o.get('V'), curves.get('V'))
     # fitter = FitLcMcmc()
-    print(""" Fitting: """)
-    fitter = FitMPFit(is_debug=True)
+    if not args.is_quiet:
+        print(""" Fitting: """)
+    fitter = FitMPFit(is_debug=not args.is_quiet)
 
     tshift = 0.
     is_lc_only = False
@@ -196,18 +192,19 @@ def main():
             res = fitter.fit_lc(curves_o.get(bname), curves_mdl.get(bname))
             print("Band: {0} time shift  = {1:.2f}+/-{2:.4f}".format(bname, res.tshift, res.tsigma))
             tshift = 0.5 * (tshift + res.tshift)  # todo change
+        print("Result: avg time shift  = {:.2f}".format(tshift))
     else:
         res = fitter.fit_curves(curves_o, curves_mdl)
-        print("Curves: time shift  = {:.2f}+/-{:.4f}".format(res.tshift, res.tsigma))
+        print("Curves: time shift  = {:.2f}+/-{:.4f} Measure: {:.4f}".format(res.tshift, res.tsigma, res.measure))
         tshift = res.tshift
 
-    print("Result: time shift  = {:.2f}".format(tshift))
     # print("Result: {0} time shift  = {1:.2f}+/-{2:.4f}".format(tshift))
     curves_o.set_tshift(tshift)
     # curves.set_tshift(0.)
 
-    plot_curves(curves_mdl, curves_o)
-    # print(" dm_abs      = {0:.4f}+/-{1:.4f}".format(dm, dmsigma))
+    if not args.is_quiet:
+        plot_curves(curves_mdl, curves_o)
+        # print(" dm_abs      = {0:.4f}+/-{1:.4f}".format(dm, dmsigma))
 
 
 if __name__ == '__main__':

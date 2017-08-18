@@ -4,6 +4,8 @@ class FitLc:
         self._mshift = 0.
         self._tshift = 0.
         self._tsigma = 0.
+        self._measure = None
+        self._comm = None
 
     def fit_lc(self, lc_o, lc_m):
         pass
@@ -38,3 +40,19 @@ class FitLc:
     @mshift.setter
     def mshift(self, v):
         self._mshift = v
+
+    @property
+    def measure(self):
+        return self._measure
+
+    @measure.setter
+    def measure(self, v):
+        self._measure = v
+
+    @property
+    def comm(self):
+        return self._comm
+
+    @comm.setter
+    def comm(self, v):
+        self._comm = v

@@ -17,9 +17,25 @@ class FitMPFit(FitLc):
 
     def fit_curves(self, curves_o, curves_m):
         dt0 = curves_o.get(curves_o.BandNames[0]).tshift
-        t, tsigma = self.best_curves(curves_o, curves_m, dt0=dt0, is_debug=super().is_debug)
-        self.tshift = t
+        dm0 = curves_o.get(curves_o.BandNames[0]).mshift
+
+        result = self.best_curves(curves_o, curves_m, dt0=dt0, dm0=dm0, is_debug=super().is_debug)
+
+        tshift = dt0 + result.params[0]
+        mshift = dm0 + result.params[1]
+        pcerror = result.perror
+        # scaled uncertainties
+        # pcerror = result.perror * np.sqrt(result.fnorm / result.dof)
+        tsigma = pcerror[0]  # todo tsigma check
+
+
+        if super().is_debug:
+            print("The final params are: tshift=%f tsigma=%f mshift=%f" % (tshift, tsigma, mshift))
+
+        self.tshift = tshift
         self.tsigma = tsigma
+        self.measure = result.fnorm
+        self.comm = 'The value of the summed squared residuals for the returned parameter values.'
         return self
 
     def best_lc(self, lc_o, lc_m, dt0=0., dm0=None, is_debug=True, xtol=1e-10, ftol=1e-10, gtol=1e-10):
@@ -73,7 +89,8 @@ class FitMPFit(FitLc):
             print("The final params are: tshift=%f tsigma=%f mshift=%f" % (tshift, tsigma, mshift))
         return tshift, tsigma
 
-    def best_curves(self, curves_o, curves_m, dt0=0., dm0=None, is_debug=True, xtol=1e-10, ftol=1e-10, gtol=1e-10):
+    def best_curves(self, curves_o, curves_m, dt0=0., dm0=0., is_dm=False,
+                    is_debug=True, xtol=1e-10, ftol=1e-10, gtol=1e-10):
         dm = 0.
         if dm0 is not None:
             dm = dm0
@@ -96,23 +113,23 @@ class FitMPFit(FitLc):
             return 0, total
 
         parinfo = [{'value': 0., 'limited': [1, 1], 'limits': [-250., 250.]}]
-        if dm0 is not None:
-            parinfo.append({'value': dm0, 'limited': [1, 1], 'limits': [-50., 50.]})
+        if is_dm:
+            parinfo.append({'value': 0., 'limited': [1, 1], 'limits': [-50., 50.]})
         else:
-            parinfo.append({'value': curves_o.get(curves_o.BandNames[0]).mshift, 'fixed': 1})
+            parinfo.append({'value': 0., 'fixed': 1})
 
         result = mpfit.mpfit(least_sq, parinfo=parinfo, quiet=not is_debug, maxiter=200,
                              ftol=ftol, gtol=gtol, xtol=xtol)
-        if result.status == 5:
-            print('Maximum number of iterations exceeded in mangle_spectrum')
-
-        tshift = dt0 + result.params[0]
-        # scaled uncertainties
-        pcerror = result.perror * np.sqrt(result.fnorm / result.dof)
-        tsigma = pcerror[0]  # todo tsigma check
-
-        mshift = dm + result.params[1]
-
         if is_debug:
-            print("The final params are: tshift=%f tsigma=%f mshift=%f" % (tshift, tsigma, mshift))
-        return tshift, tsigma
+
+            print("status: ", result.status)
+            if result.status <= 0:
+                print('error message = ', result.errmsg)
+            elif result.status == 5:
+                    print('Maximum number of iterations exceeded in mangle_spectrum')
+            else:
+                print("Iterations: ", result.niter)
+                print("Fitted pars: ", result.params)
+                print("Uncertainties: ", result.perror)
+
+        return result

@@ -78,9 +78,11 @@ def load(dic=None):
     mshift = 0.
     mag_lim = 30.
     arg = []
-    if dic is not None and 'args' in dic:
-        arg = dic['args']
+    if dic is not None:
+        is_debug = dic.get('is_debug', False)
         mag_lim = dic.get('mag_lim', 30.)
+        if 'args' in dic:
+            arg = dic['args']
 
     if len(arg) > 0:
         fname = arg.pop(0)
@@ -94,7 +96,7 @@ def load(dic=None):
 
     # read data
     # tbl = read_table_header_float(fname)
-    tbl = read_obs_table_header(fname)
+    tbl = read_obs_table_header(fname,is_out=is_debug)
     curves = table2curves(os.path.basename(fname), tbl)
 
     # remove bad data
