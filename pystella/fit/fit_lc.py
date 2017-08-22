@@ -1,11 +1,6 @@
 class FitLc:
-    def __init__(self, is_debug=False):
-        self._is_debug = is_debug
-        self._mshift = 0.
-        self._tshift = 0.
-        self._tsigma = 0.
-        self._measure = None
-        self._comm = None
+    def __init__(self):
+        self._is_debug = False
 
     def fit_lc(self, lc_o, lc_m):
         pass
@@ -16,6 +11,19 @@ class FitLc:
     @property
     def is_debug(self):
         return self._is_debug
+
+    @is_debug.setter
+    def is_debug(self, v):
+        self._is_debug = v
+
+
+class FitLcResult:
+    def __init__(self):
+        self._mshift = 0.
+        self._tshift = 0.
+        self._tsigma = 0.
+        self._measure = None
+        self._comm = None
 
     @property
     def tshift(self):

@@ -8,8 +8,8 @@ from pystella.fit.fit_lc import FitLc
 
 
 class FitLcMcmc(FitLc):
-    def __init__(self, is_debug=False):
-        super().__init__(is_debug=is_debug)
+    def __init__(self):
+        super().__init__()
 
     def fit_lc(self, lc_o, lc_m):
         t, tsigma = self.fit_lc_bayesian_1d(lc_o, lc_m, is_debug=super().is_debug)

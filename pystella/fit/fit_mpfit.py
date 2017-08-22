@@ -1,19 +1,20 @@
 import numpy as np
 
 from pystella.fit import mpfit
-from pystella.fit.fit_lc import FitLc
+from pystella.fit.fit_lc import FitLc, FitLcResult
 
 
 class FitMPFit(FitLc):
-    def __init__(self, is_debug=False):
-        super().__init__(is_debug=is_debug)
+    def __init__(self):
+        super().__init__()
 
     def fit_lc(self, lc_o, lc_m):
         dt0 = lc_o.tshift
         t, tsigma = self.best_lc(lc_o, lc_m, dt0=dt0, is_debug=super().is_debug)
-        self.tshift = t
-        self.tsigma = tsigma
-        return self
+        fit_result = FitLcResult()
+        fit_result.tshift = t
+        fit_result.tsigma = tsigma
+        return fit_result
 
     def fit_curves(self, curves_o, curves_m):
         dt0 = curves_o.get(curves_o.BandNames[0]).tshift
@@ -28,15 +29,15 @@ class FitMPFit(FitLc):
         # pcerror = result.perror * np.sqrt(result.fnorm / result.dof)
         tsigma = pcerror[0]  # todo tsigma check
 
-
         if super().is_debug:
             print("The final params are: tshift=%f tsigma=%f mshift=%f" % (tshift, tsigma, mshift))
 
-        self.tshift = tshift
-        self.tsigma = tsigma
-        self.measure = result.fnorm
-        self.comm = 'The value of the summed squared residuals for the returned parameter values.'
-        return self
+        fit_result = FitLcResult()
+        fit_result.tshift = tshift
+        fit_result.tsigma = tsigma
+        fit_result.measure = result.fnorm
+        fit_result.comm = 'The value of the summed squared residuals for the returned parameter values.'
+        return fit_result
 
     def best_lc(self, lc_o, lc_m, dt0=0., dm0=None, is_debug=True, xtol=1e-10, ftol=1e-10, gtol=1e-10):
         dm = 0.
@@ -96,6 +97,7 @@ class FitMPFit(FitLc):
             dm = dm0
 
         def least_sq(p, fjac):
+            A = 0.
             total = []
             for lc_m in curves_m:
                 lc_o = curves_o.get(lc_m.Band.Name)
@@ -104,7 +106,7 @@ class FitMPFit(FitLc):
                 # model interpolation
                 m = np.interp(lc_o.Time, lc_m.Time, lc_m.Mag)  # One-dimensional linear interpolation.
                 w = np.ones(len(m))
-                w = np.abs(1. - (lc_o.Time - lc_o.TimeMin) / (lc_o.TimeMax - lc_o.TimeMin))  # weight
+                w = np.abs(1. - A * (lc_o.Time - lc_o.TimeMin) / (lc_o.TimeMax - lc_o.TimeMin))  # weight
                 if lc_o.IsErr:
                     res = np.abs((lc_o.Mag - m) / (0.1 + lc_o.MagErr)) * w
                 else:
@@ -126,7 +128,7 @@ class FitMPFit(FitLc):
             if result.status <= 0:
                 print('error message = ', result.errmsg)
             elif result.status == 5:
-                    print('Maximum number of iterations exceeded in mangle_spectrum')
+                print('Maximum number of iterations exceeded in mangle_spectrum')
             else:
                 print("Iterations: ", result.niter)
                 print("Fitted pars: ", result.params)
