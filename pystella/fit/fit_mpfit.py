@@ -10,7 +10,7 @@ class FitMPFit(FitLc):
 
     def fit_lc(self, lc_o, lc_m):
         dt0 = lc_o.tshift
-        t, tsigma = self.best_lc(lc_o, lc_m, dt0=dt0, is_debug=super().is_debug)
+        t, tsigma = self.best_lc(lc_o, lc_m, dt0=dt0, is_debug=self.is_debug)
         fit_result = FitLcResult()
         fit_result.tshift = t
         fit_result.tsigma = tsigma
@@ -20,7 +20,7 @@ class FitMPFit(FitLc):
         dt0 = curves_o.get(curves_o.BandNames[0]).tshift
         dm0 = curves_o.get(curves_o.BandNames[0]).mshift
 
-        result = self.best_curves(curves_o, curves_m, dt0=dt0, dm0=dm0, is_debug=super().is_debug)
+        result = self.best_curves(curves_o, curves_m, dt0=dt0, dm0=dm0, is_debug=self.is_debug)
 
         tshift = dt0 + result.params[0]
         mshift = dm0 + result.params[1]
@@ -90,8 +90,9 @@ class FitMPFit(FitLc):
             print("The final params are: tshift=%f tsigma=%f mshift=%f" % (tshift, tsigma, mshift))
         return tshift, tsigma
 
-    def best_curves(self, curves_o, curves_m, dt0=0., dm0=0., is_dm=False,
-                    is_debug=True, xtol=1e-10, ftol=1e-10, gtol=1e-10):
+    @staticmethod
+    def best_curves(curves_o, curves_m, dt0=0., dm0=0., is_dm=False,
+                    is_debug=True, is_quiet=True, xtol=1e-10, ftol=1e-10, gtol=1e-10):
         dm = 0.
         if dm0 is not None:
             dm = dm0
@@ -120,7 +121,7 @@ class FitMPFit(FitLc):
         else:
             parinfo.append({'value': 0., 'fixed': 1})
 
-        result = mpfit.mpfit(least_sq, parinfo=parinfo, quiet=not is_debug, maxiter=200,
+        result = mpfit.mpfit(least_sq, parinfo=parinfo, quiet=is_quiet, maxiter=200,
                              ftol=ftol, gtol=gtol, xtol=xtol)
         if is_debug:
 

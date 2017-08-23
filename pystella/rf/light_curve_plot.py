@@ -324,6 +324,7 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname='', **k
     if isinstance(ls, str):
         c = ls.strip()
         ls = {lc.Band.Name: c for lc in curves}
+    is_legend = kwargs.get('is_legend', True)
     is_line = kwargs.get('is_line', True)
     if 'lt' in kwargs:
         is_line = False
@@ -388,7 +389,8 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname='', **k
     ax.invert_yaxis()
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
-    ax.legend()
+    if is_legend:
+        ax.legend()
     ax.set_ylabel('Magnitude')
     ax.set_xlabel('Time [days]')
     ax.grid()

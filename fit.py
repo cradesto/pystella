@@ -123,15 +123,52 @@ def engines(nm=None):
     return list(switcher.keys())
 
 
-def plot_curves(curves, curves_o):
+def plot_curves(curves_o, res_models, res_sorted, **kwargs):
     from pystella.rf import light_curve_plot as lcp
-    # matplotlib.rcParams['backend'] = "TkAgg"
-    # matplotlib.rcParams['backend'] = "Qt4Agg"
     from matplotlib import pyplot as plt
 
-    ax = lcp.curves_plot(curves, figsize=(12, 8))
-    lt = {lc.Band.Name: 'o' for lc in curves_o}
-    lcp.curves_plot(curves_o, ax, lt=lt, xlim=(-10, 300))
+    font_size = kwargs.get('font_size', 10)
+
+    xlim = None
+    ylim = None
+    num = len(res_sorted)
+    nrow = int(num / 2.1) + 1
+    ncol = 2 if num > 1 else 1
+    fig = plt.figure(figsize=(12, nrow * 4))
+    plt.matplotlib.rcParams.update({'font.size': font_size})
+
+    i = 0
+    for k, v in res_sorted.items():
+        i += 1
+        if i > num:
+            break
+        ax = fig.add_subplot(nrow, ncol, i)
+
+        curves = res_models[k]
+        lcp.curves_plot(curves, ax=ax, figsize=(12, 8), linewidth=1, is_legend=False)
+
+        lt = {lc.Band.Name: 'o' for lc in curves_o}
+        lcp.curves_plot(curves_o, ax, lt=lt, markersize=3, is_legend=False)
+
+        ax.text(0.99, 0.94, k, horizontalalignment='right', transform=ax.transAxes)
+        ax.text(0.98, 0.85, "dt={:.2f}".format(v.tshift), horizontalalignment='right', transform=ax.transAxes)
+        ax.text(0.01, 0.05, "$\chi^2: {:.2f}$".format(v.measure), horizontalalignment='left', transform=ax.transAxes, bbox=dict(facecolor='green', alpha=0.3))
+        # ax.text(0.9, 0.9, "{:.2f}".format(v.measure), horizontalalignment='right', transform=ax.transAxes, bbox=dict(facecolor='green', alpha=0.3))
+
+        # fix axes
+        if i % ncol == 0:
+            ax.yaxis.tick_right()
+            ax.yaxis.set_label_position("right")
+            # ax.set_ylabel('')
+            # ax.set_yticklabels([])
+            # ax2.set_ylabel('Magnitude')
+        else:
+            ax.yaxis.tick_left()
+            ax.yaxis.set_label_position("left")
+            # ax.set_ylabel('Magnitude')
+        ax.yaxis.set_ticks_position('both')
+    fig.subplots_adjust(wspace=0, hspace=0)
+    # return fig
     plt.show()
 
 
@@ -142,7 +179,7 @@ def main():
     # z = 0.
     # distance = 10  # pc
     bnames = ['U', 'B', 'V', 'R', "I"]
-
+    Nbest = 6
     band.Band.load_settings()
 
     parser = get_parser()
@@ -215,6 +252,8 @@ def main():
         dtshift = (float("-inf"), float("inf"))
 
     # tshift = 0.
+    res_models = {}
+    res_chi = {}
     if len(names) == 1:
         name = names[0]
         if not args.is_quiet:
@@ -222,15 +261,15 @@ def main():
                 print("Fitting for model %s %s for %s moments" % (path, name, args.times))
             else:
                 print("Fitting for model %s %s " % (path, name))
-        curves_mdl = lcf.curves_compute(name, path, bnames, z=args.redshift, distance=args.distance,
-                                        t_beg=times[0], t_end=times[1], t_diff=t_diff)
+        curves = lcf.curves_compute(name, path, bnames, z=args.redshift, distance=args.distance,
+                                    t_beg=times[0], t_end=times[1], t_diff=t_diff)
 
-        res = fitter.fit_curves(curves_o, curves_mdl)
+        res = fitter.fit_curves(curves_o, curves)
         print("{}: time shift  = {:.2f}+/-{:.4f} Measure: {:.4f}".format(name, res.tshift, res.tsigma, res.measure))
-        tshift = res.tshift
+        best_tshift = res.tshift
+        res_models[name] = curves
+        res_chi[name] = res
     elif len(names) > 1:
-        res_models = {}
-        res_chi = {}
         i = 0
         for name in names:
             i += 1
@@ -248,28 +287,38 @@ def main():
             res_models[name] = curves
             res_chi[name] = res
 
+        # select with dtshift
+        res_chi_sel = {}
+        for k, v in res_chi.items():
+            if dtshift[0] < v.tshift < dtshift[1]:
+                res_chi_sel[k] = v
+        res_chi = res_chi_sel
         # sort with measure
         res_sorted = OrderedDict(sorted(res_chi.items(), key=lambda kv: kv[1].measure))
         print("\n Results (tshift in range:{:.2f} -- {:.2f}".format(dtshift[0], dtshift[1]))
         print("{:40s} ||{:18s}|| {:10}".format('Model', 'dt+-t_err', 'Measure'))
         for k, v in res_sorted.items():
-            if dtshift[0] < v.tshift < dtshift[1]:
-                print("{:40s} || {:.2f}+/-{:.4f} || {:.4f}".format(k, v.tshift, v.tsigma, v.measure))
+            # if dtshift[0] < v.tshift < dtshift[1]:
+            print("{:40s} || {:.2f}+/-{:.4f} || {:.4f}".format(k, v.tshift, v.tsigma, v.measure))
 
-        best_mdl, res = res_sorted.popitem(last=False)
+        best_mdl = list(res_sorted)[0]
+        res = list(res_sorted.values())[0]
+        # best_mdl, res = res_sorted.popitem(last=False)
         print("Best fit model:")
         print("{}: time shift  = {:.2f}+/-{:.4f} Measure: {:.4f}".format(best_mdl, res.tshift, res.tsigma, res.measure))
-        tshift = res.tshift
-        curves_mdl = res_models[best_mdl]
-    # curves.set_tshift(0.)
+        best_tshift = res.tshift
     else:
         print("No any data about models. Path: {}".format(path))
         parser.print_help()
         sys.exit(2)
 
     if not args.is_quiet:
-        curves_o.set_tshift(tshift)
-        plot_curves(curves_mdl, curves_o)
+        curves_o.set_tshift(best_tshift)
+        # show only Nbest modeles
+        while len(res_sorted) > Nbest:
+            res_sorted.popitem()
+        # plot the best models
+        plot_curves(curves_o, res_models, res_sorted)
         # print(" dm_abs      = {0:.4f}+/-{1:.4f}".format(dm, dmsigma))
 
 
