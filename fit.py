@@ -332,8 +332,10 @@ def main():
                             print('%r generated an exception: %s' % (name, exc))
                         else:
                             res_models[name] = data[0]
-                            res_chi[name] = data[1]
-                            # print('%r page is %d bytes' % (name, len(data)))
+                            v = data[1]
+                            res_chi[name] = v
+                            #print("Done: {:40s} || {:.2f}+/-{:.4f} || {:.4f}".format(name, v.tshift, v.tsigma, v.measure))
+                            print("Done: {:40s} -> {}".format(name, v.comm))
 
                 # with concurrent.futures.ProcessPoolExecutor(max_workers=args.nodes) as executor:
                 #     pool_outputs = zip(names, executor.map(f, names))
@@ -368,7 +370,7 @@ def main():
         print("{:40s} ||{:18s}|| {:10}".format('Model', 'dt+-t_err', 'Measure'))
         for k, v in res_sorted.items():
             # if dtshift[0] < v.tshift < dtshift[1]:
-            print("{:40s} || {:.2f}+/-{:.4f} || {:.4f}".format(k, v.tshift, v.tsigma, v.measure))
+            print("{:40s} || {:7.2f}+/-{:7.4f} || {:.4f}".format(k, v.tshift, v.tsigma, v.measure))
 
         best_mdl = list(res_sorted)[0]
         res = list(res_sorted.values())[0]

@@ -37,7 +37,8 @@ class FitMPFit(FitLc):
         fit_result.tshift = tshift
         fit_result.tsigma = tsigma
         fit_result.measure = result.fnorm
-        fit_result.comm = 'The value of the summed squared residuals for the returned parameter values.'
+        fit_result.comm = 'mpfit: status={:2d} niter={:3d} fnorm={:.2f}'.format(result.status, result.niter, result.fnorm)
+        #        fit_result.comm = 'The value of the summed squared residuals for the returned parameter values.'
         return fit_result
 
     def best_lc(self, lc_o, lc_m, dt0=0., dm0=None, is_debug=True, xtol=1e-10, ftol=1e-10, gtol=1e-10):
