@@ -20,16 +20,17 @@ class FitMPFit(FitLc):
         dt0 = curves_o.get(curves_o.BandNames[0]).tshift
         dm0 = curves_o.get(curves_o.BandNames[0]).mshift
 
-        result = self.best_curves(curves_o, curves_m, dt0=dt0, dm0=dm0, is_debug=self.is_debug)
+        result = self.best_curves(curves_o, curves_m, dt0=dt0, dm0=dm0,
+                                  is_debug=self.is_debug, is_info=self.is_info)
 
         tshift = dt0 + result.params[0]
         mshift = dm0 + result.params[1]
         pcerror = result.perror
         # scaled uncertainties
         # pcerror = result.perror * np.sqrt(result.fnorm / result.dof)
-        tsigma = pcerror[0]  # todo tsigma check
+        tsigma = pcerror[0]
 
-        if super().is_debug:
+        if self.is_info:
             print("The final params are: tshift=%f tsigma=%f mshift=%f" % (tshift, tsigma, mshift))
 
         fit_result = FitLcResult()
@@ -92,13 +93,13 @@ class FitMPFit(FitLc):
 
     @staticmethod
     def best_curves(curves_o, curves_m, dt0=0., dm0=0., is_dm=False,
-                    is_debug=True, is_quiet=True, xtol=1e-10, ftol=1e-10, gtol=1e-10):
+                    is_debug=False, is_info=True, xtol=1e-10, ftol=1e-10, gtol=1e-10):
         dm = 0.
         if dm0 is not None:
             dm = dm0
 
         def least_sq(p, fjac):
-            A = 0.
+            A = 0.5
             total = []
             for lc_m in curves_m:
                 lc_o = curves_o.get(lc_m.Band.Name)
@@ -121,9 +122,9 @@ class FitMPFit(FitLc):
         else:
             parinfo.append({'value': 0., 'fixed': 1})
 
-        result = mpfit.mpfit(least_sq, parinfo=parinfo, quiet=is_quiet, maxiter=200,
+        result = mpfit.mpfit(least_sq, parinfo=parinfo, quiet=not is_debug, maxiter=200,
                              ftol=ftol, gtol=gtol, xtol=xtol)
-        if is_debug:
+        if is_info:
 
             print("status: ", result.status)
             if result.status <= 0:

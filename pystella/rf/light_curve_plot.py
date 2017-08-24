@@ -369,7 +369,7 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname='', **k
             if lc.IsErr:
                 yyerr = abs(lc.MagErr)
                 ax.errorbar(x, y, label='{0} {1}'.format(bname, fname), yerr=yyerr, fmt=lt[bname],
-                            color=colors[bname], ls='')
+                            color=colors[bname], ls='', markersize=markersize)
             else:
                 # ax.plot(x, y, label='{0} {1}'.format(bname, fname), color=bcolors[bname], ls='',
                 #         marker=marker, markersize=markersize)

@@ -206,6 +206,9 @@ class SetLightCurve(object):
                 return lc
         return None
 
+    def is_band(self, bn):
+        return bn in self.BandNames
+
     def set_tshift(self, tshift):
         for n, lc in self.Set.items():
             lc.tshift = tshift

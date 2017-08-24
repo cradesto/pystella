@@ -1,5 +1,6 @@
 class FitLc:
     def __init__(self):
+        self._is_info = False
         self._is_debug = False
 
     def fit_lc(self, lc_o, lc_m):
@@ -7,6 +8,14 @@ class FitLc:
 
     def fit_curves(self, curves_o, curves_m):
         pass
+
+    @property
+    def is_info(self):
+        return self._is_info
+
+    @is_info.setter
+    def is_info(self, v):
+        self._is_info = v
 
     @property
     def is_debug(self):

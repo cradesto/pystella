@@ -2,12 +2,16 @@
 # -*- coding: utf-8 -*-
 
 import argparse
+import concurrent
 import logging
 import os
 import sys
 from collections import OrderedDict
+from concurrent.futures import ThreadPoolExecutor
+from multiprocessing.pool import ThreadPool, Pool
 
 import numpy as np
+from multiprocessing import current_process
 
 import pystella.util.callback as cb
 from pystella.fit.fit_mcmc import FitLcMcmc
@@ -110,6 +114,12 @@ def get_parser():
                         const=True,
                         dest="is_quiet",
                         help="Just show result, no plots, no info")
+    parser.add_argument('-n', '--node',
+                        required=False,
+                        type=int,
+                        default=1,
+                        dest="nodes",
+                        help="-n <nodes>: number of processes ")
     return parser
 
 
@@ -146,13 +156,14 @@ def plot_curves(curves_o, res_models, res_sorted, **kwargs):
 
         curves = res_models[k]
         lcp.curves_plot(curves, ax=ax, figsize=(12, 8), linewidth=1, is_legend=False)
-
+        xlim = ax.get_xlim()
         lt = {lc.Band.Name: 'o' for lc in curves_o}
-        lcp.curves_plot(curves_o, ax, lt=lt, markersize=3, is_legend=False)
+        lcp.curves_plot(curves_o, ax, xlim=xlim, lt=lt, markersize=2, is_legend=False)
 
         ax.text(0.99, 0.94, k, horizontalalignment='right', transform=ax.transAxes)
         ax.text(0.98, 0.85, "dt={:.2f}".format(v.tshift), horizontalalignment='right', transform=ax.transAxes)
-        ax.text(0.01, 0.05, "$\chi^2: {:.2f}$".format(v.measure), horizontalalignment='left', transform=ax.transAxes, bbox=dict(facecolor='green', alpha=0.3))
+        ax.text(0.01, 0.05, "$\chi^2: {:.2f}$".format(v.measure), horizontalalignment='left', transform=ax.transAxes,
+                bbox=dict(facecolor='green', alpha=0.3))
         # ax.text(0.9, 0.9, "{:.2f}".format(v.measure), horizontalalignment='right', transform=ax.transAxes, bbox=dict(facecolor='green', alpha=0.3))
 
         # fix axes
@@ -167,9 +178,21 @@ def plot_curves(curves_o, res_models, res_sorted, **kwargs):
             ax.yaxis.set_label_position("left")
             # ax.set_ylabel('Magnitude')
         ax.yaxis.set_ticks_position('both')
+        # legend
+        ax.legend(curves.BandNames, loc='lower right', frameon=False, ncol=min(5, len(curves.BandNames)),
+                  fontsize='small', borderpad=1)
+        # lc_colors = band.bands_colors()
+
     fig.subplots_adjust(wspace=0, hspace=0)
     # return fig
     plt.show()
+
+
+def fit_mfl(args, curves_o, bnames, fitter, name, path, t_diff, times):
+    curves = lcf.curves_compute(name, path, bnames, z=args.redshift, distance=args.distance,
+                                t_beg=times[0], t_end=times[1], t_diff=t_diff)
+    res = fitter.fit_curves(curves_o, curves)
+    return curves, res
 
 
 def main():
@@ -235,15 +258,18 @@ def main():
     if len(bnames) == 0:
         bnames = [bn for bn in curves_o.BandNames if band_is_exist(bn)]
 
-    # Get models
+    # Time limits for models
     times = (0, None)
 
     if args.times:
         times = list(map(float, args.times.split(':')))
 
+    print('Time limits for models: {}'.format(':'.join(map(str, times))))
+
     # The fit engine
     fitter = engines(args.engine)
-    fitter.is_debug = not args.is_quiet  # fitter = FitMPFit(is_debug=not args.is_quiet)
+    fitter.is_info = not args.is_quiet  # fitter = FitMPFit(is_debug=not args.is_quiet)
+    fitter.is_debug = False
 
     # The filter results by tshift
     if args.dtshift:
@@ -258,7 +284,7 @@ def main():
         name = names[0]
         if not args.is_quiet:
             if times is not None:
-                print("Fitting for model %s %s for %s moments" % (path, name, args.times))
+                print("Fitting for model %s %s for %s moments" % (path, name, times))
             else:
                 print("Fitting for model %s %s " % (path, name))
         curves = lcf.curves_compute(name, path, bnames, z=args.redshift, distance=args.distance,
@@ -269,23 +295,66 @@ def main():
         best_tshift = res.tshift
         res_models[name] = curves
         res_chi[name] = res
+        res_sorted = res_chi
     elif len(names) > 1:
         i = 0
-        for name in names:
-            i += 1
-            if args.is_quiet:
-                sys.stdout.write((u"\u001b[1000D Fitting for model %30s  [%d/%d]" % (name, i, len(names))))
-                sys.stdout.flush()
+        if args.nodes > 1:
+            print("Run parallel fitting: nodes={}, models  {}".format(args.nodes, len(names)))
+
+            def f(n):
+                # sys.stdout.write(u"\u001b[1000D" + n)
+                # sys.stdout.flush()
+                # return [n] + fit_mfl(args, curves_o, bnames, fitter, n, path, t_diff, times)
+                c, r = fit_mfl(args, curves_o, bnames, fitter, n, path, t_diff, times)
+                return c, r
+                # return n, c, r
+
+            if False:
+                with ThreadPool(processes=args.nodes) as pool:
+                    # pool = Pool(processes=args.nodes, initializer=lambda: print('Starting', current_process().name))
+                    pool_outputs = zip(names, pool.map(f, names))
+                    # pool_outputs = pool.map(f, names)
+                for name, l in pool_outputs:
+                    res_models[name] = l[0]
+                    res_chi[name] = l[1]
             else:
-                if times is not None:
-                    print("Fitting for model %s %s for %s moments" % (path, name, args.times))
+                with concurrent.futures.ProcessPoolExecutor(max_workers=args.nodes) as executor:
+                    # Start the load operations and mark each future with its URL
+                    future_to_name = {
+                        executor.submit(fit_mfl, args, curves_o, bnames, fitter, n, path, t_diff, times):
+                            n for n in names
+                    }
+                    for future in concurrent.futures.as_completed(future_to_name):
+                        name = future_to_name[future]
+                        try:
+                            data = future.result()
+                        except Exception as exc:
+                            print('%r generated an exception: %s' % (name, exc))
+                        else:
+                            res_models[name] = data[0]
+                            res_chi[name] = data[1]
+                            # print('%r page is %d bytes' % (name, len(data)))
+
+                # with concurrent.futures.ProcessPoolExecutor(max_workers=args.nodes) as executor:
+                #     pool_outputs = zip(names, executor.map(f, names))
+
+                # pool = ThreadPoolExecutor(max_workers=args.nodes)  # ProcessPoolExecutor
+                # a = pool.submit(wait_on_b)
+                # pool.close()  # no more tasks
+                # pool.join()
+            # pool_outputs = ThreadPool(processes=args.nodes).map(f, names)
+        else:
+            for name in names:
+                i += 1
+                txt = "Fitting for model {:30s}  [{}/{}]".format(name, i, len(names))
+                if args.is_quiet:
+                    sys.stdout.write(u"\u001b[1000D" + txt)
+                    sys.stdout.flush()
                 else:
-                    print("Fitting for model %s %s " % (path, name))
-            curves = lcf.curves_compute(name, path, bnames, z=args.redshift, distance=args.distance,
-                                        t_beg=times[0], t_end=times[1], t_diff=t_diff)
-            res = fitter.fit_curves(curves_o, curves)
-            res_models[name] = curves
-            res_chi[name] = res
+                    print(txt)
+                curves, res = fit_mfl(args, curves_o, bnames, fitter, name, path, t_diff, times)
+                res_models[name] = curves
+                res_chi[name] = res
 
         # select with dtshift
         res_chi_sel = {}
@@ -312,14 +381,14 @@ def main():
         parser.print_help()
         sys.exit(2)
 
-    if not args.is_quiet:
-        curves_o.set_tshift(best_tshift)
-        # show only Nbest modeles
-        while len(res_sorted) > Nbest:
-            res_sorted.popitem()
-        # plot the best models
-        plot_curves(curves_o, res_models, res_sorted)
-        # print(" dm_abs      = {0:.4f}+/-{1:.4f}".format(dm, dmsigma))
+    # shift observational data
+    curves_o.set_tshift(best_tshift)
+
+    # plot only Nbest modeles
+    while len(res_sorted) > Nbest:
+        res_sorted.popitem()
+
+    plot_curves(curves_o, res_models, res_sorted)
 
 
 if __name__ == '__main__':
