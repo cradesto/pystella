@@ -88,7 +88,11 @@ def load(dic=None):
         fname = arg.pop(0)
         fname = os.path.expanduser(fname)
     if len(arg) > 0:
-        jd_shift = float(arg.pop(0))
+        s = arg.pop(0)
+        if s.isnumeric():
+            jd_shift = float(s)
+        elif len(arg) > 0:
+            jd_shift = float(arg.pop(0))
     if len(arg) > 0:
         mshift = float(arg.pop(0))
 

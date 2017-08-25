@@ -201,7 +201,7 @@ def main():
     name = None
     # z = 0.
     # distance = 10  # pc
-    bnames = ['U', 'B', 'V', 'R', "I"]
+    # bnames = ['U', 'B', 'V', 'R', "I"]
     Nbest = 6
     band.Band.load_settings()
 
@@ -233,8 +233,8 @@ def main():
         names.append(name)
 
     # Set band names
+    bnames = []
     if args.bnames:
-        bnames = []
         for bname in str(args.bnames).split('-'):
             if not band.band_is_exist(bname):
                 print('No such band: ' + bname)

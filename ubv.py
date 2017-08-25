@@ -156,22 +156,6 @@ def usage():
     band.print_bands()
 
 
-def old_lc_wrapper(param, p=None):
-    a = param.split(':')
-    fname = a.pop(0)
-    if p is None:
-        if os.path.isfile(fname + '.py'):
-            p, fname = os.path.split(fname)
-        elif os.path.isfile(os.path.join(os.getcwd(), fname + '.py')):
-            p = os.getcwd()
-        else:
-            p = cb.plugin_path
-    print("Call: {} from {}".format(fname, p))
-    c = cb.CallBack(fname, path=p, args=a, load=1)
-    print("Call: %s from %s" % (c.Func, c.FuncFileFull))
-    return c
-
-
 def main(name='', model_ext='.ph'):
     is_quiet = False
     is_save_mags = False
