@@ -1,6 +1,10 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
+"""
+This program finds the time offset that minimizes chi-square.
 
+
+"""
 import argparse
 import concurrent
 import logging
