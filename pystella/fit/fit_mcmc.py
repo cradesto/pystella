@@ -1,5 +1,3 @@
-import emcee
-# import corner
 import numpy as np
 from pystella.fit.fit_lc import FitLc, FitLcResult
 
@@ -64,6 +62,7 @@ class FitLcMcmc(FitLc):
         return fit_result
 
     def fit_lc_bayesian_1d(self, lc_o, lc_m, err_mdl=0.1, is_debug=True, is_plot=True):
+        import emcee
         from sklearn.metrics import mean_squared_error
 
         def log_prior(theta):
@@ -118,6 +117,8 @@ class FitLcMcmc(FitLc):
         return tshift, tsigma
 
     def fit_curves_bayesian(self, curves_o, curves_m, dt0=0.):
+        import emcee
+
         def log_prior(theta):
             return 1  # flat prior
 

@@ -57,17 +57,19 @@ also the same could be done with key '-p' without model's name.
 
 ### Install the libraries
 
-To plot light curves
+To plot light curves [ubv] and shock wave details [swd]
 ```bash
+>>> apt-get install python3
+>>> apt-get install python3-numpy python3-scipy
 >>> apt-get install python3-matplotlib
->>> apt-get install python3-tk
->>> pip3 install numpy
+??? apt-get install python3-tk
 ```
 
 
-To fit observations using Gaussian process 
+To fit observations  
 ```bash
 >>> apt-get install -y python3-pip
+>>> pip3 install emcee
 >>> pip3 install cython
 >>> pip3 install gptools
 >>> pip3 install corner

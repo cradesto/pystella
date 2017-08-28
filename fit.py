@@ -6,16 +6,13 @@ This program finds the time offset that minimizes chi-square.
 
 """
 import argparse
-import concurrent
 import logging
 import os
 import sys
 from collections import OrderedDict
-from concurrent.futures import ThreadPoolExecutor
-from multiprocessing.pool import ThreadPool, Pool
+from concurrent import futures
 
 import numpy as np
-from multiprocessing import current_process
 
 import pystella.util.callback as cb
 from pystella.fit.fit_mcmc import FitLcMcmc
@@ -313,42 +310,22 @@ def main():
                 return c, r
                 # return n, c, r
 
-            if False:
-                with ThreadPool(processes=args.nodes) as pool:
-                    # pool = Pool(processes=args.nodes, initializer=lambda: print('Starting', current_process().name))
-                    pool_outputs = zip(names, pool.map(f, names))
-                    # pool_outputs = pool.map(f, names)
-                for name, l in pool_outputs:
-                    res_models[name] = l[0]
-                    res_chi[name] = l[1]
-            else:
-                with concurrent.futures.ProcessPoolExecutor(max_workers=args.nodes) as executor:
-                    # Start the load operations and mark each future with its URL
-                    future_to_name = {
-                        executor.submit(fit_mfl, args, curves_o, bnames, fitter, n, path, t_diff, times):
-                            n for n in names
-                    }
-                    for future in concurrent.futures.as_completed(future_to_name):
-                        name = future_to_name[future]
-                        try:
-                            data = future.result()
-                        except Exception as exc:
-                            print('%r generated an exception: %s' % (name, exc))
-                        else:
-                            res_models[name] = data[0]
-                            v = data[1]
-                            res_chi[name] = v
-                            #print("Done: {:40s} || {:.2f}+/-{:.4f} || {:.4f}".format(name, v.tshift, v.tsigma, v.measure))
-                            print("Done: {:40s} -> {}".format(name, v.comm))
-
-                # with concurrent.futures.ProcessPoolExecutor(max_workers=args.nodes) as executor:
-                #     pool_outputs = zip(names, executor.map(f, names))
-
-                # pool = ThreadPoolExecutor(max_workers=args.nodes)  # ProcessPoolExecutor
-                # a = pool.submit(wait_on_b)
-                # pool.close()  # no more tasks
-                # pool.join()
-            # pool_outputs = ThreadPool(processes=args.nodes).map(f, names)
+            with futures.ProcessPoolExecutor(max_workers=args.nodes) as executor:
+                future_to_name = {
+                    executor.submit(fit_mfl, args, curves_o, bnames, fitter, n, path, t_diff, times):
+                        n for n in names
+                }
+                for future in futures.as_completed(future_to_name):
+                    name = future_to_name[future]
+                    try:
+                        data = future.result()
+                    except Exception as exc:
+                        print('%r generated an exception: %s' % (name, exc))
+                    else:
+                        res_models[name] = data[0]
+                        v = data[1]
+                        res_chi[name] = v
+                        print("Done: {:40s} -> {}".format(name, v.comm))
         else:
             for name in names:
                 i += 1

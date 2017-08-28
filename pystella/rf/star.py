@@ -191,8 +191,9 @@ class Star:
             # f = map(lambda x: min(nu_s) < x < max(nu_s), nu_b)
             nu_b = nu_b[f]
             if len(nu_b) < 3:
-                raise ValueError("Spectrum must be wider then band: {}. You have just {} points in the filter "
-                                 "wavelength range".format(b.Name, len(nu_b)))
+                raise ValueError("The filter bandwidth [{}] should be included in the bandwidth of the SED. "
+                                 "There are only {} points in the filter wavelength range."
+                                 .format(b.Name, len(nu_b)))
             resp_b = resp_b[f]
 
         # if is_b_spline:
@@ -213,11 +214,10 @@ class Star:
         response = self._response_nu(b)
         if response <= 0:
             raise ValueError("Spectrum should be more 0: %f" % response)
-            # return None
-        else:
-            # mag = -2.5 * np.log10(conv) + phys.ZP_AB - band.zp
-            mag = Flux2MagAB(response / b.Norm) - b.zp
-            return mag
+
+        # mag = -2.5 * np.log10(conv) + phys.ZP_AB - band.zp
+        mag = Flux2MagAB(response / b.Norm) - b.zp
+        return mag
 
     def k_cor(self, band_r, band_o, z=0.):
         """
