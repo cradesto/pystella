@@ -110,6 +110,26 @@ class LightCurve(object):
         lc.tshift = self.tshift
         lc.mshift = self.mshift
 
+    @classmethod
+    def Merge(cls, lc1, lc2):
+        if lc1.Band.Name != lc2.Band.Name:
+            raise ValueError("Merging is possible only for the same filters: {} VS {}".
+                             format(lc1.Band.Name, lc2.Band.Name))
+        bname = lc1.Band.Name
+        t = np.concatenate((lc1.Time, lc2.Time))
+        m = np.concatenate((lc1.Mag, lc2.Mag))
+
+        sorti = np.argsort(t)
+        time = t[sorti]
+        mags = m[sorti]
+
+        errs = None
+        if lc1.IsErr and lc2.IsErr:
+            e = np.concatenate((lc1.MagErr, lc2.MagErr))
+            errs = e[sorti]
+        res = LightCurve(bname, time, mags, errs=errs)
+        return res
+
 
 class SetLightCurve(object):
     """Set of the Light Curves"""
@@ -171,6 +191,9 @@ class SetLightCurve(object):
         res = [lc.tmin for name, lc in self.Set.items()]
         return min(res)
 
+    def IsBand(self, bname):
+        return bname in self.BandNames
+
     # for cycle
     def __getitem__(self, index):
         return self.Set[index]
@@ -216,3 +239,26 @@ class SetLightCurve(object):
     def set_mshift(self, mshift):
         for n, lc in self.Set.items():
             lc.mshift = mshift
+
+    @classmethod
+    def Merge(cls, curves1, curves2):
+        if curves1 is None:
+            return curves2
+        if curves2 is None:
+            return curves1
+
+        res = SetLightCurve("{}+{}".format(curves1.Name, curves2.Name))
+        # Add Light Curves from the first set
+        for lc1 in curves1:
+            lc2 = curves2.get(lc1.Band.Name)
+            if lc2 is None:
+                res.add(lc1)
+            else:
+                lc = LightCurve.Merge(lc1, lc2)
+                res.add(lc)
+        # Add remaining Light Curves from the second set
+        for lc in curves2:
+            if not res.IsBand(lc.Band.Name):
+                res.add(lc)
+
+        return res

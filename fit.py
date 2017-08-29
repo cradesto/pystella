@@ -20,6 +20,7 @@ from pystella.fit.fit_mpfit import FitMPFit
 from pystella.rf import band
 from pystella.rf import light_curve_func as lcf
 from pystella.rf.band import band_is_exist
+from pystella.rf.lc import SetLightCurve
 from pystella.util.path_misc import get_model_names
 from pystella.util.string_misc import str2interval
 
@@ -67,6 +68,7 @@ def get_parser():
                         help="-b <bands>: string, default: U-B-V-R-I, for example g-i-r-UVW2")
     parser.add_argument('-c', '--call',
                         required=True,
+                        nargs='+',
                         type=str,
                         dest='call',
                         help='Call observational data')
@@ -247,14 +249,31 @@ def main():
     # distance = args.distance
 
     if args.call:
-        callback = cb.lc_wrapper(str(args.call), method='load')
+        if len(args.call) > 1:
+            a = []
+            for line in args.call:
+                c = cb.lc_wrapper(line, method='load')
+                a.append(c)
+            callback = cb.CallBackArray(a)
+        elif len(args.call) == 1:
+            callback = cb.lc_wrapper(args.call[0], method='load')
+        else:
+            callback = None
     else:
         print('No obs data. Use key: -c: ')
         parser.print_help()
         sys.exit(2)
 
     # Get observations
-    curves_o = callback.load({'is_debug': not args.is_quiet})
+    curves_o = None
+    obs = callback.run({'is_debug': not args.is_quiet})
+    if isinstance(obs, list):
+        for o in obs:
+            curves_o = SetLightCurve.Merge(curves_o, o)
+    else:
+        curves_o = obs
+    # curves_o = callback.load({'is_debug': not args.is_quiet})
+    # todo Information about tshift
 
     if len(bnames) == 0:
         bnames = [bn for bn in curves_o.BandNames if band_is_exist(bn)]

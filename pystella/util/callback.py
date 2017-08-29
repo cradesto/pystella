@@ -166,8 +166,12 @@ class CallBack(object):
         # a.append(args)
         self._func(ax, dic)
 
-    def run(self):
-        self._func(self._args)
+    def run(self, dic=None):
+        if dic is None:
+            dic = {}
+        if self._args is not None:
+            dic['args'] = self._args[:]
+        return self._func(dic)
 
     def load(self, dic=None):
         if dic is None:
@@ -205,6 +209,19 @@ class CallBackArray(CallBack):
         for c in self._calls:
             c.plot(ax, dic)
 
-    def run(self):
+    def run(self, dic=None):
+        if dic is None:
+            dic = {}
+        if self._args is not None:
+            dic['args'] = self._args[:]
+        res = []
         for c in self._calls:
-            c.run(self._args)
+            res.append(c.run(dic))
+        return res
+
+    def load(self, dic=None):
+        if dic is None:
+            dic = {}
+        if self._args is not None:
+            dic['args'] = self._args[:]
+        return self._func(dic)
