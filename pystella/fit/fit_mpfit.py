@@ -36,7 +36,7 @@ class FitMPFit(FitLc):
         fit_result = FitLcResult()
         fit_result.tshift = tshift
         fit_result.tsigma = tsigma
-        fit_result.measure = result.fnorm
+        fit_result.measure = result.fnorm / result.dof
         fit_result.comm = 'mpfit: status={:2d} niter={:3d} fnorm={:.2f}'.format(result.status, result.niter, result.fnorm)
         #        fit_result.comm = 'The value of the summed squared residuals for the returned parameter values.'
         return fit_result

@@ -112,11 +112,11 @@ def get_parser():
                         default=None,
                         dest="dtshift",
                         help="The range of tshift in model LC. Default: None (any time). Format: {0}".format('2:50'))
-    parser.add_argument('-q', '--quiet',
+    parser.add_argument('-nq', '--no-quiet',
                         action='store_const',
                         const=True,
-                        dest="is_quiet",
-                        help="Just show result, no plots, no info")
+                        dest="is_not_quiet",
+                        help="Result with additional information")
     parser.add_argument('-n', '--node',
                         required=False,
                         type=int,
@@ -266,7 +266,7 @@ def main():
 
     # Get observations
     curves_o = None
-    obs = callback.run({'is_debug': not args.is_quiet})
+    obs = callback.run({'is_debug': args.is_not_quiet})
     if isinstance(obs, list):
         for o in obs:
             curves_o = SetLightCurve.Merge(curves_o, o)
@@ -288,8 +288,8 @@ def main():
 
     # The fit engine
     fitter = engines(args.engine)
-    fitter.is_info = not args.is_quiet  # fitter = FitMPFit(is_debug=not args.is_quiet)
-    fitter.is_debug = False
+    fitter.is_info = args.is_not_quiet  # fitter = FitMPFit(is_debug=args.is_not_quiet)
+    fitter.is_debug = args.is_not_quiet
 
     # The filter results by tshift
     if args.dtshift:
@@ -302,7 +302,7 @@ def main():
     res_chi = {}
     if len(names) == 1:
         name = names[0]
-        if not args.is_quiet:
+        if args.is_not_quiet:
             if times is not None:
                 print("Fitting for model %s %s for %s moments" % (path, name, times))
             else:
@@ -349,11 +349,11 @@ def main():
             for name in names:
                 i += 1
                 txt = "Fitting for model {:30s}  [{}/{}]".format(name, i, len(names))
-                if args.is_quiet:
+                if args.is_not_quiet:
+                    print(txt)
+                else:
                     sys.stdout.write(u"\u001b[1000D" + txt)
                     sys.stdout.flush()
-                else:
-                    print(txt)
                 curves, res = fit_mfl(args, curves_o, bnames, fitter, name, path, t_diff, times)
                 res_models[name] = curves
                 res_chi[name] = res
