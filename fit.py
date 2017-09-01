@@ -153,8 +153,8 @@ def plot_curves(curves_o, res_models, res_sorted, **kwargs):
     i = 0
     for k, v in res_sorted.items():
         i += 1
-        if i > num:
-            break
+        # if i > num:
+        #     break
         ax = fig.add_subplot(nrow, ncol, i)
 
         curves = res_models[k]
@@ -189,6 +189,149 @@ def plot_curves(curves_o, res_models, res_sorted, **kwargs):
     fig.subplots_adjust(wspace=0, hspace=0)
     # return fig
     plt.show()
+
+
+def plot_squared_grid(res_sorted, path='./', **kwargs):
+    from matplotlib import pyplot as plt
+    font_size = kwargs.get('font_size', 10)
+    num = 4
+    nrow = int(num / 2.1) + 1
+    ncol = 2 if num > 1 else 1
+    fig = plt.figure(figsize=(12, nrow*6))
+    plt.matplotlib.rcParams.update({'font.size': font_size})
+
+    # R-M
+    axRM = fig.add_subplot(nrow, ncol, 1)
+    plot_squared(axRM, res_sorted, path, p=('R', 'M'), **kwargs)
+
+    # R-E
+    axRE = fig.add_subplot(nrow, ncol, 2)
+    plot_squared(axRE, res_sorted, path, p=('R', 'E'), **kwargs)
+
+    # M-E
+    axME = fig.add_subplot(nrow, ncol, 3)
+    plot_squared(axME, res_sorted, path, p=('M', 'E'), **kwargs)
+
+    plt.show()
+
+
+def plot_squared(ax, res_sorted, path='./', p=('R', 'M'), **kwargs):
+    import scipy
+
+    from matplotlib import pyplot as plt
+    from pystella.model.stella import Stella
+
+    is_rbf = kwargs.get('is_rbf', True)
+    is_surface = kwargs.get('is_surface', True)
+    is_scatter = kwargs.get('is_scatter', not is_surface and False)
+    is_not_quiet = True
+    # is_not_quiet = kwargs.get('is_not_quiet', True)
+
+    # graph
+    # ax.set_title('-'.join(p))
+    ax.set_xlabel(p[0])
+    ax.set_ylabel(p[1])
+
+    # find parameters
+    i = 0
+    # info_models = {}
+    x = []
+    y = []
+    chi = []
+    for name, v in res_sorted.items():
+        i += 1
+        stella = Stella(name, path=path)
+        if stella.is_tt_data:
+            try:
+                info = stella.get_tt().Info
+                v1 = getattr(info, p[0])
+                v2 = getattr(info, p[1])
+                if v1 in x and v2 in y:
+                    print("| %40s |  %7.2f |  %6.2f |  %s" %
+                          (info.Name, v1, v2, 'This is not a unique point'))
+                else:
+                    if is_not_quiet:
+                        if i == 1:
+                            print("| %40s |  %7s |  %6s" % ('Model', p[0], p[1]))
+                        print("| %40s |  %7.2f |  %6.2f" % (info.Name, v1, v2))
+                    x.append(v1)
+                    y.append(v2)
+                    chi.append(v.measure)
+            except KeyError as ex:
+                print("Error for model {}. Message: {} ".format(name, ex))
+
+    # plot
+    x = np.array(x)
+    y = np.array(y)
+
+    chi = np.array(chi)
+
+    if is_surface:
+        # Set up a regular grid of interpolation points
+        xi, yi = np.linspace(x.min(), x.max(), 100), np.linspace(y.min(), y.max(), 100)
+        xi, yi = np.meshgrid(xi, yi)
+
+        # Interpolate
+        if is_rbf:
+            rbf = scipy.interpolate.Rbf(x, y, chi, function='linear')
+            zi = rbf(xi, yi)
+        else:
+            zi = scipy.interpolate.griddata((x, y), chi, (xi, yi), method="linear")
+
+        # im = ax.imshow(zi, cmap=plt.cm.RdBu, vmin=chi.min(), vmax=chi.max(), origin='lower',
+        im = ax.imshow(zi, cmap=plt.cm.bone, vmin=chi.min(), vmax=chi.max(), origin='lower',
+                        extent=[x.min(), x.max(), y.min(), y.max()], interpolation='none',
+                        aspect='auto', alpha=0.5)
+        cset = ax.contour(xi, yi, zi, linewidths=2, cmap=plt.cm.bone)
+        # cset = ax.contour(xi, yi, zi, linewidths=2, cmap=plt.cm.Set2)
+        ax.clabel(cset, inline=True, fmt='%1.1f', fontsize=10)
+        cb = plt.colorbar(im)
+        cb.ax.set_ylabel(r'$\chi^2$')
+        # plt.setp(cb.ax.get_yticklabels(), visible=False)
+
+        ax.scatter(x, y, c=chi, cmap=plt.cm.bone)
+        # ax.scatter(x, y, c=chi, cmap=plt.cm.RdBu)
+
+    elif is_scatter:
+        # Sort the points by density, so that the densest points are plotted last
+        idx = chi.argsort()[::-1]
+        x, y, chi = x[idx], y[idx], chi[idx]
+
+        N = len(x)
+        area = np.pi * (100 * (np.log10(chi))) ** 2  # 0 to 15 point radii
+        # plt.scatter(x, y, s=area, c=colors, alpha=0.5)
+        cax = plt.scatter(x, y, s=area, c=chi, cmap='gray',  edgecolor='', alpha=0.5)
+        plt.colorbar(cax)
+        plt.show()
+    else:
+        from matplotlib.ticker import LinearLocator
+        from matplotlib.ticker import FormatStrFormatter
+        fig = plt.figure()
+        ax = fig.gca(projection='3d')
+
+        # Make data.
+        xi, yi = np.linspace(x.min(), x.max(), 100), np.linspace(y.min(), y.max(), 100)
+        xi, yi = np.meshgrid(xi, yi)
+
+        # Interpolate
+        if is_rbf:
+            rbf = scipy.interpolate.Rbf(x, y, chi, function='linear')
+            zi = rbf(xi, yi)
+        else:
+            zi = scipy.interpolate.griddata((x, y), chi, (xi, yi), method="linear")
+
+        # Plot the surface.
+        surf = ax.plot_surface(xi, yi, zi, cmap=plt.cm.coolwarm,
+                               linewidth=0, antialiased=False)
+
+        # Customize the z axis.
+        ax.set_zlim(-1.01, 1.01)
+        ax.zaxis.set_major_locator(LinearLocator(10))
+        ax.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
+
+        # Add a color bar which maps values to colors.
+        fig.colorbar(surf, shrink=0.5, aspect=5)
+        plt.show()
 
 
 def fit_mfl(args, curves_o, bnames, fitter, name, path, t_diff, times):
@@ -317,7 +460,6 @@ def main():
         res_chi[name] = res
         res_sorted = res_chi
     elif len(names) > 1:
-        i = 0
         if args.nodes > 1:
             print("Run parallel fitting: nodes={}, models  {}".format(args.nodes, len(names)))
 
@@ -334,7 +476,9 @@ def main():
                     executor.submit(fit_mfl, args, curves_o, bnames, fitter, n, path, t_diff, times):
                         n for n in names
                 }
+                i = 0
                 for future in futures.as_completed(future_to_name):
+                    i += 1
                     name = future_to_name[future]
                     try:
                         data = future.result()
@@ -344,8 +488,9 @@ def main():
                         res_models[name] = data[0]
                         v = data[1]
                         res_chi[name] = v
-                        print("Done: {:40s} -> {}".format(name, v.comm))
+                        print("[{}/{}]: {:30s} -> {}".format(i, len(names), name, v.comm))
         else:
+            i = 0
             for name in names:
                 i += 1
                 txt = "Fitting for model {:30s}  [{}/{}]".format(name, i, len(names))
@@ -382,6 +527,9 @@ def main():
         print("No any data about models. Path: {}".format(path))
         parser.print_help()
         sys.exit(2)
+
+    # plot chi squared
+    plot_squared_grid(res_sorted, path, par=('M','E'), is_not_quiet=args.is_not_quiet)
 
     # shift observational data
     curves_o.set_tshift(best_tshift)

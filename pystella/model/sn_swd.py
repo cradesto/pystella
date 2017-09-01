@@ -126,7 +126,7 @@ class StellaShockWaveDetail:
             #     taus[i, k] = tau
         return taus
 
-    def params_ph(self, tau_ph=2. / 3., cols=['R', 'M', 'T', 'V', 'Rho']):
+    def params_ph(self, tau_ph=2./3., cols=('R', 'M', 'T', 'V', 'Rho')):
         res = {k: np.zeros(self.Ntimes) for k in ['time', 'zone']+cols}
         taus = self.taus()
         for i, time in enumerate(self.Times):
@@ -216,9 +216,9 @@ class BlockSwd:
     @property
     def Tau(self):
         tau = np.zeros(self.Nzon)
-        for i in range(self.Nzon - 2, 0, -1):
+        for i in range(self.Nzon-2, 0, -1):
             tau[i] = tau[i + 1] + self.Cappa[i] * self.Rho[i] * (self.R[i + 1] - self.R[i])
-        tau[self.Nzon - 1] = tau[self.Nzon - 2] / 2.
+        tau[self.Nzon-1] = tau[self.Nzon-2] / 2.
         return tau
 
 

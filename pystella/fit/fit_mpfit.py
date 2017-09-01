@@ -111,7 +111,7 @@ class FitMPFit(FitLc):
                 w = np.ones(len(m))
                 w = np.abs(1. - A * (lc_o.Time - lc_o.TimeMin) / (lc_o.TimeMax - lc_o.TimeMin))  # weight
                 if lc_o.IsErr:
-                    res = np.abs((lc_o.Mag - m) / (0.1 + lc_o.MagErr)) * w
+                    res = np.abs((lc_o.Mag - m) / (0.03 + lc_o.MagErr)) * w
                 else:
                     res = np.abs(lc_o.Mag - m) * w
                 total = np.append(total, res)

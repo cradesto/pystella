@@ -194,8 +194,7 @@ def main():
 
         if args.is_uph:
             logger.info(' Compute and print uph')
-            # taus = swd.taus()
-            duph = swd.params_ph()  # uph_find_uph(swd, taus)
+            duph = swd.params_ph()
             # print uph
             print(duph.keys())
             for row in zip(*duph.values()):
