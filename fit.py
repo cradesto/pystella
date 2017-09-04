@@ -13,6 +13,7 @@ from collections import OrderedDict
 from concurrent import futures
 
 import numpy as np
+import scipy as sci
 
 import pystella.util.callback as cb
 from pystella.fit.fit_mcmc import FitLcMcmc
@@ -193,11 +194,13 @@ def plot_curves(curves_o, res_models, res_sorted, **kwargs):
 
 def plot_squared_grid(res_sorted, path='./', **kwargs):
     from matplotlib import pyplot as plt
+    from mpl_toolkits.mplot3d import Axes3D
+
     font_size = kwargs.get('font_size', 10)
     num = 4
     nrow = int(num / 2.1) + 1
     ncol = 2 if num > 1 else 1
-    fig = plt.figure(figsize=(12, nrow*6))
+    fig = plt.figure(figsize=(12, nrow * 6))
     plt.matplotlib.rcParams.update({'font.size': font_size})
 
     # R-M
@@ -212,12 +215,18 @@ def plot_squared_grid(res_sorted, path='./', **kwargs):
     axME = fig.add_subplot(nrow, ncol, 3)
     plot_squared(axME, res_sorted, path, p=('M', 'E'), **kwargs)
 
+    # R-M
+    ax = fig.add_subplot(nrow, ncol, 4, projection='3d')
+    plot_squared_3d(ax, res_sorted, path, p=('R', 'M', 'E'), is_surface=False, **kwargs)
+
+    #
+    # ax = fig.add_subplot(nrow, ncol, 4, projection='polar')
+    # plot_squared_3d(ax, res_sorted, path, p=('R', 'M', 'E'), is_polar=True, **kwargs)
+    #
     plt.show()
 
 
 def plot_squared(ax, res_sorted, path='./', p=('R', 'M'), **kwargs):
-    import scipy
-
     from matplotlib import pyplot as plt
     from pystella.model.stella import Stella
 
@@ -238,7 +247,7 @@ def plot_squared(ax, res_sorted, path='./', p=('R', 'M'), **kwargs):
     x = []
     y = []
     chi = []
-    for name, v in res_sorted.items():
+    for name, res_chi in res_sorted.items():
         i += 1
         stella = Stella(name, path=path)
         if stella.is_tt_data:
@@ -246,17 +255,33 @@ def plot_squared(ax, res_sorted, path='./', p=('R', 'M'), **kwargs):
                 info = stella.get_tt().Info
                 v1 = getattr(info, p[0])
                 v2 = getattr(info, p[1])
-                if v1 in x and v2 in y:
-                    print("| %40s |  %7.2f |  %6.2f |  %s" %
-                          (info.Name, v1, v2, 'This is not a unique point'))
+
+                # print info
+                if is_not_quiet:
+                    if i == 1:
+                        print("| %40s |  %7s |  %6s" % ('Model', p[0], p[1]))
+                    print("| %40s |  %7.2f |  %6.2f" % (info.Name, v1, v2))
+
+                k = -1
+                for (xv, yv) in zip(x, y):
+                    k += 1
+                    if v1 == xv and v2 == yv:
+                        print("| %40s |  %7.2f |  %6.2f |  %s | chi_saved=%6.2f  chi_new=%6.2f" %
+                              ('   ', v1, v2, 'This is not a unique point', chi[k], res_chi.measure))
+                        if res_chi.measure < chi[k]:
+                            print("| %40s | k = %5d  Chi [%7.2f] => [%6.2f]" %
+                                  (info.Name, k, res_chi.measure, chi[k]))
+                            chi[k] = res_chi.measure
+                        break
+                # if -1 < k < len(x)-1:  # This is not a unique point
+                #     # if v1 in x and v2 in y:
+                #         todo Условие на то что chi меньше старого
+                #     print("| %40s |  %7.2f |  %6.2f |  %s" %
+                #           ('   ', v1, v2, 'This is not a unique point'))
                 else:
-                    if is_not_quiet:
-                        if i == 1:
-                            print("| %40s |  %7s |  %6s" % ('Model', p[0], p[1]))
-                        print("| %40s |  %7.2f |  %6.2f" % (info.Name, v1, v2))
                     x.append(v1)
                     y.append(v2)
-                    chi.append(v.measure)
+                    chi.append(res_chi.measure)
             except KeyError as ex:
                 print("Error for model {}. Message: {} ".format(name, ex))
 
@@ -273,15 +298,15 @@ def plot_squared(ax, res_sorted, path='./', p=('R', 'M'), **kwargs):
 
         # Interpolate
         if is_rbf:
-            rbf = scipy.interpolate.Rbf(x, y, chi, function='linear')
+            rbf = sci.interpolate.Rbf(x, y, chi, function='linear')
             zi = rbf(xi, yi)
         else:
-            zi = scipy.interpolate.griddata((x, y), chi, (xi, yi), method="linear")
+            zi = sci.interpolate.griddata((x, y), chi, (xi, yi), method="linear")
 
         # im = ax.imshow(zi, cmap=plt.cm.RdBu, vmin=chi.min(), vmax=chi.max(), origin='lower',
         im = ax.imshow(zi, cmap=plt.cm.bone, vmin=chi.min(), vmax=chi.max(), origin='lower',
-                        extent=[x.min(), x.max(), y.min(), y.max()], interpolation='none',
-                        aspect='auto', alpha=0.5)
+                       extent=[x.min(), x.max(), y.min(), y.max()], interpolation='none',
+                       aspect='auto', alpha=0.5)
         cset = ax.contour(xi, yi, zi, linewidths=2, cmap=plt.cm.bone)
         # cset = ax.contour(xi, yi, zi, linewidths=2, cmap=plt.cm.Set2)
         ax.clabel(cset, inline=True, fmt='%1.1f', fontsize=10)
@@ -300,37 +325,152 @@ def plot_squared(ax, res_sorted, path='./', p=('R', 'M'), **kwargs):
         N = len(x)
         area = np.pi * (100 * (np.log10(chi))) ** 2  # 0 to 15 point radii
         # plt.scatter(x, y, s=area, c=colors, alpha=0.5)
-        cax = plt.scatter(x, y, s=area, c=chi, cmap='gray',  edgecolor='', alpha=0.5)
+        cax = plt.scatter(x, y, s=area, c=chi, cmap='gray', edgecolor='', alpha=0.5)
         plt.colorbar(cax)
-        plt.show()
     else:
-        from matplotlib.ticker import LinearLocator
-        from matplotlib.ticker import FormatStrFormatter
-        fig = plt.figure()
-        ax = fig.gca(projection='3d')
+        from mpl_toolkits.mplot3d import Axes3D
+        import matplotlib.pyplot as plt
 
-        # Make data.
+        # # Make data.
         xi, yi = np.linspace(x.min(), x.max(), 100), np.linspace(y.min(), y.max(), 100)
         xi, yi = np.meshgrid(xi, yi)
-
-        # Interpolate
+        z = chi
+        #
+        # # Interpolate
         if is_rbf:
-            rbf = scipy.interpolate.Rbf(x, y, chi, function='linear')
+            rbf = sci.interpolate.Rbf(x, y, chi, function='linear')
             zi = rbf(xi, yi)
         else:
-            zi = scipy.interpolate.griddata((x, y), chi, (xi, yi), method="linear")
+            zi = sci.interpolate.griddata((x, y), chi, (xi, yi), method="linear")
 
-        # Plot the surface.
-        surf = ax.plot_surface(xi, yi, zi, cmap=plt.cm.coolwarm,
-                               linewidth=0, antialiased=False)
+        surf = ax.plot_trisurf(x, y, z, linewidth=0.2, antialiased=True, cmap='gray')
+        # ax.plot_trisurf(xi, yi, zi, linewidth=0.2, antialiased=True)
+        # # Plot the surface.
+        # surf = ax.plot_surface(xi, yi, zi, cmap=plt.cm.coolwarm,
+        #                        linewidth=0, antialiased=False)
+        #
+        # # Customize the z axis.
+        # ax.set_zlim(-1.01, 1.01)
+        # ax.zaxis.set_major_locator(LinearLocator(10))
+        # ax.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
+        #
+        # # Add a color bar which maps values to colors.
+        plt.colorbar(surf, shrink=0.5, aspect=5)
+        # plt.show()
 
-        # Customize the z axis.
-        ax.set_zlim(-1.01, 1.01)
-        ax.zaxis.set_major_locator(LinearLocator(10))
-        ax.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
 
-        # Add a color bar which maps values to colors.
-        fig.colorbar(surf, shrink=0.5, aspect=5)
+def plot_squared_3d(ax, res_sorted, path='./', p=('R', 'M', 'E'), is_rbf=True, **kwargs):
+    from matplotlib import pyplot as plt
+    from pystella.model.stella import Stella
+
+    is_not_quiet = True
+    is_polar = kwargs.get('is_polar', False)
+    is_show = False
+
+    if ax is None:
+        fig = plt.figure(figsize=(12, 8))
+        if is_polar:
+            ax = fig.add_subplot(1, 1, 1, projection='polar')
+        else:
+            ax = fig.add_subplot(1, 1, 1)
+        is_show = True
+
+    # find parameters
+    i = 0
+    # info_models = {}
+    data = []
+    # data = np.empty(len(p), len(res_sorted))
+    chi = []
+    for name, res_chi in res_sorted.items():
+        i += 1
+        stella = Stella(name, path=path)
+        if stella.is_tt_data:
+            try:
+                info = stella.get_tt().Info
+                v = [getattr(info, pp) for pp in p]
+
+                # print info
+                if is_not_quiet:
+                    if i == 1:
+                        print("| %40s |  %7s |  %6s" % ('Model', p[0], p[1]))
+                    # print("| %40s |  %7.2f |  %6.2f" % (info.Name) + v)
+                    print("| {:40s} | ".format(info.Name) + ' '.join("{0:6.2f}".format(vv) for vv in v))
+
+                k = -1
+                for vo in data:
+                    k += 1
+                    if np.array_equal(v, vo):
+                        print("|   | " + ' '.join("{0:6.2f}".format(vv) for vv in v)
+                              + " |  {:40s} | chi_saved={:6.2f}  chi_new={:6.2f}".
+                              format('This is not a unique point', chi[k], res_chi.measure))
+                        if res_chi.measure < chi[k]:
+                            print("| %40s | k = %5d  Chi [%7.2f] => [%6.2f]" %
+                                  (info.Name, k, res_chi.measure, chi[k]))
+                            chi[k] = res_chi.measure
+                        break
+                # if -1 < k < len(x)-1:  # This is not a unique point
+                #     # if v1 in x and v2 in y:
+                #         todo Условие на то что chi меньше старого
+                #     print("| %40s |  %7.2f |  %6.2f |  %s" %
+                #           ('   ', v1, v2, 'This is not a unique point'))
+                else:
+                    data.append(v)
+                    # y.append(v2)
+                    chi.append(res_chi.measure)
+            except KeyError as ex:
+                print("Error for model {}. Message: {} ".format(name, ex))
+
+    # plot
+    x = [v[0] for v in data]
+    y = [v[1] for v in data]
+    z = [v[2] for v in data]
+
+    x = np.array(x)
+    y = np.array(y)
+    z = np.array(z)
+
+    chi = np.array(chi)
+
+    if is_polar:
+        C = 1.9
+        theta = (x - np.min(x)) / (np.max(x)-np.min(x)) * C * np.pi  # R
+        width = y/np.max(y) * np.pi/8  # M
+        # radii = np.log10(chi+1) * 10 # chi
+        radii = 10 + (chi - np.min(chi)) / (np.max(chi)-np.min(chi)) * 100  # chi
+        bars = ax.bar(theta, radii, width=width, bottom=0.0)
+
+        # Use custom colors and opacity
+        labels = z
+        for z, bar, l in zip(z/np.max(z), bars, labels):
+            # bar.set_facecolor(plt.cm.jet(r))  # E
+            bar.set_facecolor(plt.cm.plasma(z))
+            bar.set_alpha(0.3)
+            bar.set_label(l)
+
+        xlabel_max = np.min(x) + 7./4./C * (np.max(x) - np.min(x))
+        xlabel = ["{:6.0f} R".format(xx) for xx in np.linspace(np.min(x), xlabel_max, 8)]
+        ax.set_xticklabels(xlabel)
+        ax.legend(bbox_to_anchor=(1.3, 1.05))
+    else:
+        from mpl_toolkits.mplot3d import Axes3D
+        import matplotlib.pyplot as plt
+        # graph
+        # ax.set_title('-'.join(p))
+        ax.set_xlabel(p[0])
+        ax.set_ylabel(p[1])
+        ax.set_zlabel(p[2])
+
+        N = chi / np.max(chi)
+        surf = ax.scatter(x, y, z, c=N, cmap="gray")
+        from matplotlib.ticker import LinearLocator
+        from matplotlib.ticker import FormatStrFormatter
+
+        ax.yaxis.set_major_locator(LinearLocator(10))
+        ax.yaxis.set_major_formatter(FormatStrFormatter('%.0f'))
+
+        plt.colorbar(surf, shrink=0.5, aspect=5)
+        ax.grid(True)
+    if is_show:
         plt.show()
 
 
@@ -348,7 +488,8 @@ def main():
     # z = 0.
     # distance = 10  # pc
     # bnames = ['U', 'B', 'V', 'R', "I"]
-    Nbest = 6
+    Nbest = 100
+    NbestPlot = 6
     band.Band.load_settings()
 
     parser = get_parser()
@@ -511,31 +652,40 @@ def main():
         res_chi = res_chi_sel
         # sort with measure
         res_sorted = OrderedDict(sorted(res_chi.items(), key=lambda kv: kv[1].measure))
-        print("\n Results (tshift in range:{:.2f} -- {:.2f}".format(dtshift[0], dtshift[1]))
-        print("{:40s} ||{:18s}|| {:10}".format('Model', 'dt+-t_err', 'Measure'))
-        for k, v in res_sorted.items():
-            # if dtshift[0] < v.tshift < dtshift[1]:
-            print("{:40s} || {:7.2f}+/-{:7.4f} || {:.4f}".format(k, v.tshift, v.tsigma, v.measure))
-
-        best_mdl = list(res_sorted)[0]
-        res = list(res_sorted.values())[0]
-        # best_mdl, res = res_sorted.popitem(last=False)
-        print("Best fit model:")
-        print("{}: time shift  = {:.2f}+/-{:.4f} Measure: {:.4f}".format(best_mdl, res.tshift, res.tsigma, res.measure))
-        best_tshift = res.tshift
     else:
         print("No any data about models. Path: {}".format(path))
         parser.print_help()
         sys.exit(2)
 
     # plot chi squared
-    plot_squared_grid(res_sorted, path, par=('M','E'), is_not_quiet=args.is_not_quiet)
+    plot_squared_grid(res_sorted, path, par=('M', 'E'), is_not_quiet=args.is_not_quiet)
+
+    # plot only Nbest modeles
+    while len(res_sorted) > Nbest:
+        res_sorted.popitem()
+
+    plot_squared_3d(None, res_sorted, path, p=('R', 'M', 'E'), is_polar=True)
+
+    # print results
+    print("\n Results (tshift in range:{:.2f} -- {:.2f}".format(dtshift[0], dtshift[1]))
+    print("{:40s} ||{:18s}|| {:10}".format('Model', 'dt+-t_err', 'Measure'))
+    for k, v in res_sorted.items():
+        # if dtshift[0] < v.tshift < dtshift[1]:
+        print("{:40s} || {:7.2f}+/-{:7.4f} || {:.4f}".format(k, v.tshift, v.tsigma, v.measure))
+
+    best_mdl = list(res_sorted)[0]
+    res = list(res_sorted.values())[0]
+    # best_mdl, res = res_sorted.popitem(last=False)
+    print("Best fit model:")
+    print("{}: time shift  = {:.2f}+/-{:.4f} Measure: {:.4f}".format(best_mdl, res.tshift, res.tsigma, res.measure))
+    best_tshift = res.tshift
+
 
     # shift observational data
     curves_o.set_tshift(best_tshift)
 
-    # plot only Nbest modeles
-    while len(res_sorted) > Nbest:
+    # plot only NbestPlot modeles
+    while len(res_sorted) > NbestPlot:
         res_sorted.popitem()
 
     plot_curves(curves_o, res_models, res_sorted)
