@@ -233,8 +233,8 @@ def plot_squared(ax, res_sorted, path='./', p=('R', 'M'), **kwargs):
     is_rbf = kwargs.get('is_rbf', True)
     is_surface = kwargs.get('is_surface', True)
     is_scatter = kwargs.get('is_scatter', not is_surface and False)
-    is_not_quiet = True
-    # is_not_quiet = kwargs.get('is_not_quiet', True)
+    # is_not_quiet = True
+    is_not_quiet = kwargs.get('is_not_quiet', True)
 
     # graph
     # ax.set_title('-'.join(p))
@@ -244,33 +244,40 @@ def plot_squared(ax, res_sorted, path='./', p=('R', 'M'), **kwargs):
     # find parameters
     i = 0
     # info_models = {}
-    x = []
-    y = []
+    # x = []
+    # y = []
+    data = []
     chi = []
+    models = []
     for name, res_chi in res_sorted.items():
         i += 1
         stella = Stella(name, path=path)
         if stella.is_tt_data:
             try:
                 info = stella.get_tt().Info
-                v1 = getattr(info, p[0])
-                v2 = getattr(info, p[1])
+                v = [getattr(info, pp) for pp in p]
+                # v1 = getattr(info, p[0])
+                # v2 = getattr(info, p[1])
 
                 # print info
                 if is_not_quiet:
                     if i == 1:
                         print("| %40s |  %7s |  %6s" % ('Model', p[0], p[1]))
-                    print("| %40s |  %7.2f |  %6.2f" % (info.Name, v1, v2))
+                    # print("| %40s |  %7.2f |  %6.2f" % (info.Name) + v)
+                    print("| {:40s} | ".format(info.Name) + ' '.join("{0:6.2f}".format(vv) for vv in v))
 
                 k = -1
-                for (xv, yv) in zip(x, y):
+                for vo in data:
                     k += 1
-                    if v1 == xv and v2 == yv:
-                        print("| %40s |  %7.2f |  %6.2f |  %s | chi_saved=%6.2f  chi_new=%6.2f" %
-                              ('   ', v1, v2, 'This is not a unique point', chi[k], res_chi.measure))
+                    if np.array_equal(v, vo):
+                        if is_not_quiet:
+                            print("|   | " + ' '.join("{0:6.2f}".format(vv) for vv in v)
+                                  + " |  {:40s} | chi_saved={:6.2f}  chi_new={:6.2f}".
+                                  format('This is not a unique point', chi[k], res_chi.measure))
                         if res_chi.measure < chi[k]:
-                            print("| %40s | k = %5d  Chi [%7.2f] => [%6.2f]" %
-                                  (info.Name, k, res_chi.measure, chi[k]))
+                            if is_not_quiet:
+                                print("| %40s | k = %5d  Chi [%7.2f] => [%6.2f]" %
+                                      (info.Name, k, res_chi.measure, chi[k]))
                             chi[k] = res_chi.measure
                         break
                 # if -1 < k < len(x)-1:  # This is not a unique point
@@ -279,16 +286,38 @@ def plot_squared(ax, res_sorted, path='./', p=('R', 'M'), **kwargs):
                 #     print("| %40s |  %7.2f |  %6.2f |  %s" %
                 #           ('   ', v1, v2, 'This is not a unique point'))
                 else:
-                    x.append(v1)
-                    y.append(v2)
+                    models.append(name)
+                    data.append(v)
                     chi.append(res_chi.measure)
+                #
+                # k = -1
+                # for (xv, yv) in zip(x, y):
+                #     k += 1
+                #     if v1 == xv and v2 == yv:
+                #         print("| %40s |  %7.2f |  %6.2f |  %s | chi_saved=%6.2f  chi_new=%6.2f" %
+                #               ('   ', v1, v2, 'This is not a unique point', chi[k], res_chi.measure))
+                #         if res_chi.measure < chi[k]:
+                #             print("| %40s | k = %5d  Chi [%7.2f] => [%6.2f]" %
+                #                   (info.Name, k, res_chi.measure, chi[k]))
+                #             chi[k] = res_chi.measure
+                #         break
+                # # if -1 < k < len(x)-1:  # This is not a unique point
+                # #     # if v1 in x and v2 in y:
+                # #         todo Условие на то что chi меньше старого
+                # #     print("| %40s |  %7.2f |  %6.2f |  %s" %
+                # #           ('   ', v1, v2, 'This is not a unique point'))
+                # else:
+                #     models.append(name)
+                #     x.append(v1)
+                #     y.append(v2)
+                #     chi.append(res_chi.measure)
             except KeyError as ex:
                 print("Error for model {}. Message: {} ".format(name, ex))
-
     # plot
+    x = [v[0] for v in data]
+    y = [v[1] for v in data]
     x = np.array(x)
     y = np.array(y)
-
     chi = np.array(chi)
 
     if is_surface:
@@ -307,14 +336,49 @@ def plot_squared(ax, res_sorted, path='./', p=('R', 'M'), **kwargs):
         im = ax.imshow(zi, cmap=plt.cm.bone, vmin=chi.min(), vmax=chi.max(), origin='lower',
                        extent=[x.min(), x.max(), y.min(), y.max()], interpolation='none',
                        aspect='auto', alpha=0.5)
-        cset = ax.contour(xi, yi, zi, linewidths=2, cmap=plt.cm.bone)
+        # try:
+        #     from skimage import measure
+        #     # Find contours at a constant value
+        #     levels = np.linspace(np.min(chi), np.max(chi), 10)
+        #     levels = levels[1:len(levels)-2]
+        #     for level in levels:
+        #         contours = measure.find_contours(zi, level)
+        #         for n, contour in enumerate(contours):
+        #             lx, ly = contour[:, 1], contour[:, 0]
+        #             l, = ax.plot(lx, ly, linewidth=2, label="%.1f"%level)
+        #             pos = [(lx[-2] + lx[-1]) / 2., (ly[-2] + ly[-1]) / 2.]
+        #             # xscreen = ax.transData.transform(zip(lx[-2::], ly[-2::]))
+        #             # rot = np.rad2deg(np.arctan2(*np.abs(np.gradient(xscreen)[0][0][::-1])))
+        #             rot = 0
+        #             ltex = plt.text(pos[0], pos[1], "%.1f"%level, size=9, rotation=rot,
+        #                             color=l.get_color(), ha="center", va="center",
+        #                             bbox=dict(ec='1', fc='1'))
+        #
+        #     # ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.15), ncol=4, fancybox=True)
+        # except ImportError:
+        cset = ax.contour(xi, yi, zi, linewidths=1., cmap=plt.cm.bone)
         # cset = ax.contour(xi, yi, zi, linewidths=2, cmap=plt.cm.Set2)
-        ax.clabel(cset, inline=True, fmt='%1.1f', fontsize=10)
-        cb = plt.colorbar(im)
-        cb.ax.set_ylabel(r'$\chi^2$')
+        ax.clabel(cset, inline=True, fmt='%1.1f', fontsize=9)
+        cbar = plt.colorbar(im)
+        cbar.ax.set_ylabel(r'$\chi^2$')
         # plt.setp(cb.ax.get_yticklabels(), visible=False)
 
-        ax.scatter(x, y, c=chi, cmap=plt.cm.bone)
+        ax.scatter(x, y, c=chi/np.max(chi), cmap=plt.cm.bone, picker=True)
+        # ax.set_picker(True)
+
+        def on_pick(event):
+            try:
+                ind = event.ind[0]
+                print('{} {}: R={} M={} chi^2={:.2f}'.format(ind, models[ind], x[ind], y[ind], chi[ind]))
+            except AttributeError:
+                pass
+
+        def onclick(event):
+            print('button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %
+                  (event.button, event.x, event.y, event.xdata, event.ydata))
+
+        ax.figure.canvas.mpl_connect('pick_event', on_pick)
+        ax.figure.canvas.mpl_connect('button_press_event', onclick)
         # ax.scatter(x, y, c=chi, cmap=plt.cm.RdBu)
 
     elif is_scatter:
@@ -425,11 +489,10 @@ def plot_squared_3d(ax, res_sorted, path='./', p=('R', 'M', 'E'), is_rbf=True, *
     y = [v[1] for v in data]
     z = [v[2] for v in data]
 
-    x = np.array(x)
-    y = np.array(y)
-    z = np.array(z)
-
-    chi = np.array(chi)
+    x = np.array(x[::-1])
+    y = np.array(y[::-1])
+    z = np.array(z[::-1])
+    chi = np.array(chi[::-1])
 
     if is_polar:
         C = 1.9
@@ -437,6 +500,7 @@ def plot_squared_3d(ax, res_sorted, path='./', p=('R', 'M', 'E'), is_rbf=True, *
         width = y/np.max(y) * np.pi/8  # M
         # radii = np.log10(chi+1) * 10 # chi
         radii = 10 + (chi - np.min(chi)) / (np.max(chi)-np.min(chi)) * 100  # chi
+
         bars = ax.bar(theta, radii, width=width, bottom=0.0)
 
         # Use custom colors and opacity
@@ -444,7 +508,7 @@ def plot_squared_3d(ax, res_sorted, path='./', p=('R', 'M', 'E'), is_rbf=True, *
         for z, bar, l in zip(z/np.max(z), bars, labels):
             # bar.set_facecolor(plt.cm.jet(r))  # E
             bar.set_facecolor(plt.cm.plasma(z))
-            bar.set_alpha(0.3)
+            bar.set_alpha(0.5)
             bar.set_label(l)
 
         xlabel_max = np.min(x) + 7./4./C * (np.max(x) - np.min(x))
@@ -488,7 +552,7 @@ def main():
     # z = 0.
     # distance = 10  # pc
     # bnames = ['U', 'B', 'V', 'R', "I"]
-    Nbest = 100
+    Nbest = 33
     NbestPlot = 6
     band.Band.load_settings()
 
@@ -657,6 +721,13 @@ def main():
         parser.print_help()
         sys.exit(2)
 
+    # print results
+    print("\n Results (tshift in range:{:.2f} -- {:.2f}".format(dtshift[0], dtshift[1]))
+    print("{:40s} ||{:18s}|| {:10}".format('Model', 'dt+-t_err', 'Measure'))
+    for k, v in res_sorted.items():
+        # if dtshift[0] < v.tshift < dtshift[1]:
+        print("{:40s} || {:7.2f}+/-{:7.4f} || {:.4f}".format(k, v.tshift, v.tsigma, v.measure))
+
     # plot chi squared
     plot_squared_grid(res_sorted, path, par=('M', 'E'), is_not_quiet=args.is_not_quiet)
 
@@ -666,20 +737,12 @@ def main():
 
     plot_squared_3d(None, res_sorted, path, p=('R', 'M', 'E'), is_polar=True)
 
-    # print results
-    print("\n Results (tshift in range:{:.2f} -- {:.2f}".format(dtshift[0], dtshift[1]))
-    print("{:40s} ||{:18s}|| {:10}".format('Model', 'dt+-t_err', 'Measure'))
-    for k, v in res_sorted.items():
-        # if dtshift[0] < v.tshift < dtshift[1]:
-        print("{:40s} || {:7.2f}+/-{:7.4f} || {:.4f}".format(k, v.tshift, v.tsigma, v.measure))
-
     best_mdl = list(res_sorted)[0]
     res = list(res_sorted.values())[0]
     # best_mdl, res = res_sorted.popitem(last=False)
     print("Best fit model:")
     print("{}: time shift  = {:.2f}+/-{:.4f} Measure: {:.4f}".format(best_mdl, res.tshift, res.tsigma, res.measure))
     best_tshift = res.tshift
-
 
     # shift observational data
     curves_o.set_tshift(best_tshift)

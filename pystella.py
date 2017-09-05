@@ -1,6 +1,10 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 import os
+import io
+import sys
+import time
+
 import readline
 import subprocess
 from cmd import Cmd
@@ -54,21 +58,31 @@ class MyPrompt(HistConsole):
         """Plot SN using json-file from https://sne. For detailed help type 'snespace -h'.
         """
         script = os.path.join(ROOT_DIRECTORY, 'sne_space.py')
-        subprocess.call("{0} {1}".format(script, args), shell=True)
+        MyPrompt.call_cmd(script, args)
+
+    @staticmethod
+    def call_cmd(script, args, is_proc=False, is_shell=True):
+        if is_proc:
+            with subprocess.Popen([script, args.strip()], stdout=subprocess.PIPE, bufsize=1, universal_newlines=True) as p:
+                for line in p.stdout:
+                    print(line, end='')
+        else:
+            command = "{0} {1}".format(script, args).strip()
+            subprocess.call(command, shell=is_shell)
 
     @staticmethod
     def do_snec(args):
         """Convert SNEC models to  Stella models. For detailed help type 'snec -h'.
         """
         script = os.path.join(ROOT_DIRECTORY, 'snec.py')
-        subprocess.call("{0} {1}".format(script, args), shell=True)
+        MyPrompt.call_cmd(script, args)
 
     @staticmethod
     def do_ls(args):
         """Show Stella models. For detailed help type 'ls -h'.
         """
         script = os.path.join(ROOT_DIRECTORY, 'ls.py')
-        subprocess.call("{0} {1}".format(script, args), shell=True)
+        MyPrompt.call_cmd(script, args)
 
     @staticmethod
     def do_ubv(args):
@@ -80,7 +94,7 @@ class MyPrompt(HistConsole):
             name = args
         print("ubv %s" % name)
         script = os.path.join(ROOT_DIRECTORY, 'ubv.py')
-        subprocess.call("{0} {1}".format(script, args), shell=True)
+        MyPrompt.call_cmd(script, args)
 
     @staticmethod
     def do_fit(args):
@@ -92,7 +106,7 @@ class MyPrompt(HistConsole):
             name = args
         print("fit %s" % name)
         script = os.path.join(ROOT_DIRECTORY, 'fit.py')
-        subprocess.call("{0} {1}".format(script, args), shell=True)
+        MyPrompt.call_cmd(script, args)
 
     @staticmethod
     def do_obs(args):
@@ -104,7 +118,7 @@ class MyPrompt(HistConsole):
             name = args
         print("obs %s" % name)
         script = os.path.join(ROOT_DIRECTORY, 'obs.py')
-        subprocess.call("{0} {1}".format(script, args), shell=True)
+        MyPrompt.call_cmd(script, args)
 
     @staticmethod
     def do_spec(args):
@@ -116,7 +130,7 @@ class MyPrompt(HistConsole):
             name = args
         print("spec %s" % name)
         script = os.path.join(ROOT_DIRECTORY, 'plot_spec.py')
-        subprocess.call("{0} {1}".format(script, args), shell=True)
+        MyPrompt.call_cmd(script, args)
 
     @staticmethod
     def do_eve(args):
@@ -128,7 +142,7 @@ class MyPrompt(HistConsole):
             name = args
         print("eve %s" % name)
         script = os.path.join(ROOT_DIRECTORY, 'eve.py')
-        subprocess.call("{0} {1}".format(script, args), shell=True)
+        MyPrompt.call_cmd(script, args)
 
     @staticmethod
     def do_swd(args):
@@ -140,7 +154,7 @@ class MyPrompt(HistConsole):
             name = args
         print("swd %s" % name)
         script = os.path.join(ROOT_DIRECTORY, 'swd.py')
-        subprocess.call("{0} {1}".format(script, args), shell=True)
+        MyPrompt.call_cmd(script, args)
 
     @staticmethod
     def do_bands(args):
@@ -152,7 +166,7 @@ class MyPrompt(HistConsole):
             name = args
         print("bands %s" % name)
         script = os.path.join(ROOT_DIRECTORY, 'plot_bands.py')
-        subprocess.call("{0} {1}".format(script, args), shell=True)
+        MyPrompt.call_cmd(script, args)
 
     def do_quit(self, args):
         """Quits the program."""

@@ -7,7 +7,7 @@ import os
 import sys
 from os.path import dirname
 
-from pystella.model.stella import Stella, stella_extensions, stella_ls
+from pystella.model.stella import Stella, stella_ls
 from pystella.util.string_misc import print_table, list_to_table
 
 __author__ = 'bakl'
@@ -43,8 +43,10 @@ def get_parser():
 def main():
     parser = get_parser()
     args, unknownargs = parser.parse_known_args()
-    if len(unknownargs) > 0:
+
+    if len(unknownargs) > 0 and len(unknownargs[0]) > 0:
         path = os.path.expanduser(unknownargs[0])
+        # print("1 path: {} | {} | {}".format(path, len(unknownargs), '-'.join(unknownargs)))
     else:
         path = args.path
 
@@ -70,7 +72,8 @@ def main():
                 except KeyError as ex:
                     print("| %40s |  %7s |  %6s | %6s | %s  | KeyError: %s" % (info.Name, '', '', '', exts, ex))
                 except:
-                    print("| %40s |  %7s |  %6s | %6s | %s  | Unexpected error: %s" % (info.Name, '', '', '', exts, sys.exc_info()[0]))
+                    print("| %40s |  %7s |  %6s | %6s | %s  | Unexpected error: %s"
+                          % (info.Name, '', '', '', exts, sys.exc_info()[0]))
             else:
                 print("| %40s |  %26s |  %s" % (stella.name, ' ', exts))
                 # print("{0} No tt.".format(stella))
