@@ -27,7 +27,33 @@ def read_table_header_float(fname, header=None, skip=0):
     return block
 
 
-def read_obs_table_header(fname, header=None, skip=0, colt=('time', 'JD', 'MJD'), is_out=True):
+def read_obs_table_header(fname, header=None, skip=0, colt=('time', 'JD', 'MJD'), include_names=None,
+                          is_out=False, comments='#'):
+    """
+    Load tabular data from file.
+    :param fname: The name of the file with data
+    :param header: str, optional
+        The string is used to build data-type of the resulting array.
+        Default: None.
+    :param skip:  int, optional
+        Skip the first rows before header.
+        Default: 0.
+    :param colt: list, optional.
+        Possible names for time column.
+        Default:  ('time', 'JD', 'MJD')
+    :param include_names:  list or None
+        Which columns to read.
+        Default None, results in all columns being read.
+        Example: ['B','V','R']
+        The columns with errors, like 'err'+use_names, also will be read.
+    :param is_out:  bool, optional
+        If True the skipped, header and first file-rows are printed.
+        Default: False
+    :param comments:  str or sequence, optional
+        Default: '#'.
+    :return:  ndarray - data is read from the file
+    """
+    lskip = 0
     if header is None:
         with open(fname, "r") as f:
             i = 0
@@ -37,8 +63,14 @@ def read_obs_table_header(fname, header=None, skip=0, colt=('time', 'JD', 'MJD')
                     print(line.strip())
                 if i <= skip:
                     continue
+                if line.strip().startswith(comments):
+                    lskip += 1
+                    continue
                 header = line
                 break
+            else:
+                raise ValueError('Could not get header. Check the file: {}. Probably skip [{}] is too large.'
+                                 .format(fname, skip))
             # print first lines
             if is_out:
                 line = f.readline().strip()
@@ -47,29 +79,27 @@ def read_obs_table_header(fname, header=None, skip=0, colt=('time', 'JD', 'MJD')
     cols = {i: nm for i, nm in enumerate(cols_names)}
 
     is_time = False
-    cols_curves = {}
+    cols_data = {}
     for k, v in cols.items():
         # time
         if not is_time and v in colt:
-            cols_curves[k] = v
+            cols_data[k] = v
             is_time = True
-        # band
-        elif band.band_is_exist(v):
-            cols_curves[k] = v
+        # data
+        elif include_names is None or v in include_names:
+            cols_data[k] = v
             # band error
             for err_name in ('err' + v, 'err_' + v):
                 for i, bn in cols.items():
                     if err_name == bn:
-                        cols_curves[i] = err_name
+                        cols_data[i] = err_name
 
-    names = []
-    usecols = []
-    od = collections.OrderedDict(sorted(cols_curves.items()))
-    for k, v in od.items():
-        names.append(v)
-        usecols.append(k)
+    od = collections.OrderedDict(sorted(cols_data.items()))
+    usecols = list(od.keys())
+    names = list(od.values())
+
     dt = np.dtype({'names': names, 'formats': [np.float64] * len(names)})
-    block = np.loadtxt(fname, skiprows=skip+1, dtype=dt, comments='#', usecols=usecols)
+    block = np.loadtxt(fname, skiprows=max(lskip, skip)+1, dtype=dt, comments=comments, usecols=usecols)
     return block
 
 

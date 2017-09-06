@@ -43,7 +43,7 @@ def plot(ax, dic=None, mag_lim=30.):
     print("Plot {0} [{1}]  jd_shift={2}  mshift={3}".format(fname, marker, jd_shift, mshift))
 
     # read data
-    tbl = read_obs_table_header(fname)
+    tbl = read_obs_table_header(fname, include_names=band.band_get_names_alias(), is_out=True)
     # tbl = read_table_header_float(fname)
     curves = table2curves(os.path.basename(fname), tbl)
 
@@ -74,7 +74,7 @@ def load(dic=None):
     :return SetLightCurves:
     """
     fname = None
-    jd_shift = 0.
+    tshift = 0.
     mshift = 0.
     mag_lim = 30.
     arg = []
@@ -90,17 +90,17 @@ def load(dic=None):
     if len(arg) > 0:
         s = arg.pop(0)
         if s.isnumeric():
-            jd_shift = float(s)
+            tshift = float(s)
         elif len(arg) > 0:
-            jd_shift = float(arg.pop(0))
+            tshift = float(arg.pop(0))
     if len(arg) > 0:
         mshift = float(arg.pop(0))
 
-    print("Load {0} jd_shift={1}  mshift={2}".format(fname, jd_shift, mshift))
+    print("Load {0} tshift={1}  mshift={2}".format(fname, tshift, mshift))
 
     # read data
     # tbl = read_table_header_float(fname)
-    tbl = read_obs_table_header(fname,is_out=is_debug)
+    tbl = read_obs_table_header(fname, include_names=band.band_get_names_alias(), is_out=is_debug)
     curves = table2curves(os.path.basename(fname), tbl)
 
     # remove bad data
@@ -115,6 +115,6 @@ def load(dic=None):
         lc = LightCurve(lc_orig.Band, t, m, e)
         res_curves.add(lc)
 
-    res_curves.set_tshift(jd_shift)
+    res_curves.set_tshift(tshift)
     res_curves.set_mshift(mshift)
     return res_curves

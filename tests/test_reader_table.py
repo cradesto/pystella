@@ -4,7 +4,7 @@ import unittest
 
 from pystella.rf import band
 from pystella.rf.lc import LightCurve
-from pystella.util.reader_table import read_table_header_float, table2curves
+from pystella.util.reader_table import read_table_header_float, table2curves, read_obs_table_header
 
 __author__ = 'bakl'
 
@@ -40,3 +40,10 @@ class TestReaderTable(unittest.TestCase):
         for bname in curves.BandNames:
             self.assertTrue(bname in data.dtype.names,
                             msg="No band %s in [%s] after table2curves." % (bname, ''.join(data.dtype.names)))
+
+    def test_read_obs_table_header(self):
+        fname = 'data/obs/1999em-uphHamuy.dat'
+        tbl = read_obs_table_header(fname, is_out=True)
+        for c in ('JD', 'V'):
+            self.assertTrue(c in tbl.dtype.names,
+                            msg="No band %s in [%s] after read_obs_table_header." % (c, ','.join(tbl.dtype.names)))

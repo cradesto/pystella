@@ -9,6 +9,9 @@ class FitLc:
     def fit_curves(self, curves_o, curves_m):
         pass
 
+    def fit_tss(self, tss_o, tss_m):
+        pass
+
     @property
     def is_info(self):
         return self._is_info

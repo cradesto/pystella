@@ -1,11 +1,13 @@
 import numpy as np
+
 from pystella.rf import band
+from pystella.rf.ts import TimeSeries
 
 __author__ = 'bakl'
 
 
-class LightCurve(object):
-    def __init__(self, b, time, mags, errs=None, tshift=0):
+class LightCurve(TimeSeries):
+    def __init__(self, b, time, mags, errs=None, tshift=0., mshift=0.):
         """Creates a Light Curve instance.  Required parameters:  b (band), time, mags."""
         if isinstance(b, str):  # convert band-name to band instance
             if band.band_is_exist(b):
@@ -14,57 +16,25 @@ class LightCurve(object):
                 raise ValueError("No such band: {}".format(b))
         else:
             self._b = b
-        self._t = np.array(time, copy=True)  # [days]
-        self._m = np.array(mags, copy=True)  # magnitudes
 
-        self._e = None
-        if errs is not None:
-            self._e = np.array(errs, copy=True)  # magnitudes
-        self._tshift = tshift
-        self._mshift = 0
-
-    @property
-    def Time(self):
-        return self.T + self.tshift
-
-    @property
-    def T(self):
-        return self._t
-
-    @property
-    def Length(self):
-        return len(self._t)
+        super().__init__(time, mags, errs, name=self._b.Name, tshift=tshift)
+        self._mshift = mshift
 
     @property
     def Mag(self):
-        return self.M + self.mshift
+        return self.V + self.mshift
 
     @property
     def M(self):
-        return self._m
-
-    @property
-    def IsErr(self):
-        return self._e is not None
+        return self.V
 
     @property
     def MagErr(self):
-        if self.IsErr:
-            return self._e
-        else:
-            return np.zeros(self.Length)
+        return self.Err
 
     @property
     def Band(self):
         return self._b
-
-    @property
-    def tshift(self):
-        return self._tshift
-
-    @tshift.setter
-    def tshift(self, shift):
-        self._tshift = shift
 
     @property
     def mshift(self):
@@ -75,40 +45,34 @@ class LightCurve(object):
         self._mshift = shift
 
     @property
-    def tmin(self):
-        return np.min(self._t)
-
-    @property
-    def TimeMin(self):
-        return np.min(self.Time)
-
-    @property
-    def TimeMax(self):
-        return np.max(self.Time)
-
-    @property
     def TimeLcMax(self):
         idx = np.argmin(self.Mag)
         return self.Time[idx]
 
     def copy(self, tlim=None):
+        errs = None
         if tlim is not None:
             is_good = np.where((self.Time >= tlim[0]) & (self.Time <= tlim[1]))
             time = self.T[is_good]
-            mags = self.M[is_good]
-            errs = None
+            mags = self.V[is_good]
             if self.IsErr:
                 errs = self.MagErr[is_good]
         else:
             time = self.T
-            mags = self.M
-            errs = None
+            mags = self.V
             if self.IsErr:
                 errs = self.MagErr
 
         lc = LightCurve(self.Band, time, mags, errs)
         lc.tshift = self.tshift
         lc.mshift = self.mshift
+
+    def shifted(self):
+        errs = None
+        if self.IsErr:
+            errs = self.MagErr
+
+        return  LightCurve(self.Band, self.Time, self.Mag, errs)
 
     @classmethod
     def Merge(cls, lc1, lc2):

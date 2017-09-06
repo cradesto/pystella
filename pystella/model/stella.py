@@ -48,6 +48,11 @@ class Stella:
         return os.path.isfile(fname)
 
     @property
+    def is_swd_data(self):
+        fname = os.path.join(self.path, self.name + '.swd')
+        return os.path.isfile(fname)
+
+    @property
     def is_res_data(self):
         fname = os.path.join(self.path, self.name + '.res')
         return os.path.isfile(fname)

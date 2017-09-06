@@ -7,10 +7,31 @@ from os.path import dirname
 from scipy import interpolate
 
 from pystella.model.stella import Stella
+from pystella.rf.ts import TimeSeries
 
 __author__ = 'bakl'
 
 ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
+
+
+class VelocityCurve(TimeSeries):
+    def __init__(self, name, time, vel, errs=None, tshift=0., vshift=0.):
+        """Creates a Velocity Time Series instance.  Required parameters:  name, time, vel."""
+        super().__init__(time, vel, errs, name=name, tshift=tshift)
+
+        self._vshift = vshift
+
+    @property
+    def Vel(self):
+        return self.V * self.vshift
+
+    @property
+    def vshift(self):
+        return self._vshift
+
+    @vshift.setter
+    def vshift(self, shift):
+        self._vshift = shift
 
 
 def plot_vels_sn87a(ax, z=0):
@@ -73,8 +94,6 @@ def plot_vel(ax, vel, xlim=None, ylim=None):
     is_x_lim = xlim is None
     is_y_lim = ylim is None
 
-    # t_points = [0.2, 1, 2, 3, 4, 5, 10, 20, 40, 80, 150]
-
     lw = 1.
     x_max = []
     y_mid = []
@@ -100,14 +119,30 @@ def plot_vel(ax, vel, xlim=None, ylim=None):
     ax.grid()
 
 
-def compute_vel(name, path, z=0., t_beg=1., t_end=None, t_diff=1.05):
+def compute_vel_swd(name, path):
     model = Stella(name, path=path)
-    if not model.is_res_data or not model.is_tt_data:
-        if not model.is_res_data:
-            print("There are no res-file for %s in the directory: %s " % (name, path))
-        if not model.is_tt_data:
-            print("There are no tt-file for %s in the directory: %s " % (name, path))
-        return None
+    # check data
+    if not model.is_swd_data:
+        raise ValueError("There are no swd-file for %s in the directory: %s " % (name, path))
+
+    swd = model.get_swd().load()
+    data = swd.params_ph(cols=['V'])
+
+    res = np.array(np.zeros(len(data['V'])),
+                   dtype=np.dtype({'names': ['time', 'vel'], 'formats': [np.float] * 2}))
+    res['time'] = data['time']
+    res['vel'] = data['V']
+
+    return res
+
+
+def compute_vel_res_tt(name, path, z=0., t_beg=1., t_end=None, t_diff=1.05):
+    model = Stella(name, path=path)
+    # check data
+    if not model.is_res_data:
+        raise ValueError("There are no res-file for %s in the directory: %s " % (name, path))
+    if not model.is_tt_data:
+        raise ValueError(("There are no tt-file for %s in the directory: %s " % (name, path)))
 
     if t_end is None:
         t_end = float('inf')

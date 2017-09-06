@@ -41,6 +41,27 @@ class FitMPFit(FitLc):
         #        fit_result.comm = 'The value of the summed squared residuals for the returned parameter values.'
         return fit_result
 
+    def fit_tss(self, tss_o, tss_m, dt0=0.):
+
+        result = self.best_time_series(tss_o, tss_m, dt0=dt0, is_debug=self.is_debug, is_info=self.is_info)
+
+        tshift = dt0 + result.params[0]
+        pcerror = result.perror
+        # scaled uncertainties
+        # pcerror = result.perror * np.sqrt(result.fnorm / result.dof)
+        tsigma = pcerror[0]
+
+        if self.is_info:
+            print("The final params are: tshift=%f tsigma=%f" % (tshift, tsigma))
+
+        fit_result = FitLcResult()
+        fit_result.tshift = tshift
+        fit_result.tsigma = tsigma
+        fit_result.measure = result.fnorm / result.dof
+        fit_result.comm = 'mpfit: status={:2d} niter={:3d} fnorm={:.2f}'.format(result.status, result.niter, result.fnorm)
+        #        fit_result.comm = 'The value of the summed squared residuals for the returned parameter values.'
+        return fit_result
+
     def best_lc(self, lc_o, lc_m, dt0=0., dm0=None, is_debug=True, xtol=1e-10, ftol=1e-10, gtol=1e-10):
         dm = 0.
         if dm0 is not None:
@@ -91,6 +112,43 @@ class FitMPFit(FitLc):
         if is_debug:
             print("The final params are: tshift=%f tsigma=%f mshift=%f" % (tshift, tsigma, mshift))
         return tshift, tsigma
+
+    @staticmethod
+    def best_time_series(tss_o, tss_m, dt0=0, is_debug=False, is_info=True, xtol=1e-10, ftol=1e-10, gtol=1e-10):
+        def least_sq(p, fjac):
+            A = 0.5
+            total = []
+            for name, ts_m in tss_m.items():
+                ts_o = tss_o[name]
+                ts_o.tshift = dt0 + p[0]
+                time_o = ts_o.Time
+                # model interpolation
+                m = np.interp(time_o, ts_m.Time, ts_m.V)  # One-dimensional linear interpolation.
+                w = np.ones(len(m))
+                w = np.abs(1. - A * (time_o - min(time_o)) / (max(time_o) - min(time_o)))  # weight
+                if ts_o.IsErr:
+                    res = np.abs((ts_o.V - m) / (0.03 + ts_o.Err)) * w
+                else:
+                    res = np.abs(ts_o.V - m) * w
+                total = np.append(total, res)
+            return 0, total
+
+        parinfo = [{'value': 0., 'limited': [1, 1], 'limits': [-250., 250.]}]
+        result = mpfit.mpfit(least_sq, parinfo=parinfo, quiet=not is_debug, maxiter=200,
+                             ftol=ftol, gtol=gtol, xtol=xtol)
+        if is_info:
+
+            print("status: ", result.status)
+            if result.status <= 0:
+                print('error message = ', result.errmsg)
+            elif result.status == 5:
+                print('Maximum number of iterations exceeded in mangle_spectrum')
+            else:
+                print("Iterations: ", result.niter)
+                print("Fitted pars: ", result.params)
+                print("Uncertainties: ", result.perror)
+
+        return result
 
     @staticmethod
     def best_curves(curves_o, curves_m, dt0=0., dm0=0., is_dm=False,

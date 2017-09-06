@@ -198,7 +198,7 @@ def run_scm(bands, distance, names, path, t50, t_beg, t_end, z):
                    dtype=np.dtype({'names': ['v'] + bands,
                                    'formats': [np.float] * (1 + len(bands))}))
     for im, name in enumerate(names):
-        vels = velocity.compute_vel(name, path, z=z, t_beg=t_beg, t_end=t_end)
+        vels = velocity.compute_vel_res_tt(name, path, z=z, t_beg=t_beg, t_end=t_end)
         if vels is None:
             print("No enough data for %s " % name)
             continue

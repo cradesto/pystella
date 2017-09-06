@@ -16,6 +16,7 @@ import numpy as np
 import scipy as sci
 
 import pystella.util.callback as cb
+from pystella import velocity
 from pystella.fit.fit_mcmc import FitLcMcmc
 from pystella.fit.fit_mpfit import FitMPFit
 from pystella.rf import band
@@ -24,6 +25,7 @@ from pystella.rf.band import band_is_exist
 from pystella.rf.lc import SetLightCurve
 from pystella.util.path_misc import get_model_names
 from pystella.util.string_misc import str2interval
+from pystella.velocity import VelocityCurve
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -158,14 +160,16 @@ def plot_curves(curves_o, res_models, res_sorted, **kwargs):
         #     break
         ax = fig.add_subplot(nrow, ncol, i)
 
+        tshift = v.tshift
         curves = res_models[k]
         lcp.curves_plot(curves, ax=ax, figsize=(12, 8), linewidth=1, is_legend=False)
         xlim = ax.get_xlim()
         lt = {lc.Band.Name: 'o' for lc in curves_o}
+        curves_o.set_tshift(tshift)
         lcp.curves_plot(curves_o, ax, xlim=xlim, lt=lt, markersize=2, is_legend=False)
 
         ax.text(0.99, 0.94, k, horizontalalignment='right', transform=ax.transAxes)
-        ax.text(0.98, 0.85, "dt={:.2f}".format(v.tshift), horizontalalignment='right', transform=ax.transAxes)
+        ax.text(0.98, 0.85, "dt={:.2f}".format(tshift), horizontalalignment='right', transform=ax.transAxes)
         ax.text(0.01, 0.05, "$\chi^2: {:.2f}$".format(v.measure), horizontalalignment='left', transform=ax.transAxes,
                 bbox=dict(facecolor='green', alpha=0.3))
         # ax.text(0.9, 0.9, "{:.2f}".format(v.measure), horizontalalignment='right', transform=ax.transAxes, bbox=dict(facecolor='green', alpha=0.3))
@@ -188,7 +192,70 @@ def plot_curves(curves_o, res_models, res_sorted, **kwargs):
         # lc_colors = band.bands_colors()
 
     fig.subplots_adjust(wspace=0, hspace=0)
-    # return fig
+    plt.show()
+
+
+def plot_curves_vel(curves_o, vel_o, res_models, res_sorted, vels_m, **kwargs):
+    from pystella.rf import light_curve_plot as lcp
+    from matplotlib import pyplot as plt
+
+    font_size = kwargs.get('font_size', 10)
+    linewidth = kwargs.get('linewidth', 2.0)
+    markersize = kwargs.get('markersize', 5)
+
+    xlim = None
+    ylim = None
+    num = len(res_sorted)
+    nrow = int(num/2.1) + 1
+    ncol = 2
+    fig = plt.figure(figsize=(12, nrow * 4))
+    plt.matplotlib.rcParams.update({'font.size': font_size})
+
+    i = 0
+    for k, v in res_sorted.items():
+        i += 1
+        #  Plot UBV
+        axUbv = fig.add_subplot(nrow, ncol, i)
+
+        tshift = v.tshift
+        curves = res_models[k]
+        lcp.curves_plot(curves, ax=axUbv, figsize=(12, 8), linewidth=1, is_legend=False)
+        xlim = axUbv.get_xlim()
+        lt = {lc.Band.Name: 'o' for lc in curves_o}
+        curves_o.set_tshift(tshift)
+        lcp.curves_plot(curves_o, axUbv, xlim=xlim, lt=lt, markersize=2, is_legend=False)
+
+        axUbv.text(0.99, 0.94, k, horizontalalignment='right', transform=axUbv.transAxes)
+        axUbv.text(0.98, 0.85, "dt={:.2f}".format(tshift), horizontalalignment='right', transform=axUbv.transAxes)
+        axUbv.text(0.01, 0.05, "$\chi^2: {:.2f}$".format(v.measure), horizontalalignment='left', transform=axUbv.transAxes,
+                   bbox=dict(facecolor='green', alpha=0.3))
+        # legend
+        axUbv.legend(curves.BandNames, loc='lower right', frameon=False, ncol=min(5, len(curves.BandNames)),
+                  fontsize='small', borderpad=1)
+        if i % ncol == 0:
+            axUbv.yaxis.tick_right()
+            # axUbv.yaxis.set_label_position("right")
+            axUbv.set_ylabel('')
+            axUbv.yaxis.set_ticks([])
+        else:
+            axUbv.yaxis.tick_left()
+            axUbv.yaxis.set_label_position("left")
+        axUbv.grid(linestyle=':')
+        #  Plot Vel
+        axVel = axUbv.twinx()
+        axVel.set_ylim((0., 29))
+        axVel.set_ylabel('Velocity [1000 km/s]')
+
+        ts_vel = vels_m[k]
+        x = ts_vel.Time
+        y = ts_vel.V
+        axVel.plot(x, y, label='Vel  %s' % k, color='blue', ls="-", linewidth=linewidth)
+        # Obs. vel
+        vel_o.tshift = tshift
+        axVel.plot(vel_o.Time, vel_o.V, label='Obs', color='blue', ls='', marker='o', markersize=markersize)
+
+    fig.subplots_adjust(wspace=0, hspace=0)
+    plt.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.1)
     plt.show()
 
 
@@ -233,8 +300,8 @@ def plot_squared(ax, res_sorted, path='./', p=('R', 'M'), **kwargs):
     is_rbf = kwargs.get('is_rbf', True)
     is_surface = kwargs.get('is_surface', True)
     is_scatter = kwargs.get('is_scatter', not is_surface and False)
-    # is_not_quiet = True
-    is_not_quiet = kwargs.get('is_not_quiet', True)
+    is_not_quiet = False
+    # is_not_quiet = kwargs.get('is_not_quiet', True)
 
     # graph
     # ax.set_title('-'.join(p))
@@ -256,8 +323,6 @@ def plot_squared(ax, res_sorted, path='./', p=('R', 'M'), **kwargs):
             try:
                 info = stella.get_tt().Info
                 v = [getattr(info, pp) for pp in p]
-                # v1 = getattr(info, p[0])
-                # v2 = getattr(info, p[1])
 
                 # print info
                 if is_not_quiet:
@@ -275,42 +340,15 @@ def plot_squared(ax, res_sorted, path='./', p=('R', 'M'), **kwargs):
                                   + " |  {:40s} | chi_saved={:6.2f}  chi_new={:6.2f}".
                                   format('This is not a unique point', chi[k], res_chi.measure))
                         if res_chi.measure < chi[k]:
-                            if is_not_quiet:
-                                print("| %40s | k = %5d  Chi [%7.2f] => [%6.2f]" %
-                                      (info.Name, k, res_chi.measure, chi[k]))
+                            print("| %50s | k = %5d  Chi [%7.2f] < [%6.2f]" %
+                                  (info.Name + ' '.join("{0:6.2f}".format(vv) for vv in v),
+                                   k, res_chi.measure, chi[k]))
                             chi[k] = res_chi.measure
                         break
-                # if -1 < k < len(x)-1:  # This is not a unique point
-                #     # if v1 in x and v2 in y:
-                #         todo Условие на то что chi меньше старого
-                #     print("| %40s |  %7.2f |  %6.2f |  %s" %
-                #           ('   ', v1, v2, 'This is not a unique point'))
                 else:
                     models.append(name)
                     data.append(v)
                     chi.append(res_chi.measure)
-                #
-                # k = -1
-                # for (xv, yv) in zip(x, y):
-                #     k += 1
-                #     if v1 == xv and v2 == yv:
-                #         print("| %40s |  %7.2f |  %6.2f |  %s | chi_saved=%6.2f  chi_new=%6.2f" %
-                #               ('   ', v1, v2, 'This is not a unique point', chi[k], res_chi.measure))
-                #         if res_chi.measure < chi[k]:
-                #             print("| %40s | k = %5d  Chi [%7.2f] => [%6.2f]" %
-                #                   (info.Name, k, res_chi.measure, chi[k]))
-                #             chi[k] = res_chi.measure
-                #         break
-                # # if -1 < k < len(x)-1:  # This is not a unique point
-                # #     # if v1 in x and v2 in y:
-                # #         todo Условие на то что chi меньше старого
-                # #     print("| %40s |  %7.2f |  %6.2f |  %s" %
-                # #           ('   ', v1, v2, 'This is not a unique point'))
-                # else:
-                #     models.append(name)
-                #     x.append(v1)
-                #     y.append(v2)
-                #     chi.append(res_chi.measure)
             except KeyError as ex:
                 print("Error for model {}. Message: {} ".format(name, ex))
     # plot
@@ -363,7 +401,8 @@ def plot_squared(ax, res_sorted, path='./', p=('R', 'M'), **kwargs):
         cbar.ax.set_ylabel(r'$\chi^2$')
         # plt.setp(cb.ax.get_yticklabels(), visible=False)
 
-        ax.scatter(x, y, c=chi/np.max(chi), cmap=plt.cm.bone, picker=True)
+        ax.scatter(x, y, c=chi / np.max(chi), cmap=plt.cm.bone, picker=True)
+
         # ax.set_picker(True)
 
         def on_pick(event):
@@ -373,12 +412,12 @@ def plot_squared(ax, res_sorted, path='./', p=('R', 'M'), **kwargs):
             except AttributeError:
                 pass
 
-        def onclick(event):
-            print('button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %
-                  (event.button, event.x, event.y, event.xdata, event.ydata))
-
         ax.figure.canvas.mpl_connect('pick_event', on_pick)
-        ax.figure.canvas.mpl_connect('button_press_event', onclick)
+        # def onclick(event):
+        #     print('button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %
+        #           (event.button, event.x, event.y, event.xdata, event.ydata))
+
+        # ax.figure.canvas.mpl_connect('button_press_event', onclick)
         # ax.scatter(x, y, c=chi, cmap=plt.cm.RdBu)
 
     elif is_scatter:
@@ -496,22 +535,22 @@ def plot_squared_3d(ax, res_sorted, path='./', p=('R', 'M', 'E'), is_rbf=True, *
 
     if is_polar:
         C = 1.9
-        theta = (x - np.min(x)) / (np.max(x)-np.min(x)) * C * np.pi  # R
-        width = y/np.max(y) * np.pi/8  # M
+        theta = (x - np.min(x)) / (np.max(x) - np.min(x)) * C * np.pi  # R
+        width = y / np.max(y) * np.pi / 8  # M
         # radii = np.log10(chi+1) * 10 # chi
-        radii = 10 + (chi - np.min(chi)) / (np.max(chi)-np.min(chi)) * 100  # chi
+        radii = 10 + (chi - np.min(chi)) / (np.max(chi) - np.min(chi)) * 100  # chi
 
         bars = ax.bar(theta, radii, width=width, bottom=0.0)
 
         # Use custom colors and opacity
         labels = z
-        for z, bar, l in zip(z/np.max(z), bars, labels):
+        for z, bar, l in zip(z / np.max(z), bars, labels):
             # bar.set_facecolor(plt.cm.jet(r))  # E
             bar.set_facecolor(plt.cm.plasma(z))
             bar.set_alpha(0.5)
             bar.set_label(l)
 
-        xlabel_max = np.min(x) + 7./4./C * (np.max(x) - np.min(x))
+        xlabel_max = np.min(x) + 7. / 4. / C * (np.max(x) - np.min(x))
         xlabel = ["{:6.0f} R".format(xx) for xx in np.linspace(np.min(x), xlabel_max, 8)]
         ax.set_xticklabels(xlabel)
         ax.legend(bbox_to_anchor=(1.3, 1.05))
@@ -538,11 +577,37 @@ def plot_squared_3d(ax, res_sorted, path='./', p=('R', 'M', 'E'), is_rbf=True, *
         plt.show()
 
 
-def fit_mfl(args, curves_o, bnames, fitter, name, path, t_diff, times):
-    curves = lcf.curves_compute(name, path, bnames, z=args.redshift, distance=args.distance,
-                                t_beg=times[0], t_end=times[1], t_diff=t_diff)
-    res = fitter.fit_curves(curves_o, curves)
-    return curves, res
+def fit_mfl(args, curves_o, vel_o, bnames, fitter, name, path, t_diff, times):
+    curves_m = lcf.curves_compute(name, path, bnames, z=args.redshift, distance=args.distance,
+                                  t_beg=times[0], t_end=times[1], t_diff=t_diff)
+    vel_m = None
+    if vel_o is not None:
+        # compute model velocities
+        try:
+            tbl = velocity.compute_vel_swd(name, path)
+            # tbl = velocity.compute_vel_res_tt(name, path)
+            Vnorm = 1e8
+            vel_m = VelocityCurve('Vel', tbl['time'], tbl['vel']/Vnorm)
+        except ValueError as ext:
+            print(ext)
+
+    if vel_m is not None:
+        # obs
+        dt0 = 0.
+        tss_o = {'Vel': vel_o}
+        for lc in curves_o:
+            tss_o[lc.Band.Name] = lc.shifted()
+        # model
+        tss_m = {'Vel': vel_m}
+        for lc in curves_m:
+            tss_m[lc.Band.Name] = lc
+        # fit
+        res = fitter.fit_tss(tss_o, tss_m, dt0=-dt0)
+    else:
+        res = fitter.fit_curves(curves_o, curves_m)
+
+    # res = fitter.fit_curves(curves_o, curves_m)
+    return curves_m, vel_m, res
 
 
 def main():
@@ -553,7 +618,7 @@ def main():
     # distance = 10  # pc
     # bnames = ['U', 'B', 'V', 'R', "I"]
     Nbest = 33
-    NbestPlot = 6
+    NbestPlot = 10
     band.Band.load_settings()
 
     parser = get_parser()
@@ -614,12 +679,18 @@ def main():
 
     # Get observations
     curves_o = None
+    vel_o = None
     obs = callback.run({'is_debug': args.is_not_quiet})
     if isinstance(obs, list):
         for o in obs:
-            curves_o = SetLightCurve.Merge(curves_o, o)
+            if isinstance(o, SetLightCurve):
+                curves_o = SetLightCurve.Merge(curves_o, o)
+            if isinstance(o, VelocityCurve):
+                vel_o = o
     else:
         curves_o = obs
+
+    is_vel = vel_o is not None
     # curves_o = callback.load({'is_debug': not args.is_quiet})
     # todo Information about tshift
 
@@ -647,6 +718,7 @@ def main():
 
     # tshift = 0.
     res_models = {}
+    vels_m = {}
     res_chi = {}
     if len(names) == 1:
         name = names[0]
@@ -655,30 +727,21 @@ def main():
                 print("Fitting for model %s %s for %s moments" % (path, name, times))
             else:
                 print("Fitting for model %s %s " % (path, name))
-        curves = lcf.curves_compute(name, path, bnames, z=args.redshift, distance=args.distance,
-                                    t_beg=times[0], t_end=times[1], t_diff=t_diff)
-
-        res = fitter.fit_curves(curves_o, curves)
+        curves_m = lcf.curves_compute(name, path, bnames, z=args.redshift, distance=args.distance,
+                                      t_beg=times[0], t_end=times[1], t_diff=t_diff)
+        res = fitter.fit_curves(curves_o, curves_m)
         print("{}: time shift  = {:.2f}+/-{:.4f} Measure: {:.4f}".format(name, res.tshift, res.tsigma, res.measure))
-        best_tshift = res.tshift
-        res_models[name] = curves
+        # best_tshift = res.tshift
+        res_models[name] = curves_m
         res_chi[name] = res
         res_sorted = res_chi
     elif len(names) > 1:
         if args.nodes > 1:
             print("Run parallel fitting: nodes={}, models  {}".format(args.nodes, len(names)))
 
-            def f(n):
-                # sys.stdout.write(u"\u001b[1000D" + n)
-                # sys.stdout.flush()
-                # return [n] + fit_mfl(args, curves_o, bnames, fitter, n, path, t_diff, times)
-                c, r = fit_mfl(args, curves_o, bnames, fitter, n, path, t_diff, times)
-                return c, r
-                # return n, c, r
-
             with futures.ProcessPoolExecutor(max_workers=args.nodes) as executor:
                 future_to_name = {
-                    executor.submit(fit_mfl, args, curves_o, bnames, fitter, n, path, t_diff, times):
+                    executor.submit(fit_mfl, args, curves_o, vel_o, bnames, fitter, n, path, t_diff, times):
                         n for n in names
                 }
                 i = 0
@@ -691,7 +754,8 @@ def main():
                         print('%r generated an exception: %s' % (name, exc))
                     else:
                         res_models[name] = data[0]
-                        v = data[1]
+                        vels_m[name] = data[1]
+                        v = data[2]
                         res_chi[name] = v
                         print("[{}/{}]: {:30s} -> {}".format(i, len(names), name, v.comm))
         else:
@@ -704,8 +768,9 @@ def main():
                 else:
                     sys.stdout.write(u"\u001b[1000D" + txt)
                     sys.stdout.flush()
-                curves, res = fit_mfl(args, curves_o, bnames, fitter, name, path, t_diff, times)
-                res_models[name] = curves
+                curves_m, vel_m, res = fit_mfl(args, curves_o, vel_o, bnames, fitter, name, path, t_diff, times)
+                res_models[name] = curves_m
+                vels_m[name] = vel_m
                 res_chi[name] = res
 
         # select with dtshift
@@ -729,13 +794,13 @@ def main():
         print("{:40s} || {:7.2f}+/-{:7.4f} || {:.4f}".format(k, v.tshift, v.tsigma, v.measure))
 
     # plot chi squared
-    plot_squared_grid(res_sorted, path, par=('M', 'E'), is_not_quiet=args.is_not_quiet)
+    # plot_squared_grid(res_sorted, path, par=('M', 'E'), is_not_quiet=args.is_not_quiet)
 
     # plot only Nbest modeles
     while len(res_sorted) > Nbest:
         res_sorted.popitem()
 
-    plot_squared_3d(None, res_sorted, path, p=('R', 'M', 'E'), is_polar=True)
+    # plot_squared_3d(None, res_sorted, path, p=('R', 'M', 'E'), is_polar=True)
 
     best_mdl = list(res_sorted)[0]
     res = list(res_sorted.values())[0]
@@ -745,13 +810,17 @@ def main():
     best_tshift = res.tshift
 
     # shift observational data
-    curves_o.set_tshift(best_tshift)
+    # curves_o.set_tshift(best_tshift)
 
     # plot only NbestPlot modeles
     while len(res_sorted) > NbestPlot:
         res_sorted.popitem()
 
-    plot_curves(curves_o, res_models, res_sorted)
+    if is_vel:
+        # vel_o.tshift = best_tshift
+        plot_curves_vel(curves_o, vel_o, res_models, res_sorted, vels_m)
+    else:
+        plot_curves(curves_o, res_models, res_sorted)
 
 
 if __name__ == '__main__':

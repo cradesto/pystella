@@ -22,6 +22,7 @@
       <w>caretup</w>
       <w>catcopy</w>
       <w>chemfile</w>
+      <w>cname</w>
       <w>coef</w>
       <w>comovingdist</w>
       <w>conv</w>
@@ -89,6 +90,7 @@
       <w>nburn</w>
       <w>ncol</w>
       <w>ncols</w>
+      <w>ndarray</w>
       <w>ndim</w>
       <w>nfreq</w>
       <w>nmax</w>
@@ -155,8 +157,10 @@
       <w>usno</w>
       <w>vels</w>
       <w>viktoriya</w>
+      <w>vmax</w>
       <w>vname</w>
       <w>vnorm</w>
+      <w>vshift</w>
       <w>wien</w>
       <w>wlrange</w>
       <w>wrkx</w>

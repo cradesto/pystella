@@ -334,7 +334,7 @@ def main(name='', model_ext='.ph'):
             #     lcp.curves_plot(curves, title=name, fname='', is_time_points=is_plot_time_points)
 
             if is_vel:
-                vels = vel.compute_vel(name, path, z=z)
+                vels = vel.compute_vel_res_tt(name, path, z=z)
                 if vels is None:
                     sys.exit("No data for: %s in %s" % (name, path))
                 models_vels[name] = vels

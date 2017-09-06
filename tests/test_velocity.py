@@ -22,7 +22,7 @@ class TestVelocity(unittest.TestCase):
 
         nm = 'rn300_R10_M3Mht3t30_Ni0_E003wAq2e3'
         path = '~/Sn/Release/svn_kepler/stella/branches/lucy/run/res/sncurve/rednovaM31/tt/'
-        vels = vel.compute_vel(nm, os.path.expanduser(path))
+        vels = vel.compute_vel_res_tt(nm, os.path.expanduser(path))
 
         ax = fig.add_subplot(gs1[:, 0])
         vel.plot_vel(ax, vels)

@@ -174,7 +174,7 @@ class Band(object):
 
 
 class BandUni(Band):
-    def __init__(self, name='Uniform', wlrange=(1e1, 5e4), length=100):
+    def __init__(self, name='Uniform', wlrange=(1e1, 5e4), length=999):
         """Creates a band with uniform responce.
         :param name:  default 'Uniform'.
         :param wlrange:  the wavelength range, default (1e1, 5e4) [A]
@@ -367,7 +367,7 @@ def band_get_names():
     if len(Band.Cache) == 0:
         Band.Cache = band_load_names()
 
-    return Band.Cache.keys()
+    return list(Band.Cache.keys())
 
 
 def band_get_aliases():
@@ -386,6 +386,12 @@ def band_is_exist_alias(name):
 
 def band_is_exist(name):
     return band_is_exist_names(name) or band_is_exist_alias(name)
+
+
+def band_get_names_alias():
+    res = band_get_names()
+    res.extend(band_get_aliases().keys())
+    return res
 
 
 def band_by_name(name):
