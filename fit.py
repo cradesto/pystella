@@ -585,8 +585,18 @@ def fit_mfl(args, curves_o, vel_o, bnames, fitter, name, path, t_diff, times):
     tss_o = {}
     dt0 = 0.
 
-    vel_m = None
     curves_m = None
+    # light curves
+    if curves_o is not None:
+        curves_m = lcf.curves_compute(name, path, bnames, z=args.redshift, distance=args.distance,
+                                      t_beg=times[0], t_end=times[1], t_diff=t_diff)
+        for lc in curves_m:
+            tss_m[lc.Band.Name] = lc
+
+        for lc in curves_o:
+            tss_o[lc.Band.Name] = lc.shifted()
+
+    vel_m = None
     if vel_o is not None:
         # compute model velocities
         try:
@@ -599,18 +609,15 @@ def fit_mfl(args, curves_o, vel_o, bnames, fitter, name, path, t_diff, times):
 
     # velocity
     if vel_m is not None:
-        tss_o['Vel'] = vel_o
-        tss_m['Vel'] = vel_m
-
-    # light curves
-    if curves_o is not None:
-        curves_m = lcf.curves_compute(name, path, bnames, z=args.redshift, distance=args.distance,
-                                      t_beg=times[0], t_end=times[1], t_diff=t_diff)
-        for lc in curves_m:
-            tss_m[lc.Band.Name] = lc
-
-        for lc in curves_o:
-            tss_o[lc.Band.Name] = lc.shifted()
+        if curves_m is not None:
+            # To increase the weight of Velocities with fitting
+            for i in range(curves_m.Length):
+                key = 'Vel{:d}'.format(i)
+                tss_m[key] = vel_m
+                tss_o[key] = vel_o
+        else:
+            tss_m['Vel'] = vel_m
+            tss_o['Vel'] = vel_o
 
     # fit
     # if len(tss_m) > 0:
@@ -743,12 +750,15 @@ def main():
                 print("Fitting for model %s %s for %s moments" % (path, name, times))
             else:
                 print("Fitting for model %s %s " % (path, name))
-        curves_m = lcf.curves_compute(name, path, bnames, z=args.redshift, distance=args.distance,
-                                      t_beg=times[0], t_end=times[1], t_diff=t_diff)
-        res = fitter.fit_curves(curves_o, curves_m)
+        # curves_m = lcf.curves_compute(name, path, bnames, z=args.redshift, distance=args.distance,
+        #                               t_beg=times[0], t_end=times[1], t_diff=t_diff)
+        # res = fitter.fit_curves(curves_o, curves_m)
+        curves_m, vel_m, res = fit_mfl(args, curves_o, vel_o, bnames, fitter, name, path, t_diff, times)
+
         print("{}: time shift  = {:.2f}+/-{:.4f} Measure: {:.4f}".format(name, res.tshift, res.tsigma, res.measure))
         # best_tshift = res.tshift
         res_models[name] = curves_m
+        vels_m[name] = vel_m
         res_chi[name] = res
         res_sorted = res_chi
     elif len(names) > 1:
@@ -809,14 +819,15 @@ def main():
         # if dtshift[0] < v.tshift < dtshift[1]:
         print("{:40s} || {:7.2f}+/-{:7.4f} || {:.4f}".format(k, v.tshift, v.tsigma, v.measure))
 
-    # plot chi squared
-    plot_squared_grid(res_sorted, path, par=('M', 'E'), is_not_quiet=args.is_not_quiet)
+    if len(res_sorted) > Nbest:
+        # plot chi squared
+        plot_squared_grid(res_sorted, path, par=('M', 'E'), is_not_quiet=args.is_not_quiet)
 
-    # plot only Nbest modeles
-    while len(res_sorted) > Nbest:
-        res_sorted.popitem()
+        # plot only Nbest modeles
+        while len(res_sorted) > Nbest:
+            res_sorted.popitem()
 
-    plot_squared_3d(None, res_sorted, path, p=('R', 'M', 'E'), is_polar=True)
+        plot_squared_3d(None, res_sorted, path, p=('R', 'M', 'E'), is_polar=True)
 
     best_mdl = list(res_sorted)[0]
     res = list(res_sorted.values())[0]

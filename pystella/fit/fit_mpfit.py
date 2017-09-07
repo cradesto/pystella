@@ -116,7 +116,7 @@ class FitMPFit(FitLc):
     @staticmethod
     def best_time_series(tss_o, tss_m, dt0=0, is_debug=False, is_info=True, xtol=1e-10, ftol=1e-10, gtol=1e-10):
         def least_sq(p, fjac):
-            A = 0.  #5
+            A = 0.  # 5
             total = []
             for name, ts_m in tss_m.items():
                 ts_o = tss_o[name]
