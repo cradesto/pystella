@@ -220,19 +220,20 @@ def plot_curves_vel(curves_o, vel_o, res_models, res_sorted, vels_m, **kwargs):
 
         tshift = v.tshift
         curves = res_models[k]
-        lcp.curves_plot(curves, ax=axUbv, figsize=(12, 8), linewidth=1, is_legend=False)
-        xlim = axUbv.get_xlim()
-        lt = {lc.Band.Name: 'o' for lc in curves_o}
-        curves_o.set_tshift(tshift)
-        lcp.curves_plot(curves_o, axUbv, xlim=xlim, lt=lt, markersize=2, is_legend=False)
+        if curves is not None:
+            lcp.curves_plot(curves, ax=axUbv, figsize=(12, 8), linewidth=1, is_legend=False)
+            xlim = axUbv.get_xlim()
+            lt = {lc.Band.Name: 'o' for lc in curves_o}
+            curves_o.set_tshift(tshift)
+            lcp.curves_plot(curves_o, axUbv, xlim=xlim, lt=lt, markersize=2, is_legend=False)
+            # legend
+            axUbv.legend(curves.BandNames, loc='lower right', frameon=False, ncol=min(5, len(curves.BandNames)),
+                      fontsize='small', borderpad=1)
 
         axUbv.text(0.99, 0.94, k, horizontalalignment='right', transform=axUbv.transAxes)
         axUbv.text(0.98, 0.85, "dt={:.2f}".format(tshift), horizontalalignment='right', transform=axUbv.transAxes)
         axUbv.text(0.01, 0.05, "$\chi^2: {:.2f}$".format(v.measure), horizontalalignment='left', transform=axUbv.transAxes,
                    bbox=dict(facecolor='green', alpha=0.3))
-        # legend
-        axUbv.legend(curves.BandNames, loc='lower right', frameon=False, ncol=min(5, len(curves.BandNames)),
-                  fontsize='small', borderpad=1)
         if i % ncol == 0:
             axUbv.yaxis.tick_right()
             # axUbv.yaxis.set_label_position("right")
@@ -580,9 +581,12 @@ def plot_squared_3d(ax, res_sorted, path='./', p=('R', 'M', 'E'), is_rbf=True, *
 
 
 def fit_mfl(args, curves_o, vel_o, bnames, fitter, name, path, t_diff, times):
-    curves_m = lcf.curves_compute(name, path, bnames, z=args.redshift, distance=args.distance,
-                                  t_beg=times[0], t_end=times[1], t_diff=t_diff)
+    tss_m = {}
+    tss_o = {}
+    dt0 = 0.
+
     vel_m = None
+    curves_m = None
     if vel_o is not None:
         # compute model velocities
         try:
@@ -593,20 +597,26 @@ def fit_mfl(args, curves_o, vel_o, bnames, fitter, name, path, t_diff, times):
         except ValueError as ext:
             print(ext)
 
+    # velocity
     if vel_m is not None:
-        # obs
-        dt0 = 0.
-        tss_o = {'Vel': vel_o}
-        for lc in curves_o:
-            tss_o[lc.Band.Name] = lc.shifted()
-        # model
-        tss_m = {'Vel': vel_m}
+        tss_o['Vel'] = vel_o
+        tss_m['Vel'] = vel_m
+
+    # light curves
+    if curves_o is not None:
+        curves_m = lcf.curves_compute(name, path, bnames, z=args.redshift, distance=args.distance,
+                                      t_beg=times[0], t_end=times[1], t_diff=t_diff)
         for lc in curves_m:
             tss_m[lc.Band.Name] = lc
-        # fit
-        res = fitter.fit_tss(tss_o, tss_m, dt0=-dt0)
-    else:
-        res = fitter.fit_curves(curves_o, curves_m)
+
+        for lc in curves_o:
+            tss_o[lc.Band.Name] = lc.shifted()
+
+    # fit
+    # if len(tss_m) > 0:
+    res = fitter.fit_tss(tss_o, tss_m, dt0=-dt0)
+    # else:
+    #     res = fitter.fit_curves(curves_o, curves_m)
 
     # res = fitter.fit_curves(curves_o, curves_m)
     return curves_m, vel_m, res
@@ -653,7 +663,7 @@ def main():
     # Set band names
     bnames = []
     if args.bnames:
-        for bname in str(args.bnames).split('-'):
+        for bname in args.bnames.split('-'):
             if not band.band_is_exist(bname):
                 print('No such band: ' + bname)
                 parser.print_help()
@@ -690,13 +700,17 @@ def main():
             if isinstance(o, VelocityCurve):
                 vel_o = o
     else:
-        curves_o = obs
+        if isinstance(obs, SetLightCurve):
+            curves_o = obs
+        if isinstance(obs, VelocityCurve):
+            vel_o = obs
 
     is_vel = vel_o is not None
+    is_curves_o = curves_o is not None
     # curves_o = callback.load({'is_debug': not args.is_quiet})
     # todo Information about tshift
 
-    if len(bnames) == 0:
+    if is_curves_o and len(bnames) == 0:
         bnames = [bn for bn in curves_o.BandNames if band_is_exist(bn)]
 
     # Time limits for models
@@ -759,7 +773,7 @@ def main():
                         vels_m[name] = data[1]
                         v = data[2]
                         res_chi[name] = v
-                        print("[{}/{}]: {:30s} -> {}".format(i, len(names), name, v.comm))
+                        print("[{}/{}] {:30s} -> {}".format(i, len(names), name, v.comm))
         else:
             i = 0
             for name in names:
@@ -796,13 +810,13 @@ def main():
         print("{:40s} || {:7.2f}+/-{:7.4f} || {:.4f}".format(k, v.tshift, v.tsigma, v.measure))
 
     # plot chi squared
-    # plot_squared_grid(res_sorted, path, par=('M', 'E'), is_not_quiet=args.is_not_quiet)
+    plot_squared_grid(res_sorted, path, par=('M', 'E'), is_not_quiet=args.is_not_quiet)
 
     # plot only Nbest modeles
     while len(res_sorted) > Nbest:
         res_sorted.popitem()
 
-    # plot_squared_3d(None, res_sorted, path, p=('R', 'M', 'E'), is_polar=True)
+    plot_squared_3d(None, res_sorted, path, p=('R', 'M', 'E'), is_polar=True)
 
     best_mdl = list(res_sorted)[0]
     res = list(res_sorted.values())[0]
