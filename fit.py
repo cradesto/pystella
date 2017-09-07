@@ -143,7 +143,7 @@ def plot_curves(curves_o, res_models, res_sorted, **kwargs):
     from pystella.rf import light_curve_plot as lcp
     from matplotlib import pyplot as plt
 
-    font_size = kwargs.get('font_size', 10)
+    font_size = kwargs.get('font_size', 8)
 
     xlim = None
     ylim = None
@@ -192,6 +192,7 @@ def plot_curves(curves_o, res_models, res_sorted, **kwargs):
         # lc_colors = band.bands_colors()
 
     fig.subplots_adjust(wspace=0, hspace=0)
+    plt.subplots_adjust(left=0.07, right=0.06, top=0.97, bottom=0.06)
     plt.show()
 
 
@@ -255,7 +256,7 @@ def plot_curves_vel(curves_o, vel_o, res_models, res_sorted, vels_m, **kwargs):
         axVel.plot(vel_o.Time, vel_o.V, label='Obs', color='blue', ls='', marker='o', markersize=markersize)
 
     fig.subplots_adjust(wspace=0, hspace=0)
-    plt.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.1)
+    plt.subplots_adjust(left=0.07, right=0.96, top=0.97, bottom=0.06)
     plt.show()
 
 
@@ -459,6 +460,7 @@ def plot_squared(ax, res_sorted, path='./', p=('R', 'M'), **kwargs):
         #
         # # Add a color bar which maps values to colors.
         plt.colorbar(surf, shrink=0.5, aspect=5)
+        plt.subplots_adjust(left=0.07, right=0.06, top=0.97, bottom=0.06)
         # plt.show()
 
 
@@ -618,7 +620,7 @@ def main():
     # distance = 10  # pc
     # bnames = ['U', 'B', 'V', 'R', "I"]
     Nbest = 33
-    NbestPlot = 10
+    NbestPlot = 8
     band.Band.load_settings()
 
     parser = get_parser()
