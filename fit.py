@@ -23,6 +23,7 @@ from pystella.rf import band
 from pystella.rf import light_curve_func as lcf
 from pystella.rf.band import band_is_exist
 from pystella.rf.lc import SetLightCurve
+from pystella.util.arr_dict import first
 from pystella.util.path_misc import get_model_names
 from pystella.util.string_misc import str2interval
 from pystella.velocity import VelocityCurve
@@ -30,22 +31,6 @@ from pystella.velocity import VelocityCurve
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
-
-def old_lc_wrapper(param, p=None):
-    a = param.split(':')
-    fname = a.pop(0)
-    if p is None:
-        if os.path.isfile(fname + '.py'):
-            p, fname = os.path.split(fname)
-        elif os.path.isfile(os.path.join(os.getcwd(), fname + '.py')):
-            p = os.getcwd()
-        else:
-            p = cb.plugin_path
-    # print("Call: {} from {}".format(fname, p))
-    c = cb.CallBack(fname, path=p, args=a, method='load', load=1)
-    print("Call: %s from %s" % (c.Func, c.FuncFileFull))
-    return c
 
 
 def rel_errors(mu, sig, func, num=10000):
@@ -87,6 +72,12 @@ def get_parser():
                         default=10,
                         dest="distance",
                         help="Distance to the model [pc].  Default: 10 pc")
+    parser.add_argument('-e',
+                        required=False,
+                        type=float,
+                        default=0.,
+                        dest="color_excess",
+                        help="Color excess E(B-V) is used to compute extinction via  A_nu = R_nu*E(B-V).  Default: 0")
     parser.add_argument('-z',
                         required=False,
                         type=float,
@@ -153,23 +144,22 @@ def plot_curves(curves_o, res_models, res_sorted, **kwargs):
     fig = plt.figure(figsize=(12, nrow * 4))
     plt.matplotlib.rcParams.update({'font.size': font_size})
 
+    tshift0 = first(curves_o).tshift
     i = 0
     for k, v in res_sorted.items():
         i += 1
-        # if i > num:
-        #     break
         ax = fig.add_subplot(nrow, ncol, i)
 
-        tshift = v.tshift
+        tshift_best = v.tshift
         curves = res_models[k]
         lcp.curves_plot(curves, ax=ax, figsize=(12, 8), linewidth=1, is_legend=False)
         xlim = ax.get_xlim()
         lt = {lc.Band.Name: 'o' for lc in curves_o}
-        curves_o.set_tshift(tshift)
+        curves_o.set_tshift(tshift0+tshift_best)
         lcp.curves_plot(curves_o, ax, xlim=xlim, lt=lt, markersize=2, is_legend=False)
 
         ax.text(0.99, 0.94, k, horizontalalignment='right', transform=ax.transAxes)
-        ax.text(0.98, 0.85, "dt={:.2f}".format(tshift), horizontalalignment='right', transform=ax.transAxes)
+        ax.text(0.98, 0.85, "dt={:.2f}".format(tshift_best), horizontalalignment='right', transform=ax.transAxes)
         ax.text(0.01, 0.05, "$\chi^2: {:.2f}$".format(v.measure), horizontalalignment='left', transform=ax.transAxes,
                 bbox=dict(facecolor='green', alpha=0.3))
         # ax.text(0.9, 0.9, "{:.2f}".format(v.measure), horizontalalignment='right', transform=ax.transAxes, bbox=dict(facecolor='green', alpha=0.3))
@@ -192,7 +182,7 @@ def plot_curves(curves_o, res_models, res_sorted, **kwargs):
         # lc_colors = band.bands_colors()
 
     fig.subplots_adjust(wspace=0, hspace=0)
-    plt.subplots_adjust(left=0.07, right=0.06, top=0.97, bottom=0.06)
+    plt.subplots_adjust(left=0.07, right=0.96, top=0.97, bottom=0.06)
     plt.show()
 
 
@@ -211,6 +201,11 @@ def plot_curves_vel(curves_o, vel_o, res_models, res_sorted, vels_m, **kwargs):
     ncol = 2
     fig = plt.figure(figsize=(12, nrow * 4))
     plt.matplotlib.rcParams.update({'font.size': font_size})
+    tshift0 = 0
+    if curves_o is not None:
+        tshift0 = first(curves_o).tshift
+    elif vel_o is not None:
+        tshift0 = vel_o.tshift
 
     i = 0
     for k, v in res_sorted.items():
@@ -218,25 +213,24 @@ def plot_curves_vel(curves_o, vel_o, res_models, res_sorted, vels_m, **kwargs):
         #  Plot UBV
         axUbv = fig.add_subplot(nrow, ncol, i)
 
-        tshift = v.tshift
+        tshift_best = v.tshift
+        axUbv.text(0.99, 0.94, k, horizontalalignment='right', transform=axUbv.transAxes)
+        axUbv.text(0.98, 0.85, "dt={:.2f}".format(tshift_best), horizontalalignment='right', transform=axUbv.transAxes)
+        axUbv.text(0.01, 0.05, "$\chi^2: {:.2f}$".format(v.measure), horizontalalignment='left', transform=axUbv.transAxes,
+                   bbox=dict(facecolor='green', alpha=0.3))
+
         curves = res_models[k]
         if curves is not None:
             lcp.curves_plot(curves, ax=axUbv, figsize=(12, 8), linewidth=1, is_legend=False)
-            xlim = axUbv.get_xlim()
             lt = {lc.Band.Name: 'o' for lc in curves_o}
-            curves_o.set_tshift(tshift)
-            lcp.curves_plot(curves_o, axUbv, xlim=xlim, lt=lt, markersize=2, is_legend=False)
+            curves_o.set_tshift(tshift0 + tshift_best)
+            lcp.curves_plot(curves_o, axUbv, xlim=axUbv.get_xlim(), lt=lt, markersize=2, is_legend=False)
             # legend
             axUbv.legend(curves.BandNames, loc='lower right', frameon=False, ncol=min(5, len(curves.BandNames)),
-                      fontsize='small', borderpad=1)
+                         fontsize='small', borderpad=1)
 
-        axUbv.text(0.99, 0.94, k, horizontalalignment='right', transform=axUbv.transAxes)
-        axUbv.text(0.98, 0.85, "dt={:.2f}".format(tshift), horizontalalignment='right', transform=axUbv.transAxes)
-        axUbv.text(0.01, 0.05, "$\chi^2: {:.2f}$".format(v.measure), horizontalalignment='left', transform=axUbv.transAxes,
-                   bbox=dict(facecolor='green', alpha=0.3))
         if i % ncol == 0:
             axUbv.yaxis.tick_right()
-            # axUbv.yaxis.set_label_position("right")
             axUbv.set_ylabel('')
             axUbv.yaxis.set_ticks([])
         else:
@@ -253,7 +247,7 @@ def plot_curves_vel(curves_o, vel_o, res_models, res_sorted, vels_m, **kwargs):
         y = ts_vel.V
         axVel.plot(x, y, label='Vel  %s' % k, color='blue', ls="-", linewidth=linewidth)
         # Obs. vel
-        vel_o.tshift = tshift
+        vel_o.tshift = tshift0 + tshift_best
         axVel.plot(vel_o.Time, vel_o.V, label='Obs', color='blue', ls='', marker='o', markersize=markersize)
 
     fig.subplots_adjust(wspace=0, hspace=0)
@@ -312,9 +306,6 @@ def plot_squared(ax, res_sorted, path='./', p=('R', 'M'), **kwargs):
 
     # find parameters
     i = 0
-    # info_models = {}
-    # x = []
-    # y = []
     data = []
     chi = []
     models = []
@@ -330,7 +321,6 @@ def plot_squared(ax, res_sorted, path='./', p=('R', 'M'), **kwargs):
                 if is_not_quiet:
                     if i == 1:
                         print("| %40s |  %7s |  %6s" % ('Model', p[0], p[1]))
-                    # print("| %40s |  %7.2f |  %6.2f" % (info.Name) + v)
                     print("| {:40s} | ".format(info.Name) + ' '.join("{0:6.2f}".format(vv) for vv in v))
 
                 k = -1
@@ -353,7 +343,13 @@ def plot_squared(ax, res_sorted, path='./', p=('R', 'M'), **kwargs):
                     chi.append(res_chi.measure)
             except KeyError as ex:
                 print("Error for model {}. Message: {} ".format(name, ex))
+
+    if len(models) == 0:
+        print('There are no tt-data for any models.')
+        return
+
     # plot
+    # x, y = map(np.array, zip(data))
     x = [v[0] for v in data]
     y = [v[1] for v in data]
     x = np.array(x)
@@ -427,8 +423,7 @@ def plot_squared(ax, res_sorted, path='./', p=('R', 'M'), **kwargs):
         idx = chi.argsort()[::-1]
         x, y, chi = x[idx], y[idx], chi[idx]
 
-        N = len(x)
-        area = np.pi * (100 * (np.log10(chi))) ** 2  # 0 to 15 point radii
+        area = np.pi * (100 * np.log10(chi))**2  # 0 to 15 point radii
         # plt.scatter(x, y, s=area, c=colors, alpha=0.5)
         cax = plt.scatter(x, y, s=area, c=chi, cmap='gray', edgecolor='', alpha=0.5)
         plt.colorbar(cax)
@@ -469,17 +464,9 @@ def plot_squared_3d(ax, res_sorted, path='./', p=('R', 'M', 'E'), is_rbf=True, *
     from matplotlib import pyplot as plt
     from pystella.model.stella import Stella
 
-    is_not_quiet = True
+    is_not_quiet = False
     is_polar = kwargs.get('is_polar', False)
     is_show = False
-
-    if ax is None:
-        fig = plt.figure(figsize=(12, 8))
-        if is_polar:
-            ax = fig.add_subplot(1, 1, 1, projection='polar')
-        else:
-            ax = fig.add_subplot(1, 1, 1)
-        is_show = True
 
     # find parameters
     i = 0
@@ -526,6 +513,10 @@ def plot_squared_3d(ax, res_sorted, path='./', p=('R', 'M', 'E'), is_rbf=True, *
             except KeyError as ex:
                 print("Error for model {}. Message: {} ".format(name, ex))
 
+    if len(data) == 0:
+        print('There are no tt-data for any models.')
+        return
+
     # plot
     x = [v[0] for v in data]
     y = [v[1] for v in data]
@@ -535,6 +526,14 @@ def plot_squared_3d(ax, res_sorted, path='./', p=('R', 'M', 'E'), is_rbf=True, *
     y = np.array(y[::-1])
     z = np.array(z[::-1])
     chi = np.array(chi[::-1])
+
+    if ax is None:
+        fig = plt.figure(figsize=(12, 8))
+        if is_polar:
+            ax = fig.add_subplot(1, 1, 1, projection='polar')
+        else:
+            ax = fig.add_subplot(1, 1, 1)
+        is_show = True
 
     if is_polar:
         C = 1.9
@@ -583,18 +582,22 @@ def plot_squared_3d(ax, res_sorted, path='./', p=('R', 'M', 'E'), is_rbf=True, *
 def fit_mfl(args, curves_o, vel_o, bnames, fitter, name, path, t_diff, times):
     tss_m = {}
     tss_o = {}
-    dt0 = 0.
 
     curves_m = None
+    # tshifts = {}
     # light curves
     if curves_o is not None:
         curves_m = lcf.curves_compute(name, path, bnames, z=args.redshift, distance=args.distance,
                                       t_beg=times[0], t_end=times[1], t_diff=t_diff)
+        if args.color_excess:
+            curves_m = lcf.curves_reddening(curves_m, ebv=args.color_excess, z=args.redshift, is_info=args.is_not_quiet)
+
         for lc in curves_m:
             tss_m[lc.Band.Name] = lc
 
         for lc in curves_o:
-            tss_o[lc.Band.Name] = lc.shifted()
+            tss_o[lc.Band.Name], tshift, mshift = lc.shifted()
+            # tshifts[lc.Band.Name] = tshift
 
     vel_m = None
     if vel_o is not None:
@@ -620,12 +623,8 @@ def fit_mfl(args, curves_o, vel_o, bnames, fitter, name, path, t_diff, times):
             tss_o['Vel'] = vel_o
 
     # fit
-    # if len(tss_m) > 0:
-    res = fitter.fit_tss(tss_o, tss_m, dt0=-dt0)
-    # else:
-    #     res = fitter.fit_curves(curves_o, curves_m)
+    res = fitter.fit_tss(tss_o, tss_m)
 
-    # res = fitter.fit_curves(curves_o, curves_m)
     return curves_m, vel_m, res
 
 
@@ -637,7 +636,7 @@ def main():
     # distance = 10  # pc
     # bnames = ['U', 'B', 'V', 'R', "I"]
     Nbest = 33
-    NbestPlot = 8
+    NbestPlot = 6
     band.Band.load_settings()
 
     parser = get_parser()
@@ -816,10 +815,9 @@ def main():
     print("\n Results (tshift in range:{:.2f} -- {:.2f}".format(dtshift[0], dtshift[1]))
     print("{:40s} ||{:18s}|| {:10}".format('Model', 'dt+-t_err', 'Measure'))
     for k, v in res_sorted.items():
-        # if dtshift[0] < v.tshift < dtshift[1]:
         print("{:40s} || {:7.2f}+/-{:7.4f} || {:.4f}".format(k, v.tshift, v.tsigma, v.measure))
 
-    if len(res_sorted) > Nbest:
+    if len(res_sorted) >= Nbest:
         # plot chi squared
         plot_squared_grid(res_sorted, path, par=('M', 'E'), is_not_quiet=args.is_not_quiet)
 
@@ -829,12 +827,10 @@ def main():
 
         plot_squared_3d(None, res_sorted, path, p=('R', 'M', 'E'), is_polar=True)
 
-    best_mdl = list(res_sorted)[0]
-    res = list(res_sorted.values())[0]
-    # best_mdl, res = res_sorted.popitem(last=False)
+    best_mdl, res = first(res_sorted.items())
+    # res = first(res_sorted.values())[0]
     print("Best fit model:")
     print("{}: time shift  = {:.2f}+/-{:.4f} Measure: {:.4f}".format(best_mdl, res.tshift, res.tsigma, res.measure))
-    best_tshift = res.tshift
 
     # shift observational data
     # curves_o.set_tshift(best_tshift)

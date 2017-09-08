@@ -23,7 +23,6 @@ class TimeSeries(object):
     def tshift(self, shift):
         self._tshift = shift
 
-
     @property
     def T(self):
         return self._t
@@ -47,6 +46,10 @@ class TimeSeries(object):
     @property
     def V(self):
         return self._v
+
+    @V.setter
+    def V(self, value):
+        self._v = value
 
     @property
     def IsErr(self):

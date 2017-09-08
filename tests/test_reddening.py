@@ -3,7 +3,7 @@ import unittest
 
 import numpy as np
 
-from pystella.rf import extinction
+from pystella.rf import extinction, band
 from pystella.rf.lc import LightCurve
 from pystella.rf.light_curve_func import curves_reddening
 
@@ -18,6 +18,9 @@ def lc_create(band, m=-19, dt=0.):
 
 
 class TestReddening(unittest.TestCase):
+    def setUp(self):
+        band.Band.load_settings()
+
     def test_names(self):
         law = 'Rv3.1'
         data, laws = extinction.read_data()
@@ -40,7 +43,7 @@ class TestReddening(unittest.TestCase):
         ebv = 1.
         lc = lc_create(band)
         magExpect = lc.Mag + mshift  # Av for e=1.
-        curves_reddening(lc, ebv=ebv)
+        lc = curves_reddening(lc, ebv=ebv)
         magRed = lc.Mag
         res = list(filter(lambda x: abs(x) > 1e-4, magExpect - magRed))
         self.assertTrue(len(res) == 0,
@@ -63,7 +66,7 @@ class TestReddening(unittest.TestCase):
         ebv = 1.
         lc = lc_create(band)
         magExpect = lc.Mag + mshift  # Av for e=1.
-        curves_reddening(lc, ebv=ebv, z=z)
+        lc = curves_reddening(lc, ebv=ebv, z=z)
         magRed = lc.Mag
         res = list(filter(lambda x: abs(x) > 1e-4, magExpect - magRed))
         self.assertTrue(len(res) == 0,

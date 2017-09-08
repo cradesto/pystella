@@ -4,7 +4,7 @@ import os
 import pystella.rf.rad_func as rf
 from pystella.model.stella import Stella
 from pystella.rf import extinction
-from pystella.rf.lc import LightCurve
+from pystella.rf.lc import LightCurve, SetLightCurve
 
 __author__ = 'bakl'
 
@@ -133,29 +133,38 @@ def curves_compute(name, path, bands, z=0., distance=10., magnification=1.,
     return curves
 
 
-def curves_reddening(curves, ebv, z=None, law=extinction.law_default):
+def curves_reddening(curves, ebv, z=None, law=extinction.law_default, is_info=True):
     if ebv < 0.:
         raise ValueError("ebv should be > 0")
-
-    if isinstance(curves, LightCurve):
-        lc = curves
-        bands = list(lc.Band.Name)
-        if z is not None and z > 0.1:
-            ext = extinction.reddening_law_z(ebv=ebv, bands=bands, z=z, law=law)
-        else:
-            ext = extinction.reddening_law(ebv=ebv, bands=bands, law=law)
-        lc.mshift = lc.mshift + ext[bands[0]]
-        return lc
-    else:
-        bands = tuple(curves.BandNames)
-        if z is not None and z > 0.1:
-            ext = extinction.reddening_law_z(ebv=ebv, bands=bands, z=z, law=law)
-        else:
-            ext = extinction.reddening_law(ebv=ebv, bands=bands, law=law)
-
-        for n in bands:
-            curves[n].mshift = curves[n].mshift + ext[n]
+    if ebv == 0.:
         return curves
+
+    is_instance_lc = isinstance(curves, LightCurve)
+    if is_instance_lc:
+        lc = curves
+        # bands = tuple(curves.Band.Name
+        curves = SetLightCurve(lc.Name)
+        curves.add(lc)
+        is_instance_lc = True
+
+    bands = curves.BandNames
+
+    if z is not None and z > 0.1:
+        ext = extinction.reddening_law_z(ebv=ebv, bands=bands, z=z, law=law, is_info=is_info)
+    else:
+        ext = extinction.reddening_law(ebv=ebv, bands=bands, law=law, is_info=is_info)
+
+    res = SetLightCurve(curves.Name)
+    for lc in curves:
+        lc_red = lc.copy()
+        lc_red.M += ext[lc.Band.Name]
+        res.add(lc_red)
+    # for n in bands:
+    #     curves[n].mshift = curves[n].mshift + ext[n]
+
+    if is_instance_lc:
+        return res.get(bands[0])
+    return res
 
 
 def mags_save(dictionary, bands, fname):

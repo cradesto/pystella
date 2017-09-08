@@ -28,3 +28,11 @@ def dict_save(dictionary, fname):
             # writer.writerow(list(row))
             writer.writerow(['{:12f}'.format(x) for x in row])
             # writer.writerow(['{:3.4e}'.format(x) for x in row])
+
+
+def first(s):
+    """Return the first element from an ordered collection
+       or an arbitrary element from an unordered collection.
+       Raise StopIteration if the collection is empty.
+    """
+    return next(iter(s))

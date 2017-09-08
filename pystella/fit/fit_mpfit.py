@@ -41,11 +41,11 @@ class FitMPFit(FitLc):
         #        fit_result.comm = 'The value of the summed squared residuals for the returned parameter values.'
         return fit_result
 
-    def fit_tss(self, tss_o, tss_m, dt0=0.):
+    def fit_tss(self, tss_o, tss_m):
 
-        result = self.best_time_series(tss_o, tss_m, dt0=dt0, is_debug=self.is_debug, is_info=self.is_info)
+        result = self.best_time_series(tss_o, tss_m, is_debug=self.is_debug, is_info=self.is_info)
 
-        tshift = dt0 + result.params[0]
+        tshift = result.params[0]
         pcerror = result.perror
         # scaled uncertainties
         # pcerror = result.perror * np.sqrt(result.fnorm / result.dof)
@@ -114,22 +114,23 @@ class FitMPFit(FitLc):
         return tshift, tsigma
 
     @staticmethod
-    def best_time_series(tss_o, tss_m, dt0=0, is_debug=False, is_info=True, xtol=1e-10, ftol=1e-10, gtol=1e-10):
+    def best_time_series(tss_o, tss_m, is_debug=False, is_info=True, xtol=1e-10, ftol=1e-10, gtol=1e-10):
         def least_sq(p, fjac):
             A = 0.5
+            E = 0.002
             total = []
             for name, ts_m in tss_m.items():
                 ts_o = tss_o[name]
-                ts_o.tshift = dt0 + p[0]
+                ts_o.tshift = p[0]
                 time_o = ts_o.Time
                 # model interpolation
                 m = np.interp(time_o, ts_m.Time, ts_m.V)  # One-dimensional linear interpolation.
                 w = np.ones(len(m))
                 w = np.abs(1. - A * (time_o - min(time_o)) / (max(time_o) - min(time_o)))  # weight
                 if ts_o.IsErr:
-                    res = np.abs((ts_o.V - m) / (0.03 + ts_o.Err)) * w
+                    res = np.abs((ts_o.V - m) / (abs(m)*E + ts_o.Err)) * w
                 else:
-                    res = np.abs(ts_o.V - m) * w
+                    res = np.abs(ts_o.V - m) / w
                 total = np.append(total, res)
             return 0, total
 
@@ -137,7 +138,6 @@ class FitMPFit(FitLc):
         result = mpfit.mpfit(least_sq, parinfo=parinfo, quiet=not is_debug, maxiter=200,
                              ftol=ftol, gtol=gtol, xtol=xtol)
         if is_info:
-
             print("status: ", result.status)
             if result.status <= 0:
                 print('error message = ', result.errmsg)

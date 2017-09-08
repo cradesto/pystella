@@ -28,6 +28,10 @@ class LightCurve(TimeSeries):
     def M(self):
         return self.V
 
+    @M.setter
+    def M(self, v):
+        self.V = v
+
     @property
     def MagErr(self):
         return self.Err
@@ -66,13 +70,14 @@ class LightCurve(TimeSeries):
         lc = LightCurve(self.Band, time, mags, errs)
         lc.tshift = self.tshift
         lc.mshift = self.mshift
+        return lc
 
     def shifted(self):
         errs = None
         if self.IsErr:
             errs = self.MagErr
 
-        return  LightCurve(self.Band, self.Time, self.Mag, errs)
+        return LightCurve(self.Band, self.Time, self.Mag, errs), self.tshift, self.mshift
 
     @classmethod
     def Merge(cls, lc1, lc2):
