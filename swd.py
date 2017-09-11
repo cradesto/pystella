@@ -49,7 +49,7 @@ def plot_uph(uph, vnorm=1.e8, label='', lw=2, fontsize=18):
 
     ax = fig.add_subplot(1, 1, 1)
     ax.set_xlabel('Time [day]')
-    ax.set_ylabel(r'Photospheric Velocity [$\times 10^{0}$ km/s]'.format(int(np.log10(vnorm/1e5))))
+    ax.set_ylabel(r'Photospheric Velocity [$\times 10^{0}$ km/s]'.format(int(np.log10(vnorm / 1e5))))
     #    ax.set_title(fname_uph)
 
     x = uph['time']
@@ -65,7 +65,7 @@ def make_cartoon(swd, times, vnorm, rnorm, lumnorm, is_legend, fout=None):
     for i, t in enumerate(time.compressed()):
         fig = lcp.plot_shock_details(swd, times=[t], vnorm=vnorm, rnorm=rnorm,
                                      lumnorm=lumnorm, is_legend=is_legend)
-        fsave = os.path.expanduser("img{0}{1:04d}.png".format(swd.Name,i))
+        fsave = os.path.expanduser("img{0}{1:04d}.png".format(swd.Name, i))
         print("Save plot to {0} at t={1}".format(fsave, t))
         fig.savefig(fsave, bbox_inches='tight')
         plt.close(fig)
@@ -225,6 +225,7 @@ def main():
                 fig.savefig(fsave, bbox_inches='tight')
 
     plt.show()
+
 
 if __name__ == '__main__':
     main()
