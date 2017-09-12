@@ -9,6 +9,7 @@ import argparse
 import logging
 import os
 import sys
+from itertools import cycle
 from collections import OrderedDict
 from concurrent import futures
 
@@ -26,11 +27,15 @@ from pystella.rf.lc import SetLightCurve
 from pystella.util.arr_dict import first
 from pystella.util.path_misc import get_model_names
 from pystella.util.string_misc import str2interval
-from pystella.velocity import VelocityCurve
+from pystella.velocity import VelocityCurve, SetVelocityCurve
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+markers = {u'x': u'x', u'd': u'thin_diamond',
+           u'+': u'plus', u'*': u'star', u'o': u'circle', u'v': u'triangle_down', u'<': u'triangle_left'}
+markers_style = list(markers.keys())
 
 
 def rel_errors(mu, sig, func, num=10000):
@@ -186,7 +191,7 @@ def plot_curves(curves_o, res_models, res_sorted, **kwargs):
     plt.show()
 
 
-def plot_curves_vel(curves_o, vel_o, res_models, res_sorted, vels_m, **kwargs):
+def plot_curves_vel(curves_o, vels_o, res_models, res_sorted, vels_m, **kwargs):
     from pystella.rf import light_curve_plot as lcp
     from matplotlib import pyplot as plt
 
@@ -204,8 +209,8 @@ def plot_curves_vel(curves_o, vel_o, res_models, res_sorted, vels_m, **kwargs):
     tshift0 = 0
     if curves_o is not None:
         tshift0 = first(curves_o).tshift
-    elif vel_o is not None:
-        tshift0 = vel_o.tshift
+    elif vels_o is not None:
+        tshift0 = first(vels_o).tshift
 
     i = 0
     for k, v in res_sorted.items():
@@ -247,8 +252,12 @@ def plot_curves_vel(curves_o, vel_o, res_models, res_sorted, vels_m, **kwargs):
         y = ts_vel.V
         axVel.plot(x, y, label='Vel  %s' % k, color='blue', ls="-", linewidth=linewidth)
         # Obs. vel
-        vel_o.tshift = tshift0 + tshift_best
-        axVel.plot(vel_o.Time, vel_o.V, label='Obs', color='blue', ls='', marker='o', markersize=markersize)
+
+        markers_cycler = cycle(markers_style)
+        for vel_o in vels_o:
+            vel_o.tshift = tshift0 + tshift_best
+            axVel.plot(vel_o.Time, vel_o.V, label=vel_o.Name, color='blue', ls='', marker=next(markers_cycler),
+                       markersize=markersize)
 
     fig.subplots_adjust(wspace=0, hspace=0)
     plt.subplots_adjust(left=0.07, right=0.96, top=0.97, bottom=0.06)
@@ -579,7 +588,7 @@ def plot_squared_3d(ax, res_sorted, path='./', p=('R', 'M', 'E'), is_rbf=True, *
         plt.show()
 
 
-def fit_mfl(args, curves_o, vel_o, bnames, fitter, name, path, t_diff, times):
+def fit_mfl(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, times):
     tss_m = {}
     tss_o = {}
 
@@ -600,7 +609,7 @@ def fit_mfl(args, curves_o, vel_o, bnames, fitter, name, path, t_diff, times):
             # tshifts[lc.Band.Name] = tshift
 
     vel_m = None
-    if vel_o is not None:
+    if vels_o is not None:
         # compute model velocities
         try:
             tbl = velocity.compute_vel_swd(name, path)
@@ -615,12 +624,13 @@ def fit_mfl(args, curves_o, vel_o, bnames, fitter, name, path, t_diff, times):
         if curves_m is not None:
             # To increase the weight of Velocities with fitting
             for i in range(curves_m.Length):
-                key = 'Vel{:d}'.format(i)
-                tss_m[key] = vel_m
-                tss_o[key] = vel_o
+                for vel_o in vels_o:
+                    key = 'Vel{:d}{}'.format(i,vel_o.Name)
+                    tss_m[key] = vel_m
+                    tss_o[key] = vel_o
         else:
             tss_m['Vel'] = vel_m
-            tss_o['Vel'] = vel_o
+            tss_o['Vel'] = vels_o
 
     # fit
     res = fitter.fit_tss(tss_o, tss_m)
@@ -697,21 +707,21 @@ def main():
 
     # Get observations
     curves_o = None
-    vel_o = None
+    vels_o = None
     obs = callback.run({'is_debug': args.is_not_quiet})
     if isinstance(obs, list):
         for o in obs:
             if isinstance(o, SetLightCurve):
                 curves_o = SetLightCurve.Merge(curves_o, o)
-            if isinstance(o, VelocityCurve):
-                vel_o = o
+            if isinstance(o, SetVelocityCurve):
+                vels_o = SetVelocityCurve.Merge(vels_o, o)
     else:
         if isinstance(obs, SetLightCurve):
             curves_o = obs
-        if isinstance(obs, VelocityCurve):
-            vel_o = obs
+        if isinstance(obs, SetVelocityCurve):
+            vels_o = obs
 
-    is_vel = vel_o is not None
+    is_vel = vels_o is not None and vels_o.Length > 0
     is_curves_o = curves_o is not None
     # curves_o = callback.load({'is_debug': not args.is_quiet})
     # todo Information about tshift
@@ -752,7 +762,7 @@ def main():
         # curves_m = lcf.curves_compute(name, path, bnames, z=args.redshift, distance=args.distance,
         #                               t_beg=times[0], t_end=times[1], t_diff=t_diff)
         # res = fitter.fit_curves(curves_o, curves_m)
-        curves_m, vel_m, res = fit_mfl(args, curves_o, vel_o, bnames, fitter, name, path, t_diff, times)
+        curves_m, vel_m, res = fit_mfl(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, times)
 
         print("{}: time shift  = {:.2f}+/-{:.4f} Measure: {:.4f}".format(name, res.tshift, res.tsigma, res.measure))
         # best_tshift = res.tshift
@@ -766,7 +776,7 @@ def main():
 
             with futures.ProcessPoolExecutor(max_workers=args.nodes) as executor:
                 future_to_name = {
-                    executor.submit(fit_mfl, args, curves_o, vel_o, bnames, fitter, n, path, t_diff, times):
+                    executor.submit(fit_mfl, args, curves_o, vels_o, bnames, fitter, n, path, t_diff, times):
                         n for n in names
                 }
                 i = 0
@@ -793,7 +803,7 @@ def main():
                 else:
                     sys.stdout.write(u"\u001b[1000D" + txt)
                     sys.stdout.flush()
-                curves_m, vel_m, res = fit_mfl(args, curves_o, vel_o, bnames, fitter, name, path, t_diff, times)
+                curves_m, vel_m, res = fit_mfl(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, times)
                 res_models[name] = curves_m
                 vels_m[name] = vel_m
                 res_chi[name] = res
@@ -841,7 +851,7 @@ def main():
 
     if is_vel:
         # vel_o.tshift = best_tshift
-        plot_curves_vel(curves_o, vel_o, res_models, res_sorted, vels_m)
+        plot_curves_vel(curves_o, vels_o, res_models, res_sorted, vels_m)
     else:
         plot_curves(curves_o, res_models, res_sorted)
 

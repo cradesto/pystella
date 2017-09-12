@@ -82,17 +82,17 @@ def read_obs_table_header(fname, header=None, skip=0, colt=('time', 'JD', 'MJD')
     cols_data = {}
     for k, v in cols.items():
         # time
-        if not is_time and v in colt:
+        if not is_time and v.lower() in colt:
             cols_data[k] = v
             is_time = True
         # data
         elif include_names is None or v in include_names:
             cols_data[k] = v
             # band error
-            for err_name in ('err' + v, 'err_' + v):
+            for err_name in (es+v for es in ('er', 'er_', 'err', 'err_')):
                 for i, bn in cols.items():
-                    if err_name == bn:
-                        cols_data[i] = err_name
+                    if err_name.upper() == bn.upper():
+                        cols_data[i] = bn
 
     od = collections.OrderedDict(sorted(cols_data.items()))
     usecols = list(od.keys())
@@ -110,7 +110,7 @@ def table2curves(name, tbl, bands=None, colt=('time', 'JD', 'MJD')):
             time = tbl[nm]
             break
     else:
-        raise ValueError("THe table should contain a column with name in {0}", ', '.join(colt))
+        raise ValueError("THe table should contain a column with name in [{0}]".format(', '.join(colt)))
 
     curves = SetLightCurve(name)
 

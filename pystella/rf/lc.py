@@ -1,7 +1,7 @@
 import numpy as np
 
 from pystella.rf import band
-from pystella.rf.ts import TimeSeries
+from pystella.rf.ts import TimeSeries, SetTimeSeries
 
 __author__ = 'bakl'
 
@@ -17,7 +17,7 @@ class LightCurve(TimeSeries):
         else:
             self._b = b
 
-        super().__init__(time, mags, errs, name=self._b.Name, tshift=tshift)
+        super().__init__(self._b.Name, time, mags, errs, tshift=tshift)
         self._mshift = mshift
 
     @property
@@ -100,29 +100,12 @@ class LightCurve(TimeSeries):
         return res
 
 
-class SetLightCurve(object):
+class SetLightCurve(SetTimeSeries):
     """Set of the Light Curves"""
     def __init__(self, name=''):
         """Creates a Set of Light Curves."""
-        self._name = name
-        self._set = {}
+        super().__init__(name)
         self._loop = 0
-
-    @property
-    def Name(self):
-        return self._name
-
-    @Name.setter
-    def Name(self, v):
-        self._name = v
-
-    @property
-    def Set(self):
-        return self._set
-
-    @property
-    def Length(self):
-        return len(self._set)
 
     @property
     def Bands(self):
@@ -133,64 +116,16 @@ class SetLightCurve(object):
         res = (lc.Band for name, lc in self.Set.items())
         return res
 
-    # @property
-    # def Bands(self):
-    #     if len(self.Set) == 0:
-    #         raise ValueError('There are no bands in SetLightCurve.')
-    #     res = [lc.Band for name, lc in self.Set.items()]
-    #     return res
-    #
-    # @property
-    # def BandNames(self):
-    #     for b in self.Bands:
-    #         yield b.Name
     @property
     def BandNames(self):
         res = [b.Name for b in self.Bands]
         return res
 
-    @property
-    def TimeDef(self):
-        # b = next(self.BandNames)
-        b = self.BandNames[0]
-        return self.Set[b].Time
-
-    @property
-    def tmin(self):
-        res = [lc.tmin for name, lc in self.Set.items()]
-        return min(res)
-
     def IsBand(self, bname):
         return bname in self.BandNames
 
-    # for cycle
-    def __getitem__(self, index):
-        return self.Set[index]
-
-    # def __iter__(self):
-    #     self._loop = 0
-    #     return self
-    def __iter__(self):
-        for k, v in self.Set.items():
-            yield v
-    #
-    # def next(self):
-    #     idx = self._loop
-    #     if idx >= self.Length:
-    #         raise StopIteration
-    #     # b = self.BandNames[idx]
-    #     self._loop += 1
-    #     # return self.Set[b]
-    #     return next(self.Set)
-
-    def __len__(self):
-        return len(self.Set)
-
     def add(self, lc):
         self._set[lc.Band.Name] = lc
-
-    def rm(self, bname):
-        return self._set.pop(bname, None)
 
     def get(self, bn):
         for n, lc in self.Set.items():
@@ -200,10 +135,6 @@ class SetLightCurve(object):
 
     def is_band(self, bn):
         return bn in self.BandNames
-
-    def set_tshift(self, tshift):
-        for n, lc in self.Set.items():
-            lc.tshift = tshift
 
     def set_mshift(self, mshift):
         for n, lc in self.Set.items():

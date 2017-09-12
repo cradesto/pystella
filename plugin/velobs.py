@@ -5,7 +5,7 @@
 import os
 
 from pystella.util.reader_table import read_obs_table_header
-from pystella.velocity import VelocityCurve
+from pystella.velocity import VelocityCurve, SetVelocityCurve
 
 
 def plot(ax, dic=None, colt=('time', 'JD', 'MJD')):
@@ -65,7 +65,7 @@ def load(dic=None, colt=('time', 'JD', 'MJD')):
     if dic is None:
         dic = {}
     is_debug = dic.get('is_debug', False)
-    cname = dic.get('cname', 'Vel')
+    cnames = ('Vel', 'vHeI', 'vFeII', 'vHa', 'vHb', 'vHg')
 
     fname = None
     tshift = 0.
@@ -91,11 +91,16 @@ def load(dic=None, colt=('time', 'JD', 'MJD')):
 
     # read data
     # tbl = read_table_header_float(fname)
-    tbl = read_obs_table_header(fname, colt=colt, include_names=[cname], is_out=is_debug)
+    tbl = read_obs_table_header(fname, colt=colt, include_names=cnames, is_out=is_debug)
 
-    vel_o = tbl2vel(tbl, cname, colt, mshift)
-    vel_o.tshift = tshift
-    return vel_o
+    vels_o = SetVelocityCurve("Vel-{}".format(fname))
+    for cname in cnames:
+        if cname in tbl.dtype.names:
+            vel_o = tbl2vel(tbl, cname, colt, mshift)
+            vels_o.add(vel_o)
+
+    vels_o.set_tshift(tshift)
+    return vels_o
 
 
 def tbl2vel(tbl, cname, colt, mshift):
@@ -104,7 +109,11 @@ def tbl2vel(tbl, cname, colt, mshift):
             time = tbl[nm]
             break
     else:
-        raise ValueError("THe table should contain a column with name in {0}", ', '.join(colt))
+        raise ValueError("The table should contain a column with name in [{0}]".format(', '.join(colt)))
     values = tbl[cname] * mshift
-    vel_o = VelocityCurve('Vel', time, values)
+    # filter
+    is_good = values > 0
+    t = time[is_good]
+    v = values[is_good]
+    vel_o = VelocityCurve(cname, t, v)
     return vel_o

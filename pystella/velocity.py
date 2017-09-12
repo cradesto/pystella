@@ -7,17 +7,46 @@ from os.path import dirname
 from scipy import interpolate
 
 from pystella.model.stella import Stella
-from pystella.rf.ts import TimeSeries
+from pystella.rf.ts import TimeSeries, SetTimeSeries
 
 __author__ = 'bakl'
 
 ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
 
 
+class SetVelocityCurve(SetTimeSeries):
+    """Set of the Velocity Curves"""
+    def __init__(self, name=''):
+        """Creates a Set of Light Curves."""
+        super().__init__(name)
+        self._loop = 0
+
+    @classmethod
+    def Merge(cls, vels1, vels2):
+        if vels1 is None:
+            return vels2
+        if vels2 is None:
+            return vels1
+
+        res = SetVelocityCurve("{}+{}".format(vels1.Name, vels2.Name))
+        for vel1 in vels1:
+            vel2 = vels2.get(vel1.Name)
+            if vel2 is None:
+                res.add(vel1)
+            else:
+                vel = VelocityCurve.Merge(vel1, vel2)
+                res.add(vel)
+        for vel in vels2:
+            if not res.IsName(vel.Name):
+                res.add(vel)
+
+        return res
+
+
 class VelocityCurve(TimeSeries):
     def __init__(self, name, time, vel, errs=None, tshift=0., vshift=0.):
         """Creates a Velocity Time Series instance.  Required parameters:  name, time, vel."""
-        super().__init__(time, vel, errs, name=name, tshift=tshift)
+        super().__init__(name, time, vel, errs, tshift=tshift)
 
         self._vshift = vshift
 

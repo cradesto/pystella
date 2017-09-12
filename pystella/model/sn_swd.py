@@ -126,7 +126,7 @@ class StellaShockWaveDetail:
             #     taus[i, k] = tau
         return taus
 
-    def params_ph(self, tau_ph=2./3., cols=('R', 'M', 'T', 'V', 'Rho')):
+    def params_ph(self, tau_ph=2./3., cols=['R', 'M', 'T', 'V', 'Rho']):
         res = {k: np.zeros(self.Ntimes) for k in ['time', 'zone']+cols}
         taus = self.taus()
         for i, time in enumerate(self.Times):
