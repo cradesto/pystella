@@ -62,14 +62,10 @@ def main():
     models = stella_ls(path, pattern=args.pattern)
 
     if len(models) == 0:
-        print("No models in {0}".format(path))
+        print("No tt-files in {0}".format(path))
         return None
 
     if args.is_summary:
-        # R = []
-        # M = []
-        # Mni = []
-        # E = []
         data = {k: [] for k in ('R', 'M', 'Mni', 'E')}
         for mdl, exts in models.items():
             stella = Stella(mdl, path=path)
@@ -85,9 +81,12 @@ def main():
             else:
                 print("{0} No tt.".format(stella))
 
-        print('Summary in {}'.format(path))
-        for k in data.keys():
-            print("{:5s}: {}".format(k, ', '.join(map(str, sorted(data[k])))))
+        if len(list(data.values())[0]) > 0:
+            print('Summary in {}'.format(path))
+            for k in data.keys():
+                print("{:5s}: {}".format(k, ', '.join(map(str, sorted(data[k])))))
+        else:
+            print('No tt-files in {}'.format(path))
     elif args.is_long:
         print("| %40s |  %7s |  %6s | %6s |  %s" % ('Name', 'R', 'M', 'E', 'comment'))
         print("| %40s |  %7s |  %6s | %6s |  %s" % ('-' * 40, '-' * 7, '-' * 6, '-' * 6, '-' * 7))
