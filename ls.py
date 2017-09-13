@@ -37,6 +37,11 @@ def get_parser():
                         const=True,
                         dest="is_long",
                         help="use a long info format")
+    parser.add_argument('--summary',
+                        action='store_const',
+                        const=True,
+                        dest="is_summary",
+                        help="show summary for a directory")
     return parser
 
 
@@ -60,7 +65,30 @@ def main():
         print("No models in {0}".format(path))
         return None
 
-    if args.is_long:
+    if args.is_summary:
+        # R = []
+        # M = []
+        # Mni = []
+        # E = []
+        data = {k: [] for k in ('R', 'M', 'Mni', 'E')}
+        for mdl, exts in models.items():
+            stella = Stella(mdl, path=path)
+            if stella.is_tt_data:
+                info = stella.get_tt().Info
+                try:
+                    for k in data.keys():
+                        v = getattr(info, k)
+                        if v not in data[k]:
+                            data[k].append(v)
+                except KeyError as ex:
+                    print(" KeyError: %s. %s" % (info.Name, ex))
+            else:
+                print("{0} No tt.".format(stella))
+
+        print('Summary in {}'.format(path))
+        for k in data.keys():
+            print("{:5s}: {}".format(k, ', '.join(map(str, sorted(data[k])))))
+    elif args.is_long:
         print("| %40s |  %7s |  %6s | %6s |  %s" % ('Name', 'R', 'M', 'E', 'comment'))
         print("| %40s |  %7s |  %6s | %6s |  %s" % ('-' * 40, '-' * 7, '-' * 6, '-' * 6, '-' * 7))
         for mdl, exts in models.items():
