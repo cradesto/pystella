@@ -134,8 +134,8 @@ class SetTimeSeries(object):
 
     @property
     def TimeDef(self):
-        f = first(self.Set)
-        return f.Time
+        lc = self.get(first(self.Set))
+        return lc.Time
 
     @property
     def tmin(self):
