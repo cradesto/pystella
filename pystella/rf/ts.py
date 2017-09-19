@@ -98,6 +98,28 @@ class TimeSeries(object):
         res = TimeSeries(nm, time, values, errs=errs)
         return res
 
+    def copy(self, name=None, f=None):
+        errs = None
+        if name is None:
+            name = self.Name
+
+        if f is not None:
+            is_good = np.where(f(self))
+            # is_good = np.where((self.Time >= tlim[0]) & (self.Time <= tlim[1]))
+            t = self.T[is_good]
+            v = self.V[is_good]
+            if self.IsErr:
+                errs = self.Err[is_good]
+        else:
+            t = self.T
+            v = self.V
+            if self.IsErr:
+                errs = self.Err
+
+        new = TimeSeries(name, t, v, errs)
+        new.tshift = self.tshift
+        return new
+
 
 class SetTimeSeries(object):
     """Set of the TimeSeries"""

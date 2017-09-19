@@ -6,7 +6,7 @@ from pystella.fit.fit_lc import FitLc, FitLcResult
 
 class FitMPFit(FitLc):
     def __init__(self):
-        super().__init__()
+        super().__init__("MPFit")
 
     def fit_lc(self, lc_o, lc_m):
         dt0 = lc_o.tshift
@@ -119,8 +119,9 @@ class FitMPFit(FitLc):
             A = 0.5
             E = 0.002
             total = []
-            for name, ts_m in tss_m.items():
-                ts_o = tss_o[name]
+            for ts_m in tss_m:
+            # for name, ts_m in tss_m.items():
+                ts_o = tss_o[ts_m.Name]
                 ts_o.tshift = p[0]
                 time_o = ts_o.Time
                 # model interpolation

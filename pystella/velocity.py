@@ -62,6 +62,29 @@ class VelocityCurve(TimeSeries):
     def vshift(self, shift):
         self._vshift = shift
 
+    def copy(self, name=None, f=None):
+        errs = None
+        if name is None:
+            name = self.Name
+
+        if f is not None:
+            is_good = np.where(f(self))
+            # is_good = np.where((self.Time >= tlim[0]) & (self.Time <= tlim[1]))
+            t = self.T[is_good]
+            v = self.V[is_good]
+            if self.IsErr:
+                errs = self.Err[is_good]
+        else:
+            t = self.T
+            v = self.V
+            if self.IsErr:
+                errs = self.Err
+
+        new = VelocityCurve(name, t, v, errs)
+        new.tshift = self.tshift
+        new.vshift = self.vshift
+        return new
+
 
 def plot_vels_sn87a(ax, z=0):
     print("Plot the velocities of Sn 87A ")

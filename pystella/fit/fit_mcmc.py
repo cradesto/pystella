@@ -1,10 +1,11 @@
 import numpy as np
+
 from pystella.fit.fit_lc import FitLc, FitLcResult
 
 
 class FitLcMcmc(FitLc):
     def __init__(self):
-        super().__init__()
+        super().__init__("MCMCFit")
 
     def fit_lc(self, lc_o, lc_m):
         tshift, tsigma = self.fit_lc_bayesian_1d(lc_o, lc_m, is_debug=super().is_debug)
@@ -13,14 +14,14 @@ class FitLcMcmc(FitLc):
         fit_result.tsigma = tsigma
         return fit_result
 
-    def fit_curves(self, curves_o, curves_m):
-        dt0 = curves_o.get(curves_o.BandNames[0]).tshift
+    def fit_tss(self, tss_o, tss_m):
+        # dt0 = first(tss_o).get(tss_o.BandNames[0]).tshift
 
-        sampler = self.fit_curves_bayesian(curves_o, curves_m, dt0=dt0)
+        sampler = self.fit_curves_bayesian(tss_o, tss_m)
 
         af = sampler.acceptance_fraction.mean()
         chain = sampler.flatchain
-        tshift = dt0 + chain.mean()
+        tshift = chain.mean()
         tsigma = np.std(chain)
         walkers, steps, dim = sampler.chain.shape
 
@@ -57,11 +58,12 @@ class FitLcMcmc(FitLc):
         fit_result = FitLcResult()
         fit_result.tshift = tshift
         fit_result.tsigma = tsigma
-        fit_result.measure = af
+        fit_result.measure = 1 / af
         fit_result.comm = 'result MCMC: np.mean(sampler.acceptance_fraction)).'
         return fit_result
 
-    def fit_lc_bayesian_1d(self, lc_o, lc_m, err_mdl=0.1, is_debug=True, is_plot=True):
+    @staticmethod
+    def fit_lc_bayesian_1d(lc_o, lc_m, err_mdl=0.1, is_debug=True, is_plot=True):
         import emcee
         from sklearn.metrics import mean_squared_error
 
@@ -116,50 +118,48 @@ class FitLcMcmc(FitLc):
 
         return tshift, tsigma
 
-    def fit_curves_bayesian(self, curves_o, curves_m, dt0=0.):
+    def fit_curves_bayesian(self, tss_o, tss_m):
         import emcee
 
         def log_prior(theta):
             return 1  # flat prior
+        #
+        # def log_likelihood_lc(theta, lc_o, lc_m):
+        #     to, mo = lc_o.Time, lc_o.Mag
+        #     if lc_o.IsErr:
+        #         eo = lc_o.MagErr
+        #     else:
+        #         eo = np.ones(lc_o.Length)
+        #     lc_o.tshift = theta[0]
+        #     # tck = interpolate.splrep(lc_m.Time, lc_m.Mag, s=0)
+        #     # m_mdl = interpolate.splev(to, tck, der=0)
+        #     m_mdl = np.interp(lc_o.Time, lc_m.Time, lc_m.Mag)  # One-dimensional linear interpolation.
+        #
+        #     return -0.5 * np.sum(np.log(2 * np.pi * (eo ** 2))
+        #                          + (mo - m_mdl) ** 2 / eo ** 2)
 
-        def log_likelihood_lc(theta, lc_o, lc_m):
-            to, mo = lc_o.Time, lc_o.Mag
-            if lc_o.IsErr:
-                eo = lc_o.MagErr
-            else:
-                eo = np.ones(lc_o.Length)
-            lc_o.tshift = dt0 + theta[0]
-            # tck = interpolate.splrep(lc_m.Time, lc_m.Mag, s=0)
-            # m_mdl = interpolate.splev(to, tck, der=0)
-            m_mdl = np.interp(lc_o.Time, lc_m.Time, lc_m.Mag)  # One-dimensional linear interpolation.
-
-            return -0.5 * np.sum(np.log(2 * np.pi * (eo ** 2))
-                                 + (mo - m_mdl) ** 2 / eo ** 2)
-
-        def lnprob(theta, lc_o, lc_m):
+        def lnprob(theta, ts_o, ts_m):
             # mean, amplitude, stddev = param
-            lc_o.tshift = dt0 + theta[0]
-            x = lc_o.Time
-            y = lc_o.Mag
-            yp = np.interp(x, lc_m.Time, lc_m.Mag)
+            ts_o.tshift = theta[0]
+            yp = np.interp(ts_o.Time, ts_m.Time, ts_m.V)
+            y = ts_o.V
             diff = (y - yp)
-            if lc_o.IsErr:
-                eo = lc_o.MagErr
+            if ts_o.IsErr:
+                eo = ts_o.Err
                 diff /= eo
             return -np.dot(diff, diff)
 
-        def log_likelihood_curves(theta, curves_o, curves_m):
+        def log_likelihood_curves(theta, obs, mdl):
             res = 0.
-            for lc_o in curves_o:
-                lc_m = curves_m.get(lc_o.Band.Name)
-                if lc_m is not None:
-                    p = lnprob(theta, lc_o, lc_m)
-                    # p = log_likelihood_lc(theta, lc_o, lc_m)
+            for ts_o in obs:
+                ts_m = mdl.get(ts_o.Name)
+                if ts_m is not None:
+                    p = lnprob(theta, ts_o, ts_m)
                     res += p
             return res
 
-        def log_posterior(theta, curves_o, curves_m):
-            return log_prior(theta) + log_likelihood_curves(theta, curves_o, curves_m)
+        def log_posterior(theta, obs, mdl):
+            return log_prior(theta) + log_likelihood_curves(theta, obs, mdl)
 
         ndim = 1  # number of parameters in the model
         nwalkers = 50  # number of MCMC walkers
@@ -174,7 +174,7 @@ class FitLcMcmc(FitLc):
         starting_guesses[0] *= 100  # for time delay in [0,100]
 
         # fit
-        sampler = emcee.EnsembleSampler(nwalkers, ndim, log_posterior, args=(curves_o, curves_m))
+        sampler = emcee.EnsembleSampler(nwalkers, ndim, log_posterior, args=(tss_o, tss_m))
         # sampler.run_mcmc(starting_guesses, nsteps)
 
         # burnin

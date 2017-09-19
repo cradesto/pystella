@@ -24,6 +24,7 @@ from pystella.rf import band
 from pystella.rf import light_curve_func as lcf
 from pystella.rf.band import band_is_exist
 from pystella.rf.lc import SetLightCurve
+from pystella.rf.ts import SetTimeSeries
 from pystella.util.arr_dict import first
 from pystella.util.path_misc import get_model_names
 from pystella.util.string_misc import str2interval
@@ -589,8 +590,9 @@ def plot_squared_3d(ax, res_sorted, path='./', p=('R', 'M', 'E'), is_rbf=True, *
 
 
 def fit_mfl(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, times):
-    tss_m = {}
-    tss_o = {}
+    tss_m = SetTimeSeries("Models")
+    tss_o = SetTimeSeries("Obs")
+    # tss_o = {}
 
     curves_m = None
     # tshifts = {}
@@ -602,10 +604,13 @@ def fit_mfl(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, times):
             curves_m = lcf.curves_reddening(curves_m, ebv=args.color_excess, z=args.redshift, is_info=args.is_not_quiet)
 
         for lc in curves_m:
-            tss_m[lc.Band.Name] = lc
+            tss_m.add(lc)
+            # tss_m[lc.Band.Name] = lc
 
         for lc in curves_o:
-            tss_o[lc.Band.Name], tshift, mshift = lc.shifted()
+            l, tshift, mshift = lc.shifted()
+            tss_o.add(l)
+            # tss_o[lc.Band.Name], tshift, mshift = lc.shifted()
             # tshifts[lc.Band.Name] = tshift
 
     vel_m = None
@@ -626,11 +631,15 @@ def fit_mfl(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, times):
             for i in range(curves_m.Length):
                 for vel_o in vels_o:
                     key = 'Vel{:d}{}'.format(i,vel_o.Name)
-                    tss_m[key] = vel_m
-                    tss_o[key] = vel_o
+                    tss_m.add(vel_m.copy(name=key))
+                    tss_o.add(vel_o.copy(name=key))
+                    # tss_o[key] = vel_o
+                    # tss_m[key] = vel_m
         else:
-            tss_m['Vel'] = vel_m
-            tss_o['Vel'] = vels_o
+            tss_m.add(vel_m.copy(name='Vel'))
+            tss_o.add(vels_o.copy(name='Vel'))
+            # tss_m['Vel'] = vel_m
+            # tss_o['Vel'] = vels_o
 
     # fit
     res = fitter.fit_tss(tss_o, tss_m)
@@ -797,7 +806,7 @@ def main():
             i = 0
             for name in names:
                 i += 1
-                txt = "Fitting for model {:30s}  [{}/{}]".format(name, i, len(names))
+                txt = "Fitting [{}] for model {:30s}  [{}/{}]".format(fitter.Name, name, i, len(names))
                 if args.is_not_quiet:
                     print(txt)
                 else:

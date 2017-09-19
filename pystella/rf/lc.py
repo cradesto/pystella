@@ -53,8 +53,11 @@ class LightCurve(TimeSeries):
         idx = np.argmin(self.Mag)
         return self.Time[idx]
 
-    def copy(self, tlim=None):
+    def copy(self, name=None, tlim=None):
         errs = None
+        if name is None:
+            name = self.Name
+            
         if tlim is not None:
             is_good = np.where((self.Time >= tlim[0]) & (self.Time <= tlim[1]))
             time = self.T[is_good]

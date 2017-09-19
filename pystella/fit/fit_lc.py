@@ -1,5 +1,6 @@
 class FitLc:
-    def __init__(self):
+    def __init__(self, name):
+        self._name = name
         self._is_info = False
         self._is_debug = False
 
@@ -11,6 +12,10 @@ class FitLc:
 
     def fit_tss(self, tss_o, tss_m):
         pass
+
+    @property
+    def Name(self):
+        return self._name
 
     @property
     def is_info(self):
