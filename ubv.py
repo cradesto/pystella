@@ -147,7 +147,7 @@ def usage():
     print("  -x  <xbeg:xend> - xlim, ex: 0:12. Default: None, used all days.")
     print("  -y  <ybeg:yend> - ylim, ex: 26:21. Default: None, used top-magnitude+-5.")
     print("  -v  plot model velocities.")
-    print("  -w  write magnitudes to file, default 'False'")
+    print("  -w  write magnitudes to out-file. Use '1' for the default name of out-file")
     print("  -z <redshift>.  Default: 0")
     print("  --dt=<t_diff>  time difference between two spectra")
     print("  -l  write plot label")
@@ -169,6 +169,7 @@ def main(name='', model_ext='.ph'):
 
     label = None
     fsave = None
+    fname = None
     # path = ''
     path = os.getcwd()
     z = 0.
@@ -184,7 +185,7 @@ def main(name='', model_ext='.ph'):
     band.Band.load_settings()
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hqwtc:d:p:e:g:i:b:l:m:vs:x:y:z:", longopts='dt')
+        opts, args = getopt.getopt(sys.argv[1:], "hqtc:d:p:e:g:i:b:l:m:vs:w:x:y:z:", longopts='dt')
     except getopt.GetoptError as err:
         print(str(err))  # will print something like "option -a not recognized"
         usage()
@@ -248,6 +249,8 @@ def main(name='', model_ext='.ph'):
             continue
         if opt == '-w':
             is_save_mags = True
+            if arg != '1':
+                fname = arg.strip()
             continue
         if opt == '-t':
             is_plot_time_points = True
@@ -323,7 +326,15 @@ def main(name='', model_ext='.ph'):
             models_mags[name] = curves
 
             if is_save_mags:
-                fname = os.path.join(path, name + '.ubv')
+                if fname is None:
+                    fname = os.path.join(path, name)
+                    if z > 0.:
+                        fname = '{}_Z{:.2g}'.format(fname, z)
+                    if distance > 10.:
+                        fname = '{}_D{:.2e}'.format(fname, distance)
+                    if e > 0:
+                        fname = '{}_E{:0.2g}'.format(fname, e)
+                    fname = '{}{}'.format(fname, '.ubv')
                 lcf.curves_save(curves, fname)
                 print("Magnitudes have been saved to " + fname)
 

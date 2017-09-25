@@ -65,9 +65,11 @@ def curves_save(curves, fname, sep='\t'):
        Save curves to CSV-format. It required for correct operation the common time for all LC.
     :param curves:
     :param fname:
+    :param sep:
     :return:
     """
     if curves.Length > 0:
+
         with open(fname, 'w') as f:
             writer = csv.writer(f, delimiter=sep, quotechar='|', quoting=csv.QUOTE_MINIMAL)
             writer.writerow(['{:^8s}'.format(x) for x in ['time'] + curves.BandNames])

@@ -121,7 +121,7 @@ def plot(ax, dic=None):
     arg = []
     bnames = None
     is_lens_shift = False
-    jd_shift = None
+    jd_shift = -56950.
     im = 'S1'
     glens = grav_lens_def
     t_lc_max = 0.
@@ -130,21 +130,23 @@ def plot(ax, dic=None):
         arg = dic.get('args', [])
         glens = dic.get('glens', grav_lens_def)
         im = dic.get('image', 'S1')
-        jd_shift = dic.get('jd_shift', None)
+        jd_shift = dic.get('jd_shift', jd_shift)
         bnames = dic.get('bands', None)
         is_lens_shift = dic.get('shift', '') == 'lens'
 
     if jd_shift is None:
-        jd_shift = float(arg.pop(0)) if arg is not None else -56950
+        if len(arg) > 0:
+            jd_shift = float(arg.pop(0))
 
-    print("Plot Sn Refsdal %s, glens: %s, jd_shift: %f, path: %s, band_max=%s " % (im, glens, jd_shift,     d, band_max))
+    print("Plot Sn Refsdal %s, glens: %s, jd_shift: %f, path: %s, band_max=%s " %
+          (im, glens, jd_shift, d, band_max))
 
     # plot B-V
     if 'bv' in dic:
         plot_BV(ax=ax, path=d, jd_shift=jd_shift, glens=glens, image=im)
     elif ax is not None:  # plot ubv
-        t_lc_max = plot_ubv(ax=ax, path=d, jd_shift=jd_shift, band_max=band_max, glens=glens, image=im, bnames=bnames,
-                            is_lens_shift=is_lens_shift)
+        t_lc_max = plot_ubv(ax=ax, path=d, jd_shift=jd_shift, band_max=band_max, glens=glens, image=im,
+                            bnames=bnames, is_lens_shift=is_lens_shift)
     else:
         print("Error: ax is not defined")
 
@@ -171,7 +173,7 @@ def plot(ax, dic=None):
 
 
 def get_xy(d, b, colS):
-    d2 = d[d[:, 0] == b,]
+    d2 = d[d[:, 0] == b, ]
     x = d2[:, 1]
     y = d2[:, colS]
     is_good = y != 0

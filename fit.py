@@ -65,7 +65,8 @@ def get_parser():
                         nargs='+',
                         type=str,
                         dest='call',
-                        help='Call observational data')
+                        help='Call observational data, for example: '
+                             'lcobs[:fname:marker:dt:dm], popov[:R:M:E[FOE]:Mni].')
     parser.add_argument('-g', '--engine',
                         required=False,
                         type=str,
