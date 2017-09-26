@@ -60,7 +60,7 @@ def plot(ax, dic=None, mag_lim=30.):
         x = lc.Time[is_good] + jd_shift
         y = lc.Mag[is_good] + mshift
         if lc.IsErr:
-            yyerr = abs(lc.MagErr[is_good])
+            yyerr = abs(lc.Err[is_good])
             ax.errorbar(x, y, label='{0} {1}'.format(bname, fname), yerr=yyerr, fmt=marker,
                         color=bcolors[bname], ls='')
         else:
@@ -111,7 +111,7 @@ def load(dic=None):
         m = lc_orig.Mag[is_good]
         e = None
         if lc_orig.IsErr:
-            e = lc_orig.MagErr[is_good]
+            e = lc_orig.Err[is_good]
         lc = LightCurve(lc_orig.Band, t, m, e)
         res_curves.add(lc)
 

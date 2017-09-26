@@ -63,12 +63,12 @@ class LightCurve(TimeSeries):
             time = self.T[is_good]
             mags = self.V[is_good]
             if self.IsErr:
-                errs = self.MagErr[is_good]
+                errs = self.Err[is_good]
         else:
             time = self.T
             mags = self.V
             if self.IsErr:
-                errs = self.MagErr
+                errs = self.Err
 
         lc = LightCurve(self.Band, time, mags, errs)
         lc.tshift = self.tshift
@@ -78,7 +78,7 @@ class LightCurve(TimeSeries):
     def shifted(self):
         errs = None
         if self.IsErr:
-            errs = self.MagErr
+            errs = self.Err
 
         return LightCurve(self.Band, self.Time, self.Mag, errs), self.tshift, self.mshift
 
@@ -97,7 +97,7 @@ class LightCurve(TimeSeries):
 
         errs = None
         if lc1.IsErr and lc2.IsErr:
-            e = np.concatenate((lc1.MagErr, lc2.MagErr))
+            e = np.concatenate((lc1.Err, lc2.Err))
             errs = e[sorti]
         res = LightCurve(bname, time, mags, errs=errs)
         return res

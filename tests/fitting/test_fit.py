@@ -58,8 +58,8 @@ def popov_fit(lc, R0, M0, Mni0=None, E0=None, dt0=None, is_verbose=True, xtol=1e
         w = np.exp(-(max(abs(lc.Mag)) - abs(lc.Mag))*2)  # weight
         w = 1.
         # w = w / max(w)
-        if lc.MagErr is not None:
-            res = res * w / lc.MagErr
+        if lc.IsErr:
+            res = res * w / lc.Err
         return 0, res
 
     parinfo = [{'value': R0,   'limited': [1, 1], 'limits': [10., 1500e0]},

@@ -123,7 +123,7 @@ class TimeSeries(object):
 
 class SetTimeSeries(object):
     """Set of the TimeSeries"""
-    def __init__(self, name=''):
+    def __init__(self, name='SetTimeSeries'):
         """Creates a Set of TimeSeries."""
         self._name = name
         self._set = {}
@@ -136,6 +136,21 @@ class SetTimeSeries(object):
     @Name.setter
     def Name(self, v):
         self._name = v
+
+    # check common time
+    @property
+    def IsCommonTime(self):
+        if self.Length <= 1:
+            return True
+        t = self.TimeCommon
+        for ts in self:
+            if not np.array_equal(ts.Time, t):
+                return False
+        return True
+
+    # @IsCommonTime.setter
+    # def IsCommonTime(self, v):
+    #     self._is_common_time = v
 
     @property
     def Set(self):
@@ -155,7 +170,7 @@ class SetTimeSeries(object):
         return res
 
     @property
-    def TimeDef(self):
+    def TimeCommon(self):
         lc = self.get(first(self.Set))
         return lc.Time
 
@@ -175,7 +190,7 @@ class SetTimeSeries(object):
     #     self._loop = 0
     #     return self
     def __iter__(self):
-        for k, ts in self.Set.items():
+        for ts in self.Set.values():
             yield ts
 
     def __len__(self):
@@ -187,11 +202,11 @@ class SetTimeSeries(object):
     def rm(self, name):
         return self._set.pop(name, None)
 
-    def get(self, bn):
+    def get(self, bn, default=None):
         for n, ts in self.Set.items():
             if n == bn:
                 return ts
-        return None
+        return default
 
     def set_tshift(self, tshift):
         for n, ts in self.Set.items():

@@ -77,7 +77,7 @@ class FitLcMcmc(FitLc):
         def log_likelihood_t(theta, lc_o, lc_m):
             t = lc_o.Time
             mo = lc_o.Mag
-            e = np.sqrt(lc_o.MagErr**2 + err_mdl**2)
+            e = np.sqrt(lc_o.Err**2 + err_mdl**2)
             lc_m.tshift = -theta[0]
             # tck = interpolate.splrep(lc_m.Time, lc_m.Mag, s=0)
             # m_mdl = interpolate.splev(t, tck, der=0)

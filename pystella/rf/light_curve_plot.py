@@ -13,11 +13,12 @@ __author__ = 'bakl'
 
 lc_colors = band.bands_colors()
 
-lc_lntypes = dict(U="-", B="-", V="-", R="-", I="-",
-                  UVM2="-.", UVW1="-.", UVW2="-.",
-                  F125W=":", F160W="-.", F140W="--", F105W="-.", F435W="--", F606W="-.", F814W="--",
-                  u="--", g="--", r="--", i="--", z="--",
-                  bol='-')
+lc_lntypes = {'U': "-", 'B': "-", 'V': "-", 'R': "-", 'I': "-",
+              'UVM2': "-.", 'UVW1': "-.", 'UVW2': "-.",
+              'F125W': ":", 'F160W': "-.", 'F140W': "--", 'F105W': "-.", 'F435W': "--", 'F606W': "-.",
+              'F814W': "--",
+              'u': "--", 'g': "--", 'r': "--", 'i': "--", 'z': "--",
+              'bol': '-'}
 
 lines = ["-", "--", "-.", ":"]
 
@@ -30,14 +31,14 @@ markers = list(markers.keys())
 
 def lbl(b, band_shift):
     shift = band_shift[b]
-    l = b
+    s = b
     if shift == int(shift):
         shift = int(shift)
     if shift > 0:
-        l += '+' + str(shift)
+        s += '+' + s(shift)
     elif shift < 0:
-        l += '-' + str(abs(shift))
-    return l
+        s += '-' + s(abs(shift))
+    return s
 
 
 def plot_ubv_models(ax, models_dic, bands, **kwargs):
@@ -76,7 +77,7 @@ def plot_ubv_models(ax, models_dic, bands, **kwargs):
             if len(models_dic) == 1:
                 ax.plot(x, y, label='%s  %s' % (lbl(bname, band_shift), mname), color=bcolor, ls=ls1, linewidth=lw)
             elif len(models_dic) <= len(lines):
-                ax.plot(x, y, label='%s  %s' % (lbl(bname, band_shift), mname), color=bcolor, ls=lines[mi-1],
+                ax.plot(x, y, label='%s  %s' % (lbl(bname, band_shift), mname), color=bcolor, ls=lines[mi - 1],
                         linewidth=lw)
             else:
                 ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label='%s  %s' % (lbl(bname, band_shift), mname),
@@ -199,7 +200,7 @@ def plot_models_curves(ax, models_curves, band_shift=None, xlim=None, ylim=None,
             mshift = dict((bname, 0.) for bname in bands)  # no y-shift
         for bname in bands:
             ib += 1
-            x = curves.TimeDef
+            x = curves.TimeCommon
             y = curves[bname].Mag + mshift[bname]
             ax.plot(x, y, label='%s  %s' % (lbl(bname, mshift), mname),
                     color=colors[bname], ls=lc_types[mname], linewidth=lw)
@@ -237,7 +238,7 @@ def plot_models_curves_fixed_bands(ax, models_curves, bands, band_shift=None, xl
         mi += 1
         for bname in bands:
             ib += 1
-            x = curves.TimeDef
+            x = curves.TimeCommon
             y = curves[bname].Mag
             ax.plot(x, y, label='%s  %s' % (lbl(bname, band_shift), mname),
                     color=colors[bname], ls=lc_types[mname], linewidth=lw)
@@ -367,7 +368,7 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname='', **k
                     color=colors[bname], ls=ls[bname], linewidth=linewidth)
         else:
             if lc.IsErr:
-                yyerr = abs(lc.MagErr)
+                yyerr = abs(lc.Err)
                 ax.errorbar(x, y, label='{0} {1}'.format(bname, fname), yerr=yyerr, fmt=lt[bname],
                             color=colors[bname], ls='', markersize=markersize)
             else:
@@ -406,8 +407,91 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname='', **k
     return ax
 
 
-def plot_shock_details(swd, times, **kwargs):
+def lc_plot(lc, ax=None, xlim=None, ylim=None, title=None, fname='', **kwargs):
+    ls = kwargs.get('ls', {lc.Band.Name: '-'})
+    if isinstance(ls, str):
+        c = ls.strip()
+        ls = {lc.Band.Name: c}
     is_legend = kwargs.get('is_legend', True)
+    is_line = kwargs.get('is_line', True)
+    if 'lt' in kwargs:
+        is_line = False
+    lt = kwargs.get('lt', {lc.Band.Name: 'o'})
+    colors = kwargs.get('colors', lc_colors)
+    linewidth = kwargs.get('linewidth', 2.0)
+    markersize = kwargs.get('markersize', 5)
+    rect = kwargs.get('rect', (0.1, 0.3, 0.8, 0.65))
+    fontsize = kwargs.get('fontsize', 18)
+    figsize = kwargs.get('figsize', (20, 10))
+
+    is_new_fig = ax is None
+    if is_new_fig:
+        plt.matplotlib.rcParams.update({'font.size': 14})
+        fig = plt.figure(figsize=figsize)
+        # fig = plt.figure(num=None, figsize=(7, 11), dpi=100, facecolor='w', edgecolor='k')
+        # ax = fig.add_axes()
+        ax = fig.add_axes(rect)
+        for item in ([ax.title, ax.xaxis.label,
+                      ax.yaxis.label] + ax.get_xticklabels() + ax.get_yticklabels()):
+            item.set_fontsize(fontsize)
+            # ax = fig.add_axes((0.1, 0.3, 0.8, 0.65))
+
+    # plt.title(''.join(bands) + ' filter response')
+    is_xlim = False
+    is_ylim = False
+    if xlim is None:
+        is_xlim = True
+        xlim = [float('inf'), float('-inf')]
+    if ylim is None:
+        is_ylim = True
+        ylim = [float('-inf'), float('inf')]
+
+    x = lc.Time
+    y = lc.Mag
+    bname = lc.Band.Name
+    if is_line:
+        ax.plot(x, y, label='{0} {1}'.format(bname, lc.Name),
+                color=colors[bname], ls=ls[bname], linewidth=linewidth)
+    else:
+        if lc.IsErr:
+            yyerr = abs(lc.Err)
+            ax.errorbar(x, y, label='{0} {1}'.format(bname, fname), yerr=yyerr, fmt=lt[bname],
+                        color=colors[bname], ls='', markersize=markersize)
+        else:
+            # ax.plot(x, y, label='{0} {1}'.format(bname, fname), color=bcolors[bname], ls='',
+            #         marker=marker, markersize=markersize)
+            ax.plot(x, y, label='{0} {1}'.format(bname, lc.Name),
+                    color=colors[bname], ls='', marker=lt[bname], markersize=markersize)
+
+    if is_xlim:
+        xlim[0] = np.min(x)
+        xlim[1] = np.max(x)
+    if is_ylim:
+        ylim[0] = np.max(y)
+        ylim[1] = np.min(y)
+
+    if is_ylim:
+        ylim = [ylim[1] + 10, ylim[1] - 2]
+    # ylim = np.add(ylim, [1, -1])
+    ax.invert_yaxis()
+    ax.set_xlim(xlim)
+    ax.set_ylim(ylim)
+    if is_legend:
+        ax.legend()
+    ax.set_ylabel('Magnitude')
+    ax.set_xlabel('Time [days]')
+    ax.grid()
+    if title is not None:
+        plt.title(title)
+        # ax.text(0.17, 0.07, title, family='monospace')
+    if fname != '':
+        # plt.savefig("ubv_%s.png" % fname, format='png')
+        plt.savefig(fname)
+    return ax
+
+
+def plot_shock_details(swd, times, **kwargs):
+    is_legend = kwargs.get('is_legend', False)
     rnorm = kwargs.get('rnorm', 'lgr')
     vnorm = kwargs.get('vnorm', 1e8)
     lumnorm = kwargs.get('lumnorm', 1e40)
@@ -429,7 +513,7 @@ def plot_shock_details(swd, times, **kwargs):
         ax = fig.add_subplot(nrow, ncol, ncol * i + 1)
         # plot swd(radius)
         sn_swd.plot_swd(ax, b, is_xlabel=(i == len(times) - 1), vnorm=vnorm, lumnorm=lumnorm,
-                        rnorm=rnorm, is_legend=False, is_yrlabel=False, text_posy=0.92,
+                        rnorm=rnorm, is_legend=is_legend, is_yrlabel=False, text_posy=0.92,
                         is_grid=is_grid)
         x = ax.get_xlim()
         if xlim is None:

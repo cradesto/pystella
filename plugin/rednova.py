@@ -49,7 +49,7 @@ def plot_ubv(ax, path, jd_shift=0., mshift=0., **kwargs):
                 bcolor = colors[lc.Band.Name]
                 # ax.plot(x, y, label='%s Master' % lc.Band.Name,
                 #         ls="", color=bcolor, markersize=markersize, marker="o")
-                ax.errorbar(x, y, yerr=lc.MagErr, label=lbl % lc.Band.Name,
+                ax.errorbar(x, y, yerr=lc.Err, label=lbl % lc.Band.Name,
                             color=bcolor, fmt=fmt, fillstyle='none', ecolor=bcolor,
                             mec=bcolor, markersize=markersize, zorder=1)
 

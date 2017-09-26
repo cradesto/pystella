@@ -1,6 +1,7 @@
 import csv
 import os
 
+import numpy as np
 import pystella.rf.rad_func as rf
 from pystella.model.stella import Stella
 from pystella.rf import extinction
@@ -60,6 +61,36 @@ def compute_mag(name, path, bands, ext=None, z=0., distance=10., magnification=1
     return mags
 
 
+def curves_save_mags(curves, fname, sep='\t'):
+    """
+       Save curves to CSV-format. It required for correct operation the common time for all LC.
+    :param curves:
+    :param fname:
+    :param sep:
+    :return:
+    """
+    if curves.Length == 0:
+        print("Nothing to save: curves.Length=%d" % curves.Length)
+        return False
+
+    if not curves.IsCommonTime:
+        print("The curves has different time arrays.")
+        print("  LC  |  len(time)  ")
+        for lc in curves:
+            print("{:40s}   {:d}".format(lc.Name, len(lc.Time)))
+        return False
+
+    with open(fname, 'w') as f:
+        writer = csv.writer(f, delimiter=sep, quotechar='|', quoting=csv.QUOTE_MINIMAL)
+        writer.writerow(['{:^8s}'.format(x) for x in ['time'] + curves.BandNames])
+        for i, (row) in enumerate(zip(curves.TimeCommon, *[curves.get(b).Mag for b in curves.BandNames])):
+            # row = row[-1:] + row[:-1]  # make time first column
+            writer.writerow(['{:8.3f}'.format(x) for x in row])
+            # writer.writerow(['{:3.4e}'.format(x) for x in row])
+
+    return True
+
+
 def curves_save(curves, fname, sep='\t'):
     """
        Save curves to CSV-format. It required for correct operation the common time for all LC.
@@ -68,17 +99,61 @@ def curves_save(curves, fname, sep='\t'):
     :param sep:
     :return:
     """
-    if curves.Length > 0:
-
-        with open(fname, 'w') as f:
-            writer = csv.writer(f, delimiter=sep, quotechar='|', quoting=csv.QUOTE_MINIMAL)
-            writer.writerow(['{:^8s}'.format(x) for x in ['time'] + curves.BandNames])
-            for i, (row) in enumerate(zip(curves.TimeDef, *[curves.get(b).Mag for b in curves.BandNames])):
-                # row = row[-1:] + row[:-1]  # make time first column
-                writer.writerow(['{:8.3f}'.format(x) for x in row])
-                # writer.writerow(['{:3.4e}'.format(x) for x in row])
-    else:
+    if curves.Length == 0:
         print("Nothing to save: curves.Length=%d" % curves.Length)
+        return False
+
+    if not curves.IsCommonTime:
+        print("The curves has different time arrays.")
+        print("  LC  |  len(time)  ")
+        for lc in curves:
+            print("{:40s}   {:d}".format(lc.Name, len(lc.Time)))
+        return False
+
+    arr = curves2nparray(curves)
+    fmt_header = "%10s " * len(arr.dtype.names)
+    header = fmt_header % arr.dtype.names
+    fmt = "%10.5f  " * len(arr.dtype.names)
+    np.savetxt(fname, arr, delimiter=sep, header=header, comments='', fmt=fmt)
+    return True
+
+
+def curves2nparray(curves):
+    """
+       Convert curves to numpy array.
+    :param curves:
+    :return:
+    """
+    if curves.Length == 0:
+        print("Nothing to convert: curves.Length=%d" % curves.Length)
+        return None
+
+    if not curves.IsCommonTime:
+        print("The curves has different time arrays.")
+        print("  LC  |  len(time)  ")
+        for lc in curves:
+            print("{:40s}   {:d}".format(lc.Name, len(lc.Time)))
+        return None
+
+    res = np.array(curves.TimeCommon)  # first column
+    dtype = {'names': ['time']}
+    data = [curves.TimeCommon]
+    for lc in curves:
+        # res = np.hstack((res, lc.Mag.reshape(lc.Length, 1)))
+        # res = np.column_stack((res, lc.Mag))
+        dtype['names'].append(lc.Band.Name)
+        data.append(lc.Mag)
+        if lc.IsErr:
+            # res = np.hstack((res, lc.Err.reshape(lc.Length, 1)))
+            # res = np.column_stack(res, lc.Err)
+            dtype['names'].append('err'+lc.Band.Name)
+            data.append(lc.Err)
+
+    res = np.column_stack(data)
+    # res = np.dstack(data)
+    dtype['formats'] = [np.float64] * len(dtype['names'])
+    res.dtype = dtype
+    return res.ravel()
 
 
 def curves_compute(name, path, bands, z=0., distance=10., magnification=1.,
@@ -127,7 +202,7 @@ def curves_compute(name, path, bands, z=0., distance=10., magnification=1.,
     if is_show_info:
         # print the time of maximum LC
         tmin = 2.0
-        t = curves.TimeDef
+        t = curves.TimeCommon
         for n in bands:
             t_min = t[t > tmin][curves[n][t > tmin].argmin()]
             print("t_max(%s) = %f" % (n, t_min))
@@ -177,4 +252,3 @@ def mags_save(dictionary, bands, fname):
             # row = row[-1:] + row[:-1]  # make time first column
             writer.writerow(['{:8.3f}'.format(x) for x in row])
             # writer.writerow(['{:3.4e}'.format(x) for x in row])
-

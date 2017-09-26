@@ -103,7 +103,7 @@ class TestFitGaussianProcess(unittest.TestCase):
         lc.mshift = dm
         t = lc.Time
         y = lc.Mag
-        yerr = lc.MagErr
+        yerr = lc.Err
 
         # k = gptools.SquaredExponentialKernel()
         # gp = gptools.GaussianProcess(k)
@@ -166,7 +166,7 @@ class TestFitGaussianProcess(unittest.TestCase):
         # lc.mshift = dm
         t = lc.Time
         y = lc.Mag
-        yerr = lc.MagErr
+        yerr = lc.Err
 
         #  Gaussian process
         k = gptools.SquaredExponentialKernel(param_bounds=[(0, max(np.abs(y))),
@@ -210,7 +210,7 @@ class TestFitGaussianProcess(unittest.TestCase):
             # lc.mshift = dm
             t = lc.Time
             y = lc.Mag
-            yerr = lc.MagErr
+            yerr = lc.Err
 
             #  Gaussian process
             k = gptools.SquaredExponentialKernel(param_bounds=[(min(np.abs(y)), max(np.abs(y))),
@@ -263,7 +263,7 @@ class TestFitGaussianProcess(unittest.TestCase):
         # lc.mshift = dm
         t = lc.Time
         y = lc.Mag
-        yerr = lc.MagErr
+        yerr = lc.Err
         #
         # Instanciate a Gaussian Process model
         # kernel = C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2))

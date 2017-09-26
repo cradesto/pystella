@@ -116,7 +116,7 @@ class EmceeTests(unittest.TestCase):
         # Generate some synthetic data from the model.
         # N = 50
         t = lc_obs.Time
-        merr = lc_obs.MagErr
+        merr = lc_obs.Err
         m = lc_obs.Mag
 
         def lnlike(theta, t, m, yerr):

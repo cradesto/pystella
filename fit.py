@@ -162,7 +162,7 @@ def plot_curves(curves_o, res_models, res_sorted, **kwargs):
         lcp.curves_plot(curves, ax=ax, figsize=(12, 8), linewidth=1, is_legend=False)
         xlim = ax.get_xlim()
         lt = {lc.Band.Name: 'o' for lc in curves_o}
-        curves_o.set_tshift(tshift0+tshift_best)
+        curves_o.set_tshift(tshift0 + tshift_best)
         lcp.curves_plot(curves_o, ax, xlim=xlim, lt=lt, markersize=2, is_legend=False)
 
         ax.text(0.99, 0.94, k, horizontalalignment='right', transform=ax.transAxes)
@@ -204,7 +204,7 @@ def plot_curves_vel(curves_o, vels_o, res_models, res_sorted, vels_m, **kwargs):
     xlim = None
     ylim = None
     num = len(res_sorted)
-    nrow = int(num/2.1) + 1
+    nrow = int(num / 2.1) + 1
     ncol = 2
     fig = plt.figure(figsize=(12, nrow * 4))
     plt.matplotlib.rcParams.update({'font.size': font_size})
@@ -223,7 +223,8 @@ def plot_curves_vel(curves_o, vels_o, res_models, res_sorted, vels_m, **kwargs):
         tshift_best = v.tshift
         axUbv.text(0.99, 0.94, k, horizontalalignment='right', transform=axUbv.transAxes)
         axUbv.text(0.98, 0.85, "dt={:.2f}".format(tshift_best), horizontalalignment='right', transform=axUbv.transAxes)
-        axUbv.text(0.01, 0.05, "$\chi^2: {:.2f}$".format(v.measure), horizontalalignment='left', transform=axUbv.transAxes,
+        axUbv.text(0.01, 0.05, "$\chi^2: {:.2f}$".format(v.measure), horizontalalignment='left',
+                   transform=axUbv.transAxes,
                    bbox=dict(facecolor='green', alpha=0.3))
 
         curves = res_models[k]
@@ -379,8 +380,8 @@ def plot_squared(ax, res_sorted, path='./', p=('R', 'M'), **kwargs):
         else:
             zi = sci.interpolate.griddata((x, y), chi, (xi, yi), method="linear")
 
-        # im = ax.imshow(zi, cmap=plt.cm.RdBu, vmin=chi.min(), vmax=chi.max(), origin='lower',
-        im = ax.imshow(zi, cmap=plt.cm.bone, vmin=chi.min(), vmax=chi.max(), origin='lower',
+        # cmap: bone viridis  RdBu
+        im = ax.imshow(zi, cmap=plt.cm.viridis, vmin=chi.min(), vmax=chi.max(), origin='lower',
                        extent=[x.min(), x.max(), y.min(), y.max()], interpolation='none',
                        aspect='auto', alpha=0.5)
         # try:
@@ -434,7 +435,7 @@ def plot_squared(ax, res_sorted, path='./', p=('R', 'M'), **kwargs):
         idx = chi.argsort()[::-1]
         x, y, chi = x[idx], y[idx], chi[idx]
 
-        area = np.pi * (100 * np.log10(chi))**2  # 0 to 15 point radii
+        area = np.pi * (100 * np.log10(chi)) ** 2  # 0 to 15 point radii
         # plt.scatter(x, y, s=area, c=colors, alpha=0.5)
         cax = plt.scatter(x, y, s=area, c=chi, cmap='gray', edgecolor='', alpha=0.5)
         plt.colorbar(cax)
@@ -559,7 +560,8 @@ def plot_squared_3d(ax, res_sorted, path='./', p=('R', 'M', 'E'), is_rbf=True, *
         labels = z
         for z, bar, l in zip(z / np.max(z), bars, labels):
             # bar.set_facecolor(plt.cm.jet(r))  # E
-            bar.set_facecolor(plt.cm.plasma(z))
+            bar.set_facecolor(plt.cm.viridis(z))
+            # bar.set_facecolor(plt.cm.plasma(z))
             bar.set_alpha(0.5)
             bar.set_label(l)
 
@@ -577,7 +579,8 @@ def plot_squared_3d(ax, res_sorted, path='./', p=('R', 'M', 'E'), is_rbf=True, *
         ax.set_zlabel(p[2])
 
         N = chi / np.max(chi)
-        surf = ax.scatter(x, y, z, c=N, cmap="gray")
+        surf = ax.scatter(x, y, z, c=N, cmap=plt.cm.viridis)
+        # surf = ax.scatter(x, y, z, c=N, cmap="gray")
         from matplotlib.ticker import LinearLocator
         from matplotlib.ticker import FormatStrFormatter
 
@@ -621,7 +624,7 @@ def fit_mfl(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, times):
             tbl = velocity.compute_vel_swd(name, path)
             # tbl = velocity.compute_vel_res_tt(name, path)
             Vnorm = 1e8
-            vel_m = VelocityCurve('Vel', tbl['time'], tbl['vel']/Vnorm)
+            vel_m = VelocityCurve('Vel', tbl['time'], tbl['vel'] / Vnorm)
         except ValueError as ext:
             print(ext)
 
@@ -631,14 +634,18 @@ def fit_mfl(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, times):
             # To increase the weight of Velocities with fitting
             for i in range(curves_m.Length):
                 for vel_o in vels_o:
-                    key = 'Vel{:d}{}'.format(i,vel_o.Name)
+                    key = 'Vel{:d}{}'.format(i, vel_o.Name)
                     tss_m.add(vel_m.copy(name=key))
                     tss_o.add(vel_o.copy(name=key))
                     # tss_o[key] = vel_o
                     # tss_m[key] = vel_m
         else:
-            tss_m.add(vel_m.copy(name='Vel'))
-            tss_o.add(vels_o.copy(name='Vel'))
+            # tss_m.add(vel_m.copy(name='Vel'))
+            for i, vel_o in enumerate(vels_o):
+                key = 'Vel{:d}{}'.format(i, vel_o.Name)
+                tss_m.add(vel_m.copy(name=key))
+                tss_o.add(vel_o.copy(name=key))
+            # tss_o.add(vels_o.copy(name='Vel'))
             # tss_m['Vel'] = vel_m
             # tss_o['Vel'] = vels_o
 

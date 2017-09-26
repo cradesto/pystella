@@ -174,7 +174,7 @@ class Band(object):
 
 
 class BandUni(Band):
-    def __init__(self, name='Uniform', wlrange=(1e1, 5e4), length=999):
+    def __init__(self, name='bol', wlrange=(1e1, 5e4), length=999):
         """Creates a band with uniform responce.
         :param name:  default 'Uniform'.
         :param wlrange:  the wavelength range, default (1e1, 5e4) [A]

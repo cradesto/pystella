@@ -325,18 +325,6 @@ def main(name='', model_ext='.ph'):
 
             models_mags[name] = curves
 
-            if is_save_mags:
-                if fname is None:
-                    fname = os.path.join(path, name)
-                    if z > 0.:
-                        fname = '{}_Z{:.2g}'.format(fname, z)
-                    if distance > 10.:
-                        fname = '{}_D{:.2e}'.format(fname, distance)
-                    if e > 0:
-                        fname = '{}_E{:0.2g}'.format(fname, e)
-                    fname = '{}{}'.format(fname, '.ubv')
-                lcf.curves_save(curves, fname)
-                print("Magnitudes have been saved to " + fname)
 
             # if not is_quiet:
             #     # z, distance = 0.145, 687.7e6  # pc for comparison with Maria
@@ -361,7 +349,22 @@ def main(name='', model_ext='.ph'):
             else:
                 label = "z=%4.2f D=%6.2e mu=%3.1f ebv=%4.2f" % (z, distance, magnification, e)
 
-        if not is_quiet:
+        # save curves to files
+        if is_save_mags:
+            for curves in models_mags.values():
+                if fname is None:
+                    fname = os.path.join(path, curves.Name)
+                    if z > 0.:
+                        fname = '{}_Z{:.2g}'.format(fname, z)
+                    if distance > 10.:
+                        fname = '{}_D{:.2e}'.format(fname, distance)
+                    if e > 0:
+                        fname = '{}_E{:0.2g}'.format(fname, e)
+                    fname = '{}{}'.format(fname, '.ubv')
+                lcf.curves_save(curves, fname)
+                print("Magnitudes of {} have been saved to {}".format(curves.Name, fname))
+        # plot
+        elif not is_quiet:
             if opt_grid in view_opts[1:]:
                 sep = opt_grid[:-1]
                 if sep == 'd':
