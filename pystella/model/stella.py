@@ -1,15 +1,10 @@
 import os
 import numpy as np
 import math
-from pystella.model.sn_res import StellaRes
-from pystella.model.sn_swd import StellaShockWaveDetail
-from pystella.model.sn_tt import StellaTt
-from pystella.rf.spectrum import SeriesSpectrum, Spectrum
-from pystella.model import sn_eve
 
 __author__ = 'bakl'
 
-stella_extensions = ('tt', 'swd', 'lbol', 'res', 'dat', 'ph', "mrt", 'eve', 'rho', 'xni')
+stella_extensions = ('tt', 'swd', 'lbol', 'res', 'dat', 'ph', "mrt", 'eve', 'rho', 'xni', 'flx')
 
 
 class Stella:
@@ -63,6 +58,11 @@ class Stella:
         return os.path.isfile(fname)
 
     @property
+    def is_flx_data(self):
+        fname = os.path.join(self.path, self.name + '.flx')
+        return os.path.isfile(fname)
+
+    @property
     def series_spec(self):
         return self._serial_spec
 
@@ -70,22 +70,33 @@ class Stella:
         self._serial_spec = ss
 
     def get_eve(self, name, path=None):
+        from pystella.model import sn_eve
         if path is None:
             path = self.path
         eve = sn_eve.load_rho(os.path.join(path, name + '.rho'))
         return eve
 
     def get_res(self):
+        from pystella.model.sn_res import StellaRes
         return StellaRes(self.name, self.path)
 
     def get_tt(self):
+        from pystella.model.sn_tt import StellaTt
         return StellaTt(self.name, self.path)
 
     def get_swd(self):
+        from pystella.model.sn_swd import StellaShockWaveDetail
         swd = StellaShockWaveDetail(self.name, self.path)
         return swd
 
+    def get_flx(self):
+        import pystella.model.sn_flx as flx
+        swd = flx.flx_reader(os.path.join(self.path, self.name + '.flx'))
+        return swd
+
     def read_series_spectrum(self, t_diff=1.005, t_beg=0.0, t_end=None, is_nfrus=True):
+        from pystella.rf.spectrum import SeriesSpectrum, Spectrum
+
         if t_end is None:
             t_end = float('inf')
         # read first line with frequencies

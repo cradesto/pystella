@@ -11,13 +11,12 @@
 #
 #  Created By : UMN
 #
+#  Modified:  Petr Baklanov
 # _._._._._._._._._._._._._._._._._._._._._.
 import struct
 import numpy as np
-import astropy.units as units
 import logging
 import matplotlib.pyplot as plt
-
 
 # create logger
 logger = logging.getLogger(__name__)
@@ -46,13 +45,14 @@ class _flx_record_reader(object):
         number of snapshots saved in the record
     Mfreq : int
         total number of frequency bins
-    Tcurved : units.Quantity array
+    Tcurved : [day] array
         time of the snapshots
     Nfrus : np.ndarray
         number of active frequency bins
     Flsave : 2D np.ndarray
         emergent Flux, shape: (Mfreq x Lsave)
     """
+
     def __init__(self, fstream):
         """
         Nomenclature:
@@ -91,7 +91,7 @@ class _flx_record_reader(object):
 
         self.Lsave = struct.unpack("i", self.fstream.read(4))[0]
 
-        self.Mfreq = (self.Nrec - 4 - 8 * self.Lsave)//(self.Lsave * 8)
+        self.Mfreq = (self.Nrec - 4 - 8 * self.Lsave) // (self.Lsave * 8)
 
         logging.info("Calculated Mfreq: %d" % self.Mfreq)
 
@@ -99,15 +99,14 @@ class _flx_record_reader(object):
         self.Nfrus = np.zeros(self.Lsave)
         self.Flsave = np.zeros((self.Mfreq, self.Lsave))
 
-        for i in xrange(self.Lsave):
-
+        for i in range(self.Lsave):
             self.Tcurv[i] = struct.unpack("f", self.fstream.read(4))[0]
             self.Nfrus[i] = struct.unpack("i", self.fstream.read(4))[0]
-            self.Flsave[:,i] = np.array(
+            self.Flsave[:, i] = np.array(
                 struct.unpack("{:d}d".format(self.Mfreq),
                               self.fstream.read(8 * self.Mfreq)))
         try:
-            assert(self.Nrec == struct.unpack("i", self.fstream.read(4))[0])
+            assert (self.Nrec == struct.unpack("i", self.fstream.read(4))[0])
         except AssertionError:
             logger.exception(
                 "Mismatch in record length at start and end stamps")
@@ -115,8 +114,9 @@ class _flx_record_reader(object):
         logger.info("Record successfully read")
 
         # Time is stored in days
-        self.Tcurv = self.Tcurv * units.d
+        self.Tcurv = self.Tcurv  # * units.d
         # Units of Flsave not clear
+
 
 class flx_reader(object):
     """Reader for Stella flx binary files
@@ -128,10 +128,12 @@ class flx_reader(object):
     fname : str
         full filename (including extension) of the flx file
     """
+    extension = ".flx"
+
     def __init__(self, fname):
 
-        if fname[-4:] != ".flx":
-            fname = fname + ".flx"
+        if fname[-4:] != flx_reader.extension:
+            fname = fname + flx_reader.extension
         self.fname = fname
         self.fstream = open(fname, "rb")
 
@@ -147,12 +149,12 @@ class flx_reader(object):
             fpos = self.fstream.tell()
             buffer = self.fstream.read(4)
             if buffer == "":
-                #EOF
+                # EOF
                 logger.info("EOF triggered")
                 break
             else:
                 if struct.unpack("i", buffer)[0] == 4:
-                    #last record with Lsave = 0
+                    # last record with Lsave = 0
                     logger.info("Last, empty, record found: stopping")
                     break
                 else:
@@ -172,20 +174,22 @@ class flx_reader(object):
         - Flsave
 
         """
+        from pystella.util.arr_dict import first
 
         ntot = np.sum([rec.Lsave for rec in self.records])
+        Mfreq = first(self.records).Mfreq
 
-        self.time = np.zeros(ntot) * rec.Tcurv.unit
+        self.time = np.zeros(ntot)  # * rec.Tcurv.unit
         self.Nfrus = np.zeros(ntot)
-        self.Flsave = np.zeros((rec.Mfreq, ntot))
+        self.Flsave = np.zeros((Mfreq, ntot))
 
         n = 0
         for rec in self.records:
             k = rec.Lsave
-            self.time[n:n+k] = rec.Tcurv
-            self.Nfrus[n:n+k] = rec.Nfrus
-            self.Flsave[:, n:n+k] = rec.Flsave
-            n = n+k
+            self.time[n:n + k] = rec.Tcurv
+            self.Nfrus[n:n + k] = rec.Nfrus
+            self.Flsave[:, n:n + k] = rec.Flsave
+            n = n + k
 
     def show_emergent_Fl(self, nu=None, logx=True, logy=True, logz=True,
                          cmap="afmhot", floor=1e-20, vmax=1e3, vmin=1e-7):
@@ -207,7 +211,7 @@ class flx_reader(object):
 
         Parameters
         ----------
-        nu : None, units.Quantity array
+        nu : None, Hz array
             the frequency grid; has to be supplied by hand. If None, Flsave
             will be shown versus the index of the frequency bins (default None)
         logx : bool
@@ -246,19 +250,20 @@ class flx_reader(object):
             x = np.arange(self.records[0].Mfreq).astype(np.float) + 1
             xlabel = r"frequency bin index"
         else:
-            try:
-                x = nu.to("Hz").value
-            except (units.UnitsError, AttributeError):
-                logger.error(
-                    "nu must be astropy quantity with a frequency unit")
-                raise
+            x = nu
+            # try:
+            #     x = nu.to("Hz").value
+            # except (units.UnitsError, AttributeError):
+            #     logger.error(
+            #         "nu must be astropy quantity with a frequency unit")
+            #     raise
             xlabel = r"$\nu$ [Hz]"
 
         lenZ = len(x)
 
-        y = self.time.to("d").value
+        y = self.time  # .to("d").value
         X, Y = np.meshgrid(x, y)
-        Z = np.maximum(self.Flsave[:lenZ, :].T, 1e-20)
+        Z = np.maximum(self.Flsave[:lenZ, :].T, floor)
 
         if logz:
             Z = np.log10(Z)
@@ -270,8 +275,7 @@ class flx_reader(object):
 
         fig = plt.figure()
         ax = fig.add_subplot(111)
-        im = ax.pcolormesh(X, Y, Z, rasterized="True", cmap=cmap, vmin=vmin,
-                           vmax=vmax)
+        im = ax.pcolormesh(X, Y, Z, rasterized="True", cmap=cmap, vmin=vmin, vmax=vmax)
 
         cbar = plt.colorbar(im)
         if logx:
@@ -288,5 +292,4 @@ class flx_reader(object):
 
 
 if __name__ == "__main__":
-
     test = flx_reader("m100101wgrid1304.flx")
