@@ -311,7 +311,7 @@ def main(name='', model_ext='.ph'):
         if z > 0:
             print("  Cosmology D(z)={0:E} Mpc".format(cosmology_D_by_z(z)))
 
-    # Run plotting
+    # Run models
     if len(names) > 0:
         models_mags = {}  # dict((k, None) for k in names)
         models_vels = {}  # dict((k, None) for k in names)
@@ -324,13 +324,6 @@ def main(name='', model_ext='.ph'):
                 curves = lcf.curves_reddening(curves, ebv=e, z=z)
 
             models_mags[name] = curves
-
-
-            # if not is_quiet:
-            #     # z, distance = 0.145, 687.7e6  # pc for comparison with Maria
-            #     # lcf.plot_bands(mags, bands, title=name, fname='', is_time_points=is_plot_time_points)
-            #     # lcp.plot_bands(curves, bnames, title=name, fname='', is_time_points=is_plot_time_points)
-            #     lcp.curves_plot(curves, title=name, fname='', is_time_points=is_plot_time_points)
 
             if is_vel:
                 vels = vel.compute_vel_res_tt(name, path, z=z)
