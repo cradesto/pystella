@@ -298,7 +298,7 @@ def plot_fit_wl(model, series, wl_ab):
 
     Tcol = series_cut.get_T_color()
     Twien = series_cut.get_T_wien()
-    zeta = np.power(Twien/Tcol, 1/4)
+    zeta = np.power(Twien/Tcol, 4)
 
     print("{:>10s}  {:>12s}  {:>12s}  {:>12s}  ".format("Time", "Tcol", "Twien", "zeta"))
     for t, c, w, z in zip(series.Time, Tcol, Twien, zeta):
