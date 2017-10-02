@@ -33,6 +33,14 @@ class Stella:
                 print("No %s-file: %s" % (e, fname))
 
     @property
+    def Name(self):
+        """
+        Alias for self.name
+        :return: name
+        """
+        return self.name
+
+    @property
     def is_any_data(self):
         ext = ('tt', 'ph', 'res', 'swd')
         return any(map(os.path.isfile, [os.path.join(self.path, self.name + '.' + e) for e in ext]))

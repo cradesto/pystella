@@ -327,14 +327,16 @@ class SeriesSpectrum(object):
         if wl_ab is None:
             wl_ab = (0., float("inf"))
 
+        # freq limits
+        f_l = phys.c / (wl_ab[1] * phys.angs_to_cm)
+        f_h = float("inf") if wl_ab[0] <= 0. else phys.c / (wl_ab[0] * phys.angs_to_cm)
+
         res = SeriesSpectrum(name)
         for k, t in enumerate(self.Time):
             if t_ab[0] <= t <= t_ab[1]:
                 s = self.get_spec(k)
                 freq = s.Freq
                 flux = s.Flux
-                f_l = phys.c / (wl_ab[1] * phys.angs_to_cm)
-                f_h = float("inf") if wl_ab[0] <= 0. else phys.c / (wl_ab[0] * phys.angs_to_cm)
                 is_freq = (freq > f_l) & (freq < f_h)
                 ss = Spectrum(s.Name, freq[is_freq], flux=flux[is_freq])
                 res.add(t, ss)
@@ -342,7 +344,7 @@ class SeriesSpectrum(object):
 
     def map(self, func, t_ab=None):
         """Map func under each Spectrum in the array.
-        func=func(t, spec)  - result ander Spectrum,
+        func=func(t, spec)  - result with Spectrum,
         t_ab  - time interval [day]"""
         if t_ab is None:
             t_ab = (float("-inf"), float("inf"))
@@ -358,15 +360,14 @@ class SeriesSpectrum(object):
         return {'t': times, 'v': fvalue}
 
     def get_T_color(self):
-        def fTcolor(t, s):
-            return s.T_color
-        d = self.map(fTcolor)
+        d = self.map(lambda t, s: s.T_color)
         return np.array(d['v'])
 
     def get_T_wien(self):
-        def fTcolor(t, s):
-            return s.T_wien
-        d = self.map(fTcolor)
+        # def f(t, s):
+        #     return s.T_wien
+        # d = self.map(f)
+        d = self.map(lambda t, s: s.T_wien)
         return np.array(d['v'])
 
     def get_tspec(self, idx):

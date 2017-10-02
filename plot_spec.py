@@ -5,16 +5,17 @@ import os
 import sys
 from os.path import dirname
 
-import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib import cm
+from scipy import interpolate
+from scipy.optimize import fmin
+
+import matplotlib.pyplot as plt
+# from matplotlib import cm
 from matplotlib import gridspec
 from matplotlib.collections import PolyCollection
 from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.mlab import griddata
 from mpl_toolkits.mplot3d import Axes3D
-from scipy import interpolate
-from scipy.optimize import fmin
 
 import pystella.rf.rad_func as rf
 from pystella.model.stella import Stella
@@ -26,11 +27,11 @@ __author__ = 'bakl'
 
 ROOT_DIRECTORY = dirname(os.path.abspath(__file__))
 
-colors_band = dict(U="blue", B="cyan", V="black", R="red", I="magenta",
-                   J="green", H="cyan", K="black",
-                   UVM2="skyblue", UVW1="orange", UVW2="blue",
-                   g="g", r="red", i="magenta", u="blue", z="chocolate",
-                   y='olive', w='tomato')
+colors_band = {'U': "blue", 'B': "cyan", 'V': "black", 'R': "red", 'I': "magenta",
+               'J': "green", 'H': "cyan", 'K': "black",
+               'UVM2': "skyblue", 'UVW1': "orange", 'UVW2': "blue",
+               'g': "g", 'r': "red", 'i': "magenta",
+               'u': "blue", 'z': "chocolate", 'y': 'olive', 'w': 'tomato'}
 
 _colors = ["blue", "cyan", "brown", 'darkseagreen', 'tomato', 'olive', 'orange',
            'skyblue', 'darkviolet']
@@ -125,7 +126,6 @@ def plot_spec(dic_stars, times, set_bands, is_planck=False, is_filter=False):
         ax.legend(prop={'size': 11}, loc=4, borderaxespad=0.)
     # plt.title('; '.join(set_bands) + ' filter response')
     plt.grid()
-    plt.show()
     return fig
 
 
@@ -230,7 +230,7 @@ def plot_spec_poly(series, moments=None, fcut=1.e-20, is_info=False):
 
     Tmap = np.log(T_cols / np.min(T_cols))
     color_map = color_map_temp()
-    m = cm.ScalarMappable(cmap=color_map)
+    m = plt.cm.ScalarMappable(cmap=color_map)
     m.set_array(Tmap)
     facecolors = m.to_rgba(Tmap * 1.e-4)
     poly = PolyCollection(verts, facecolors=facecolors, linewidths=1.5)  # np.ones(len(t_data)))
@@ -255,8 +255,67 @@ def plot_spec_poly(series, moments=None, fcut=1.e-20, is_info=False):
     ax.yaxis.set_label_text('Time [days]')
     ax.zaxis.set_label_text('Flux [a.u.]')
 
-    plt.grid()
-    plt.show()
+    return fig
+
+
+def plot_fit_bands(model, series, set_bands, times):
+    name = model.Name
+    tt = model.read_tt_data()
+    tt = tt[tt['time'] > min(times) - 1.]  # time cut  days
+    Rph_spline = interpolate.splrep(tt['time'], tt['Rph'], s=0)
+    distance = rf.pc_to_cm(10.)  # pc for Absolute magnitude
+    dic_results = {}  # dict((k, None) for k in names)
+    # it = 0
+    for it, time in enumerate(times):
+        print("\nRun: %s t=%f [%d/%d]" % (name, time, it, len(times)))
+        spec = series.get_spec_by_time(time)
+        spec.cut_flux(max(spec.Flux) * .1e-5)  # cut flux
+
+        star = Star("%s: %f" % (name, time), spec=spec, is_flux_eq_luminosity=True)
+        star.set_distance(distance)
+        radius = interpolate.splev(time, Rph_spline)
+        star.set_radius_ph(radius)
+        star.set_redshift(0.)
+
+        for bset in set_bands:
+            Tcol, zeta = compute_tcolor(star, bset.split('-'))
+            # save results
+            star.set_Tcol(Tcol, bset)
+            star.set_zeta(zeta, bset)
+            print("\nRun: %s Tcol=%f zeta=%f " % (bset, Tcol, zeta))
+
+        dic_results[it] = star
+        # it += 1
+    fig = plot_spec(dic_results, times, set_bands, is_planck=True, is_filter=True)
+    return fig
+
+
+def plot_fit_wl(model, series, wl_ab):
+    name = series.Name
+    # tt = model.read_tt_data()
+    dic_results = {'T': [], 'zeta': [], 'time': []}
+    series_cut = series.copy(wl_ab=wl_ab)
+
+    Tcol = series_cut.get_T_color()
+    Twien = series_cut.get_T_wien()
+    zeta = np.power(Twien/Tcol, 1/4)
+
+    print("{:>10s}  {:>12s}  {:>12s}  {:>12s}  ".format("Time", "Tcol", "Twien", "zeta"))
+    for t, c, w, z in zip(series.Time, Tcol, Twien, zeta):
+        print("%10.2f  %12.6f  %12.6f  %12.6f  " % (t, c, w, z))
+    # for it, time in enumerate(tt['time']):
+    #     print("\nRun: %s t=%f [%d/%d]" % (name, time, it, len(tt['time'])))
+    #     spec = series_cut.get_spec_by_time(time)
+    #     spec.cut_flux(max(spec.Flux) * .1e-5)  # cut flux
+    #
+    #     Tcol, zeta = compute_tcolor_wl(series)
+    #     dic_results['time'].append(time)
+    #     dic_results['T'].append(Tcol)
+    #     dic_results['zeta'].append(zeta)
+    #     print("\nRun: %f Tcol=%f zeta=%f " % (time, Tcol, zeta))
+    #
+    fig = None  # plot_spec_wl(dic_results, is_planck=True, is_filter=True)
+    return fig
 
 
 def plot_spec_t(series, wl_lim=None, moments=None):
@@ -295,7 +354,7 @@ def plot_spec_t(series, wl_lim=None, moments=None):
     # scatter3D
     if True:
         ax = Axes3D(fig)
-        ax.scatter3D(x, y, z, c=z, cmap=cm.jet)
+        ax.scatter3D(x, y, z, c=z, cmap=plt.cm.viridis)  # jet)
         plt.show()
         return None
 
@@ -308,7 +367,7 @@ def plot_spec_t(series, wl_lim=None, moments=None):
         # interpolation
         Z = griddata(x, y, z, xi, yi)
         ax = Axes3D(fig)
-        ax.scatter3D(x, y, z, c=z, cmap=cm.jet)
+        ax.scatter3D(x, y, z, c=z, cmap=plt.cm.viridis)
         ax.plot_surface(X, Y, Z, rstride=8, cstride=8, alpha=0.3)
         plt.show()
         return None
@@ -359,7 +418,21 @@ def planck_fit(star, bset):
     return star_bb
 
 
-def epsilon(x, freq, mag, bands, radius, dist):
+def epsilon_mag(x, freq, mag, bands, radius, dist):
+    temp_color, zeta = x
+    sp = spectrum.SpectrumDilutePlanck(freq, temp_color, zeta ** 2)
+
+    star = Star("bb", sp)
+    star.set_radius_ph(radius)
+    star.set_distance(dist)
+    mag_bb = {b: star.magAB(band.band_by_name(b)) for b in bands}
+    e = 0
+    for b in bands:
+        e += abs(mag[b] - mag_bb[b])
+    return e
+
+
+def epsilon_freq(x, freq, spec, radius, dist):
     temp_color, zeta = x
     sp = spectrum.SpectrumDilutePlanck(freq, temp_color, zeta ** 2)
 
@@ -379,7 +452,14 @@ def compute_tcolor(star, bands):
         b = band.band_by_name(n)
         mags[n] = star.magAB(b)
 
-    Tcol, zeta = fmin(epsilon, x0=np.array([1.e4, 1]),
+    Tcol, zeta = fmin(epsilon_mag, x0=np.array([1.e4, 1]),
+                      args=(star.Freq, mags, bands, star.radius_ph, star.distance), disp=0)
+    return Tcol, zeta
+
+
+def compute_tcolor_wl(series):
+
+    Tcol, zeta = fmin(epsilon_mag, x0=np.array([1.e4, 1]),
                       args=(star.Freq, mags, bands, star.radius_ph, star.distance), disp=0)
     return Tcol, zeta
 
@@ -406,7 +486,7 @@ def usage():
           "     Available: " + '-'.join(sorted(bands)))
     print("  -f  force mode: rewrite tcolor-files even if it exists")
     print("  -i <model name>.  Example: cat_R450_M15_Ni007_E7")
-    print("  -o  options: [fit] - plot spectral fit in bands")
+    print("  -o  options: [fit, wl] - plot spectral fit")
     print("  -p <model path(directory)>, default: ./")
     print("  -s <file-name> without extension. Save plot to pdf-file. Default: spec_<file-name>.pdf")
     print("  -t  time interval [day]. Example: 5.:75.")
@@ -430,7 +510,7 @@ def write_magAB(series, d=10):
         # flux = spec.Flux
         # mAB = rf.Flux2MagAB(flux)
         star = Star("%s: %f" % (series.Name, t), spec=spec, is_flux_eq_luminosity=True)
-        star.set_distance(d*phys.pc)
+        star.set_distance(d * phys.pc)
         # print("{0}  {1} ".format(t, '  '.join(map(str, star.Flux))))
         print("{0}  {1} ".format(t, '  '.join(map(str, star.FluxAB))))
         # print("{0}  {1} ".format(t, '  '.join(map(str, flux))))
@@ -440,6 +520,7 @@ def write_magAB(series, d=10):
 def main():
     is_save_plot = False
     is_fit = False
+    is_fit_wl = False
     is_magAB = False
     fsave = None
 
@@ -502,6 +583,7 @@ def main():
         if opt == '-o':
             ops = str(arg).split(':')
             is_fit = "fit" in ops
+            is_fit_wl = "wl" in ops
             continue
         if opt == '-p':
             path = os.path.expanduser(str(arg))
@@ -527,61 +609,39 @@ def main():
     # series = series_spec  #.copy(t_ab=(0., 25e3), wl_ab=(1., 25e3))
     series = series_spec.copy(t_ab=t_ab, wl_ab=wl_ab)
 
+    fig = None
     if is_magAB:
         if fsave is None or len(fsave) == 0:
             fsave = "magAB_%s" % name
         print("Save series to %s " % fsave)
         write_magAB(series)
         sys.exit(2)
-
-    if not is_fit:
-        plot_spec_poly(series)
-        # plot_spec_t(series_spec)
+    elif is_fit:
+        if not model.is_tt_data:
+            print("Error in fit-band: no tt-data for: " + str(model))
+            sys.exit(2)
+        fig = plot_fit_bands(model, series, set_bands, times)
+    elif is_fit_wl:
+        if not model.is_tt_data:
+            print("Error in fit-wave: no tt-data for: " + str(model))
+            sys.exit(2)
+        fig = plot_fit_wl(model, series_spec, wl_ab)
+    else:
+        fig = plot_spec_poly(series)
         print("Plot spectral F(t,nu): " + str(model))
-        sys.exit(2)
 
-    if not model.is_tt_data:
-        print("No tt-data for: " + str(model))
-        return None
+    if fig is not None:
+        if is_save_plot:
+            if fsave is None or len(fsave) == 0:
+                fsave = "spec_%s" % name
+            d = os.path.expanduser('~/')
+            fsave = os.path.join(d, os.path.splitext(fsave)[0]) + '.pdf'
 
-    tt = model.read_tt_data()
-    tt = tt[tt['time'] > min(times) - 1.]  # time cut  days
-
-    Rph_spline = interpolate.splrep(tt['time'], tt['Rph'], s=0)
-
-    distance = rf.pc_to_cm(10.)  # pc for Absolute magnitude
-    dic_results = {}  # dict((k, None) for k in names)
-    # it = 0
-    for it, time in enumerate(times):
-        print("\nRun: %s t=%f [%d/%d]" % (name, time, it, len(times)))
-        spec = series.get_spec_by_time(time)
-        spec.cut_flux(max(spec.Flux) * .1e-5)  # cut flux
-
-        star = Star("%s: %f" % (name, time), spec=spec, is_flux_eq_luminosity=True)
-        star.set_distance(distance)
-        radius = interpolate.splev(time, Rph_spline)
-        star.set_radius_ph(radius)
-        star.set_redshift(0.)
-
-        for bset in set_bands:
-            Tcol, zeta = compute_tcolor(star, bset.split('-'))
-            # save results
-            star.set_Tcol(Tcol, bset)
-            star.set_zeta(zeta, bset)
-            print("\nRun: %s Tcol=%f zeta=%f " % (bset, Tcol, zeta))
-
-        dic_results[it] = star
-        # it += 1
-
-    fig = plot_spec(dic_results, times, set_bands, is_planck=True, is_filter=True)
-    if is_save_plot:
-        if fsave is None or len(fsave) == 0:
-             fsave = "spec_%s" % name
-        d = os.path.expanduser('~/')
-        fsave = os.path.join(d, os.path.splitext(fsave)[0]) + '.pdf'
-
-        print("Save plot to %s " % fsave)
-        fig.savefig(fsave, bbox_inches='tight')
+            print("Save plot to %s " % fsave)
+            fig.savefig(fsave, bbox_inches='tight')
+        else:
+            # plt.grid()
+            plt.show()
 
 
 if __name__ == '__main__':
