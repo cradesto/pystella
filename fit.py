@@ -27,6 +27,7 @@ from pystella.rf.lc import SetLightCurve
 from pystella.rf.ts import SetTimeSeries
 from pystella.util.arr_dict import first
 from pystella.util.path_misc import get_model_names
+from pystella.util.phys_var import cosmology_D_by_z
 from pystella.util.string_misc import str2interval
 from pystella.velocity import VelocityCurve, SetVelocityCurve
 
@@ -76,7 +77,7 @@ def get_parser():
     parser.add_argument('-d',
                         required=False,
                         type=float,
-                        default=10,
+                        default=None,
                         dest="distance",
                         help="Distance to the model [pc].  Default: 10 pc")
     parser.add_argument('-e',
@@ -85,12 +86,6 @@ def get_parser():
                         default=0.,
                         dest="color_excess",
                         help="Color excess E(B-V) is used to compute extinction via  A_nu = R_nu*E(B-V).  Default: 0")
-    parser.add_argument('-z',
-                        required=False,
-                        type=float,
-                        default=0,
-                        dest="redshift",
-                        help="Redshift for the model .  Default: 0")
     parser.add_argument('-i', '--input',
                         required=False,
                         dest="input",
@@ -101,12 +96,6 @@ def get_parser():
                         default='./',
                         dest="path",
                         help="Model directory")
-    parser.add_argument('-t', '--time',
-                        required=False,
-                        type=str,
-                        default=None,
-                        dest="times",
-                        help="The range of fitting in model LC. Default: None (all points). Format: {0}".format('2:50'))
     parser.add_argument('-dt', '--dtshift',
                         required=False,
                         type=str,
@@ -124,6 +113,24 @@ def get_parser():
                         default=1,
                         dest="nodes",
                         help="-n <nodes>: number of processes ")
+    parser.add_argument('-s', '--save',
+                        required=False,
+                        type=str,
+                        default=None,
+                        dest="save_file",
+                        help="To save the result plot to pdf-file.")
+    parser.add_argument('-t', '--time',
+                        required=False,
+                        type=str,
+                        default=None,
+                        dest="times",
+                        help="The range of fitting in model LC. Default: None (all points). Format: {0}".format('2:50'))
+    parser.add_argument('-z',
+                        required=False,
+                        type=float,
+                        default=0,
+                        dest="redshift",
+                        help="Redshift for the model .  Default: 0")
     return parser
 
 
@@ -189,8 +196,9 @@ def plot_curves(curves_o, res_models, res_sorted, **kwargs):
         # lc_colors = band.bands_colors()
 
     fig.subplots_adjust(wspace=0, hspace=0)
-    plt.subplots_adjust(left=0.07, right=0.96, top=0.97, bottom=0.06)
-    plt.show()
+    return fig
+    # plt.subplots_adjust(left=0.07, right=0.96, top=0.97, bottom=0.06)
+    # plt.show()
 
 
 def plot_curves_vel(curves_o, vels_o, res_models, res_sorted, vels_m, **kwargs):
@@ -263,8 +271,7 @@ def plot_curves_vel(curves_o, vels_o, res_models, res_sorted, vels_m, **kwargs):
                        markersize=markersize)
 
     fig.subplots_adjust(wspace=0, hspace=0)
-    plt.subplots_adjust(left=0.07, right=0.96, top=0.97, bottom=0.06)
-    plt.show()
+    return fig
 
 
 def plot_squared_grid(res_sorted, path='./', **kwargs):
@@ -594,18 +601,22 @@ def plot_squared_3d(ax, res_sorted, path='./', p=('R', 'M', 'E'), is_rbf=True, *
 
 
 def fit_mfl(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, times):
+    distance = 10  # pc
+    z = args.redshift
+    # Set distance and redshift
+    if args.distance is None and z > 0:
+        distance = cosmology_D_by_z(z)*1e6
+
     tss_m = SetTimeSeries("Models")
     tss_o = SetTimeSeries("Obs")
-    # tss_o = {}
-
     curves_m = None
-    # tshifts = {}
+
     # light curves
     if curves_o is not None:
-        curves_m = lcf.curves_compute(name, path, bnames, z=args.redshift, distance=args.distance,
+        curves_m = lcf.curves_compute(name, path, bnames, z=z, distance=distance,
                                       t_beg=times[0], t_end=times[1], t_diff=t_diff)
         if args.color_excess:
-            curves_m = lcf.curves_reddening(curves_m, ebv=args.color_excess, z=args.redshift, is_info=args.is_not_quiet)
+            curves_m = lcf.curves_reddening(curves_m, ebv=args.color_excess, z=z, is_info=args.is_not_quiet)
 
         for lc in curves_m:
             tss_m.add(lc)
@@ -746,12 +757,23 @@ def main():
     if is_curves_o and len(bnames) == 0:
         bnames = [bn for bn in curves_o.BandNames if band_is_exist(bn)]
 
+    # Set distance and redshift
+    distance = 10  # pc
+    z = args.redshift
+    if args.distance is None:
+        if z > 0:
+            distance = cosmology_D_by_z(z) * 1e6
+            print("Fit magnitudes on z={0:F} with cosmology D(z)={1:E} pc".format(z, distance))
+    else:
+        print("Fit magnitudes on z={0:F} at distance={1:E}".format(z, distance))
+        if z > 0:
+            print("  Cosmology D(z)={0:E} Mpc".format(cosmology_D_by_z(z)))
+
     # Time limits for models
     times = (0, None)
 
     if args.times:
         times = list(map(float, args.times.split(':')))
-
     print('Time limits for models: {}'.format(':'.join(map(str, times))))
 
     # The fit engine
@@ -868,9 +890,22 @@ def main():
 
     if is_vel:
         # vel_o.tshift = best_tshift
-        plot_curves_vel(curves_o, vels_o, res_models, res_sorted, vels_m)
+        fig = plot_curves_vel(curves_o, vels_o, res_models, res_sorted, vels_m)
     else:
-        plot_curves(curves_o, res_models, res_sorted)
+        fig = plot_curves(curves_o, res_models, res_sorted)
+
+    if args.save_file is not None:
+        fsave = args.save_file
+        if len(os.path.dirname(fsave)) == 0:
+            fsave = os.path.expanduser("~/{}".format(fsave))
+        if not fsave.endswith('.pdf'):
+            fsave += '.pdf'
+        print("Save plot to {0}".format(fsave))
+        fig.savefig(fsave, bbox_inches='tight')
+    else:
+        from matplotlib import pyplot as plt
+        plt.subplots_adjust(left=0.07, right=0.96, top=0.97, bottom=0.06)
+        plt.show()
 
 
 if __name__ == '__main__':

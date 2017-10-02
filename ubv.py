@@ -209,11 +209,11 @@ def main(name='', model_ext='.ph'):
             continue
         if opt == '-b':
             bnames = []
+            bshift = {}
             for b in str(arg).split('-'):
                 # extract band shift
                 if ':' in b:
                     bname, shift = b.split(':')
-                    bshift = {}
                     if '_' in shift:
                         bshift[bname] = -float(shift.replace('_', ''))
                     else:

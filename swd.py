@@ -134,7 +134,7 @@ def get_parser():
                         action='store_const',
                         const=True,
                         dest="is_save",
-                        help="To save plot to pdf-file. Default: False".format('2:10:50'))
+                        help="To save the result plot to pdf-file. Format: swd_[name]_t[times].pdf.")
     parser.add_argument('-w', '--write',
                         action='store_const',
                         const=True,

@@ -35,9 +35,9 @@ def lbl(b, band_shift):
     if shift == int(shift):
         shift = int(shift)
     if shift > 0:
-        s += '+' + s(shift)
+        s += '+' + str(shift)
     elif shift < 0:
-        s += '-' + s(abs(shift))
+        s += '-' + str(abs(shift))
     return s
 
 

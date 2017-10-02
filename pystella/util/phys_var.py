@@ -34,15 +34,12 @@ class phys:
 
     FOE = 1.e51  # ergs
 
-    d2s = 24.*60.*60.  # convert days to seconds
+    d2s = 24. * 60. * 60.  # convert days to seconds
     ev2erg = 1.6021764630e-12  # convert eV to erg
 
 
-def cosmology_D_by_z(z):
-    Omega_m = 0.31
-    Omega_e = 0.69
+def cosmology_D_by_z(z, H0=67.7, Omega_m=0.31, Omega_e=0.69):
     c = 2.998e5
-    H0 = 67.7
     D = (1. + z) * c / H0 * \
         quad(lambda zz: 1 / np.sqrt(Omega_m * (1. + zz) ** 3 + Omega_e), 0, z)[0]
     return D
