@@ -127,7 +127,7 @@ def compare_ttVSubv(mname, path, bands=('U', 'B', 'V', 'R', 'I'), t_cut=1., is_p
     dic_results = {}
 
     model = Stella(mname, path=path)
-    tt = model.read_tt_data()
+    tt = model.get_tt().read()
 
     # time cut  days
     mags = tt[tt['time'] > t_cut]

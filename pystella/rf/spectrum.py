@@ -46,7 +46,7 @@ class Spectrum(object):
         return self._flux
 
     @property
-    def Flux_wl(self):  # wavelength of flux [cm]
+    def FluxWl(self):  # wavelength of flux [cm]
         return self.Flux * self.Freq ** 2 / phys.c  # flux [erg/cm^2/cm) ]
 
     @property
@@ -69,6 +69,39 @@ class Spectrum(object):
         popt, pcov = curve_fit(func, self.Freq, self.Flux, p0=Tinit)
         return popt[0]
 
+    def T_color_zeta(self, is_mpfit=True, is_quiet=True):
+        from pystella.fit import mpfit
+        """
+        Fitting Spectrum by planck function and find the color temperature
+        :return:   color temperature
+        """
+
+        def func(nu, T, w):
+            return np.pi * w * rf.planck(nu, T, inp="Hz", out="freq")
+
+        def least_sq(p, fjac):
+            T = p[0]
+            w = p[1]
+            wbb = np.pi * w * rf.planck(self.Freq, T, inp="Hz", out="freq")
+
+            # model interpolation
+            res = np.abs(self.Flux - wbb)
+            return 0, res
+
+        Tinit, W = self.T_wien, 1.
+        if is_mpfit:
+            xtol = 1e-10
+            ftol = 1e-10
+            gtol = 1e-10
+            parinfo = [{'value': Tinit, 'limited': [1, 1], 'limits': [10., 1e6]},
+                       {'value': 1., 'limited': [1, 1], 'limits': [0., 1e4]}]
+            result = mpfit.mpfit(least_sq, parinfo=parinfo, quiet=is_quiet, maxiter=200,
+                                 ftol=ftol, gtol=gtol, xtol=xtol)
+            popt = result.params
+        else:
+            popt, pcov = curve_fit(func, self.Freq, self.Flux, p0=(Tinit, W))
+        return popt
+
     @property
     def temp_wien_interp(self):
         return rf.temp_wien(self.wl_flux_max_interp)
@@ -80,7 +113,7 @@ class Spectrum(object):
         :return: Wien's temperature
         """
         wl = self.Wl
-        tck = interpolate.splrep(wl, self.Flux_wl)
+        tck = interpolate.splrep(wl, self.FluxWl)
 
         def func(w):
             return -interpolate.splev(w, tck, der=0)
@@ -94,7 +127,7 @@ class Spectrum(object):
         Find max wave length of Spectrum
         :return: the wave length of the spectrum maximum
         """
-        idx = np.argmax(self.Flux_wl)
+        idx = np.argmax(self.FluxWl)
         wl_max = self.Wl[idx]
         return wl_max
 
@@ -146,7 +179,7 @@ class Spectrum(object):
             wavelengthMax = self.Wl.max()
 
         mask = np.logical_and(np.greater(self.Wl, wavelengthMin), np.less(self.Wl, wavelengthMax))
-        flux = np.trapz(self.Flux_wl[mask], self.Wl[mask])
+        flux = np.trapz(self.FluxWl[mask], self.Wl[mask])
         return flux
 
     def smooth(self, smoothPix):
@@ -194,15 +227,10 @@ class SpectrumPlanck(Spectrum):
         flux = math.pi * rf.planck(freq, temperature=temperature)
         Spectrum.__init__(self, name, freq=freq, flux=flux)
         self._T = temperature
-        # self.zeta = None
 
     @property
     def T(self):
         return self._T
-
-        # def correct_zeta(self, zeta):
-        #     self.zeta = zeta
-        #     self._flux *= zeta ** 2
 
 
 class SpectrumDilutePlanck(Spectrum):
@@ -358,6 +386,10 @@ class SeriesSpectrum(object):
                 times.append(t)
                 fvalue.append(r)
         return {'t': times, 'v': fvalue}
+
+    def get_T_color_zeta(self):
+        d = self.map(lambda t, s: s.T_color_zeta())
+        return np.array(d['v'])
 
     def get_T_color(self):
         d = self.map(lambda t, s: s.T_color)

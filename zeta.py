@@ -583,7 +583,7 @@ def compute_tcolor(name, path, bands, d=rf.pc_to_cm(10.), z=0., t_cut=1.):
     mags = serial_spec.mags_bands(bands, z=z, d=d)
 
     # read R_ph
-    tt = model.read_tt_data()
+    tt = model.get_tt().read()
     tt = tt[tt['time'] > t_cut]  # time cut  days
 
     # compute Tnu, W

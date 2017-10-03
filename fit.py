@@ -475,7 +475,7 @@ def plot_squared(ax, res_sorted, path='./', p=('R', 'M'), **kwargs):
         #
         # # Add a color bar which maps values to colors.
         plt.colorbar(surf, shrink=0.5, aspect=5)
-        plt.subplots_adjust(left=0.07, right=0.06, top=0.97, bottom=0.06)
+        plt.subplots_adjust(left=0.07, right=0.96, top=0.97, bottom=0.06)
         # plt.show()
 
 

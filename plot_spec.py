@@ -20,6 +20,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import pystella.rf.rad_func as rf
 from pystella.model.stella import Stella
 from pystella.rf import band, spectrum
+from pystella.rf.spectrum import SpectrumPlanck, SpectrumDilutePlanck, Spectrum
 from pystella.rf.star import Star
 from pystella.util.phys_var import phys
 
@@ -260,7 +261,7 @@ def plot_spec_poly(series, moments=None, fcut=1.e-20, is_info=False):
 
 def plot_fit_bands(model, series, set_bands, times):
     name = model.Name
-    tt = model.read_tt_data()
+    tt = model.get_tt().read()
     tt = tt[tt['time'] > min(times) - 1.]  # time cut  days
     Rph_spline = interpolate.splrep(tt['time'], tt['Rph'], s=0)
     distance = rf.pc_to_cm(10.)  # pc for Absolute magnitude
@@ -290,31 +291,144 @@ def plot_fit_bands(model, series, set_bands, times):
     return fig
 
 
-def plot_fit_wl(model, series, wl_ab):
-    name = series.Name
-    # tt = model.read_tt_data()
-    dic_results = {'T': [], 'zeta': [], 'time': []}
+def plot_fit_wl(model, series, wl_ab, times=None, fsave=None):
+    name = model.name
+    results = {'T': [], 'zeta': [], 'time': []}
+
+    tt = model.get_tt().read()
     series_cut = series.copy(wl_ab=wl_ab)
 
-    Tcol = series_cut.get_T_color()
-    Twien = series_cut.get_T_wien()
-    zeta = np.power(Twien/Tcol, 4)
+    time = series.Time
+    radiuses = np.interp(time, tt['time'], tt['rbb'], 0, 0)
 
-    print("{:>10s}  {:>12s}  {:>12s}  {:>12s}  ".format("Time", "Tcol", "Twien", "zeta"))
-    for t, c, w, z in zip(series.Time, Tcol, Twien, zeta):
-        print("%10.2f  %12.6f  %12.6f  %12.6f  " % (t, c, w, z))
-    # for it, time in enumerate(tt['time']):
-    #     print("\nRun: %s t=%f [%d/%d]" % (name, time, it, len(tt['time'])))
-    #     spec = series_cut.get_spec_by_time(time)
-    #     spec.cut_flux(max(spec.Flux) * .1e-5)  # cut flux
-    #
-    #     Tcol, zeta = compute_tcolor_wl(series)
-    #     dic_results['time'].append(time)
-    #     dic_results['T'].append(Tcol)
-    #     dic_results['zeta'].append(zeta)
-    #     print("\nRun: %f Tcol=%f zeta=%f " % (time, Tcol, zeta))
-    #
-    fig = None  # plot_spec_wl(dic_results, is_planck=True, is_filter=True)
+    if True:
+        Tcol, Twien, zeta = [], [], []
+        Tdil, Wdil = [], []
+        for i, t in enumerate(time):
+            sp = series_cut.get_spec(i)
+            # sp = series_cut.get_spec_by_time(t)
+            R = radiuses[i]
+            star_cut = Star("bb_cut", sp)
+            star_cut.set_distance(R)
+            sp_obs = Spectrum('cut', star_cut.Freq, star_cut.FluxObs)
+            Tc = sp_obs.T_color
+            Tw = sp_obs.T_wien
+            w = np.power(Tw/Tc, 4)
+            Td, W_d = sp_obs.T_color_zeta()
+
+            Tcol.append(Tc)
+            Twien.append(Tw)
+            zeta.append(w)
+            Tdil.append(Td)
+            Wdil.append(W_d)
+    else:
+        Tcol = series_cut.get_T_color()
+        Twien = series_cut.get_T_wien()
+        zeta = np.power(Twien/Tcol, 4)
+
+        res = series_cut.get_T_color_zeta()
+        Tdil, Wdil = res[:, 0], res[:, 1]
+
+    # print
+    # print("{:>10s}  {:>12s}  {:>12s}  {:>12s}  ".format("Time",  "Twien", "Tcol", "zeta", "Tdil", "Wdil"))
+    print("{:>8}".format("Time") +
+          ' '.join("{:>12s}".format(s) for s in ("T_wien", "Tcol", "W", "T_dil", "W_dil")))
+    for t, *p in zip(time, Twien, Tcol, zeta, Tdil, Wdil):
+        print("{:8.2f}".format(t) + ' '.join("{0:12.2f}".format(s) for s in p))
+        # print("%10.2f  %12.6f  %12.6f  %12.6f  " % p)
+    if fsave is not None:
+        with open(fsave, "w+") as f:
+            print("{:>8s}".format("Time") +
+                  ' '.join("{:>12s}".format(s) for s in ("T_wien", "Tcol", "W", "T_dil", "W_dil")), file=f)
+            # print("{:>10s}  {:>12s}  {:>12s}  {:>12s}  ".format("Time",  "Twien", "Tcol","zeta"), file=f)
+            for t, *p in zip(time, Twien, Tcol, zeta, Tdil, Wdil):
+                print("{:8.2f}".format(t) + ' '.join("{0:12.2f}".format(s) for s in p), file=f)
+        print("Save temperatures to %s " % fsave)
+
+    # plot
+    fig, ax = plt.subplots()
+    marker_style = dict(linestyle=':', color='cornflowerblue', markersize=10)
+
+    ax.semilogy(time, Tcol, 'ks-', markerfacecolor='white', markersize=3, label="Tcolor")
+    ax.semilogy(time, Twien, 'r:', label="Twien")
+    ax.semilogy(time, Tdil, 'ys-',  markersize=3, label="T_dil")
+    ax.semilogy(tt['time'], tt['Tbb'], 'g:', label="tt Tbb")
+    # ax.semilogy(tt['time'], tt['Teff'], 'y:', label="tt Teff")
+    # ax.semilogy(results['time'], tt['T'], 'm:', label="tt Teff")
+    ax.legend()
+    # wl range
+
+    if times is not None:
+        for xc in times:
+            ax.axvline(x=xc, color="grey", linestyle='--')
+
+        fig = plot_spec_wl(times, series, tt, wl_ab)
+    else:
+        pass
+    return fig
+
+
+def plot_spec_wl(times, series, tt, wl_ab, **kwargs):
+    font_size = kwargs.get('font_size', 11)
+    nrow = np.math.floor(len(times)/2)
+    ncol = 2
+    fig = plt.figure(figsize=(12, nrow * 4))
+    plt.matplotlib.rcParams.update({'font.size': font_size})
+
+    series_cut = series.copy(wl_ab=wl_ab)
+    # radiuses = np.interp(times, tt['time'], tt['Rph'], 0, 0)
+    radiuses = np.interp(times, tt['time'], tt['rbb'], 0, 0)
+    Tbbes = np.interp(times, tt['time'], tt['Tbb'], 0, 0)
+    marker_style = dict(linestyle=':', markersize=5)
+
+    for i, t in enumerate(times):
+        ax = fig.add_subplot(nrow, ncol, i + 1)
+        spec = series.get_spec_by_time(t)
+        spec.cut_flux(max(spec.Flux) * 1e-6)  # cut flux
+        R = radiuses[i]
+
+        star_bb = Star("bb", spec)
+        star_bb.set_distance(R)
+
+        spec_cut = series_cut.get_spec_by_time(t)
+        star_cut = Star("bb_cut", spec_cut)
+        star_cut.set_distance(R)
+
+        # spectrum
+        ax.semilogy(star_bb.Wl*phys.cm_to_angs, star_bb.FluxWlObs, label="Spec Ph",
+                    marker='o', **marker_style)
+        # Tcolor
+        spec_obs = Spectrum('wbb', star_cut.Freq, star_cut.FluxObs)
+        Tcol = spec_obs.T_color
+        T_wien = spec_obs.T_wien
+        zeta = (T_wien/Tcol)**4
+        wbb = SpectrumDilutePlanck(spec.Freq, Tcol, zeta)
+        ax.semilogy(wbb.Wl*phys.cm_to_angs, wbb.FluxWl, label="Tcol={:.0f} W={:.2f}".format(Tcol, zeta),
+                    marker='<', **marker_style)
+        # diluted
+        Tdil, W = spec_obs.T_color_zeta()
+        dil = SpectrumDilutePlanck(spec.Freq, Tdil, W)
+        ax.semilogy(dil.Wl*phys.cm_to_angs, dil.FluxWl, label="Tdil={:.0f} W={:.2f}".format(Tdil, W),
+                    marker='>', **marker_style)
+        # Tbb
+        Tbb = Tbbes[i]
+        bb = SpectrumPlanck(spec.Freq, Tbb)
+        ax.semilogy(bb.Wl*phys.cm_to_angs, bb.FluxWl, label="Tbb={:.0f}".format(Tbb),
+                    marker='d', **marker_style)
+
+        # wl range
+        if wl_ab is not None:
+            for xc in wl_ab:
+                plt.axvline(x=xc, color="grey", linestyle='--')
+        ax.legend(loc="best", prop={'size': 7})
+        ax.text(0.01, 0.05, "$t_d: {:.1f}$".format(t), horizontalalignment='left', transform=ax.transAxes,
+                bbox=dict(facecolor='green', alpha=0.3))
+        xlim = ax.get_xlim()
+        ax.set_xlim(xlim[0], min(xlim[1], 2e4))
+
+    # fig.subplots_adjust(wspace=0, hspace=0)
+    # fig.subplots_adjust(wspace=0, hspace=0, left=0.07, right=0.96, top=0.97, bottom=0.06)
+    plt.subplots_adjust(left=0.07, right=0.96, top=0.97, bottom=0.06)
     return fig
 
 
@@ -432,32 +546,11 @@ def epsilon_mag(x, freq, mag, bands, radius, dist):
     return e
 
 
-def epsilon_freq(x, freq, spec, radius, dist):
-    temp_color, zeta = x
-    sp = spectrum.SpectrumDilutePlanck(freq, temp_color, zeta ** 2)
-
-    star = Star("bb", sp)
-    star.set_radius_ph(radius)
-    star.set_distance(dist)
-    mag_bb = {b: star.magAB(band.band_by_name(b)) for b in bands}
-    e = 0
-    for b in bands:
-        e += abs(mag[b] - mag_bb[b])
-    return e
-
-
 def compute_tcolor(star, bands):
     mags = {}
     for n in bands:
         b = band.band_by_name(n)
         mags[n] = star.magAB(b)
-
-    Tcol, zeta = fmin(epsilon_mag, x0=np.array([1.e4, 1]),
-                      args=(star.Freq, mags, bands, star.radius_ph, star.distance), disp=0)
-    return Tcol, zeta
-
-
-def compute_tcolor_wl(series):
 
     Tcol, zeta = fmin(epsilon_mag, x0=np.array([1.e4, 1]),
                       args=(star.Freq, mags, bands, star.radius_ph, star.distance), disp=0)
@@ -521,7 +614,7 @@ def main():
     is_save_plot = False
     is_fit = False
     is_fit_wl = False
-    is_magAB = False
+    is_write = False
     fsave = None
 
     try:
@@ -552,7 +645,7 @@ def main():
     wl_ab = None
     set_bands = ['B-V', 'B-V-I', 'V-I']
     # set_bands = ['B-V', 'B-V-I', 'V-I', 'J-H-K']
-    times = [15., 30., 60., 120.]
+    times = [5., 15., 30., 60., 90., 120.]
 
     for opt, arg in opts:
         if opt == '-b':
@@ -564,7 +657,7 @@ def main():
                         sys.exit(2)
             continue
         if opt == '-a':
-            is_magAB = True
+            is_write = True
             continue
         if opt == '-s':
             is_save_plot = True
@@ -600,34 +693,39 @@ def main():
         sys.exit(2)
 
     model = Stella(name, path=path)
+    series = model.get_ph(t_diff=1.05)
 
     if not model.is_ph_data:
         print("No ph-data for: " + str(model))
         return None
 
-    series_spec = model.read_series_spectrum(t_diff=1.05)
-    # series = series_spec  #.copy(t_ab=(0., 25e3), wl_ab=(1., 25e3))
-    series = series_spec.copy(t_ab=t_ab, wl_ab=wl_ab)
+    if is_fit:
+        if is_write:
+            if fsave is None or len(fsave) == 0:
+                fsave = "spec_%s" % name
+            print("Save series to %s " % fsave)
+            series_cut = series.copy(t_ab=t_ab, wl_ab=wl_ab)
+            write_magAB(series_cut)
+            sys.exit(2)
 
-    fig = None
-    if is_magAB:
-        if fsave is None or len(fsave) == 0:
-            fsave = "magAB_%s" % name
-        print("Save series to %s " % fsave)
-        write_magAB(series)
-        sys.exit(2)
-    elif is_fit:
         if not model.is_tt_data:
             print("Error in fit-band: no tt-data for: " + str(model))
             sys.exit(2)
-        fig = plot_fit_bands(model, series, set_bands, times)
+        series = model.get_ph(t_diff=1.05)
+        series_cut = series.copy(t_ab=t_ab, wl_ab=wl_ab)
+        fig = plot_fit_bands(model, series_cut, set_bands, times)
     elif is_fit_wl:
         if not model.is_tt_data:
             print("Error in fit-wave: no tt-data for: " + str(model))
             sys.exit(2)
-        fig = plot_fit_wl(model, series_spec, wl_ab)
+        if is_write:
+            if fsave is None or len(fsave) == 0:
+                fsave = os.path.join(os.path.expanduser('~/'), "temp_%s" % name) + '.txt'
+        fig = plot_fit_wl(model, series, wl_ab, times, fsave=fsave)
     else:
-        fig = plot_spec_poly(series)
+        series = model.get_ph(t_diff=1.05)
+        series_cut = series.copy(t_ab=t_ab, wl_ab=wl_ab)
+        fig = plot_spec_poly(series_cut)
         print("Plot spectral F(t,nu): " + str(model))
 
     if fig is not None:

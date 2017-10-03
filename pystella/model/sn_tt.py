@@ -34,6 +34,7 @@ class StellaTt:
     def read(self, ext='tt', line_header=87):
         """
         Read tt-data
+        Columns: time Tbb rbb Teff Rlast_sc Rph Mbol MU MB MV MI MR   Mbolavg  gdepos
         :return: data in np.array
         """
 

@@ -35,12 +35,12 @@ def plot_bb(Trad, Tcol, W1, W2, wl_lim=(100., 1e5, 100)):
 
     # plot Trad
     x = sp_1.Wl * phys.cm_to_angs
-    y = sp_1.Flux_wl
+    y = sp_1.FluxWl
     ax.semilogy(x, y, color='red', ls=":", linewidth=2.5, label='Diluted 1: Tcol=%6.1f W=%4.2f' % (sp_1.T, sp_1.W))
 
     # plot Tcol & W
     xx = sp_2.Wl * phys.cm_to_angs
-    yy = sp_2.Flux_wl
+    yy = sp_2.FluxWl
     ax.semilogy(xx, yy, color='blue', ls="--", linewidth=2.5, label='Diluted 2: Tcol=%6.1f W=%4.2f' % (sp_2.T, sp_2.W))
 
     ymax = np.max([y, yy])

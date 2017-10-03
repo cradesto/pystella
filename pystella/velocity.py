@@ -200,7 +200,7 @@ def compute_vel_res_tt(name, path, z=0., t_beg=1., t_end=None, t_diff=1.05):
         t_end = float('inf')
 
     res = model.get_res()
-    tt = model.read_tt_data()
+    tt = model.get_tt().read()
     tt = tt[tt['time'] >= t_beg]  # time cut  days
 
     radiuses = list()

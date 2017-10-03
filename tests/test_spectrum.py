@@ -22,6 +22,18 @@ class TestSpectrum(unittest.TestCase):
             self.assertTrue(freq[i] > freq[i + 1],
                             "Freq should be ordered, but freq[%d] > freq[%d]." % (i, i + 1))
 
+    def test_spectrum_T_color_zeta(self):
+        nf, start, end = 100, 10., 1e5
+        wl = np.exp(np.linspace(np.log(end), np.log(start), nf))
+        freq = rf.val_to_hz(wl, inp="A")
+        W = 0.5
+        Tcolor = 7e3
+        sp = spectrum.SpectrumDilutePlanck(freq, Tcolor, W, 'test')
+
+        Tbb, zeta = sp.T_color_zeta()
+        self.assertAlmostEqual(Tcolor, Tbb, "Init Tcolor={:.2f} should be as Tbb={:.2f}.".format(Tcolor, Tbb))
+        self.assertAlmostEqual(W, zeta, "Init W={:.2f} should be as zeta={:.2f}.".format(W, zeta))
+
 
 def main():
     unittest.main()
