@@ -369,7 +369,7 @@ def plot_fit_wl(model, series, wl_ab, times=None, fsave=None):
 
 
 def plot_spec_wl(times, series, tt, wl_ab, **kwargs):
-    font_size = kwargs.get('font_size', 11)
+    font_size = kwargs.get('font_size', 12)
     nrow = np.math.floor(len(times)/2)
     ncol = 2
     fig = plt.figure(figsize=(12, nrow * 4))
@@ -395,8 +395,7 @@ def plot_spec_wl(times, series, tt, wl_ab, **kwargs):
         star_cut.set_distance(R)
 
         # spectrum
-        ax.semilogy(star_bb.Wl*phys.cm_to_angs, star_bb.FluxWlObs, label="Spec Ph",
-                    marker='o', **marker_style)
+        ax.semilogy(star_bb.Wl*phys.cm_to_angs, star_bb.FluxWlObs, label="Spec Ph")
         # Tcolor
         spec_obs = Spectrum('wbb', star_cut.Freq, star_cut.FluxObs)
         Tcol = spec_obs.T_color
@@ -420,7 +419,7 @@ def plot_spec_wl(times, series, tt, wl_ab, **kwargs):
         if wl_ab is not None:
             for xc in wl_ab:
                 plt.axvline(x=xc, color="grey", linestyle='--')
-        ax.legend(loc="best", prop={'size': 7})
+        ax.legend(loc="best", prop={'size': 9})
         ax.text(0.01, 0.05, "$t_d: {:.1f}$".format(t), horizontalalignment='left', transform=ax.transAxes,
                 bbox=dict(facecolor='green', alpha=0.3))
         xlim = ax.get_xlim()
