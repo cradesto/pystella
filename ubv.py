@@ -303,7 +303,7 @@ def main(name='', model_ext='.ph'):
     if distance is None:
         if z > 0:
             distance = cosmology_D_by_z(z)*1e6
-            print("Plot magnitudes on z={0:F}. Use cosmology D(z)={1:E} pc".format(z, distance))
+            print("Plot magnitudes on z={0:F} with D(z)={1:E} pc (cosmological)".format(z, distance))
         else:
             distance = 10  # pc
     else:
@@ -328,12 +328,12 @@ def main(name='', model_ext='.ph'):
             if is_vel:
                 vels = vel.compute_vel_res_tt(name, path, z=z)
                 if vels is None:
-                    sys.exit("No data for: %s in %s" % (name, path))
+                    sys.exit("Error: no data for: %s in %s" % (name, path))
                 models_vels[name] = vels
-                print("Finish velocity: %s [%d/%d]" % (name, i, len(names)))
+                print("[%d/%d] Done velocity for %s" % (i, len(names), name))
             else:
                 models_vels = None
-                print("Finish mags: %s [%d/%d] in %s" % (name, i, len(names), path))
+                print("[%d/%d] Done mags for %s" % (i, len(names), name))
 
         if label is None:
             if callback is not None:

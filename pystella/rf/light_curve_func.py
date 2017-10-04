@@ -172,7 +172,7 @@ def curves_compute(name, path, bands, z=0., distance=10., magnification=1.,
     :return: dictionary with keys = bands, value = star's magnitudes
     """
     t_beg = kwargs.get("t_beg", 0.)
-    t_end = kwargs.get("t_end", None)
+    t_end = kwargs.get("t_end", float('inf'))
     is_show_info = kwargs.get("is_show_info", False)
     t_diff = kwargs.get("t_diff", 1.05)
 
@@ -189,7 +189,7 @@ def curves_compute(name, path, bands, z=0., distance=10., magnification=1.,
         model.show_info()
 
     # serial_spec = model.read_serial_spectrum(t_diff=0.)
-    serial_spec = model.read_series_spectrum(t_diff=t_diff, t_beg=t_beg, t_end=t_end)
+    serial_spec = model.get_ph(t_diff=t_diff, t_beg=t_beg, t_end=t_end)
     curves = serial_spec.flux_to_curves(bands, z=z, d=rf.pc_to_cm(distance), magnification=magnification)
     # curves = SetLightCurve(name)
     # for n in bands:
