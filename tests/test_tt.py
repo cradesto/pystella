@@ -75,7 +75,7 @@ class TestStellaTt(unittest.TestCase):
         curves_tt = self.tt.read_curves_tt()
         bands = curves_tt.BandNames
 
-        serial_spec = self.stella.read_series_spectrum(t_diff=1.00001)
+        serial_spec = self.stella.get_ph(t_diff=1.00001)
         curves_ph = serial_spec.flux_to_curves(bands)
 
         models_dic = {'tt': curves_tt, 'ph': curves_ph}
@@ -94,7 +94,7 @@ class TestStellaTt(unittest.TestCase):
         bands = curves_gri.BandNames
         # bands = ('J','H','K')
 
-        serial_spec = self.stella.read_series_spectrum(t_diff=1.)
+        serial_spec = self.stella.get_ph(t_diff=1.)
         curves_ph = serial_spec.flux_to_curves(bands)
 
         models_dic = {'gri': curves_gri, 'ph': curves_ph}
@@ -116,7 +116,7 @@ class TestStellaTt(unittest.TestCase):
 
         bands = np.unique(np.array(bands_tt + bands_gri))
 
-        serial_spec = self.stella.read_series_spectrum(t_diff=1.00001)
+        serial_spec = self.stella.get_ph(t_diff=1.00001)
         curves_ph = serial_spec.flux_to_curves(bands)
 
         models_dic = {'tt': curves_tt, 'gri': curves_gri, 'ph': curves_ph}

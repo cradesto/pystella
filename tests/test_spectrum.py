@@ -31,8 +31,8 @@ class TestSpectrum(unittest.TestCase):
         sp = spectrum.SpectrumDilutePlanck(freq, Tcolor, W, 'test')
 
         Tbb, zeta = sp.T_color_zeta()
-        self.assertAlmostEqual(Tcolor, Tbb, "Init Tcolor={:.2f} should be as Tbb={:.2f}.".format(Tcolor, Tbb))
-        self.assertAlmostEqual(W, zeta, "Init W={:.2f} should be as zeta={:.2f}.".format(W, zeta))
+        self.assertAlmostEqual(Tcolor, Tbb, 5, "Init Tcolor={:.2f} should be as Tbb={:.2f}.".format(Tcolor, Tbb))
+        self.assertAlmostEqual(W, zeta, 5, "Init W={:.2f} should be as zeta={:.2f}.".format(W, zeta))
 
 
 def main():

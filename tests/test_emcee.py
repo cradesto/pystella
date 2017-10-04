@@ -98,7 +98,7 @@ class EmceeTests(unittest.TestCase):
         curves = sn1999em.read_curves()
         lc_obs = curves.get('V')
         lc_obs.mshift = -dm
-        lc_obs.tshift = -lc_obs.tmin
+        lc_obs.tshift = -lc_obs.Tmin
 
         # model light curves
         name = 'cat_R1000_M15_Ni007_E15'

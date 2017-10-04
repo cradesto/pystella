@@ -1,15 +1,14 @@
-import numpy as np
 import unittest
-import matplotlib.pyplot as plt
 from os.path import dirname, abspath, join
 
+import matplotlib.pyplot as plt
+import numpy as np
 from scipy import interpolate
 
-from pystella.fit.fit_mcmc import FitLcMcmc
-from pystella.fit.fit_mpfit import FitMPFit
-from pystella.model.popov import Popov
 from plugin import sn1999em, sn87a, rednova
 from pystella.fit import mpfit
+from pystella.fit.fit_mpfit import FitMPFit
+from pystella.model.popov import Popov
 from pystella.util.phys_var import phys
 
 __author__ = 'bakl'
@@ -105,7 +104,7 @@ class TestFit(unittest.TestCase):
         lc = curves.get('V')
         lc.mshift = dm
 
-        time = lc.Time - lc.tmin
+        time = lc.Time - lc.Tmin
         # time = np.exp(np.linspace(np.log(start), np.log(end), n))
         popov = Popov('test', R=450., M=15., Mni=0.04, E=0.7)
         mags = popov.MagBol(time)
@@ -160,7 +159,7 @@ class TestFit(unittest.TestCase):
         curves = rednova.read_curves_kurtenkov()
         lc = curves.get('R')
         lc.mshift = -dm
-        lc.tshift = -lc.tmin
+        lc.tshift = -lc.Tmin
 
         # fit
         ppv, tshift = popov_fit(lc, R0=10., M0=3., E0=1.e-2, dt0=-10)
@@ -184,7 +183,7 @@ class TestFit(unittest.TestCase):
         curves = sn87a.read_curves()
         lc = curves.get('R')
         lc.mshift = dm
-        lc.tshift = -lc.tmin
+        lc.tshift = -lc.Tmin
 
         # fit
         ppv, tshift = popov_fit(lc, R0=1000., M0=10., Mni0=0.01, E0=1., dt0=0.)
@@ -220,7 +219,8 @@ class TestFit(unittest.TestCase):
 
         # fit
         # fitter = FitLcMcmc()
-        fitter = FitMPFit(is_debug=True)
+        fitter = FitMPFit()
+        fitter.is_debug = True
         lc_o = curves_obs.get('V')
         res = fitter.fit_lc(lc_o, curves_mdl.get(lc_o.Band.Name))
 
@@ -259,7 +259,8 @@ class TestFit(unittest.TestCase):
 
         # fit
         # fitter = FitLcMcmc()
-        fitter = FitMPFit(is_debug=True)
+        fitter = FitMPFit()
+        fitter.is_debug = True
         res = fitter.fit_curves(curves_obs, curves_mdl)
 
         # print
