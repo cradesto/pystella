@@ -770,7 +770,7 @@ def main():
             print("  Cosmology D(z)={0:E} Mpc".format(cosmology_D_by_z(z)))
 
     # Time limits for models
-    times = (0, None)
+    times = (0, float('inf'))
 
     if args.times:
         times = list(map(float, args.times.split(':')))

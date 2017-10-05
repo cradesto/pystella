@@ -292,9 +292,6 @@ def plot_fit_bands(model, series, set_bands, times):
 
 
 def plot_fit_wl(model, series, wl_ab, times=None, fsave=None):
-    name = model.name
-    results = {'T': [], 'zeta': [], 'time': []}
-
     tt = model.get_tt().read()
     series_cut = series.copy(wl_ab=wl_ab)
 
