@@ -10,6 +10,8 @@ __author__ = 'bakl'
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+err_prefix = ('er', 'er_', 'err', 'err_')
+
 
 def read_table_header_float(fname, header=None, skip=0):
     if header is None:
@@ -89,7 +91,7 @@ def read_obs_table_header(fname, header=None, skip=0, colt=('time', 'JD', 'MJD')
         elif include_names is None or v in include_names:
             cols_data[k] = v
             # band error
-            for err_name in (es+v for es in ('er', 'er_', 'err', 'err_')):
+            for err_name in (es+v for es in err_prefix):
                 for i, bn in cols.items():
                     if err_name.upper() == bn.upper():
                         cols_data[i] = bn
@@ -124,7 +126,7 @@ def table2curves(name, tbl, bands=None, colt=('time', 'JD', 'MJD')):
         mask = np.where(mag != 0)  # filter out values not equal 0
         t = time[mask]
         m = mag[mask]
-        for err_name in ('err'+bname, 'err_'+bname):
+        for err_name in (prefix+bname for prefix in err_prefix):
             if err_name in tbl.dtype.names:
                 err = tbl[err_name]
                 e = err[mask]

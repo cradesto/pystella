@@ -4,7 +4,7 @@
 
 import os
 
-from pystella.util.reader_table import read_obs_table_header
+import pystella.util.reader_table  as rtbl
 from pystella.velocity import VelocityCurve, SetVelocityCurve
 
 
@@ -41,7 +41,7 @@ def plot(ax, dic=None, colt=('time', 'JD', 'MJD')):
     print("Plot {0} [{1}]  jd_shift={2}  mshift={3}".format(fname, marker, tshift, mshift))
 
     # read data
-    tbl = read_obs_table_header(fname, is_out=True)
+    tbl = rtbl.read_obs_table_header(fname, is_out=True)
     vel_o = tbl2vel(tbl, cname, colt, mshift)
     vel_o.tshift = tshift
 
@@ -91,7 +91,7 @@ def load(dic=None, colt=('time', 'JD', 'MJD')):
 
     # read data
     # tbl = read_table_header_float(fname)
-    tbl = read_obs_table_header(fname, colt=colt, include_names=cnames, is_out=is_debug)
+    tbl = rtbl.read_obs_table_header(fname, colt=colt, include_names=cnames, is_out=is_debug)
 
     vels_o = SetVelocityCurve("Vel-{}".format(fname))
     for cname in cnames:
@@ -112,8 +112,17 @@ def tbl2vel(tbl, cname, colt, mshift):
         raise ValueError("The table should contain a column with name in [{0}]".format(', '.join(colt)))
     values = tbl[cname] * mshift
     # filter
-    is_good = values > 0
-    t = time[is_good]
-    v = values[is_good]
-    vel_o = VelocityCurve(cname, t, v)
+    mask = values > 0
+    t = time[mask]
+    v = values[mask]
+
+    for err_name in (prefix + cname for prefix in rtbl.err_prefix):
+        if err_name in tbl.dtype.names:
+            err = tbl[err_name]
+            e = err[mask]
+            vel_o = VelocityCurve(cname, t, v, e)
+            break
+    else:
+        vel_o = VelocityCurve(cname, t, v)
+
     return vel_o

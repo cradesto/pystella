@@ -113,6 +113,12 @@ def get_parser():
                         default=1,
                         dest="nodes",
                         help="-n <nodes>: number of processes ")
+    parser.add_argument('--plotnbest',
+                        required=False,
+                        type=int,
+                        default=6,
+                        dest="plotnbest",
+                        help="<N>: number of the best fit-models on the figure")
     parser.add_argument('-s', '--save',
                         required=False,
                         type=str,
@@ -216,11 +222,12 @@ def plot_curves_vel(curves_o, vels_o, res_models, res_sorted, vels_m, **kwargs):
     ncol = 2
     fig = plt.figure(figsize=(12, nrow * 4))
     plt.matplotlib.rcParams.update({'font.size': font_size})
-    tshift0 = 0
+    tshift_lc = 0.
     if curves_o is not None:
-        tshift0 = first(curves_o).tshift
-    elif vels_o is not None:
-        tshift0 = first(vels_o).tshift
+        tshift_lc = first(curves_o).tshift
+    tshift_vel = 0.
+    if vels_o is not None:
+        tshift_vel = first(vels_o).tshift
 
     i = 0
     for k, v in res_sorted.items():
@@ -239,7 +246,7 @@ def plot_curves_vel(curves_o, vels_o, res_models, res_sorted, vels_m, **kwargs):
         if curves is not None:
             lcp.curves_plot(curves, ax=axUbv, figsize=(12, 8), linewidth=1, is_legend=False)
             lt = {lc.Band.Name: 'o' for lc in curves_o}
-            curves_o.set_tshift(tshift0 + tshift_best)
+            curves_o.set_tshift(tshift_lc + tshift_best)
             lcp.curves_plot(curves_o, axUbv, xlim=axUbv.get_xlim(), lt=lt, markersize=2, is_legend=False)
             # legend
             axUbv.legend(curves.BandNames, loc='lower right', frameon=False, ncol=min(5, len(curves.BandNames)),
@@ -266,7 +273,7 @@ def plot_curves_vel(curves_o, vels_o, res_models, res_sorted, vels_m, **kwargs):
 
         markers_cycler = cycle(markers_style)
         for vel_o in vels_o:
-            vel_o.tshift = tshift0 + tshift_best
+            vel_o.tshift = tshift_vel + tshift_best
             axVel.plot(vel_o.Time, vel_o.V, label=vel_o.Name, color='blue', ls='', marker=next(markers_cycler),
                        markersize=markersize)
 
@@ -279,6 +286,8 @@ def plot_squared_grid(res_sorted, path='./', **kwargs):
     from mpl_toolkits.mplot3d import Axes3D
 
     font_size = kwargs.get('font_size', 10)
+    is_show = kwargs.get('is_show', False)
+
     num = 4
     nrow = int(num / 2.1) + 1
     ncol = 2 if num > 1 else 1
@@ -305,7 +314,54 @@ def plot_squared_grid(res_sorted, path='./', **kwargs):
     # ax = fig.add_subplot(nrow, ncol, 4, projection='polar')
     # plot_squared_3d(ax, res_sorted, path, p=('R', 'M', 'E'), is_polar=True, **kwargs)
     #
-    plt.show()
+    if is_show:
+        plt.show()
+
+
+def plot_chi_par(res_sorted, path='./', p=('R', 'M', 'E'), **kwargs):
+    from pystella.model.stella import Stella
+    is_show = kwargs.get('is_show', False)
+    # find parameters
+    i = 0
+    datatt = {}
+    for name, res_chi in res_sorted.items():
+        i += 1
+        stella = Stella(name, path=path)
+        if stella.is_tt_data:
+            try:
+                info = stella.get_tt().Info
+                v = [getattr(info, pp) for pp in p]
+                datatt[name] = {"v": v, 'chi': res_chi.measure}
+            except KeyError as ex:
+                print("Error for model {}. Message: {} ".format(name, ex))
+
+    if len(datatt) == 0:
+        print('There are no tt-data for any models.')
+        return
+
+    import matplotlib.pyplot as plt
+    font_size = kwargs.get('font_size', 10)
+    markers_cycler = cycle({u'D': u'diamond', 6: u'caretup', u's': u'square', u'x': u'x'}.keys())
+
+    num = len(p)
+    nrow = int(num / 2.1) + 1
+    ncol = 2 if num > 1 else 1
+    fig = plt.figure(figsize=(12, nrow * 6))
+    plt.matplotlib.rcParams.update({'font.size': font_size})
+
+    for i, px in enumerate(p):
+        ax = fig.add_subplot(nrow, ncol, i+1)
+        x = []
+        y = []
+        for name, val in datatt.items():
+            x.append(val['v'][i])  # get value of parameter
+            y.append(val['chi'])  # get chi
+        ax.semilogy(x, y, marker=next(markers_cycler), ls="")
+        ax.set_xlabel(px)
+        ax.set_ylabel(r'$\chi^2$')
+
+    if is_show:
+        plt.show()
 
 
 def plot_squared(ax, res_sorted, path='./', p=('R', 'M'), **kwargs):
@@ -351,9 +407,10 @@ def plot_squared(ax, res_sorted, path='./', p=('R', 'M'), **kwargs):
                                   + " |  {:40s} | chi_saved={:6.2f}  chi_new={:6.2f}".
                                   format('This is not a unique point', chi[k], res_chi.measure))
                         if res_chi.measure < chi[k]:
-                            print("| %50s | k = %5d  Chi [%7.2f] < [%6.2f]" %
-                                  (info.Name + ' '.join("{0:6.2f}".format(vv) for vv in v),
-                                   k, res_chi.measure, chi[k]))
+                            if is_not_quiet:
+                                print("| %50s | k = %5d  Chi [%7.2f] < [%6.2f]" %
+                                      (info.Name + ' '.join("{0:6.2f}".format(vv) for vv in v),
+                                       k, res_chi.measure, chi[k]))
                             chi[k] = res_chi.measure
                         break
                 else:
@@ -552,7 +609,7 @@ def plot_squared_3d(ax, res_sorted, path='./', p=('R', 'M', 'E'), is_rbf=True, *
             ax = fig.add_subplot(1, 1, 1, projection='polar')
         else:
             ax = fig.add_subplot(1, 1, 1)
-        is_show = True
+            is_show = True
 
     if is_polar:
         C = 1.9
@@ -600,7 +657,7 @@ def plot_squared_3d(ax, res_sorted, path='./', p=('R', 'M', 'E'), is_rbf=True, *
         plt.show()
 
 
-def fit_mfl(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, times):
+def fit_mfl(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, times, Vnorm = 1e8):
     distance = 10  # pc
     z = args.redshift
     # Set distance and redshift
@@ -634,8 +691,7 @@ def fit_mfl(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, times):
         try:
             tbl = velocity.compute_vel_swd(name, path)
             # tbl = velocity.compute_vel_res_tt(name, path)
-            Vnorm = 1e8
-            vel_m = VelocityCurve('Vel', tbl['time'], tbl['vel'] / Vnorm)
+            vel_m = VelocityCurve('Vel', tbl['time'], tbl['vel']/Vnorm)
         except ValueError as ext:
             print(ext)
 
@@ -673,8 +729,8 @@ def main():
     # z = 0.
     # distance = 10  # pc
     # bnames = ['U', 'B', 'V', 'R', "I"]
+    # Nbest = 5
     Nbest = 33
-    NbestPlot = 6
     band.Band.load_settings()
 
     parser = get_parser()
@@ -868,13 +924,14 @@ def main():
 
     if len(res_sorted) >= Nbest:
         # plot chi squared
-        plot_squared_grid(res_sorted, path, par=('M', 'E'), is_not_quiet=args.is_not_quiet)
+        plot_squared_grid(res_sorted, path, is_not_quiet=args.is_not_quiet)
+        plot_chi_par(res_sorted, path)
 
         # plot only Nbest modeles
-        while len(res_sorted) > Nbest:
-            res_sorted.popitem()
+        # while len(res_sorted) > Nbest:
+        #     res_sorted.popitem()
 
-        plot_squared_3d(None, res_sorted, path, p=('R', 'M', 'E'), is_polar=True)
+        # plot_squared_3d(None, res_sorted, path, p=('R', 'M', 'E'), is_polar=True)
 
     best_mdl, res = first(res_sorted.items())
     # res = first(res_sorted.values())[0]
@@ -885,7 +942,7 @@ def main():
     # curves_o.set_tshift(best_tshift)
 
     # plot only NbestPlot modeles
-    while len(res_sorted) > NbestPlot:
+    while len(res_sorted) > args.plotnbest:
         res_sorted.popitem()
 
     if is_vel:
