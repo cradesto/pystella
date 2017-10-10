@@ -274,8 +274,14 @@ def plot_curves_vel(curves_o, vels_o, res_models, res_sorted, vels_m, **kwargs):
         markers_cycler = cycle(markers_style)
         for vel_o in vels_o:
             vel_o.tshift = tshift_vel + tshift_best
-            axVel.plot(vel_o.Time, vel_o.V, label=vel_o.Name, color='blue', ls='', marker=next(markers_cycler),
-                       markersize=markersize)
+            marker = next(markers_cycler)
+            if vel_o.IsErr:
+                yyerr = abs(vel_o.Err)
+                axVel.errorbar(vel_o.Time, vel_o.V, yerr=yyerr, label='{0}'.format(vel_o.Name),
+                               color="blue", ls='', markersize=markersize, fmt=marker)
+            else:
+                axVel.plot(vel_o.Time, vel_o.V, label=vel_o.Name, color='blue', ls='',
+                           marker=marker, markersize=markersize)
 
     fig.subplots_adjust(wspace=0, hspace=0)
     return fig

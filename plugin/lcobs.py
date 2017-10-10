@@ -100,7 +100,7 @@ def load(dic=None):
 
     # read data
     # tbl = read_table_header_float(fname)
-    tbl = read_obs_table_header(fname, include_names=band.band_get_names_alias(), is_out=is_debug)
+    tbl, cols_data = read_obs_table_header(fname, include_names=band.band_get_names_alias(), is_out=is_debug)
     curves = table2curves(os.path.basename(fname), tbl)
 
     # remove bad data

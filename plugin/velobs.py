@@ -66,6 +66,8 @@ def load(dic=None, colt=('time', 'JD', 'MJD')):
         dic = {}
     is_debug = dic.get('is_debug', False)
     cnames = ('Vel', 'vHeI', 'vFeII', 'vHa', 'vHb', 'vHg')
+    # cnames = ('Vel', 'vHeI', 'vFeII', 'vHa', 'vHb', 'vHg', 'Vel*', 'vel*', )
+    cpatterns = ('Vel*', 'vel*')
 
     fname = None
     tshift = 0.
@@ -91,13 +93,13 @@ def load(dic=None, colt=('time', 'JD', 'MJD')):
 
     # read data
     # tbl = read_table_header_float(fname)
-    tbl = rtbl.read_obs_table_header(fname, colt=colt, include_names=cnames, is_out=is_debug)
+    tbl, cols_data = rtbl.read_obs_table_header(fname, colt=colt, include_names=cnames,
+                                     include_patterns=cpatterns, is_out=is_debug)
 
     vels_o = SetVelocityCurve("Vel-{}".format(fname))
-    for cname in cnames:
-        if cname in tbl.dtype.names:
-            vel_o = tbl2vel(tbl, cname, colt, mshift)
-            vels_o.add(vel_o)
+    for i, cname in cols_data.items():
+        vel_o = tbl2vel(tbl, cname, colt, mshift)
+        vels_o.add(vel_o)
 
     vels_o.set_tshift(tshift)
     return vels_o

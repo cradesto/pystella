@@ -29,7 +29,8 @@ def read_table_header_float(fname, header=None, skip=0):
     return block
 
 
-def read_obs_table_header(fname, header=None, skip=0, colt=('time', 'JD', 'MJD'), include_names=None,
+def read_obs_table_header(fname, header=None, skip=0, colt=('time', 'JD', 'MJD'),
+                          include_names=None, include_patterns=None,
                           is_out=False, comments='#'):
     """
     Load tabular data from file.
@@ -47,6 +48,11 @@ def read_obs_table_header(fname, header=None, skip=0, colt=('time', 'JD', 'MJD')
         Which columns to read.
         Default None, results in all columns being read.
         Example: ['B','V','R']
+        The columns with errors, like 'err'+use_names, also will be read.
+    :param include_patterns:  list or None
+        Which columns to read as the pattern of regular expression.
+        Default None, results in all columns being read.
+        Example: ['Vel\d+','Vel.*']
         The columns with errors, like 'err'+use_names, also will be read.
     :param is_out:  bool, optional
         If True the skipped, header and first file-rows are printed.
@@ -81,28 +87,47 @@ def read_obs_table_header(fname, header=None, skip=0, colt=('time', 'JD', 'MJD')
     cols = {i: nm for i, nm in enumerate(cols_names)}
 
     is_time = False
+    cols_used = {}
     cols_data = {}
-    for k, v in cols.items():
+
+    def check_col_nm(nm, names, patterns):
+        import re
+        if names is None and patterns is None:
+            return True
+
+        if names is not None and v in names:
+            return True
+
+        if patterns is not None:
+            for n in patterns:
+                if re.match(n, nm):
+                    return True
+        return False
+
+    for k, v in list(cols.items()):
         # time
         if not is_time and v.lower() in colt:
-            cols_data[k] = v
+            cols_used[k] = v
             is_time = True
         # data
-        elif include_names is None or v in include_names:
+        elif check_col_nm(v, include_names, include_patterns):
+            cols_used[k] = v
             cols_data[k] = v
-            # band error
+            #  error
             for err_name in (es+v for es in err_prefix):
-                for i, bn in cols.items():
+                for i, bn in list(cols.items()):
                     if err_name.upper() == bn.upper():
-                        cols_data[i] = bn
+                        cols_used[i] = bn
+                        cols.pop(i)
+                        break
 
-    od = collections.OrderedDict(sorted(cols_data.items()))
+    od = collections.OrderedDict(sorted(cols_used.items()))
     usecols = list(od.keys())
     names = list(od.values())
 
     dt = np.dtype({'names': names, 'formats': [np.float64] * len(names)})
     block = np.loadtxt(fname, skiprows=max(lskip, skip)+1, dtype=dt, comments=comments, usecols=usecols)
-    return block
+    return block, cols_data
 
 
 def table2curves(name, tbl, bands=None, colt=('time', 'JD', 'MJD')):
