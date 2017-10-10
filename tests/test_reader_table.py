@@ -43,7 +43,7 @@ class TestReaderTable(unittest.TestCase):
 
     def test_read_obs_table_header(self):
         fname = 'data/obs/1999em-uphHamuy.dat'
-        tbl = read_obs_table_header(fname, is_out=True)
+        tbl, cols_data = read_obs_table_header(fname, is_out=True)
         for c in ('JD', 'V'):
             self.assertTrue(c in tbl.dtype.names,
                             msg="No band %s in [%s] after read_obs_table_header." % (c, ','.join(tbl.dtype.names)))

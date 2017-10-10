@@ -5,7 +5,7 @@ __author__ = 'bakl'
 
 ROOT_DIRECTORY = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 bands_alias = dict(U="Landolt_U", B="Landolt_B", V="Landolt_V", R="Landolt_R", I="Landolt_I",
-                   J="UKIRT_J", H="UKIRT_H", K="UKIRT_K",  # UVM2="skyblue", UVW1="orange", UVW2="blue",
+                   J="UKIRT_J", H="UKIRT_H", K="UKIRT_K",  UVM2="UVM2", UVW1="UVW1", UVW2="UVW2",
                    F105W="WFC3_F105W", F435W="ACS_F435W", F606W="ACS_F606W", F125W="WFC3_F125W",
                    F140W="WFC3_F140W",
                    F160W="WFC3_F160W", F814W="ACS_F814W",

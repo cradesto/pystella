@@ -41,7 +41,7 @@ def plot(ax, dic=None, colt=('time', 'JD', 'MJD')):
     print("Plot {0} [{1}]  jd_shift={2}  mshift={3}".format(fname, marker, tshift, mshift))
 
     # read data
-    tbl = rtbl.read_obs_table_header(fname, is_out=True)
+    tbl, cols_data = rtbl.read_obs_table_header(fname, is_out=True)
     vel_o = tbl2vel(tbl, cname, colt, mshift)
     vel_o.tshift = tshift
 

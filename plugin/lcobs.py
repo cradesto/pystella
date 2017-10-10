@@ -43,7 +43,7 @@ def plot(ax, dic=None, mag_lim=30.):
     print("Plot {0} [{1}]  jd_shift={2}  mshift={3}".format(fname, marker, jd_shift, mshift))
 
     # read data
-    tbl = read_obs_table_header(fname, include_names=band.band_get_names_alias(), is_out=True)
+    tbl, cols_data = read_obs_table_header(fname, include_names=band.band_get_names_alias(), is_out=True)
     # tbl = read_table_header_float(fname)
     curves = table2curves(os.path.basename(fname), tbl)
 
