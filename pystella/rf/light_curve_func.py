@@ -61,7 +61,59 @@ def compute_mag(name, path, bands, ext=None, z=0., distance=10., magnification=1
     return mags
 
 
-def curves_save_mags(curves, fname, sep='\t'):
+def curves_save_mags(curves, fname, sedef curves_compute(name, path, bands, z=0., distance=10., magnification=1.,
+                   **kwargs):
+    """
+        Compute magnitude in bands for the 'name' model.
+    :param name: the name of a model and data files
+    :param path: the directory with data-files
+    :param bands: photometric bands
+    :param z: redshift, default 0
+    :param distance: distance to star in parsec, default 10 pc
+    :param magnification: gravitational lensing magnification
+    :param t_end:
+    :param t_beg:
+    :param is_show_info: flag to write some information, default True
+    :return: dictionary with keys = bands, value = star's magnitudes
+    """
+    t_beg = kwargs.get("t_beg", 0.)
+    t_end = kwargs.get("t_end", float('inf'))
+    is_show_info = kwargs.get("is_show_info", False)
+    t_diff = kwargs.get("t_diff", 1.05)
+
+    if len(bands) == 0:
+        raise ValueError("You have not set any bands for model: " + str(name))
+
+    model = Stella(name, path=path)
+    if not model.is_ph_data:
+        model.show_info()
+        raise ValueError("Error: No spectral data for: " + str(model))
+
+    if is_show_info:
+        print('')
+        model.show_info()
+
+    # serial_spec = model.read_serial_spectrum(t_diff=0.)
+    serial_spec = model.get_ph(t_diff=t_diff, t_beg=t_beg, t_end=t_end)
+    curves = serial_spec.flux_to_curves(bands, z=z, d=rf.pc_to_cm(distance), magnification=magnification)
+    # curves = SetLightCurve(name)
+    # for n in bands:
+    #     b = band.band_by_name(n)
+    #     lc = serial_spec.flux_to_curve(b, z=z, dl=rf.pc_to_cm(distance), magnification=magnification)
+    #     # time = serial_spec.times * (1. + z)
+    #     # lc = LightCurve(b, time, mags)
+    #     curves.add(lc)
+
+    if is_show_info:
+        # print the time of maximum LC
+        tmin = 2.0
+        t = curves.TimeCommon
+        for n in bands:
+            t_min = t[t > tmin][curves[n][t > tmin].argmin()]
+            print("t_max(%s) = %f" % (n, t_min))
+
+    return curves
+p='\t'):
     """
        Save curves to CSV-format. It required for correct operation the common time for all LC.
     :param curves:
