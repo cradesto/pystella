@@ -210,6 +210,8 @@ def curves_compute(name, path, bands, z=0., distance=10., magnification=1.,
     return curves
 
 
+# todo Implement direct reddening from spectra
+# http://webast.ast.obs-mip.fr/hyperz/hyperz_manual1/node10.html
 def curves_reddening(curves, ebv, z=None, law=extinction.law_default, is_info=True):
     if ebv < 0.:
         raise ValueError("ebv should be > 0")

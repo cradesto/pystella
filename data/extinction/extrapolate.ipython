@@ -1,0 +1,35 @@
+
+from numpy import genfromtxt
+d  = np.genfromtxt('extinction_schlafly.csv')
+d.shape
+#[Out]# (91, 6)
+plt.plot(d[:,1], d[:,3])
+plt.plot(d[:,1], d[:,3], marker='d')
+plt.plot(d[:,1], d[:,3], marker='d', ls='')
+plt.plot(d[:,1], d[:,4], marker='s', ls='')
+plt.plot(d[:,1], d[:,5], marker='>', ls='')
+
+x =d[-3:,1]  #  [Out]# array([ 2030.5,  2228.1,  2589.1])  - lambda_eff
+
+from scipy.interpolate import InterpolatedUnivariateSpline
+dd =d[d[:-3,1].argsort()]
+dd.shape
+s = InterpolatedUnivariateSpline(dd[:-3,1], dd[:-3,2], k=2)
+s(x)
+#[Out]# array([ 2030.5,  2228.1,  2589.1])
+
+s = InterpolatedUnivariateSpline(dd[:-3,1], dd[:-3,2], k=1)
+s(x)
+#[Out]# array([ 14.64428895,  12.61268428,   9.2717429 ])
+
+s = InterpolatedUnivariateSpline(dd[:-3,1], dd[:-3,3], k=1)
+s(x)
+#[Out]# array([ 8.91253123,  7.86689224,  6.14813859])
+
+s = InterpolatedUnivariateSpline(dd[:-3,1], dd[:-3,4], k=1)
+s(x)
+#[Out]# array([ 6.70043651,  6.02504324,  4.914967  ])
+
+s = InterpolatedUnivariateSpline(dd[:-3,1], dd[:-3,5], k=1)
+s(x)
+

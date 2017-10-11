@@ -278,7 +278,9 @@ def plot_curves_vel(curves_o, vels_o, res_models, res_sorted, vels_m, **kwargs):
             if vel_o.IsErr:
                 yyerr = abs(vel_o.Err)
                 axVel.errorbar(vel_o.Time, vel_o.V, yerr=yyerr, label='{0}'.format(vel_o.Name),
-                               color="blue", ls='', markersize=markersize, fmt=marker)
+                               color="blue", ls='',
+                               markersize=markersize, fmt=marker, markeredgewidth=2,
+                               markerfacecolor='none', markeredgecolor='blue')
             else:
                 axVel.plot(vel_o.Time, vel_o.V, label=vel_o.Name, color='blue', ls='',
                            marker=marker, markersize=markersize)
@@ -377,8 +379,8 @@ def plot_squared(ax, res_sorted, path='./', p=('R', 'M'), **kwargs):
     is_rbf = kwargs.get('is_rbf', True)
     is_surface = kwargs.get('is_surface', True)
     is_scatter = kwargs.get('is_scatter', not is_surface and False)
-    is_not_quiet = False
-    # is_not_quiet = kwargs.get('is_not_quiet', True)
+    # is_not_quiet = False
+    is_not_quiet = kwargs.get('is_not_quiet', False)
 
     # graph
     # ax.set_title('-'.join(p))
@@ -546,7 +548,7 @@ def plot_squared_3d(ax, res_sorted, path='./', p=('R', 'M', 'E'), is_rbf=True, *
     from matplotlib import pyplot as plt
     from pystella.model.stella import Stella
 
-    is_not_quiet = False
+    is_not_quiet = kwargs.get('is_not_quiet', False)
     is_polar = kwargs.get('is_polar', False)
     is_show = False
 
@@ -575,19 +577,16 @@ def plot_squared_3d(ax, res_sorted, path='./', p=('R', 'M', 'E'), is_rbf=True, *
                 for vo in data:
                     k += 1
                     if np.array_equal(v, vo):
-                        print("|   | " + ' '.join("{0:6.2f}".format(vv) for vv in v)
-                              + " |  {:40s} | chi_saved={:6.2f}  chi_new={:6.2f}".
-                              format('This is not a unique point', chi[k], res_chi.measure))
+                        if is_not_quiet:
+                            print("|   | " + ' '.join("{0:6.2f}".format(vv) for vv in v)
+                                  + " |  {:40s} | chi_saved={:6.2f}  chi_new={:6.2f}".
+                                  format('This is not a unique point', chi[k], res_chi.measure))
                         if res_chi.measure < chi[k]:
-                            print("| %40s | k = %5d  Chi [%7.2f] => [%6.2f]" %
-                                  (info.Name, k, res_chi.measure, chi[k]))
+                            if is_not_quiet:
+                                print("| %40s | k = %5d  Chi [%7.2f] => [%6.2f]" %
+                                      (info.Name, k, res_chi.measure, chi[k]))
                             chi[k] = res_chi.measure
                         break
-                # if -1 < k < len(x)-1:  # This is not a unique point
-                #     # if v1 in x and v2 in y:
-                #         todo Условие на то что chi меньше старого
-                #     print("| %40s |  %7.2f |  %6.2f |  %s" %
-                #           ('   ', v1, v2, 'This is not a unique point'))
                 else:
                     data.append(v)
                     # y.append(v2)
@@ -640,7 +639,6 @@ def plot_squared_3d(ax, res_sorted, path='./', p=('R', 'M', 'E'), is_rbf=True, *
         ax.set_xticklabels(xlabel)
         ax.legend(bbox_to_anchor=(1.3, 1.05))
     else:
-        from mpl_toolkits.mplot3d import Axes3D
         import matplotlib.pyplot as plt
         # graph
         # ax.set_title('-'.join(p))
@@ -813,8 +811,6 @@ def main():
 
     is_vel = vels_o is not None and vels_o.Length > 0
     is_curves_o = curves_o is not None
-    # curves_o = callback.load({'is_debug': not args.is_quiet})
-    # todo Information about tshift
 
     if is_curves_o and len(bnames) == 0:
         bnames = [bn for bn in curves_o.BandNames if band_is_exist(bn)]
