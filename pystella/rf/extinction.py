@@ -40,7 +40,7 @@ def read_cache_data():
     return EXT_DATA, EXT_LAWS
 
 
-def reddening_law(ebv, bands, law=law_default, is_info=True):
+def reddening(ebv, bands, law=law_default, is_info=True):
     """Compute  total extinction A(band)
     :param ebv: color excess E_{B-V}
     :param bands: list of bands
@@ -68,7 +68,7 @@ def reddening_law(ebv, bands, law=law_default, is_info=True):
     return ext
 
 
-def reddening_law_z(ebv, bands, z, law=law_default, is_info=True):
+def reddening_z(ebv, bands, z, law=law_default, is_info=True):
     # see http://iopscience.iop.org/article/10.1088/0004-637X/737/2/103/meta
 
     # ext_all = dict((k, 0) for k, v in colors.items())   # it's just mock

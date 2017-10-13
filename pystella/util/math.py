@@ -9,8 +9,8 @@ def log_interp1d(x, y, kind='linear'):
     :param x: 
     :param y: 
     :param kind: (‘linear’, ‘nearest’, ‘zero’, ‘slinear’, ‘quadratic, ‘cubic’) 
-    See: https://docs.scipy.org/doc/scipy-0.15.1/reference/generated/scipy.interpolate.interp1d.html#scipy.interpolate.interp1d
-    :return: 
+    See: https://docs.scipy.org/doc/scipy-0.15.1/reference/generated/scipy.interpolate.interp1d.html
+    :return:
     """
     logx = np.log10(x)
     logy = np.log10(y)

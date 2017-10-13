@@ -72,6 +72,21 @@ class TestReddening(unittest.TestCase):
         self.assertTrue(len(res) == 0,
                         msg="Some mags were shifted more then %f." % mshift)
 
+    def test_ReddeningLaw_ksi(self):
+        from pystella.rf.reddening import ReddeningLaw
+        import matplotlib.pyplot as plt
+
+        wl = np.logspace(3.0, np.log10(5e4), num=100)
+        for law in ReddeningLaw.Laws:
+            ksi = ReddeningLaw.ksi(wl, law=law)
+            x = 1e4 / wl
+            plt.plot(x, ksi, label=ReddeningLaw.Names[law])
+        plt.legend()
+        plt.xlabel(r'$1/\lambda\; [\mu m^{-1}]$')
+        plt.ylabel(r'$\xi(\lambda)$')
+        plt.grid(linestyle=':', linewidth=1)
+        plt.show()
+
 
 def main():
     unittest.main()

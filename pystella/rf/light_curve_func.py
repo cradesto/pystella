@@ -188,16 +188,8 @@ def curves_compute(name, path, bands, z=0., distance=10., magnification=1.,
         print('')
         model.show_info()
 
-    # serial_spec = model.read_serial_spectrum(t_diff=0.)
     serial_spec = model.get_ph(t_diff=t_diff, t_beg=t_beg, t_end=t_end)
     curves = serial_spec.flux_to_curves(bands, z=z, d=rf.pc_to_cm(distance), magnification=magnification)
-    # curves = SetLightCurve(name)
-    # for n in bands:
-    #     b = band.band_by_name(n)
-    #     lc = serial_spec.flux_to_curve(b, z=z, dl=rf.pc_to_cm(distance), magnification=magnification)
-    #     # time = serial_spec.times * (1. + z)
-    #     # lc = LightCurve(b, time, mags)
-    #     curves.add(lc)
 
     if is_show_info:
         # print the time of maximum LC
@@ -210,6 +202,13 @@ def curves_compute(name, path, bands, z=0., distance=10., magnification=1.,
     return curves
 
 
+def flux_reddening(wl, flux, ebv, law='MW'):
+    from pystella.rf.reddening import ReddeningLaw
+    Rlmd = ReddeningLaw.Rlmd(wl, law)
+    Almd = Rlmd * ebv
+    res = flux * 10 ** (-0.4 * Almd)
+    return res
+
 # todo Implement direct reddening from spectra
 # http://webast.ast.obs-mip.fr/hyperz/hyperz_manual1/node10.html
 def curves_reddening(curves, ebv, z=None, law=extinction.law_default, is_info=True):
@@ -221,7 +220,6 @@ def curves_reddening(curves, ebv, z=None, law=extinction.law_default, is_info=Tr
     is_instance_lc = isinstance(curves, LightCurve)
     if is_instance_lc:
         lc = curves
-        # bands = tuple(curves.Band.Name
         curves = SetLightCurve(lc.Name)
         curves.add(lc)
         is_instance_lc = True
@@ -229,9 +227,9 @@ def curves_reddening(curves, ebv, z=None, law=extinction.law_default, is_info=Tr
     bands = curves.BandNames
 
     if z is not None and z > 0.1:
-        ext = extinction.reddening_law_z(ebv=ebv, bands=bands, z=z, law=law, is_info=is_info)
+        ext = extinction.reddening_z(ebv=ebv, bands=bands, z=z, law=law, is_info=is_info)
     else:
-        ext = extinction.reddening_law(ebv=ebv, bands=bands, law=law, is_info=is_info)
+        ext = extinction.reddening(ebv=ebv, bands=bands, law=law, is_info=is_info)
 
     res = SetLightCurve(curves.Name)
     for lc in curves:
