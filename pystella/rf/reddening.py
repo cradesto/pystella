@@ -12,17 +12,11 @@ class ReddeningLaw(object):
     Laws = list(Names.keys())
 
     @staticmethod
-    def Rlmd(wl, law=MW):
-        if law not in ReddeningLaw.Laws:
-            raise ValueError('Such law [{}] is not supported. There are {}'.
-                             format(law, ', '.join(ReddeningLaw.Laws)))
-        return LawPei.Rlmd(wl, law)
-
-    @staticmethod
-    def ksi(wl, law=MW):
+    def Almd(wl, ebv, law=MW):
         """
-
-        :param wl: [A
+        Compute Absorption A_lamda
+        :param wl: [A]
+        :param ebv:  E(B-V)
         :param law:
         :return:
         """
@@ -30,7 +24,21 @@ class ReddeningLaw(object):
             raise ValueError('Such law [{}] is not supported. There are {}'.
                              format(law, ', '.join(ReddeningLaw.Laws)))
         wl = np.array(wl) / 1e4  # A -> microns
-        return LawPei.ksi(wl, law)
+        return LawPei.Almd(wl, ebv, law)
+
+    @staticmethod
+    def xi(wl, law=MW):
+        """
+        Compute extinction curve
+        :param wl: [A]
+        :param law:
+        :return:
+        """
+        if law not in ReddeningLaw.Laws:
+            raise ValueError('Such law [{}] is not supported. There are {}'.
+                             format(law, ', '.join(ReddeningLaw.Laws)))
+        wl = np.array(wl) / 1e4  # A -> microns
+        return LawPei.xi(wl, law)
 
 
 class LawPei(ReddeningLaw):
@@ -64,21 +72,22 @@ class LawPei(ReddeningLaw):
           }
 
     @staticmethod
-    def ksi(wl, law=MW):
-        res = [LawPei.func_ksi(l, LawPei.ai[law], LawPei.li[law], LawPei.bi[law], LawPei.ni[law], )
+    def xi(wl, law=MW):
+        res = [LawPei.func_xi(l, LawPei.ai[law], LawPei.li[law], LawPei.bi[law], LawPei.ni[law], )
                for l in wl]
         # for l in wl:
         #     res += ai[i] / (bi[i] + (wl/li)**ni[i] + (li/wl)**ni[i])
         return np.array(res)
 
     @staticmethod
-    def func_ksi(wl, ai, li, bi, ni):
+    def func_xi(wl, ai, li, bi, ni):
         res = 0.
         for i in range(6):
             res += ai[i] / (bi[i] + (wl/li[i]) ** ni[i] + (li[i]/wl) ** ni[i])
         return res
 
     @staticmethod
-    def Rlmd(wl, law=MW):
-        # todo something...
-        pass
+    def Almd(wl, ebv, law=MW):
+        Av = LawPei.Rv[law] * ebv
+        xi = LawPei.xi(wl, law)
+        return xi * Av

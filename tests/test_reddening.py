@@ -5,7 +5,7 @@ import numpy as np
 
 from pystella.rf import extinction, band
 from pystella.rf.lc import LightCurve
-from pystella.rf.light_curve_func import curves_reddening
+from pystella.rf.light_curve_func import curves_reddening, flux_reddening
 
 __author__ = 'bakl'
 
@@ -72,18 +72,60 @@ class TestReddening(unittest.TestCase):
         self.assertTrue(len(res) == 0,
                         msg="Some mags were shifted more then %f." % mshift)
 
-    def test_ReddeningLaw_ksi(self):
+    def test_ReddeningLaw_xi(self):
         from pystella.rf.reddening import ReddeningLaw
         import matplotlib.pyplot as plt
 
         wl = np.logspace(3.0, np.log10(5e4), num=100)
         for law in ReddeningLaw.Laws:
-            ksi = ReddeningLaw.ksi(wl, law=law)
+            xi = ReddeningLaw.xi(wl, law=law)
             x = 1e4 / wl
-            plt.plot(x, ksi, label=ReddeningLaw.Names[law])
+            plt.plot(x, xi, label=ReddeningLaw.Names[law])
         plt.legend()
         plt.xlabel(r'$1/\lambda\; [\mu m^{-1}]$')
-        plt.ylabel(r'$\xi(\lambda)$')
+        plt.ylabel(r'$\xi(\lambda) = A_\lambda / A_V$')
+        plt.grid(linestyle=':', linewidth=1)
+        plt.show()
+
+    def test_ReddeningLaw_Almd(self):
+        from pystella.rf.reddening import ReddeningLaw
+        import matplotlib.pyplot as plt
+
+        wl = np.logspace(3.0, np.log10(5e4), num=100)
+        ebv = 0.074
+        for law in ReddeningLaw.Laws:
+            Almd = ReddeningLaw.Almd(wl, ebv, law=law)
+            x = 1e4 / wl
+            plt.plot(x, Almd, label=ReddeningLaw.Names[law])
+        plt.legend()
+        plt.xlabel(r'$1/\lambda\; [\mu m^{-1}]$')
+        plt.ylabel(r'$A_\lambda$')
+        plt.grid(linestyle=':', linewidth=1)
+        plt.show()
+
+    def test_flux_with_ReddeningLaw(self):
+        import matplotlib.pyplot as plt
+        from pystella.rf.reddening import ReddeningLaw
+        import pystella.rf.rad_func as rf
+        from pystella.util.phys_var import phys
+
+        wl = np.logspace(3.0, np.log10(5e4), num=100)
+        freq = phys.c / (wl * phys.angs_to_cm)
+        T = 15500.
+        flux = rf.planck(freq, temperature=T)
+        flux_wl = flux * freq**2 / phys.c
+
+        ebv = 0.074
+        plt.plot(wl, flux_wl, color='black', label='Origin planck T={}'.format(T))
+        for law in ReddeningLaw.Laws:
+            x = wl
+            y = flux_reddening(wl, flux_wl, ebv, law=law)
+            plt.plot(x, y, label=ReddeningLaw.Names[law])
+        plt.legend()
+        plt.xscale("log", nonposx='clip')
+        plt.yscale("log", nonposy='clip')
+        plt.xlabel(r'$\lambda\; [A]$')
+        plt.ylabel(r'$F_\lambda\; [ergs s^{-1} cm^{-2} A^{-1}]$')
         plt.grid(linestyle=':', linewidth=1)
         plt.show()
 

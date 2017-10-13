@@ -202,12 +202,20 @@ def curves_compute(name, path, bands, z=0., distance=10., magnification=1.,
     return curves
 
 
-def flux_reddening(wl, flux, ebv, law='MW'):
+def flux_reddening(wl, flux_wl, ebv, law='MW'):
+    """
+    Apply extinction curves to flux values
+    :param wl:  [A]
+    :param flux_wl:  [ergs s^-1 cm^-2 A^-1]
+    :param ebv: E(B-V_
+    :param law: type of extinction curves (MW, LMC, SMC)
+    :return: reddening flux
+    """
     from pystella.rf.reddening import ReddeningLaw
-    Rlmd = ReddeningLaw.Rlmd(wl, law)
-    Almd = Rlmd * ebv
-    res = flux * 10 ** (-0.4 * Almd)
+    A_lambda = ReddeningLaw.Almd(wl, ebv, law)
+    res = flux_wl * 10 ** (-0.4 * A_lambda)
     return res
+
 
 # todo Implement direct reddening from spectra
 # http://webast.ast.obs-mip.fr/hyperz/hyperz_manual1/node10.html
