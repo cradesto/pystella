@@ -5,7 +5,7 @@ import numpy as np
 
 from pystella.rf import extinction, band
 from pystella.rf.lc import LightCurve
-from pystella.rf.light_curve_func import curves_reddening, flux_reddening
+from pystella.rf.light_curve_func import curves_reddening, flux_reddening_wl, flux_reddening
 
 __author__ = 'bakl'
 
@@ -103,7 +103,7 @@ class TestReddening(unittest.TestCase):
         plt.grid(linestyle=':', linewidth=1)
         plt.show()
 
-    def test_flux_with_ReddeningLaw(self):
+    def test_flux_freq_with_ReddeningLaw(self):
         import matplotlib.pyplot as plt
         from pystella.rf.reddening import ReddeningLaw
         import pystella.rf.rad_func as rf
@@ -113,13 +113,39 @@ class TestReddening(unittest.TestCase):
         freq = phys.c / (wl * phys.angs_to_cm)
         T = 15500.
         flux = rf.planck(freq, temperature=T)
-        flux_wl = flux * freq**2 / phys.c
+
+        ebv = 0.074
+        plt.plot(freq, flux, color='black', label='Origin planck T={}'.format(T))
+        for law in ReddeningLaw.Laws:
+            x = freq
+            y = flux_reddening(freq, flux, ebv, law=law)
+            plt.plot(x, y, label=ReddeningLaw.Names[law])
+        plt.legend()
+        plt.xscale("log", nonposx='clip')
+        plt.yscale("log", nonposy='clip')
+        plt.xlabel(r'$Frequency\; [Hz]$')
+        plt.ylabel(r'$F_\nu\; [ergs s^{-1} cm^{-2} Hz^{-1}]$')
+        plt.grid(linestyle=':', linewidth=1)
+        plt.show()
+
+    def test_flux_wl_with_ReddeningLaw(self):
+        import matplotlib.pyplot as plt
+        from pystella.rf.reddening import ReddeningLaw
+        import pystella.rf.rad_func as rf
+        from pystella.util.phys_var import phys
+
+        wl = np.logspace(3.0, np.log10(5e4), num=100)
+        freq = phys.c / (wl * phys.angs_to_cm)
+        T = 15500.
+        flux = rf.planck(freq, temperature=T)
+        flux_wl = rf.Fnu2Fwl(freq, flux)
+        # flux_wl = flux * freq**2 / phys.c
 
         ebv = 0.074
         plt.plot(wl, flux_wl, color='black', label='Origin planck T={}'.format(T))
         for law in ReddeningLaw.Laws:
             x = wl
-            y = flux_reddening(wl, flux_wl, ebv, law=law)
+            y = flux_reddening_wl(wl, flux_wl, ebv, law=law)
             plt.plot(x, y, label=ReddeningLaw.Names[law])
         plt.legend()
         plt.xscale("log", nonposx='clip')

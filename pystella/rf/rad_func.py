@@ -140,6 +140,16 @@ def Flux2MagAB(f):
     return mag
 
 
+def Fnu2Fwl(nu, flux):
+    """Convert monochromatic flux [ erg sec^-1 cm^-2 Hz^-1] to [ erg sec^-1 cm^-2 A^-1]"""
+    return flux * nu**2 / phys.c
+
+
+def Fwl2Fnu(nu, flux_wl):
+    """Convert monochromatic flux [ erg sec^-1 cm^-2 A^-1] to [ erg sec^-1 cm^-2 Hz^-1]"""
+    return flux_wl * phys.c / nu**2
+
+
 def MagAB2Flux(ab):
     """Convert AB magnitudes to monochromatic flux [ erg sec^-1 cm^-2 Hz^-1]
     see http://www.jstor.org/stable/10.1086/429382

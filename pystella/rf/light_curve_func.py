@@ -202,12 +202,32 @@ def curves_compute(name, path, bands, z=0., distance=10., magnification=1.,
     return curves
 
 
-def flux_reddening(wl, flux_wl, ebv, law='MW'):
+def flux_reddening(freq, flux, ebv, law='MW'):
+    """
+    Apply extinction curves to flux values
+    :param freq:  [Hz]
+    :param flux:  [ergs s^-1 cm^-2 Hz^-1]
+    :param ebv: E(B-V)
+    :param law: type of extinction curves (MW, LMC, SMC)
+    :return: reddening flux
+    """
+    from pystella.util.phys_var import phys
+
+    flux_wl = rf.Fnu2Fwl(freq, flux)
+    # flux_wl = flux * freq ** 2 / phys.c
+    wl = np.array(phys.c / freq) * phys.cm_to_angs
+    res = flux_reddening_wl(wl, flux_wl, ebv, law)
+    res = rf.Fwl2Fnu(freq, res)
+    # res = flux_reddening_wl(wl, flux_wl, ebv, law) * phys.c / freq**2
+    return res
+
+
+def flux_reddening_wl(wl, flux_wl, ebv, law='MW'):
     """
     Apply extinction curves to flux values
     :param wl:  [A]
     :param flux_wl:  [ergs s^-1 cm^-2 A^-1]
-    :param ebv: E(B-V_
+    :param ebv: E(B-V)
     :param law: type of extinction curves (MW, LMC, SMC)
     :return: reddening flux
     """
