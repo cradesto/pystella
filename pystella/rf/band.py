@@ -15,6 +15,7 @@ __author__ = 'bakl'
 
 
 class Band(object):
+    IsLoad = False
     Cache = dict()
     Alias = None
     FileFilters = 'filters.ini'
@@ -163,13 +164,16 @@ class Band(object):
         return b
 
     @classmethod
-    def load_settings(cls):
+    def load_settings(cls, is_force=False):
+        if Band.IsLoad and not is_force:
+            return True
         parser = ConfigParser()
         parser.optionxform = str
         fini = os.path.join(Band.DirRoot, Band.FileSettings)
         parser.read(fini)
         if 'alias' in parser.sections():
             Band.Alias = {k: v for k, v in parser.items('alias')}
+        Band.IsLoad = True
         return True
 
 

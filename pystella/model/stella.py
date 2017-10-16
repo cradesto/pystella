@@ -11,7 +11,7 @@ class Stella:
         self.name = name
         self.path = path  # path to model files
         if info:
-            self.show_info()
+            self.info()
 
     def __str__(self):
         return "%s, path: %s" % (self.name, self.path)
@@ -19,15 +19,6 @@ class Stella:
     def __repr__(self):
         return "%s, path: %s" % (self.name, self.path)
         # return "%s" % self.name
-
-    def show_info(self):
-        # ext = ('tt', 'ph', 'res', 'swd')
-        for e in stella_extensions:
-            fname = os.path.join(self.path, self.name + '.' + e)
-            if os.path.isfile(fname):
-                print("Exist %s-file: %s" % (e, fname))
-            else:
-                print("No %s-file: %s" % (e, fname))
 
     @property
     def Name(self):
@@ -38,8 +29,14 @@ class Stella:
         return self.name
 
     @property
-    def is_any_data(self):
-        ext = ('tt', 'ph', 'res', 'swd')
+    def Path(self):
+        """
+        Alias for self.path
+        :return: path
+        """
+        return self.path
+
+    def is_any_data(self, ext=('tt', 'ph', 'res', 'swd')):
         return any(map(os.path.isfile, [os.path.join(self.path, self.name + '.' + e) for e in ext]))
 
     @property
@@ -64,8 +61,9 @@ class Stella:
 
     @property
     def is_flx_data(self):
-        fname = os.path.join(self.path, self.name + '.flx')
-        return os.path.isfile(fname)
+        return self.is_any_data(ext=['flx'])
+        # fname = os.path.join(self.path, self.name + '.flx')
+        # return os.path.isfile(fname)
 
     def get_eve(self, name, path=None):
         from pystella.model import sn_eve
@@ -96,10 +94,64 @@ class Stella:
         import pystella.model.sn_ph as ph
         res = ph.read(self.name, self.path, t_diff=t_diff, t_beg=t_beg, t_end=t_end, is_nfrus=is_nfrus)
         return res
-    #
-    # # old
-    # def read_tt_data(self):
-    #     return self.get_tt().read()
+
+    def curves(self, bands, z=0., distance=10., ebv=0., **kwargs):
+        """
+            Compute magnitude in bands for the 'name' model.
+        :param bands: photometric bands
+        :param z: redshift, default 0
+        :param distance: distance to star in parsec, default 10 pc
+        :param magnification: gravitational lensing magnification
+        :return: dictionary with keys = bands, value = star's magnitudes
+        """
+        t_beg = kwargs.get("t_beg", 0.)
+        t_end = kwargs.get("t_end", float('inf'))
+        magnification = kwargs.get("magnification", float(1))
+        is_show_info = kwargs.get("is_show_info", False)
+        t_diff = kwargs.get("t_diff", 1.05)
+
+        if len(bands) == 0:
+            raise ValueError("You have not set any bands for model: " + str(self))
+        if not self.is_ph_data:
+            self.info()
+            raise ValueError("Error: No spectral data for: " + str(self))
+
+        if is_show_info:
+            print('')
+            self.info()
+
+        serial_spec = self.get_ph(t_diff=t_diff, t_beg=t_beg, t_end=t_end)
+        if ebv > 0:
+            serial_spec = redennig
+        curves = serial_spec.flux_to_curves(bands, z=z, d=rf.pc_to_cm(distance), magnification=magnification)
+
+        if is_show_info:
+            # print the time of maximum LC
+            tmin = 2.0
+            t = curves.TimeCommon
+            for n in bands:
+                t_min = t[t > tmin][curves[n][t > tmin].argmin()]
+                print("t_max(%s) = %f" % (n, t_min))
+
+        return curves
+
+    def info(self):
+        """Print information list about models in the path
+        :return: None
+       """
+        print('Stella model: {} path: {}'.format(self.Name, self.path))
+        for e in stella_extensions:
+            fname = os.path.join(self.path, self.name + '.' + e)
+            if os.path.isfile(fname):
+                print("Exist %s-file: %s" % (e, fname))
+            else:
+                print("No %s-file: %s" % (e, fname))
+        if self.is_tt_data:
+            info = self.get_tt().Info
+            info.show()
+        if self.is_res_data:
+            info = self.get_res().Info
+            info.show()
 
 
 def stella_ls(path, pattern='*', exts=stella_extensions):

@@ -36,8 +36,7 @@ def compute_mag(name, path, bands, ext=None, z=0., distance=10., magnification=1
         print("Error: No data for: " + str(model))
         return None
 
-    # serial_spec = model.read_serial_spectrum(t_diff=0.)
-    serial_spec = model.read_series_spectrum(t_diff=t_diff)
+    serial_spec = model.get_ph(t_diff=t_diff)
     mags = serial_spec.mags_bands(bands, z=z, d=rf.pc_to_cm(distance), magnification=magnification)
 
     if mags is not None:
@@ -118,6 +117,25 @@ def curves_save(curves, fname, sep='\t'):
     return True
 
 
+def curves_read(fname, is_out=False):
+    """
+       Read curves from file with header-format. It required the correct format of header, ex:
+       time          B       errB          I          V       errV          U       errU
+    :param fname: file with data
+    :param is_out: show additional information during parsing
+    :return: curves
+    """
+    from pystella.util.reader_table import read_obs_table_header, table2curves
+    if not os.path.exists(fname):
+        raise("No file to read: {}".format(fname))
+
+    from pystella.rf import band
+    band.Band.load_settings()
+    tbl, cols_data = read_obs_table_header(fname, is_out=is_out)
+    curves = table2curves(os.path.basename(fname), tbl)
+    return curves
+
+
 def curves2nparray(curves):
     """
        Convert curves to numpy array.
@@ -135,7 +153,6 @@ def curves2nparray(curves):
             print("{:40s}   {:d}".format(lc.Name, len(lc.Time)))
         return None
 
-    res = np.array(curves.TimeCommon)  # first column
     dtype = {'names': ['time']}
     data = [curves.TimeCommon]
     for lc in curves:
@@ -166,9 +183,6 @@ def curves_compute(name, path, bands, z=0., distance=10., magnification=1.,
     :param z: redshift, default 0
     :param distance: distance to star in parsec, default 10 pc
     :param magnification: gravitational lensing magnification
-    :param t_end:
-    :param t_beg:
-    :param is_show_info: flag to write some information, default True
     :return: dictionary with keys = bands, value = star's magnitudes
     """
     t_beg = kwargs.get("t_beg", 0.)
@@ -181,12 +195,12 @@ def curves_compute(name, path, bands, z=0., distance=10., magnification=1.,
 
     model = Stella(name, path=path)
     if not model.is_ph_data:
-        model.show_info()
+        model.info()
         raise ValueError("Error: No spectral data for: " + str(model))
 
     if is_show_info:
         print('')
-        model.show_info()
+        model.info()
 
     serial_spec = model.get_ph(t_diff=t_diff, t_beg=t_beg, t_end=t_end)
     curves = serial_spec.flux_to_curves(bands, z=z, d=rf.pc_to_cm(distance), magnification=magnification)
@@ -204,7 +218,7 @@ def curves_compute(name, path, bands, z=0., distance=10., magnification=1.,
 
 def flux_reddening(freq, flux, ebv, law='MW'):
     """
-    Apply extinction curves to flux values
+    Apply extinction curves to flux(freq) values
     :param freq:  [Hz]
     :param flux:  [ergs s^-1 cm^-2 Hz^-1]
     :param ebv: E(B-V)
@@ -224,7 +238,7 @@ def flux_reddening(freq, flux, ebv, law='MW'):
 
 def flux_reddening_wl(wl, flux_wl, ebv, law='MW'):
     """
-    Apply extinction curves to flux values
+    Apply extinction curves to flux(lambda) values
     :param wl:  [A]
     :param flux_wl:  [ergs s^-1 cm^-2 A^-1]
     :param ebv: E(B-V)

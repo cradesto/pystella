@@ -3,7 +3,7 @@ import unittest
 
 from pystella.rf.band import Band
 from pystella.rf.lc import SetLightCurve, LightCurve
-from pystella.rf.light_curve_func import curves_save
+from pystella.rf.light_curve_func import curves_save, curves_read
 
 __author__ = 'bakl'
 
@@ -55,6 +55,21 @@ class TestSetLightCurve(unittest.TestCase):
                 curves.add(lc_create(b))
             res = curves_save(curves, 'tmp_curves')
             self.assertTrue(res, msg="Error:  curves_save should return True")
+
+    def test_SetLightCurve_save_read(self):
+            bands = ['U', 'B', 'V']
+            curves = SetLightCurve()
+            for b in bands:
+                curves.add(lc_create(b))
+            curves_save(curves, 'tmp_curves')
+            read = curves_read('tmp_curves')
+            self.assertCountEqual(curves.BandNames, read.BandNames,
+                                  msg="Error for the names of Bands.\n \
+                    Now band were %s but  readed BandNames are %s."
+                                      % (' '.join(curves.BandNames), ' '.join(read.BandNames)))
+            # todo correct testing
+            self.assertSequenceEqual(curves.TimeCommon, read.TimeCommon, msg="The time columns are not equal")
+
 
     def test_SetLightCurve_save_true_with_errors(self):
             bands = ['U', 'B', 'V']
