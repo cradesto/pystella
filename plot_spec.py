@@ -691,7 +691,7 @@ def main():
     model = Stella(name, path=path)
     series = model.get_ph(t_diff=1.05)
 
-    if not model.is_ph_data:
+    if not model.is_ph:
         print("No ph-data for: " + str(model))
         return None
 
@@ -704,14 +704,14 @@ def main():
             write_magAB(series_cut)
             sys.exit(2)
 
-        if not model.is_tt_data:
+        if not model.is_tt:
             print("Error in fit-band: no tt-data for: " + str(model))
             sys.exit(2)
         series = model.get_ph(t_diff=1.05)
         series_cut = series.copy(t_ab=t_ab, wl_ab=wl_ab)
         fig = plot_fit_bands(model, series_cut, set_bands, times)
     elif is_fit_wl:
-        if not model.is_tt_data:
+        if not model.is_tt:
             print("Error in fit-wave: no tt-data for: " + str(model))
             sys.exit(2)
         if is_write:

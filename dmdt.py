@@ -91,7 +91,7 @@ def compute_mag(name, path, bands, z=0., distance=10., t_cut=0., t_up=400., tdif
     """
     model = Stella(name, path=path)
 
-    if not model.is_ph_data:
+    if not model.is_ph:
         print("No data for: " + str(model))
         return None
 

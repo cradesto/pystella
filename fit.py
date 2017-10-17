@@ -335,7 +335,7 @@ def plot_chi_par(res_sorted, path='./', p=('R', 'M', 'E'), **kwargs):
     for name, res_chi in res_sorted.items():
         i += 1
         stella = Stella(name, path=path)
-        if stella.is_tt_data:
+        if stella.is_tt:
             try:
                 info = stella.get_tt().Info
                 v = [getattr(info, pp) for pp in p]
@@ -395,7 +395,7 @@ def plot_squared(ax, res_sorted, path='./', p=('R', 'M'), **kwargs):
     for name, res_chi in res_sorted.items():
         i += 1
         stella = Stella(name, path=path)
-        if stella.is_tt_data:
+        if stella.is_tt:
             try:
                 info = stella.get_tt().Info
                 v = [getattr(info, pp) for pp in p]
@@ -561,7 +561,7 @@ def plot_squared_3d(ax, res_sorted, path='./', p=('R', 'M', 'E'), is_rbf=True, *
     for name, res_chi in res_sorted.items():
         i += 1
         stella = Stella(name, path=path)
-        if stella.is_tt_data:
+        if stella.is_tt:
             try:
                 info = stella.get_tt().Info
                 v = [getattr(info, pp) for pp in p]

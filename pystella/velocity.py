@@ -174,7 +174,7 @@ def plot_vel(ax, vel, xlim=None, ylim=None):
 def compute_vel_swd(name, path):
     model = Stella(name, path=path)
     # check data
-    if not model.is_swd_data:
+    if not model.is_swd:
         raise ValueError("There are no swd-file for %s in the directory: %s " % (name, path))
 
     swd = model.get_swd().load()
@@ -191,9 +191,9 @@ def compute_vel_swd(name, path):
 def compute_vel_res_tt(name, path, z=0., t_beg=1., t_end=None, t_diff=1.05):
     model = Stella(name, path=path)
     # check data
-    if not model.is_res_data:
+    if not model.is_res:
         raise ValueError("There are no res-file for %s in the directory: %s " % (name, path))
-    if not model.is_tt_data:
+    if not model.is_tt:
         raise ValueError(("There are no tt-file for %s in the directory: %s " % (name, path)))
 
     if t_end is None:

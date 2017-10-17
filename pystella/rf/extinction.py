@@ -5,7 +5,7 @@ __author__ = 'bakl'
 
 ROOT_DIRECTORY = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 bands_alias = dict(U="Landolt_U", B="Landolt_B", V="Landolt_V", R="Landolt_R", I="Landolt_I",
-                   J="UKIRT_J", H="UKIRT_H", K="UKIRT_K",  UVM2="UVM2", UVW1="UVW1", UVW2="UVW2",
+                   J="UKIRT_J", H="UKIRT_H", K="UKIRT_K", UVM2="UVM2", UVW1="UVW1", UVW2="UVW2",
                    F105W="WFC3_F105W", F435W="ACS_F435W", F606W="ACS_F606W", F125W="WFC3_F125W",
                    F140W="WFC3_F140W",
                    F160W="WFC3_F160W", F814W="ACS_F814W",
@@ -25,9 +25,9 @@ def read_data():
     # with open(fname, 'rb') as fh:
     with open(fname, 'r') as fh:
         data = np.loadtxt(fh, comments='#', skiprows=1,
-                      converters={0: lambda s: s.decode("utf-8")},
-                      dtype={'names': ('band', 'lambdaeff', 'Rv2.1', 'Rv3.1', 'Rv4.1', 'Rv5.1'),
-                             'formats': ('U12', np.float, np.float, np.float, np.float, np.float)}, )
+                          converters={0: lambda s: s.decode("utf-8")},
+                          dtype={'names': ('band', 'lambdaeff', 'Rv2.1', 'Rv3.1', 'Rv4.1', 'Rv5.1'),
+                                 'formats': ('U12', np.float, np.float, np.float, np.float, np.float)}, )
 
         # data['band'] = [s.decode("utf-8") for s in data['band']]
     return data, laws

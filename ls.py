@@ -69,7 +69,7 @@ def main():
         data = {k: [] for k in ('R', 'M', 'Mni', 'E')}
         for mdl, exts in models.items():
             stella = Stella(mdl, path=path)
-            if stella.is_tt_data:
+            if stella.is_tt:
                 info = stella.get_tt().Info
                 try:
                     for k in data.keys():
@@ -92,7 +92,7 @@ def main():
         print("| %40s |  %7s |  %6s | %6s |  %s" % ('-' * 40, '-' * 7, '-' * 6, '-' * 6, '-' * 7))
         for mdl, exts in models.items():
             stella = Stella(mdl, path=path)
-            if stella.is_tt_data:
+            if stella.is_tt:
                 info = stella.get_tt().Info
                 try:
                     info.show(comment='{0}'.format(exts))

@@ -185,7 +185,7 @@ def main(name='', model_ext='.ph'):
     band.Band.load_settings()
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hqtc:d:p:e:g:i:b:l:m:vs:w:x:y:z:", longopts='dt')
+        opts, args = getopt.getopt(sys.argv[1:], "hqtc:d:p:e:g:i:b:l:m:vs:w:x:y:z:", longopts='dt=')
     except getopt.GetoptError as err:
         print(str(err))  # will print something like "option -a not recognized"
         usage()

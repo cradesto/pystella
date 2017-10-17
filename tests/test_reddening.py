@@ -10,11 +10,11 @@ from pystella.rf.light_curve_func import curves_reddening, flux_reddening_wl, fl
 __author__ = 'bakl'
 
 
-def lc_create(band, m=-19, dt=0.):
+def lc_create(bname, m=-19, dt=0.):
     n = 10
     time = np.linspace(0.+dt, 200.+dt, n)
     mags = m * np.ones(n)
-    return LightCurve(band, time, mags)
+    return LightCurve(bname, time, mags)
 
 
 class TestReddening(unittest.TestCase):
@@ -39,9 +39,9 @@ class TestReddening(unittest.TestCase):
         :return:
         """
         # band, mshift = 'V', 2.742
-        band, mshift = 'U', 4.334
+        bname, mshift = 'U', 4.334
         ebv = 1.
-        lc = lc_create(band)
+        lc = lc_create(bname)
         magExpect = lc.Mag + mshift  # Av for e=1.
         lc = curves_reddening(lc, ebv=ebv)
         magRed = lc.Mag
@@ -61,10 +61,10 @@ class TestReddening(unittest.TestCase):
         :return:
         """
         # band, mshift = 'V', 2.742
-        band, mshift = 'V', 4.334  # shifted to U
+        bname, mshift = 'V', 4.334  # shifted to U
         z = 5421.7/3508.2 - 1.
         ebv = 1.
-        lc = lc_create(band)
+        lc = lc_create(bname)
         magExpect = lc.Mag + mshift  # Av for e=1.
         lc = curves_reddening(lc, ebv=ebv, z=z)
         magRed = lc.Mag
@@ -152,6 +152,74 @@ class TestReddening(unittest.TestCase):
         plt.yscale("log", nonposy='clip')
         plt.xlabel(r'$\lambda\; [A]$')
         plt.ylabel(r'$F_\lambda\; [ergs s^{-1} cm^{-2} A^{-1}]$')
+        plt.grid(linestyle=':', linewidth=1)
+        plt.show()
+
+    def test_flux_ones_with_ReddeningLaw(self):
+        import matplotlib.pyplot as plt
+        from pystella.rf.reddening import ReddeningLaw
+        from pystella.util.phys_var import phys
+
+        wl = np.logspace(3.0, np.log10(5e4), num=100)
+        freq = phys.c / (wl * phys.angs_to_cm)
+        flux = np.ones(len(freq))
+        ebv = 1.
+        x = 1e4 / wl
+        plt.plot(x, flux, color='black', label='Origin flux')
+        for law in ReddeningLaw.Laws:
+            y = flux_reddening_wl(wl, flux, ebv, law=law)
+            plt.plot(x, y, label='Flux {}'.format(ReddeningLaw.Names[law]))
+            Almd = ReddeningLaw.Almd(wl, ebv, law=law)
+            yy = 10.**(-0.4*Almd)
+            plt.plot(x, yy, label=r'$A_\lambda$ {}'.format(ReddeningLaw.Names[law]),
+                     marker='o', ls='', markersize='1')
+
+        plt.legend()
+        plt.xscale("log", nonposx='clip')
+        plt.xlabel(r'$1/\lambda\; [\mu m^{-1}]$')
+        plt.ylabel(r'$F_\nu\; [ergs s^{-1} cm^{-2} Hz^{-1}]$')
+        plt.grid(linestyle=':', linewidth=1)
+        plt.show()
+
+    def test_band_EXT_LAWS(self):
+        import matplotlib.pyplot as plt
+        from pystella.rf.reddening import ReddeningLaw
+
+        # ebv = .074
+        ebv = 1.
+        data, laws = extinction.read_cache_data()
+
+        # lawBand = 'Rv2.1'
+        lawBand = 'Rv3.1'
+        # lawBand = 'Rv4.1'
+        # lawBand = 'Rv5.1'
+
+        # law = ReddeningLaw.MW
+        x = data['lambdaeff']
+        y = data[lawBand]
+        # sort
+        sorti = np.argsort(x)
+        x = x[sorti]
+        y = y[sorti] * ebv
+
+        plt.plot(x, y, label='Law {}'.format(lawBand), ls='--', marker='o', markersize=3)
+
+        yy = ReddeningLaw.Almd(x, ebv, law=ReddeningLaw.MW)
+        plt.plot(x, yy, label=r'$A_\lambda$ {}'.format(ReddeningLaw.Names[ReddeningLaw.MW]),
+                 marker='d', ls=':', markersize=2)
+
+        yy = ReddeningLaw.Almd(x, ebv, law=ReddeningLaw.LMC)
+        plt.plot(x, yy, label=r'$A_\lambda$ {}'.format(ReddeningLaw.Names[ReddeningLaw.LMC]),
+                 marker='<', ls=':', markersize=2)
+
+        yy = ReddeningLaw.Almd(x, ebv, law=ReddeningLaw.SMC)
+        plt.plot(x, yy, label=r'$A_\lambda$ {}'.format(ReddeningLaw.Names[ReddeningLaw.SMC]),
+                 marker='>', ls=':', markersize=2)
+
+        plt.legend()
+        plt.xscale("log", nonposx='clip')
+        # plt.xlabel(r'$1/\lambda\; [\mu m^{-1}]$')
+        # plt.ylabel(r'$F_\nu\; [ergs s^{-1} cm^{-2} Hz^{-1}]$')
         plt.grid(linestyle=':', linewidth=1)
         plt.show()
 

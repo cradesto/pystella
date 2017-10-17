@@ -568,11 +568,11 @@ def compute_Tnu_w(serial_spec, tt):
 def compute_tcolor(name, path, bands, d=rf.pc_to_cm(10.), z=0., t_cut=1.):
     model = Stella(name, path=path)
 
-    if not model.is_ph_data:
+    if not model.is_ph:
         print("No ph-data for: " + str(model))
         return None
 
-    if not model.is_tt_data:
+    if not model.is_tt:
         print("No tt-data for: " + str(model))
         return None
 

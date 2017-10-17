@@ -1,5 +1,7 @@
 import os
 
+from pystella.rf.reddening import ReddeningLaw
+
 __author__ = 'bakl'
 
 stella_extensions = ('tt', 'swd', 'lbol', 'res', 'dat', 'ph', "mrt", 'eve', 'rho', 'xni', 'flx')
@@ -40,27 +42,27 @@ class Stella:
         return any(map(os.path.isfile, [os.path.join(self.path, self.name + '.' + e) for e in ext]))
 
     @property
-    def is_ph_data(self):
+    def is_ph(self):
         fname = os.path.join(self.path, self.name + '.ph')
         return os.path.isfile(fname)
 
     @property
-    def is_swd_data(self):
+    def is_swd(self):
         fname = os.path.join(self.path, self.name + '.swd')
         return os.path.isfile(fname)
 
     @property
-    def is_res_data(self):
+    def is_res(self):
         fname = os.path.join(self.path, self.name + '.res')
         return os.path.isfile(fname)
 
     @property
-    def is_tt_data(self):
+    def is_tt(self):
         fname = os.path.join(self.path, self.name + '.tt')
         return os.path.isfile(fname)
 
     @property
-    def is_flx_data(self):
+    def is_flx(self):
         return self.is_any_data(ext=['flx'])
         # fname = os.path.join(self.path, self.name + '.flx')
         # return os.path.isfile(fname)
@@ -95,43 +97,37 @@ class Stella:
         res = ph.read(self.name, self.path, t_diff=t_diff, t_beg=t_beg, t_end=t_end, is_nfrus=is_nfrus)
         return res
 
-    def curves(self, bands, z=0., distance=10., ebv=0., **kwargs):
+    def curves(self, bands, z=0., distance=10., ebv=0., law=ReddeningLaw.MW, **kwargs):
         """
             Compute magnitude in bands for the 'name' model.
         :param bands: photometric bands
         :param z: redshift, default 0
         :param distance: distance to star in parsec, default 10 pc
-        :param magnification: gravitational lensing magnification
-        :return: dictionary with keys = bands, value = star's magnitudes
+        :param ebv: color excess, default: 0
+        :param law: the law of extinction curve
+        :return: light curves for the photometric bands
         """
+        from pystella.rf.light_curve_func import series_spec_reddening
+        from pystella.rf.rad_func import pc_to_cm
+
         t_beg = kwargs.get("t_beg", 0.)
         t_end = kwargs.get("t_end", float('inf'))
-        magnification = kwargs.get("magnification", float(1))
-        is_show_info = kwargs.get("is_show_info", False)
         t_diff = kwargs.get("t_diff", 1.05)
+        magnification = kwargs.get("magnification", 1.)
 
         if len(bands) == 0:
             raise ValueError("You have not set any bands for model: " + str(self))
-        if not self.is_ph_data:
+        if not self.is_ph:
             self.info()
             raise ValueError("Error: No spectral data for: " + str(self))
 
-        if is_show_info:
-            print('')
-            self.info()
-
+        # Get SED(time)
         serial_spec = self.get_ph(t_diff=t_diff, t_beg=t_beg, t_end=t_end)
+        # reddening
         if ebv > 0:
-            serial_spec = redennig
-        curves = serial_spec.flux_to_curves(bands, z=z, d=rf.pc_to_cm(distance), magnification=magnification)
-
-        if is_show_info:
-            # print the time of maximum LC
-            tmin = 2.0
-            t = curves.TimeCommon
-            for n in bands:
-                t_min = t[t > tmin][curves[n][t > tmin].argmin()]
-                print("t_max(%s) = %f" % (n, t_min))
+            serial_spec = series_spec_reddening(serial_spec, ebv=ebv, law=law)
+        # light curves
+        curves = serial_spec.flux_to_curves(bands, z=z, d=pc_to_cm(distance), magnification=magnification)
 
         return curves
 
@@ -146,10 +142,10 @@ class Stella:
                 print("Exist %s-file: %s" % (e, fname))
             else:
                 print("No %s-file: %s" % (e, fname))
-        if self.is_tt_data:
+        if self.is_tt:
             info = self.get_tt().Info
             info.show()
-        if self.is_res_data:
+        if self.is_res:
             info = self.get_res().Info
             info.show()
 

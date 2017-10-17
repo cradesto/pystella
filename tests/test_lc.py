@@ -9,7 +9,7 @@ __author__ = 'bakl'
 
 
 def lc_create(bname, m=-19, dt=0., n=10, is_err=False):
-    time = np.linspace(0.+dt, 200.+dt, n)
+    time = np.linspace(0. + dt, 200. + dt, n)
     mags = m * np.linspace(0.1, 1., n)
     band = Band(bname)
     if is_err:
@@ -49,46 +49,49 @@ class TestSetLightCurve(unittest.TestCase):
                 Now band is %s but  lc.Band.Name is  %s." % (' '.join(bands), ' '.join(curves.BandNames)))
 
     def test_SetLightCurve_save_true(self):
-            bands = ['U', 'B', 'V']
-            curves = SetLightCurve()
-            for b in bands:
-                curves.add(lc_create(b))
-            res = curves_save(curves, 'tmp_curves')
-            self.assertTrue(res, msg="Error:  curves_save should return True")
+        bands = ['U', 'B', 'V']
+        curves = SetLightCurve()
+        for b in bands:
+            curves.add(lc_create(b))
+        res = curves_save(curves, 'tmp_curves')
+        self.assertTrue(res, msg="Error:  curves_save should return True")
 
     def test_SetLightCurve_save_read(self):
-            bands = ['U', 'B', 'V']
-            curves = SetLightCurve()
-            for b in bands:
-                curves.add(lc_create(b))
-            curves_save(curves, 'tmp_curves')
-            read = curves_read('tmp_curves')
-            self.assertCountEqual(curves.BandNames, read.BandNames,
-                                  msg="Error for the names of Bands.\n \
-                    Now band were %s but  readed BandNames are %s."
-                                      % (' '.join(curves.BandNames), ' '.join(read.BandNames)))
-            # todo correct testing
-            self.assertSequenceEqual(curves.TimeCommon, read.TimeCommon, msg="The time columns are not equal")
-
+        bands = ['U', 'B', 'V']
+        curves = SetLightCurve()
+        for b in bands:
+            curves.add(lc_create(b))
+        curves_save(curves, 'tmp_curves')
+        read = curves_read('tmp_curves')
+        self.assertTrue((np.array(curves.BandNames == read.BandNames)).all(),
+                        msg="Error for the initial band names [%s] "
+                            "VS secondary BandNames are %s."
+                            % (' '.join(curves.BandNames), ' '.join(read.BandNames)))
+        self.assertTrue(np.allclose(curves.TimeCommon, read.TimeCommon),
+                        msg="Error for the initial TimeCommon of Bands.\n \
+                                  Now band were %s but BandNames are %s."
+                            % (' '.join(curves.BandNames), ' '.join(read.BandNames)))
+        # todo correct testing
+        # self.assertSequenceEqual(curves.TimeCommon, read.TimeCommon, msg="The time columns are not equal")
 
     def test_SetLightCurve_save_true_with_errors(self):
-            bands = ['U', 'B', 'V']
-            curves = SetLightCurve()
-            for b in bands:
-                curves.add(lc_create(b, is_err=True))
-            curves.add(lc_create('I'))
-            res = curves_save(curves, 'tmp_curves')
-            self.assertTrue(res, msg="Error:  curves_save should return True")
+        bands = ['U', 'B', 'V']
+        curves = SetLightCurve()
+        for b in bands:
+            curves.add(lc_create(b, is_err=True))
+        curves.add(lc_create('I'))
+        res = curves_save(curves, 'tmp_curves')
+        self.assertTrue(res, msg="Error:  curves_save should return True")
 
     def test_SetLightCurve_save_NoIsCommonTime(self):
-            bands = ['U', 'B', 'V']
-            curves = SetLightCurve()
-            for b in bands:
-                curves.add(lc_create(b))
-            curves.add(lc_create('TimeDif', dt=1.))
+        bands = ['U', 'B', 'V']
+        curves = SetLightCurve()
+        for b in bands:
+            curves.add(lc_create(b))
+        curves.add(lc_create('TimeDif', dt=1.))
 
-            res = curves_save(curves, 'tmp_curves_2')
-            self.assertFalse(res, msg="Error:  curves_save should return False due to IsCommonTime=False")
+        res = curves_save(curves, 'tmp_curves_2')
+        self.assertFalse(res, msg="Error:  curves_save should return False due to IsCommonTime=False")
 
 
 def main():

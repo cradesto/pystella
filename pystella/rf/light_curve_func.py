@@ -6,6 +6,7 @@ import pystella.rf.rad_func as rf
 from pystella.model.stella import Stella
 from pystella.rf import extinction
 from pystella.rf.lc import LightCurve, SetLightCurve
+from pystella.rf.reddening import ReddeningLaw
 
 __author__ = 'bakl'
 
@@ -29,10 +30,10 @@ def compute_mag(name, path, bands, ext=None, z=0., distance=10., magnification=1
     model = Stella(name, path=path)
     if is_show_info:
         print('')
-        model.show_info()
+        model.info()
 
-    if not model.is_ph_data:
-        model.show_info()
+    if not model.is_ph:
+        model.info()
         print("Error: No data for: " + str(model))
         return None
 
@@ -194,7 +195,7 @@ def curves_compute(name, path, bands, z=0., distance=10., magnification=1.,
         raise ValueError("You have not set any bands for model: " + str(name))
 
     model = Stella(name, path=path)
-    if not model.is_ph_data:
+    if not model.is_ph:
         model.info()
         raise ValueError("Error: No spectral data for: " + str(model))
 
@@ -216,7 +217,7 @@ def curves_compute(name, path, bands, z=0., distance=10., magnification=1.,
     return curves
 
 
-def flux_reddening(freq, flux, ebv, law='MW'):
+def flux_reddening(freq, flux, ebv, law=ReddeningLaw.MW):
     """
     Apply extinction curves to flux(freq) values
     :param freq:  [Hz]
@@ -236,7 +237,7 @@ def flux_reddening(freq, flux, ebv, law='MW'):
     return res
 
 
-def flux_reddening_wl(wl, flux_wl, ebv, law='MW'):
+def flux_reddening_wl(wl, flux_wl, ebv, law=ReddeningLaw.MW):
     """
     Apply extinction curves to flux(lambda) values
     :param wl:  [A]
@@ -248,6 +249,18 @@ def flux_reddening_wl(wl, flux_wl, ebv, law='MW'):
     from pystella.rf.reddening import ReddeningLaw
     A_lambda = ReddeningLaw.Almd(wl, ebv, law)
     res = flux_wl * 10 ** (-0.4 * A_lambda)
+    return res
+
+
+def series_spec_reddening(series, ebv, law=ReddeningLaw.MW):
+    from pystella.rf.spectrum import Spectrum, SeriesSpectrum
+    res = SeriesSpectrum(series.Name)
+    for k, t in enumerate(series.Time):
+        s = series.get_spec(k)
+        freq = s.Freq
+        flux_red = flux_reddening(freq, s.Flux, ebv, law=law)
+        ss = Spectrum(s.Name, freq, flux=flux_red)
+        res.add(t, ss)
     return res
 
 

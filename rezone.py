@@ -67,7 +67,7 @@ def main(name=False):
 
     model = Stella(name, path=path)
 
-    if not model.is_res_data:
+    if not model.is_res:
         print("There are no  %s in the directory: %s " % (name, path))
 
     res = model.get_res()
