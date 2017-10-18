@@ -162,7 +162,8 @@ class TestReddening(unittest.TestCase):
 
         wl = np.logspace(3.0, np.log10(5e4), num=100)
         freq = phys.c / (wl * phys.angs_to_cm)
-        flux = np.ones(len(freq))
+        flux = np.ones_like(freq)
+        # flux = np.ones(len(freq))
         ebv = 1.
         x = 1e4 / wl
         plt.plot(x, flux, color='black', label='Origin flux')
@@ -183,7 +184,7 @@ class TestReddening(unittest.TestCase):
 
     def test_band_EXT_LAWS(self):
         import matplotlib.pyplot as plt
-        from pystella.rf.reddening import ReddeningLaw
+        from pystella.rf.reddening import ReddeningLaw, LawPei, LawFitz
 
         # ebv = .074
         ebv = 1.
@@ -204,8 +205,12 @@ class TestReddening(unittest.TestCase):
 
         plt.plot(x, y, label='Law {}'.format(lawBand), ls='--', marker='o', markersize=3)
 
-        yy = ReddeningLaw.Almd(x, ebv, law=ReddeningLaw.MW)
-        plt.plot(x, yy, label=r'$A_\lambda$ {}'.format(ReddeningLaw.Names[ReddeningLaw.MW]),
+        yy = LawPei.Almd(x, ebv, law=LawPei.MW)
+        plt.plot(x, yy, label=r'$A_\lambda$ {}'.format(ReddeningLaw.Names[LawPei.MW]),
+                 marker='d', ls=':', markersize=2)
+
+        yy = LawFitz.Almd(x, ebv, law=LawFitz.MW)
+        plt.plot(x, yy, label=r'$A_\lambda$ {}'.format(LawFitz.Names[LawFitz.MW]),
                  marker='d', ls=':', markersize=2)
 
         yy = ReddeningLaw.Almd(x, ebv, law=ReddeningLaw.LMC)
