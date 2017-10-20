@@ -87,18 +87,34 @@ class TestReddening(unittest.TestCase):
         plt.grid(linestyle=':', linewidth=1)
         plt.show()
 
-    def test_ReddeningLaw_Almd(self):
-        from pystella.rf.reddening import ReddeningLaw
+    def test_LawPei_Almd(self):
+        from pystella.rf.reddening import LawPei
         import matplotlib.pyplot as plt
 
         wl = np.logspace(3.0, np.log10(5e4), num=100)
         ebv = 0.074
-        for law in ReddeningLaw.Laws:
-            Almd = ReddeningLaw.Almd(wl, ebv, law=law)
+        for law in LawPei.Laws:
+            Almd = LawPei.Almd(wl, ebv, Rv=LawPei.Rv[law], law=law)
             x = 1e4 / wl
-            plt.plot(x, Almd, label=ReddeningLaw.Names[law])
+            plt.plot(x, Almd, label=LawPei.Names[law])
         plt.legend()
-        plt.xlabel(r'$1/\lambda\; [\mu m^{-1}]$')
+        plt.xlabel(r'LawPei: $1/\lambda\; [\mu m^{-1}]$')
+        plt.ylabel(r'$A_\lambda$')
+        plt.grid(linestyle=':', linewidth=1)
+        plt.show()
+
+    def test_LawFitz_Almd(self):
+        from pystella.rf.reddening import LawFitz
+        import matplotlib.pyplot as plt
+
+        wl = np.logspace(3.0, np.log10(5e4), num=100)
+        ebv = 0.074
+        for law in LawFitz.Laws:
+            Almd = LawFitz.Almd(wl, ebv, Rv=LawFitz.Rv[law], law=law)
+            x = 1e4 / wl
+            plt.plot(x, Almd, label=LawFitz.Names[law])
+        plt.legend()
+        plt.xlabel(r'LawFitz: $1/\lambda\; [\mu m^{-1}]$')
         plt.ylabel(r'$A_\lambda$')
         plt.grid(linestyle=':', linewidth=1)
         plt.show()
@@ -155,9 +171,9 @@ class TestReddening(unittest.TestCase):
         plt.grid(linestyle=':', linewidth=1)
         plt.show()
 
-    def test_flux_ones_with_ReddeningLaw(self):
+    def test_flux_ones_with_LawFitz(self):
         import matplotlib.pyplot as plt
-        from pystella.rf.reddening import ReddeningLaw
+        from pystella.rf.reddening import LawFitz
         from pystella.util.phys_var import phys
 
         wl = np.logspace(3.0, np.log10(5e4), num=100)
@@ -167,12 +183,12 @@ class TestReddening(unittest.TestCase):
         ebv = 1.
         x = 1e4 / wl
         plt.plot(x, flux, color='black', label='Origin flux')
-        for law in ReddeningLaw.Laws:
+        for law in LawFitz.Laws:
             y = flux_reddening_wl(wl, flux, ebv, law=law)
-            plt.plot(x, y, label='Flux {}'.format(ReddeningLaw.Names[law]))
-            Almd = ReddeningLaw.Almd(wl, ebv, law=law)
+            plt.plot(x, y, label='Flux {}'.format(LawFitz.Names[law]))
+            Almd = LawFitz.Almd(wl, ebv, Rv=LawFitz.Rv[law], law=law)
             yy = 10.**(-0.4*Almd)
-            plt.plot(x, yy, label=r'$A_\lambda$ {}'.format(ReddeningLaw.Names[law]),
+            plt.plot(x, yy, label=r'$A_\lambda$ {}'.format(LawFitz.Names[law]),
                      marker='o', ls='', markersize='1')
 
         plt.legend()
@@ -184,42 +200,55 @@ class TestReddening(unittest.TestCase):
 
     def test_band_EXT_LAWS(self):
         import matplotlib.pyplot as plt
-        from pystella.rf.reddening import ReddeningLaw, LawPei, LawFitz
+        from pystella.rf.reddening import LawPei, LawFitz
 
         # ebv = .074
         ebv = 1.
         data, laws = extinction.read_cache_data()
-
-        # lawBand = 'Rv2.1'
-        lawBand = 'Rv3.1'
-        # lawBand = 'Rv4.1'
-        # lawBand = 'Rv5.1'
-
-        # law = ReddeningLaw.MW
         x = data['lambdaeff']
-        y = data[lawBand]
-        # sort
         sorti = np.argsort(x)
         x = x[sorti]
-        y = y[sorti] * ebv
 
-        plt.plot(x, y, label='Law {}'.format(lawBand), ls='--', marker='o', markersize=3)
+        lawBands = ['Rv2.1', 'Rv3.1', 'Rv4.1', 'Rv5.1']
+        for lawBand in lawBands:
+            # lawBand = 'Rv2.1'
+            # lawBand = 'Rv3.1'
+            # lawBand = 'Rv4.1'
+            # lawBand = 'Rv5.1'
 
-        yy = LawPei.Almd(x, ebv, law=LawPei.MW)
-        plt.plot(x, yy, label=r'$A_\lambda$ {}'.format(ReddeningLaw.Names[LawPei.MW]),
-                 marker='d', ls=':', markersize=2)
+            y = data[lawBand]
+            # sort
+            y = y[sorti] * ebv
 
-        yy = LawFitz.Almd(x, ebv, law=LawFitz.MW)
-        plt.plot(x, yy, label=r'$A_\lambda$ {}'.format(LawFitz.Names[LawFitz.MW]),
-                 marker='d', ls=':', markersize=2)
+            plt.plot(x, y, label='Bands {}'.format(lawBand), ls='--', marker='o', markersize=3)
 
-        yy = ReddeningLaw.Almd(x, ebv, law=ReddeningLaw.LMC)
-        plt.plot(x, yy, label=r'$A_\lambda$ {}'.format(ReddeningLaw.Names[ReddeningLaw.LMC]),
-                 marker='<', ls=':', markersize=2)
+        markers = ['<', '>', 'd']
+        for i, law in enumerate(LawPei.Laws):
+            Rv = LawPei.Rv[law]
+            # nm = LawPei.Names[law]
+            yy = LawPei.Almd(x, ebv, Rv=Rv, law=law)
+            # yy = LawPei.Almd(x, ebv, Rv=Rv, law=LawPei.MW)
+            plt.plot(x, yy, label=r'$A_\lambda$: Pei Rv={}'.format(Rv),
+                     marker=markers[i], ls='', markersize=2)
 
-        yy = ReddeningLaw.Almd(x, ebv, law=ReddeningLaw.SMC)
-        plt.plot(x, yy, label=r'$A_\lambda$ {}'.format(ReddeningLaw.Names[ReddeningLaw.SMC]),
-                 marker='>', ls=':', markersize=2)
+        for i, law in enumerate(LawFitz.Laws):
+            Rv = LawFitz.Rv[law]
+            # nm = LawFitz.Names[law]
+            yy = LawFitz.Almd(x, ebv, Rv=Rv, law=law)
+            plt.plot(x, yy, label=r'$A_\lambda$: Fitz Rv={}'.format(Rv),
+                     marker=markers[i], ls='', markersize=2)
+        # Rv = LawFitz.Rv[LawFitz.MW]
+        # yy = LawFitz.Almd(x, ebv, Rv=Rv, law=LawFitz.MW)
+        # plt.plot(x, yy, label=r'$A_\lambda$ {}'.format(LawFitz.Names[LawFitz.MW]),
+        #          marker='d', ls=':', markersize=2)
+
+        # yy = ReddeningLaw.Almd(x, ebv, law=ReddeningLaw.LMC)
+        # plt.plot(x, yy, label=r'$A_\lambda$ {}'.format(ReddeningLaw.Names[ReddeningLaw.LMC]),
+        #          marker='<', ls=':', markersize=2)
+        #
+        # yy = ReddeningLaw.Almd(x, ebv, law=ReddeningLaw.SMC)
+        # plt.plot(x, yy, label=r'$A_\lambda$ {}'.format(ReddeningLaw.Names[ReddeningLaw.SMC]),
+        #          marker='>', ls=':', markersize=2)
 
         plt.legend()
         plt.xscale("log", nonposx='clip')

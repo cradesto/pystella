@@ -15,6 +15,7 @@ from matplotlib import gridspec
 
 import pystella.util.callback as cb
 from pystella import velocity as vel
+from pystella.model.stella import Stella
 from pystella.rf import band
 from pystella.rf import light_curve_func as lcf
 from pystella.rf import light_curve_plot as lcp
@@ -318,8 +319,13 @@ def main(name='', model_ext='.ph'):
         i = 0
         for name in names:
             i += 1
-            curves = lcf.curves_compute(name, path, bnames, z=z, distance=distance,
-                                        magnification=magnification, t_diff=t_diff)
+            if False:  # old
+                curves = lcf.curves_compute(name, path, bnames, z=z, distance=distance,
+                                            magnification=magnification, t_diff=t_diff)
+            else:
+                mdl = Stella(name, path=path)
+                curves = mdl.curves(bnames, z=z, distance=distance, ebv=e, magnification=magnification)
+
             if is_extinction:
                 curves = lcf.curves_reddening(curves, ebv=e, z=z)
 

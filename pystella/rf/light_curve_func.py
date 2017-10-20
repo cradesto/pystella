@@ -246,8 +246,8 @@ def flux_reddening_wl(wl, flux_wl, ebv, law=ReddeningLaw.MW):
     :param law: type of extinction curves (MW, LMC, SMC)
     :return: reddening flux
     """
-    from pystella.rf.reddening import ReddeningLaw
-    A_lambda = ReddeningLaw.Almd(wl, ebv, law)
+    from pystella.rf.reddening import LawFitz
+    A_lambda = LawFitz.Almd(wl, ebv, Rv=LawFitz.Rv[law], law=law)
     res = flux_wl * 10 ** (-0.4 * A_lambda)
     return res
 

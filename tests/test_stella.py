@@ -5,6 +5,7 @@ import numpy as np
 from pystella.model.stella import Stella
 import pystella.rf.light_curve_func as lcf
 import pystella.rf.light_curve_plot as lcp
+from pystella.rf.reddening import ReddeningLaw
 
 __author__ = 'bakl'
 
@@ -29,7 +30,7 @@ class TestStellaLightCurves(unittest.TestCase):
 
         name = 'cat_R500_M15_Ni006_E12'
         path = join(dirname(abspath(__file__)), 'data', 'stella')
-        bands = ('UVW2', 'U', 'B', 'R', 'I')
+        bands = ('UVW1', 'UVW2', 'UVM2', 'U', 'B', 'R', 'I')
         ebv = 1
 
         # mags reddening
@@ -37,7 +38,8 @@ class TestStellaLightCurves(unittest.TestCase):
         curves_mags = lcf.curves_reddening(cs, ebv=ebv)
 
         mdl = Stella(name, path=path)
-        curves = mdl.curves(bands, ebv=ebv)
+        curves = mdl.curves(bands, ebv=ebv)  # best SML
+        # curves = mdl.curves(bands, ebv=ebv, law=ReddeningLaw.SMC)  # best SML
 
         self.assertTrue((np.array(sorted(curves.BandNames) == sorted(curves_mags.BandNames))).all(),
                         msg="Error for the initial band names [%s] "

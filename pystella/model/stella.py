@@ -97,7 +97,7 @@ class Stella:
         res = ph.read(self.name, self.path, t_diff=t_diff, t_beg=t_beg, t_end=t_end, is_nfrus=is_nfrus)
         return res
 
-    def curves(self, bands, z=0., distance=10., ebv=0., law=ReddeningLaw.MW, **kwargs):
+    def curves(self, bands, z=0., distance=10., ebv=0., law=ReddeningLaw.SMC, **kwargs):
         """
             Compute magnitude in bands for the 'name' model.
         :param bands: photometric bands
@@ -109,6 +109,7 @@ class Stella:
         """
         from pystella.rf.light_curve_func import series_spec_reddening
         from pystella.rf.rad_func import pc_to_cm
+        from pystella.rf.reddening import LawFitz
 
         t_beg = kwargs.get("t_beg", 0.)
         t_end = kwargs.get("t_end", float('inf'))
@@ -125,7 +126,8 @@ class Stella:
         serial_spec = self.get_ph(t_diff=t_diff, t_beg=t_beg, t_end=t_end)
         # reddening
         if ebv > 0:
-            serial_spec = series_spec_reddening(serial_spec, ebv=ebv, law=law)
+            ss = serial_spec.copy(self,  wl_ab=LawFitz.LAMBDA_LIM)
+            serial_spec = series_spec_reddening(ss, ebv=ebv, law=law)
         # light curves
         curves = serial_spec.flux_to_curves(bands, z=z, d=pc_to_cm(distance), magnification=magnification)
 
