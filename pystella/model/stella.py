@@ -1,6 +1,6 @@
 import os
 
-from pystella.rf.reddening import ReddeningLaw
+from pystella.rf.reddening import ReddeningLaw, LawFitz, LawPei
 
 __author__ = 'bakl'
 
@@ -97,19 +97,20 @@ class Stella:
         res = ph.read(self.name, self.path, t_diff=t_diff, t_beg=t_beg, t_end=t_end, is_nfrus=is_nfrus)
         return res
 
-    def curves(self, bands, z=0., distance=10., ebv=0., law=ReddeningLaw.SMC, **kwargs):
+    def curves(self, bands, z=0., distance=10., ebv=0., Rv=None, law=LawFitz, mode=ReddeningLaw.SMC, **kwargs):
         """
             Compute magnitude in bands for the 'name' model.
         :param bands: photometric bands
         :param z: redshift, default 0
         :param distance: distance to star in parsec, default 10 pc
         :param ebv: color excess, default: 0
+        :param Rv:  R_V
         :param law: the law of extinction curve
+        :param mode: type of extinction curves (MW, LMC, SMC)
         :return: light curves for the photometric bands
         """
         from pystella.rf.light_curve_func import series_spec_reddening
         from pystella.rf.rad_func import pc_to_cm
-        from pystella.rf.reddening import LawFitz
 
         t_beg = kwargs.get("t_beg", 0.)
         t_end = kwargs.get("t_end", float('inf'))
@@ -126,8 +127,8 @@ class Stella:
         serial_spec = self.get_ph(t_diff=t_diff, t_beg=t_beg, t_end=t_end)
         # reddening
         if ebv > 0:
-            ss = serial_spec.copy(self,  wl_ab=LawFitz.LAMBDA_LIM)
-            serial_spec = series_spec_reddening(ss, ebv=ebv, law=law)
+            ss = serial_spec.copy(self,  wl_ab=law.LAMBDA_LIM)
+            serial_spec = series_spec_reddening(ss, ebv=ebv, Rv=Rv, law=law, mode=mode)
         # light curves
         curves = serial_spec.flux_to_curves(bands, z=z, d=pc_to_cm(distance), magnification=magnification)
 

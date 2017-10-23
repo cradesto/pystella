@@ -1,11 +1,11 @@
 import unittest
 from os.path import join, dirname, abspath
+
 import numpy as np
 
-from pystella.model.stella import Stella
 import pystella.rf.light_curve_func as lcf
 import pystella.rf.light_curve_plot as lcp
-from pystella.rf.reddening import ReddeningLaw
+from pystella.model.stella import Stella
 
 __author__ = 'bakl'
 
@@ -39,7 +39,7 @@ class TestStellaLightCurves(unittest.TestCase):
 
         mdl = Stella(name, path=path)
         curves = mdl.curves(bands, ebv=ebv)  # best SML
-        # curves = mdl.curves(bands, ebv=ebv, law=ReddeningLaw.SMC)  # best SML
+        # curves = mdl.curves(bands, ebv=ebv, law=LawFitz, mode=ReddeningLaw.SMC)  # best SML
 
         self.assertTrue((np.array(sorted(curves.BandNames) == sorted(curves_mags.BandNames))).all(),
                         msg="Error for the initial band names [%s] "

@@ -7,6 +7,7 @@ from pystella.model.stella import Stella
 from pystella.rf import extinction
 from pystella.rf.lc import LightCurve, SetLightCurve
 from pystella.rf.reddening import ReddeningLaw
+from pystella.rf.reddening import LawFitz
 
 __author__ = 'bakl'
 
@@ -217,13 +218,15 @@ def curves_compute(name, path, bands, z=0., distance=10., magnification=1.,
     return curves
 
 
-def flux_reddening(freq, flux, ebv, law=ReddeningLaw.MW):
+def flux_reddening(freq, flux, ebv, Rv=None, law=LawFitz, mode=ReddeningLaw.MW):
     """
     Apply extinction curves to flux(freq) values
     :param freq:  [Hz]
     :param flux:  [ergs s^-1 cm^-2 Hz^-1]
     :param ebv: E(B-V)
-    :param law: type of extinction curves (MW, LMC, SMC)
+    :param Rv: R_V
+    :param law: the variant of extinction curves
+    :param mode: type of extinction curves (MW, LMC, SMC)
     :return: reddening flux
     """
     from pystella.util.phys_var import phys
@@ -231,34 +234,37 @@ def flux_reddening(freq, flux, ebv, law=ReddeningLaw.MW):
     flux_wl = rf.Fnu2Fwl(freq, flux)
     # flux_wl = flux * freq ** 2 / phys.c
     wl = np.array(phys.c / freq) * phys.cm_to_angs
-    res = flux_reddening_wl(wl, flux_wl, ebv, law)
+    res = flux_reddening_wl(wl, flux_wl, ebv, Rv=Rv, law=law, mode=mode)
     res = rf.Fwl2Fnu(freq, res)
     # res = flux_reddening_wl(wl, flux_wl, ebv, law) * phys.c / freq**2
     return res
 
 
-def flux_reddening_wl(wl, flux_wl, ebv, law=ReddeningLaw.MW):
+def flux_reddening_wl(wl, flux_wl, ebv, Rv=None, law=LawFitz, mode=ReddeningLaw.MW):
     """
     Apply extinction curves to flux(lambda) values
     :param wl:  [A]
     :param flux_wl:  [ergs s^-1 cm^-2 A^-1]
     :param ebv: E(B-V)
-    :param law: type of extinction curves (MW, LMC, SMC)
+    :param Rv: R_V
+    :param law: the variant of extinction curves
+    :param mode: type of extinction curves (MW, LMC, SMC)
     :return: reddening flux
     """
-    from pystella.rf.reddening import LawFitz
-    A_lambda = LawFitz.Almd(wl, ebv, Rv=LawFitz.Rv[law], law=law)
+    if Rv is None:
+        Rv = law.Rv[mode]
+    A_lambda = law.Almd(wl, ebv, Rv=Rv)
     res = flux_wl * 10 ** (-0.4 * A_lambda)
     return res
 
 
-def series_spec_reddening(series, ebv, law=ReddeningLaw.MW):
+def series_spec_reddening(series, ebv, Rv=None, law=LawFitz, mode=ReddeningLaw.MW):
     from pystella.rf.spectrum import Spectrum, SeriesSpectrum
     res = SeriesSpectrum(series.Name)
     for k, t in enumerate(series.Time):
         s = series.get_spec(k)
         freq = s.Freq
-        flux_red = flux_reddening(freq, s.Flux, ebv, law=law)
+        flux_red = flux_reddening(freq, s.Flux, ebv, Rv=Rv, law=law, mode=mode)
         ss = Spectrum(s.Name, freq, flux=flux_red)
         res.add(t, ss)
     return res

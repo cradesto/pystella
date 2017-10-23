@@ -77,7 +77,7 @@ class TestReddening(unittest.TestCase):
         import matplotlib.pyplot as plt
 
         wl = np.logspace(3.0, np.log10(5e4), num=100)
-        for law in ReddeningLaw.Laws:
+        for law in ReddeningLaw.Modes:
             xi = ReddeningLaw.xi(wl, law=law)
             x = 1e4 / wl
             plt.plot(x, xi, label=ReddeningLaw.Names[law])
@@ -93,10 +93,10 @@ class TestReddening(unittest.TestCase):
 
         wl = np.logspace(3.0, np.log10(5e4), num=100)
         ebv = 0.074
-        for law in LawPei.Laws:
-            Almd = LawPei.Almd(wl, ebv, Rv=LawPei.Rv[law], law=law)
+        for mode in LawPei.Modes:
+            Almd = LawPei.Almd(wl, ebv, Rv=LawPei.Rv[mode])
             x = 1e4 / wl
-            plt.plot(x, Almd, label=LawPei.Names[law])
+            plt.plot(x, Almd, label=LawPei.Names[mode])
         plt.legend()
         plt.xlabel(r'LawPei: $1/\lambda\; [\mu m^{-1}]$')
         plt.ylabel(r'$A_\lambda$')
@@ -109,10 +109,10 @@ class TestReddening(unittest.TestCase):
 
         wl = np.logspace(3.0, np.log10(5e4), num=100)
         ebv = 0.074
-        for law in LawFitz.Laws:
-            Almd = LawFitz.Almd(wl, ebv, Rv=LawFitz.Rv[law], law=law)
+        for mode in LawFitz.Modes:
+            Almd = LawFitz.Almd(wl, ebv, Rv=LawFitz.Rv[mode])
             x = 1e4 / wl
-            plt.plot(x, Almd, label=LawFitz.Names[law])
+            plt.plot(x, Almd, label=LawFitz.Names[mode])
         plt.legend()
         plt.xlabel(r'LawFitz: $1/\lambda\; [\mu m^{-1}]$')
         plt.ylabel(r'$A_\lambda$')
@@ -132,10 +132,10 @@ class TestReddening(unittest.TestCase):
 
         ebv = 0.074
         plt.plot(freq, flux, color='black', label='Origin planck T={}'.format(T))
-        for law in ReddeningLaw.Laws:
+        for mode in ReddeningLaw.Modes:
             x = freq
-            y = flux_reddening(freq, flux, ebv, law=law)
-            plt.plot(x, y, label=ReddeningLaw.Names[law])
+            y = flux_reddening(freq, flux, ebv, mode=mode)
+            plt.plot(x, y, label=ReddeningLaw.Names[mode])
         plt.legend()
         plt.xscale("log", nonposx='clip')
         plt.yscale("log", nonposy='clip')
@@ -159,10 +159,10 @@ class TestReddening(unittest.TestCase):
 
         ebv = 0.074
         plt.plot(wl, flux_wl, color='black', label='Origin planck T={}'.format(T))
-        for law in ReddeningLaw.Laws:
+        for mode in ReddeningLaw.Modes:
             x = wl
-            y = flux_reddening_wl(wl, flux_wl, ebv, law=law)
-            plt.plot(x, y, label=ReddeningLaw.Names[law])
+            y = flux_reddening_wl(wl, flux_wl, ebv, mode=mode)
+            plt.plot(x, y, label=ReddeningLaw.Names[mode])
         plt.legend()
         plt.xscale("log", nonposx='clip')
         plt.yscale("log", nonposy='clip')
@@ -183,12 +183,13 @@ class TestReddening(unittest.TestCase):
         ebv = 1.
         x = 1e4 / wl
         plt.plot(x, flux, color='black', label='Origin flux')
-        for law in LawFitz.Laws:
-            y = flux_reddening_wl(wl, flux, ebv, law=law)
-            plt.plot(x, y, label='Flux {}'.format(LawFitz.Names[law]))
-            Almd = LawFitz.Almd(wl, ebv, Rv=LawFitz.Rv[law], law=law)
+        law = LawFitz
+        for mode in law.Modes:
+            y = flux_reddening_wl(wl, flux, ebv, law=law, mode=mode)
+            plt.plot(x, y, label='Flux {}'.format(law.Names[mode]))
+            Almd = law.Almd(wl, ebv, Rv=law.Rv[mode])
             yy = 10.**(-0.4*Almd)
-            plt.plot(x, yy, label=r'$A_\lambda$ {}'.format(LawFitz.Names[law]),
+            plt.plot(x, yy, label=r'$A_\lambda$ {}'.format(law.Names[mode]),
                      marker='o', ls='', markersize='1')
 
         plt.legend()
@@ -223,18 +224,18 @@ class TestReddening(unittest.TestCase):
             plt.plot(x, y, label='Bands {}'.format(lawBand), ls='--', marker='o', markersize=3)
 
         markers = ['<', '>', 'd']
-        for i, law in enumerate(LawPei.Laws):
-            Rv = LawPei.Rv[law]
+        for i, mode in enumerate(LawPei.Modes):
+            Rv = LawPei.Rv[mode]
             # nm = LawPei.Names[law]
-            yy = LawPei.Almd(x, ebv, Rv=Rv, law=law)
+            yy = LawPei.Almd(x, ebv, Rv=Rv)
             # yy = LawPei.Almd(x, ebv, Rv=Rv, law=LawPei.MW)
             plt.plot(x, yy, label=r'$A_\lambda$: Pei Rv={}'.format(Rv),
                      marker=markers[i], ls='', markersize=2)
 
-        for i, law in enumerate(LawFitz.Laws):
-            Rv = LawFitz.Rv[law]
+        for i, mode in enumerate(LawFitz.Modes):
+            Rv = LawFitz.Rv[mode]
             # nm = LawFitz.Names[law]
-            yy = LawFitz.Almd(x, ebv, Rv=Rv, law=law)
+            yy = LawFitz.Almd(x, ebv, Rv=Rv)
             plt.plot(x, yy, label=r'$A_\lambda$: Fitz Rv={}'.format(Rv),
                      marker=markers[i], ls='', markersize=2)
         # Rv = LawFitz.Rv[LawFitz.MW]

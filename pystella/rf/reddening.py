@@ -7,26 +7,24 @@ class ReddeningLaw(object):
     MW = "MW"
     LMC = "LMC"
     SMC = "SMC"
-    lmd_lim = (1, 5e4)
+
+    LAMBDA_LIM = (1., 5e4)  # as Stella
 
     Names = {MW: "Milky Way", LMC: "Large Magellanic Cloud", SMC: "Small Magellanic Cloud"}
-    Laws = list(Names.keys())
+    Modes = list(Names.keys())
 
     @staticmethod
-    def Almd(wl, ebv, Rv, law=MW):
+    def Almd(wl, ebv, Rv):
         """
         Compute Absorption A_lamda
         :param wl: [A]
         :param ebv: E(B-V)
         :param Rv: R_V
-        :param law:
         :return:
         """
-        if law not in ReddeningLaw.Laws:
-            raise ValueError('Such law [{}] is not supported. There are {}'.
-                             format(law, ', '.join(ReddeningLaw.Laws)))
-        wl = np.array(wl) / 1e4  # A -> microns
-        return LawPei.Almd(wl, ebv, Rv, law)
+        raise NotImplemented()
+        # wl = np.array(wl) / 1e4  # A -> microns
+        # return LawPei.Almd(wl, ebv, Rv)
 
     @staticmethod
     def xi(wl, law=MW):
@@ -36,9 +34,9 @@ class ReddeningLaw(object):
         :param law:
         :return:
         """
-        if law not in ReddeningLaw.Laws:
+        if law not in ReddeningLaw.Modes:
             raise ValueError('Such law [{}] is not supported. There are {}'.
-                             format(law, ', '.join(ReddeningLaw.Laws)))
+                             format(law, ', '.join(ReddeningLaw.Modes)))
         wl = np.array(wl) / 1e4  # A -> microns
         return LawPei.xi(wl, law)
 
@@ -75,9 +73,9 @@ class LawPei(ReddeningLaw):
           }
 
     @staticmethod
-    def xi(wl, law=MW):
-        wl = wl / 1e4   # A to microns
-        res = [LawPei.func_xi(l, LawPei.ai[law], LawPei.li[law], LawPei.bi[law], LawPei.ni[law], )
+    def xi(wl, mode=MW):
+        wl = wl / 1e4  # A to microns
+        res = [LawPei.func_xi(l, LawPei.ai[mode], LawPei.li[mode], LawPei.bi[mode], LawPei.ni[mode], )
                for l in wl]
         return np.array(res)
 
@@ -85,21 +83,21 @@ class LawPei(ReddeningLaw):
     def func_xi(wl, ai, li, bi, ni):
         res = 0.
         for i in range(6):
-            res += ai[i] / (bi[i] + (wl/li[i]) ** ni[i] + (li[i]/wl) ** ni[i])
+            res += ai[i] / (bi[i] + (wl / li[i]) ** ni[i] + (li[i] / wl) ** ni[i])
         return res
 
     @staticmethod
-    def Almd(wl, ebv, Rv=Rv[MW], law=MW):
+    def Almd(wl, ebv, Rv=Rv[MW]):
         """
         Origin: eq 20 from  http://adsabs.harvard.edu/abs/1992ApJ...395..130P
         :param wl: array of wave lengths [A]
         :param ebv: E(B-V)
         :param Rv: R_V
-        :param law: MW, LMW, SMW
         :return: A_lambda
         """
         Av = Rv * ebv
-        xi = LawPei.xi(wl, law)
+        mode = min({k: abs(v - Rv) for k, v in LawPei.Rv.items()}, key=lambda x: x[1])  # the nearest value to Rv
+        xi = LawPei.xi(wl, mode)
         return xi * Av
 
 
@@ -120,13 +118,12 @@ class LawFitz(ReddeningLaw):
     LAMBDA_LIM = (910, 6e4)
 
     @staticmethod
-    def Almd(wl, ebv, Rv,  law=ReddeningLaw.MW, model='f99'):
+    def Almd(wl, ebv, Rv, model='f99'):
         """
         Origin: https://github.com/LSSTDESC/Recipes/blob/master/python/utensils/extinction.py
         :param wl: array of wave lengths [A]
         :param ebv: E(B-V)
         :param Rv:  R_V
-        :param law: no used now
         :param model: f99 or fm07. Default: f99
         :return: A_lambda
         """
