@@ -31,7 +31,7 @@ class StellaTt:
         return StellaTtInfo(self.name, self.path)
         # return "%s" % self.name
 
-    def read(self, ext='tt', line_header=87):
+    def read(self, ext='tt', line_header=80):
         """
         Read tt-data
         Columns: time Tbb rbb Teff Rlast_sc Rph Mbol MU MB MV MI MR   Mbolavg  gdepos
