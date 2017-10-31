@@ -73,7 +73,7 @@ class Spectrum(object):
         from pystella.fit import mpfit
         """
         Fitting Spectrum by planck function and find the color temperature
-        :return:   color temperature
+        :return:   color temperature adn dilution
         """
 
         def func(nu, T, w):

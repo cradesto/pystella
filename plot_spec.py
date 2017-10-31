@@ -328,19 +328,21 @@ def plot_fit_wl(model, series, wl_ab, times=None, fsave=None):
 
     # print
     # print("{:>10s}  {:>12s}  {:>12s}  {:>12s}  ".format("Time",  "Twien", "Tcol", "zeta", "Tdil", "Wdil"))
-    print("{:>8}".format("Time") +
-          ' '.join("{:>12s}".format(s) for s in ("T_wien", "Tcol", "W", "T_dil", "W_dil")))
-    for t, *p in zip(time, Twien, Tcol, zeta, Tdil, Wdil):
-        print("{:8.2f}".format(t) + ' '.join("{0:12.2f}".format(s) for s in p))
-        # print("%10.2f  %12.6f  %12.6f  %12.6f  " % p)
     if fsave is not None:
         with open(fsave, "w+") as f:
             print("{:>8s}".format("Time") +
-                  ' '.join("{:>12s}".format(s) for s in ("T_wien", "Tcol", "W", "T_dil", "W_dil")), file=f)
+                  ' '.join("{:>12s}".format(s) for s in ("T_dil", "W_dil")), file=f)
+                  # ' '.join("{:>12s}".format(s) for s in ("T_wien", "Tcol", "W", "T_dil", "W_dil")), file=f)
             # print("{:>10s}  {:>12s}  {:>12s}  {:>12s}  ".format("Time",  "Twien", "Tcol","zeta"), file=f)
-            for t, *p in zip(time, Twien, Tcol, zeta, Tdil, Wdil):
+            for t, *p in zip(time, Tdil, Wdil):
                 print("{:8.2f}".format(t) + ' '.join("{0:12.2f}".format(s) for s in p), file=f)
         print("Save temperatures to %s " % fsave)
+    else:
+        print("{:>8}".format("Time") +
+              ' '.join("{:>12s}".format(s) for s in ("T_dil", "W_dil")))
+        for t, *p in zip(time, Tdil, Wdil):
+            print("{:8.2f}".format(t) + ' '.join("{0:12.2f}".format(s) for s in p))
+            # print("%10.2f  %12.6f  %12.6f  %12.6f  " % p)
 
     # plot
     fig, ax = plt.subplots()
