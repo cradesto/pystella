@@ -207,7 +207,7 @@ ROOT_DIRECTORY = dirname(dirname(dirname(os.path.abspath(__file__))))
 #     return os.path.join(ROOT_DIRECTORY, fname)
 
 
-def bands_colors():
+def bands_colors(bname=None):
     colors = dict(
         U="blue", B="cyan", V="darkgreen", R="red", I="magenta",
         BesU="blue", BesB="cyan", BesV="darkgreen", BesR="red", BesI="magenta",
@@ -230,7 +230,10 @@ def bands_colors():
     for b in list('grizY'):
         colors['HSC' + b] = colors[b]
 
-    return colors
+    if bname is None:
+        return colors
+    else:
+        return colors[bname]
 
 
 #

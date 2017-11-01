@@ -1,6 +1,7 @@
 import unittest
 from os.path import join, dirname, abspath
 
+import matplotlib.pyplot as plt
 import numpy as np
 
 import pystella.rf.light_curve_func as lcf
@@ -24,13 +25,33 @@ class TestStellaLightCurves(unittest.TestCase):
                             "VS secondary BandNames are %s."
                             % (' '.join(bands), ' '.join(curves.BandNames)))
 
-    def test_stella_curves_reddening(self):
-        import matplotlib.pyplot as plt
+    def test_stella_curves_VS_tt_plot(self):
+        from pystella.rf.band import bands_colors
+        name = 'cat_R500_M15_Ni006_E12'
+        path = join(dirname(abspath(__file__)), 'data', 'stella')
+        bands = ('U', 'B', 'V', 'R', 'I')
+
+        mdl = Stella(name, path=path)
+        curves = mdl.curves(bands)
+
+        tt = mdl.get_tt().read()
+
+        ax = lcp.curves_plot(curves)
+        for bname in bands:
+            ax.plot(tt['time'], tt['M'+bname], label="tt "+bname, color=bands_colors(bname),
+                    marker='*', markersize=3, ls='')
+        ax.legend()
+
+        plt.grid(linestyle=':', linewidth=1)
+        plt.show()
+
+    def test_stella_curves_reddening_plot(self):
         from matplotlib import gridspec
 
         name = 'cat_R500_M15_Ni006_E12'
         path = join(dirname(abspath(__file__)), 'data', 'stella')
-        bands = ('UVW1', 'UVW2', 'UVM2', 'U', 'B', 'R', 'I')
+        bands = ('UVW1', 'UVW2', 'UVM2')
+        # bands = ('UVW1', 'UVW2', 'UVM2', 'U', 'B', 'R', 'I')
         ebv = 1
 
         # mags reddening
