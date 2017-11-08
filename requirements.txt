@@ -22,4 +22,4 @@ corner
 gptools
 pandas
 ipython
-
+h5py

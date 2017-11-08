@@ -472,6 +472,9 @@ class SeriesSpectrum(object):
 
         times = (1. + z) * np.array(times)
         lc = LightCurve(b, times, mags)
+        lc.attrs('d', d)
+        lc.attrs('z', z)
+        lc.attrs('magnification', magnification)
         return lc
 
     def flux_to_curves(self, bands, z=0., d=rf.pc_to_cm(10.), magnification=1.):

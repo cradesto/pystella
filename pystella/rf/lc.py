@@ -19,6 +19,7 @@ class LightCurve(TimeSeries):
 
         super().__init__(self._b.Name, time, mags, errs, tshift=tshift)
         self._mshift = mshift
+        self._attrs = {}
 
     @property
     def Mag(self):
@@ -52,6 +53,19 @@ class LightCurve(TimeSeries):
     def TimeLcMax(self):
         idx = np.argmin(self.Mag)
         return self.Time[idx]
+
+    def attrs(self, nm, *val):
+        if not val:
+            return self._attrs[nm]
+        else:
+            self._attrs[nm] = val
+
+    def toarray(self, is_err=True):
+        if is_err and self.IsErr:
+            res = np.array([self.Time, self.Mag, self.MagErr])
+        else:
+            res = np.array([self.Time, self.Mag])
+        return res.T
 
     def copy(self, name=None, tlim=None):
         errs = None

@@ -130,7 +130,7 @@ def read_obs_table_header(fname, header=None, skip=0, colt=('time', 'JD', 'MJD')
     return block, cols_data
 
 
-def table2curves(name, tbl, bands=None, colt=('time', 'JD', 'MJD')):
+def table2curves(name, tbl, bands=None, colt=('time', 'JD', 'MJD'), is_filter_zero=True):
     # time = None
     for nm in colt:
         if nm in tbl.dtype.names:
@@ -148,7 +148,10 @@ def table2curves(name, tbl, bands=None, colt=('time', 'JD', 'MJD')):
         b = band.band_by_name(bname)
         mag = tbl[bname]
         # filter
-        mask = np.where(mag != 0)  # filter out values not equal 0
+        if is_filter_zero:
+            mask = np.where(mag != 0)  # filter out values not equal 0
+        else:
+            mask = np.ones(len(mag), dtype=bool)
         t = time[mask]
         m = mag[mask]
         for err_name in (prefix+bname for prefix in err_prefix):
@@ -161,3 +164,31 @@ def table2curves(name, tbl, bands=None, colt=('time', 'JD', 'MJD')):
             lc = LightCurve(b, t, m)
         curves.add(lc)
     return curves
+
+
+def curves2table(curves):
+    def add(a, vals):
+        # a = np.append(a, [lc.Mag], axis=0)
+        # # a[:, :-1] = lc.Mag
+        combined = np.vstack((a, vals))
+        return combined
+    # a = np.array(curves.TimeCommon, dtype=[('time', np.float64, (len(curves.TimeCommon)))])
+    # a = np.empty([0, len(curves.TimeCommon)])
+    # a = np.array([0,100])
+    # a = np.append(a, [curves.TimeCommon], axis=0)
+    a = np.array(curves.TimeCommon)
+    names = ['time']
+    for lc in curves:
+        a = add(a, lc.Mag)
+        names.append(lc.Band.Name)
+        if lc.IsErr:
+            a = add(a, lc.MagErr)
+            names.append('err'+lc.Band.Name)
+    # dt = {'names': names, 'formats': [np.float64] * len(names)}
+    dt = list(zip(names, [np.float64] * len(names)))
+    a = a.T
+    a.dtype = np.dtype(dt)
+    # a.dtype = np.dtype(dt)
+    # a.dtype.names = names
+
+    return a

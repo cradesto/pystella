@@ -12,6 +12,7 @@ class phys:
     k = 1.3806504e-16  # erg K^-1
     sigma_SB = 5.6704e-5  # erg cm^-2 s^-1 K^-4, Stefan-Boltzman Constant
     H0 = 68  # Hubble constant [km/c/Mpc]
+    G = 6.6743e-8  # Newton's gravitational constant cm3 g-1 s-2
 
     echarg = 4.8032042000e-10
     avogar = 6.0221419900e+23
