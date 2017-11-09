@@ -333,7 +333,7 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname='', **k
     colors = kwargs.get('colors', lc_colors)
     linewidth = kwargs.get('linewidth', 2.0)
     markersize = kwargs.get('markersize', 5)
-    rect = kwargs.get('rect', (0.1, 0.3, 0.8, 0.65))
+    rect = kwargs.get('rect', (0.1, 0.2, 0.8, 0.65))
     fontsize = kwargs.get('fontsize', 18)
     figsize = kwargs.get('figsize', (20, 10))
 
@@ -342,8 +342,9 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname='', **k
         plt.matplotlib.rcParams.update({'font.size': 14})
         fig = plt.figure(figsize=figsize)
         # fig = plt.figure(num=None, figsize=(7, 11), dpi=100, facecolor='w', edgecolor='k')
-        # ax = fig.add_axes()
-        ax = fig.add_axes(rect)
+        # ax = fig.add_axes(rect)
+        ax = fig.add_subplot(1, 1, 1)
+
         for item in ([ax.title, ax.xaxis.label,
                       ax.yaxis.label] + ax.get_xticklabels() + ax.get_yticklabels()):
             item.set_fontsize(fontsize)

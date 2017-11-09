@@ -16,18 +16,17 @@ class TestStellaShockWaveDetail(unittest.TestCase):
         path = join(dirname(abspath(__file__)), 'data', 'stella')
         stella = Stella(name, path=path)
         self.swd = stella.get_swd()
+        self.swd.load()
 
     def test_reading(self):
         nzon = 100
         ntimes = 20
-        self.swd.load()
         self.assertEquals(self.swd.Nzon, nzon, "Error in zon setting: swd.Nzon=%d, but should be %d"
                           % (self.swd.Nzon, nzon))
         self.assertEquals(self.swd.Ntimes, ntimes, "Error in time reading: swd.Ntimes=%d, but should be %d"
                           % (self.swd.Ntimes, ntimes))
 
     def test_reading_block(self):
-        self.swd.load()
         time = 2.
         idx, t = self.swd.time_nearest(time)
         b = self.swd.block_nearest(time)
@@ -40,7 +39,6 @@ class TestStellaShockWaveDetail(unittest.TestCase):
 
     # @unittest.skip("just for plot")
     def test_block_plot(self):
-        self.swd.load()
         time = 2.
         idx, t = self.swd.time_nearest(time)
         b = self.swd.block_nearest(time)
@@ -64,7 +62,6 @@ class TestStellaShockWaveDetail(unittest.TestCase):
 
     # @unittest.skip("just for plot")
     def test_block_plot_many(self):
-        self.swd.load()
         times = [1., 2., 3.]
 
         fig = plt.figure(num=None, figsize=(8, 12), dpi=100, facecolor='w', edgecolor='k')
@@ -88,18 +85,15 @@ class TestStellaShockWaveDetail(unittest.TestCase):
 
     def test_swd_evolution_exeption_val(self):
         def func():
-            self.swd.load()
-            t, y = self.swd.evolution('bad_value', self.swd.Nzon+1)
+            t, y = self.swd.evolution('bad_value', self.swd.Nzon)
 
         self.assertRaises(ValueError, func)
 
     def test_swd_evolution(self):
-        self.swd.load()
         t, y = self.swd.evolution('Rho', 20)
         self.assertCountEqual(t, self.swd.Times, "The times should be the same size.")
 
     def test_swd_params_ph(self):
-        self.swd.load()
         params_ph = self.swd.params_ph()
         self.assertCountEqual(params_ph['time'], self.swd.Times, "The times should be the same size.")
 
