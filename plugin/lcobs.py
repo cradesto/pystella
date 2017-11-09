@@ -56,7 +56,7 @@ def plot(ax, dic=None, mag_lim=30.):
     # plot data
     for lc in curves:
         bname = lc.Band.Name
-        is_good = lc.Mag < (mag_lim-mshift)
+        is_good = lc.Mag < (mag_lim - mshift)
         x = lc.Time[is_good] + jd_shift
         y = lc.Mag[is_good] + mshift
         if lc.IsErr:
@@ -78,6 +78,8 @@ def load(dic=None):
     mshift = 0.
     mag_lim = 30.
     arg = []
+    is_debug = False
+
     if dic is not None:
         is_debug = dic.get('is_debug', False)
         mag_lim = dic.get('mag_lim', 30.)
@@ -118,3 +120,44 @@ def load(dic=None):
     res_curves.set_tshift(tshift)
     res_curves.set_mshift(mshift)
     return res_curves
+
+
+def load_curves(fname):
+    """
+    Reader data-file with mix bname data, like:
+    >>% head photometry.txt
+    jd filter mag mage
+    2457059.6228778586 V 17.493766309999998 0.0592200135089
+    2457059.6244578934 V 17.539956019999998
+    0.0542402986717 2457059.6261980557 g 17.782871193345898
+    0.0454000142503 2457059.6287036575 g 17.7782469177482 0.0395424488201
+
+    :param fname: file with data
+    :return: curves
+    """
+    import numpy as np
+    # dtype = [('JD', 'f'), ('b', 'S1'), ('mag', 'f4'), ('err', '<f4')])
+    dtype = [('JD', '<f4'), ('b', 'S1'), ('mag', '<f4'), ('err', '<f4')]
+    lc_data = np.loadtxt(fname, skiprows=1, dtype=dtype)  # jd filter mag mage
+    b_tot = lc_data['b']
+    bnames = np.unique(b_tot)
+    # time_tot = lc_data['JD']
+    # mags_tot = lc_data['mag']
+    # err_tot = lc_data['err']
+
+    curves = SetLightCurve()
+    for bname in bnames:
+        if band.band_is_exist(bname):
+            # filter of the current band
+            is_good = np.array(map(lambda x: x == bname, b_tot), dtype=bool)
+            t = lc_data['JD'][is_good]
+            m = lc_data['mag'][is_good]
+            e = lc_data['err'][is_good]
+            # add light curve
+            b = band.band_by_name(bname)
+            lc = LightCurve(b, t, m, e)
+            curves.add(lc)
+        else:
+            print('Could read the light curve. There is no band: {}. '
+                  'You may try to add it to dir data/bands'.format(bname))
+    return curves

@@ -144,11 +144,11 @@ class SetLightCurve(SetTimeSeries):
     def add(self, lc):
         self._set[lc.Band.Name] = lc
 
-    def get(self, bn):
+    def get(self, bn, default=None):
         for n, lc in self.Set.items():
             if lc.Band.Name == bn:
                 return lc
-        return None
+        return default
 
     def is_band(self, bn):
         return bn in self.BandNames

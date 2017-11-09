@@ -98,8 +98,10 @@ def plot_all(models_vels, models_dic, bnames, d=10, call=None, **kwargs):
 
     # plot callback
     if call is not None:
-        call.plot(axUbv, {'ax2': axVel})
-
+        if is_vel:
+            call.plot((axUbv, axVel))
+        else:
+            call.plot(axUbv)
     # finish plot
     axUbv.set_ylabel('Magnitude')
     axUbv.set_xlabel('Time [days]')
@@ -136,7 +138,7 @@ def usage():
     print("  -i <model name>.  Example: cat_R450_M15_Ni007_E7")
     print("  -p <model directory>, default: ./")
     print("  -e <extinction, E(B-V)> is used to define A_nu, default: 0 ")
-    print("  -c <callback> [lcobs:fname:marker:dt:dm, popov[:R:M:E[FOE]:Mni]]. "
+    print("  -c <callback> [lcobs:fname:marker:dt:dm, velobs:fname:marker:dt:vnorm(1e8), popov[:R:M:E[FOE]:Mni]]. "
           "You can add parameters in format func:params")
     print("  -d <distance> [pc].  Default: 10 pc")
     print("  -g <single, grid, gridm, gridl> Select plot view.  single [default] = all models in one figure"
@@ -147,7 +149,7 @@ def usage():
     print("  -s  <file-name> without extension. Save plot to pdf-file. Default: ubv_<file-name>.pdf")
     print("  -x  <xbeg:xend> - xlim, ex: 0:12. Default: None, used all days.")
     print("  -y  <ybeg:yend> - ylim, ex: 26:21. Default: None, used top-magnitude+-5.")
-    print("  -v  plot model velocities.")
+    print("  -v  <swd OR ttres> - plot model velocities computed from swd OR tt-res files.")
     print("  -w  write magnitudes to out-file. Use '1' for the default name of out-file")
     print("  -z <redshift>.  Default: 0")
     print("  --dt=<t_diff>  time difference between two spectra")
@@ -163,7 +165,7 @@ def main(name='', model_ext='.ph'):
     is_save_plot = False
     is_plot_time_points = False
     is_extinction = False
-    is_vel = False
+    vel_mode = None
     view_opts = ('single', 'grid', 'gridl', 'gridm')
     opt_grid = view_opts[0]
     t_diff = 1.01
@@ -186,7 +188,7 @@ def main(name='', model_ext='.ph'):
     band.Band.load_settings()
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hqtc:d:p:e:g:i:b:l:m:vs:w:x:y:z:", longopts='dt=')
+        opts, args = getopt.getopt(sys.argv[1:], "hqtc:d:p:e:g:i:b:l:m:v:s:w:x:y:z:", longopts='dt=')
     except getopt.GetoptError as err:
         print(str(err))  # will print something like "option -a not recognized"
         usage()
@@ -257,7 +259,7 @@ def main(name='', model_ext='.ph'):
             is_plot_time_points = True
             continue
         if opt == '-v':
-            is_vel = True
+            vel_mode = arg.strip()
             continue
         if opt == '-m':
             magnification = float(arg)
@@ -331,8 +333,14 @@ def main(name='', model_ext='.ph'):
 
             models_mags[name] = curves
 
-            if is_vel:
-                vels = vel.compute_vel_res_tt(name, path, z=z)
+            if vel_mode is not None:
+                if vel_mode == 'ttres':
+                    vels = vel.compute_vel_res_tt(name, path, z=z)
+                elif vel_mode == 'swd':
+                    vels = vel.compute_vel_swd(name, path, z=z)
+                else:
+                    raise ValueError('This mode [{}] for velocity is not supported'.format(vel_mode))
+
                 if vels is None:
                     sys.exit("Error: no data for: %s in %s" % (name, path))
                 models_vels[name] = vels
@@ -375,7 +383,7 @@ def main(name='', model_ext='.ph'):
                                is_time_points=is_plot_time_points, title=label, bshift=bshift)
             if is_save_plot:
                 if len(fsave) == 0:
-                    if is_vel:
+                    if vel_mode is not None:
                         fsave = "ubv_vel_%s" % name
                     else:
                         fsave = "ubv_%s" % name

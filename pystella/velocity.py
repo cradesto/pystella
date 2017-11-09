@@ -44,7 +44,7 @@ class SetVelocityCurve(SetTimeSeries):
 
 
 class VelocityCurve(TimeSeries):
-    def __init__(self, name, time, vel, errs=None, tshift=0., vshift=0.):
+    def __init__(self, name, time, vel, errs=None, tshift=0., vshift=1.):
         """Creates a Velocity Time Series instance.  Required parameters:  name, time, vel."""
         super().__init__(name, time, vel, errs, tshift=tshift)
 
@@ -109,7 +109,7 @@ def plot_vels_sn87a(ax, z=0):
         ax.plot(x, y, label='%s, SN 87A' % el, ls=".", color=elcolors[el], markersize=6, marker=elmarkers[el])
 
 
-def plot_vels_models(ax, models_dic, xlim=None, ylim=None):
+def plot_vels_models(ax, models_dic, xlim=None, ylim=None, vnorm=1e8):
     is_x_lim = xlim is None
     is_y_lim = ylim is None
 
@@ -122,8 +122,8 @@ def plot_vels_models(ax, models_dic, xlim=None, ylim=None):
     for mname, mdic in models_dic.items():
         mi += 1
         x = mdic['time']
-        y = mdic['vel'] / 1e8
-        ax.plot(x, y, label='Vel  %s' % mname, color='blue', ls="-", linewidth=lw)
+        y = mdic['vel'] / vnorm
+        ax.plot(x, y, label='Vel  %s' % mname, color='blue', ls="-", marker='o', markersize=1, linewidth=lw)
         if is_x_lim:
             x_max.append(np.max(x))
         if is_y_lim:
@@ -138,7 +138,7 @@ def plot_vels_models(ax, models_dic, xlim=None, ylim=None):
         # ylim = [np.min(y_mid) + 7., np.min(y_mid) - 2.]
     ax.set_ylim(ylim)
 
-    ax.set_ylabel('Velocity')
+    ax.set_ylabel('Velocity [{:.0e} km/s]'.format(vnorm/1e5))
     ax.set_xlabel('Time [days]')
 
 
@@ -171,7 +171,7 @@ def plot_vel(ax, vel, xlim=None, ylim=None):
     ax.grid()
 
 
-def compute_vel_swd(name, path):
+def compute_vel_swd(name, path, z=0.):
     model = Stella(name, path=path)
     # check data
     if not model.is_swd:
@@ -182,7 +182,7 @@ def compute_vel_swd(name, path):
 
     res = np.array(np.zeros(len(data['V'])),
                    dtype=np.dtype({'names': ['time', 'vel'], 'formats': [np.float] * 2}))
-    res['time'] = data['time']
+    res['time'] = data['time'] * (1. + z)  # redshifted time
     res['vel'] = data['V']
 
     return res
@@ -202,11 +202,9 @@ def compute_vel_res_tt(name, path, z=0., t_beg=1., t_end=None, t_diff=1.05):
     res = model.get_res()
     tt = model.get_tt().read()
     tt = tt[tt['time'] >= t_beg]  # time cut  days
-
-    radiuses = list()
-    vels = list()
-    times = list()
     Rph_spline = interpolate.splrep(tt['time'], tt['Rph'], s=0)
+
+    radii, vels, times = [], [], []
     for nt in range(len(tt['time'])):
         t = tt['time'][nt]
         if t > t_end:
@@ -217,10 +215,10 @@ def compute_vel_res_tt(name, path, z=0., t_beg=1., t_end=None, t_diff=1.05):
         radius = interpolate.splev(t, Rph_spline)
         if np.isnan(radius):
             radius = np.interp(t, tt['time'], tt['Rph'], 0, 0)  # One-dimensional linear interpolation.
+
         block = res.read_at_time(time=t)
         if block is None:
             break
-
         if True:
             vel = np.interp(radius, block['R14']*1e14, block['V8'], 0, 0)  # One-dimensional linear interpolation.
             vels.append(vel * 1e8)
@@ -228,14 +226,13 @@ def compute_vel_res_tt(name, path, z=0., t_beg=1., t_end=None, t_diff=1.05):
             idx = np.abs(block['R14'] - radius / 1e14).argmin()
             vels.append(block['V8'][idx] * 1e8)
 
-        radiuses.append(radius)
+        radii.append(radius)
         times.append(t * (1. + z))  # redshifted time
 
     # show results
     res = np.array(np.zeros(len(vels)),
-                   dtype=np.dtype({'names': ['time', 'vel', 'r'],
-                                   'formats': [np.float] * 3}))
+                   dtype=np.dtype({'names': ['time', 'vel', 'r'], 'formats': [np.float] * 3}))
     res['time'] = times
     res['vel'] = vels
-    res['r'] = radiuses
+    res['r'] = radii
     return res

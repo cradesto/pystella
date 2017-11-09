@@ -4,7 +4,7 @@
 
 import os
 
-import pystella.util.reader_table  as rtbl
+import pystella.util.reader_table as rtbl
 from pystella.velocity import VelocityCurve, SetVelocityCurve
 
 
@@ -22,7 +22,7 @@ def plot(ax, dic=None, colt=('time', 'JD', 'MJD')):
     cname = dic.get('cname', 'Vel')
     fname = dic.get('fname', None)
     tshift = dic.get('tshift', 0.)
-    mshift = dic.get('mshift', 0.)
+    vshift = dic.get('vshift', 1e8)  # default in units of 1000 km/s
     marker = dic.get('marker', 'o')
     markersize = dic.get('markersize', 9)
     color = dic.get('color', 'blue')
@@ -36,17 +36,17 @@ def plot(ax, dic=None, colt=('time', 'JD', 'MJD')):
     if len(arg) > 0:
         tshift = float(arg.pop(0))
     if len(arg) > 0:
-        mshift = float(arg.pop(0))
+        vshift = float(arg.pop(0))
 
-    print("Plot {0} [{1}]  jd_shift={2}  mshift={3}".format(fname, marker, tshift, mshift))
+    print("Plot {0} [{1}]  jd_shift={2}  mshift={3}".format(fname, marker, tshift, vshift))
 
     # read data
     tbl, cols_data = rtbl.read_obs_table_header(fname, is_out=True)
-    vel_o = tbl2vel(tbl, cname, colt, mshift)
+    vel_o = tbl2vel(tbl, cname, colt, vshift)
     vel_o.tshift = tshift
 
     x = vel_o.Time
-    y = vel_o.Vel
+    y = vel_o.Vel / 1e8
 
     if vel_o.IsErr:
         yyerr = abs(vel_o.Err)
@@ -94,7 +94,7 @@ def load(dic=None, colt=('time', 'JD', 'MJD')):
     # read data
     # tbl = read_table_header_float(fname)
     tbl, cols_data = rtbl.read_obs_table_header(fname, colt=colt, include_names=cnames,
-                                     include_patterns=cpatterns, is_out=is_debug)
+                                                include_patterns=cpatterns, is_out=is_debug)
 
     vels_o = SetVelocityCurve("Vel-{}".format(fname))
     for i, cname in cols_data.items():

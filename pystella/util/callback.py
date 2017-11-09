@@ -147,7 +147,8 @@ class CallBack(object):
             sys.path.append(self.Path)
             py_mod = __import__(self.FileName, fromlist=['load'])
             if hasattr(py_mod, 'load'):
-                method_load = getattr(__import__(self.FileName), 'load')
+                method = getattr(__import__(self.FileName), 'load')
+                # method_load = getattr(__import__(self.FileName), 'load')
 
         if not method:
             raise Exception("Method load in %s not implemented" % self._fname)
@@ -200,14 +201,18 @@ class CallBackArray(CallBack):
         super(CallBackArray, self).put_args(args)
 
     def plot(self, ax, dic=None):
+        import collections
         if dic is None:
             dic = {}
 
         if self._args is not None:
             dic['args'] = self._args[:]
-
-        for c in self._calls:
-            c.plot(ax, dic)
+        if isinstance(ax, collections.Sequence):
+            for i, c in enumerate(self._calls):
+                c.plot(ax[i], dic)
+        else:
+            for c in self._calls:
+                c.plot(ax, dic)
 
     def run(self, dic=None):
         if dic is None:
