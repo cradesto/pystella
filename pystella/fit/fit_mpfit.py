@@ -131,7 +131,7 @@ class FitMPFit(FitLc):
                 if ts_o.IsErr:
                     res = np.abs((ts_o.V - m) / (abs(m)*E + ts_o.Err)) * w
                 else:
-                    res = np.abs(ts_o.V - m) / w
+                    res = np.abs(ts_o.V - m) * w
                 total = np.append(total, res)
             return 0, total
 

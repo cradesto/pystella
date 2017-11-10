@@ -677,6 +677,7 @@ def fit_mfl(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, times, V
         curves_m = lcf.curves_compute(name, path, bnames, z=z, distance=distance,
                                       t_beg=times[0], t_end=times[1], t_diff=t_diff)
         if args.color_excess:
+            # todo change for modern method via Stella.curves(...)
             curves_m = lcf.curves_reddening(curves_m, ebv=args.color_excess, z=z, is_info=args.is_not_quiet)
 
         for lc in curves_m:
