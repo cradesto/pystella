@@ -31,11 +31,11 @@ class TestHDF5(unittest.TestCase):
         mdl = Stella(name, path=path)
         curves = mdl.curves(bands)
 
-        f = h5py.File("tmp_curves.hdf5", "w")
-        grp = f.create_group("curves")
-        for lc in curves:
-            ds = grp.create_dataset(lc.Band.Name, data=lc.toarray())
-            ds.attrs['z'] = lc.attrs('z')
-            ds.attrs['d'] = lc.attrs('d')
+        with h5py.File("tmp_curves.hdf5", "w") as f:
+            grp = f.create_group("curves")
+            for lc in curves:
+                ds = grp.create_dataset(lc.Band.Name, data=lc.toarray())
+                ds.attrs['z'] = lc.attrs('z')
+                ds.attrs['d'] = lc.attrs('d')
 
-        self.assertEqual(curves.Length, len(grp.items()))
+            self.assertEqual(curves.Length, len(grp.items()))
