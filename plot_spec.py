@@ -329,14 +329,28 @@ def plot_fit_wl(model, series, wl_ab, times=None, fsave=None):
     # print
     # print("{:>10s}  {:>12s}  {:>12s}  {:>12s}  ".format("Time",  "Twien", "Tcol", "zeta", "Tdil", "Wdil"))
     if fsave is not None:
-        with open(fsave, "w+") as f:
-            print("{:>8s}".format("Time") +
-                  ' '.join("{:>12s}".format(s) for s in ("T_dil", "W_dil")), file=f)
-                  # ' '.join("{:>12s}".format(s) for s in ("T_wien", "Tcol", "W", "T_dil", "W_dil")), file=f)
-            # print("{:>10s}  {:>12s}  {:>12s}  {:>12s}  ".format("Time",  "Twien", "Tcol","zeta"), file=f)
-            for t, *p in zip(time, Tdil, Wdil):
-                print("{:8.2f}".format(t) + ' '.join("{0:12.2f}".format(s) for s in p), file=f)
-        print("Save temperatures to %s " % fsave)
+        if fsave.endswith('.hdf5'):
+            import h5py
+            with h5py.File(fsave, "w") as f:
+                # data = np.array([time, Tdil, Wdil])
+                data = np.zeros(len(time), dtype={'names': ['time', 'Tcolor', 'W'], 'formats': [np.float]*3})
+                data['time'] = time
+                data['Tcolor'] = Tdil
+                data['W'] = Wdil
+                ds = f.create_dataset('bbfit', data=data)
+                ds.attrs['model'] = model.Name
+                if wl_ab is not None:
+                    ds.attrs['wl_ab'] = '-'.join(map(str, wl_ab))
+        else:
+            with open(fsave, "w+") as f:
+                print("{:>8s}".format("Time") +
+                      ' '.join("{:>12s}".format(s) for s in ("T_dil", "W_dil")), file=f)
+                      # ' '.join("{:>12s}".format(s) for s in ("T_wien", "Tcol", "W", "T_dil", "W_dil")), file=f)
+                # print("{:>10s}  {:>12s}  {:>12s}  {:>12s}  ".format("Time",  "Twien", "Tcol","zeta"), file=f)
+                for t, *p in zip(time, Tdil, Wdil):
+                    print("{:8.2f}".format(t) + ' '.join("{0:12.2f}".format(s) for s in p), file=f)
+        print("The temperature has been saved to %s " % fsave)
+        return None
     else:
         print("{:>8}".format("Time") +
               ' '.join("{:>12s}".format(s) for s in ("T_dil", "W_dil")))
@@ -581,8 +595,8 @@ def usage():
     print("  -p <model path(directory)>, default: ./")
     print("  -s <file-name> without extension. Save plot to pdf-file. Default: spec_<file-name>.pdf")
     print("  -t  time interval [day]. Example: 5.:75.")
-    print("  -w  wave length interval [A]. Example: 1.:25e3")
-    print("  -a  write flux to magAB")
+    print("  -a  wave length interval [A]. Example: 1.:25e3")
+    print("  -w  write data to file. Example: flux to magAB, Tcolor and W [.hdf5]")
     print("  -h  print usage")
 
 
@@ -614,9 +628,10 @@ def main():
     is_fit_wl = False
     is_write = False
     fsave = None
+    fplot = None
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "afhsup:i:b:o:t:w:")
+        opts, args = getopt.getopt(sys.argv[1:], "a:fhsup:i:b:o:t:w:")
     except getopt.GetoptError as err:
         print(str(err))  # will print something like "option -a not recognized"
         usage()
@@ -654,15 +669,16 @@ def main():
                         print('No such band: ' + b)
                         sys.exit(2)
             continue
-        if opt == '-a':
+        if opt == '-w':
             is_write = True
+            fsave = arg
             continue
         if opt == '-s':
             is_save_plot = True
             if len(arg) > 0:
-                fsave = str(arg).strip()
+                fplot = str(arg).strip()
             continue
-        if opt == '-w':
+        if opt == '-a':
             wl_ab = interval2float(arg)
             # wl_ab = [np.float(s) for s in (str(arg).split(':'))]
             continue
@@ -717,7 +733,7 @@ def main():
             print("Error in fit-wave: no tt-data for: " + str(model))
             sys.exit(2)
         if is_write:
-            if fsave is None or len(fsave) == 0:
+            if fsave is None or len(fsave) == 0 or fsave == '1':
                 fsave = os.path.join(os.path.expanduser('~/'), "temp_%s" % name) + '.txt'
         fig = plot_fit_wl(model, series, wl_ab, times, fsave=fsave)
     else:
@@ -728,13 +744,13 @@ def main():
 
     if fig is not None:
         if is_save_plot:
-            if fsave is None or len(fsave) == 0:
-                fsave = "spec_%s" % name
+            if fplot is None or len(fplot) == 0:
+                fplot = "spec_%s" % name
             d = os.path.expanduser('~/')
-            fsave = os.path.join(d, os.path.splitext(fsave)[0]) + '.pdf'
+            fplot = os.path.join(d, os.path.splitext(fplot)[0]) + '.pdf'
 
-            print("Save plot to %s " % fsave)
-            fig.savefig(fsave, bbox_inches='tight')
+            print("Save plot to %s " % fplot)
+            fig.savefig(fplot, bbox_inches='tight')
         else:
             # plt.grid()
             plt.show()
