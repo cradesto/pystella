@@ -48,10 +48,10 @@ class SneSpace:
 
     @property
     def lumdist(self):
-        l = self.property('lumdist')
-        if l is not None:
-            d = float(l[0]['value'])
-            u = l[0]['u_value'].lower()
+        lum = self.property('lumdist')
+        if lum is not None:
+            d = float(lum[0]['value'])
+            u = lum[0]['u_value'].lower()
             if u == 'mpc':
                 d *= 1.e6
             return d
@@ -59,16 +59,16 @@ class SneSpace:
 
     @property
     def comovingdist(self):
-        l = self.property('comovingdist')
-        if l is not None:
+        dist = self.property('comovingdist')
+        if dist is not None:
             dd = 0.
-            for node in l:
+            for node in dist:
                 d = float(node['value'])
                 u = node['u_value'].lower()
                 if u == 'mpc':
                     d *= 1.e6
                 dd += d
-            return dd / len(l)
+            return dd / len(dist)
         return None
 
     def property(self, name):
@@ -105,10 +105,16 @@ class SneSpace:
         times = {}
         mags = {}
         err = {}
-        for b, t, m, e in zip(ph.band, ph.time, ph.magnitude, ph.e_magnitude):
-            add(times, b, t)
-            add(mags, b, m)
-            add(err, b, e)
+        # {'magnitude': '6.36', 'u_time': 'MJD', 'time': '46849.44', 'band': 'V', 'source': '44,62'}
+        if 'e_magnitude' in ph.keys():
+            for b, t, m, e in zip(ph.band, ph.time, ph.magnitude, ph.e_magnitude):
+                add(times, b, t)
+                add(mags, b, m)
+                add(err, b, e)
+        else:
+            for b, t, m in zip(ph.band, ph.time, ph.magnitude):
+                add(times, b, t)
+                add(mags, b, m)
 
         bands = list(times.keys())
 
@@ -118,8 +124,11 @@ class SneSpace:
             if band.band_is_exist(bname):
                 tt = list(map(float, times[bname]))
                 mm = list(map(float, mags[bname]))
-                ee = list(map(float, err[bname]))
-                lc = LightCurve(bname, tt, mm, ee)
+                if len(err) > 0:
+                    ee = list(map(float, err[bname]))
+                    lc = LightCurve(bname, tt, mm, ee)
+                else:
+                    lc = LightCurve(bname, tt, mm)
                 curves.add(lc)
 
         return curves
@@ -127,14 +136,14 @@ class SneSpace:
     def to_spectra(self):
         series = SeriesSpectrum(self.Name)
 
-        def to_pystella_spec(name, tbl):
+        def to_pystella_spec(nm, table):
             lmd = []
             flux = []
-            for x in tbl:
+            for x in table:
                 lmd.append(float(x[0]))
                 flux.append(float(x[1]))
             if len(lmd) > 0:
-                sp = Spectrum.from_lambda(name, lmd, flux, u_lmd="A")
+                sp = Spectrum.from_lambda(nm, lmd, flux, u_lmd="A")
                 return sp
             return None
 

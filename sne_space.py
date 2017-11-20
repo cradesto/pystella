@@ -52,13 +52,17 @@ def main():
     if len(unknownargs) > 0:
         fname = unknownargs[0]
     else:
-        if args.fname and os.path.isfile(args.fname):
+        if args.fname:
             fname = args.fname
         else:
             # logger.error(" No data. Use key '-i' ")
             parser.print_help()
             sys.exit(2)
     fname = os.path.expanduser(fname)
+    if not os.path.isfile(fname):
+        logger.error(" No such file: {}".format(fname))
+        parser.print_help()
+        sys.exit(2)
 
     sn = SneSpace()
     print("Load {0}".format(fname))
@@ -67,17 +71,20 @@ def main():
 
     curves = sn.to_curves()
     print("Curves {} is computed. There are {} bands.".format(sn.Name, '-'.join(curves.BandNames)))
-    serial_spec = sn.to_spectra()
-    print("Spectra {} is computed: {} times points.".format(sn.Name, serial_spec.Length))
-    # curves_spectra = serial_spec.flux_to_curves(['V'], d=sn.lumdist*phys.pc)
-    mu = 1.
-    # mu = (10./sn.lumdist)**2
-    curves_spectra = serial_spec.flux_to_curves(curves.BandNames, d=None, magnification=mu)
-
     # plotting
     ax = lcp.curves_plot(curves, title='Photometry', is_line=False)
-    lcp.curves_plot(curves_spectra, title='From spectra', is_line=False)
-    # lcp.curves_plot(curves_spectra, ax=ax, is_line=True)
+
+    # Spectra
+    if False:
+        serial_spec = sn.to_spectra()
+        print("Spectra {} is computed: {} times points.".format(sn.Name, serial_spec.Length))
+        # curves_spectra = serial_spec.flux_to_curves(['V'], d=sn.lumdist*phys.pc)
+        mu = 1.
+        # mu = (10./sn.lumdist)**2
+        curves_spectra = serial_spec.flux_to_curves(curves.BandNames, d=None, magnification=mu)
+        lcp.curves_plot(curves_spectra, title='From spectra', is_line=False)
+        # lcp.curves_plot(curves_spectra, ax=ax, is_line=True)
+
     plt.show()
 
 
