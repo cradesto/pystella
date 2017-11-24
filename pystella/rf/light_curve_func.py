@@ -104,19 +104,24 @@ def curves_save(curves, fname, sep='\t', is_mix=False):
         print("Nothing to save: curves.Length=%d" % curves.Length)
         return False
 
-    if is_mix:
-        arr = curves2nparraymix(curves)
-    else:
-        if not curves.IsCommonTime:
-            print("The curves has different time arrays.")
-            print("  LC  |  len(time)  ")
-            for lc in curves:
-                print("{:40s}   {:d}".format(lc.Name, len(lc.Time)))
-            return False
+    if curves.IsCommonTime:
+        print("The curves has different time arrays.")
+        print("  LC  |  len(time)  ")
+        for lc in curves:
+            print("{:40s}   {:d}".format(lc.Name, len(lc.Time)))
+        return False
         arr = curves2nparray(curves)
-    fmt_header = "%10s " * len(arr.dtype.names)
-    header = fmt_header % arr.dtype.names
-    fmt = "%10.5f  " * len(arr.dtype.names)
+        fmt_header = "%10s " * len(arr.dtype.names)
+        header = fmt_header % arr.dtype.names
+        fmt = "%10.5f  " * len(arr.dtype.names)
+    else:
+        arr = curves2nparraymix(curves)
+        fmt_header = "%8s " * len(arr.dtype.names)
+        header = fmt_header % arr.dtype.names
+        fmt = "%10.5f %s %10.5f"
+        if len(arr.dtype.names) > 3:
+            fmt += ' %10.5f'
+
     np.savetxt(fname, arr, delimiter=sep, header=header, comments='', fmt=fmt)
     return True
 
@@ -195,29 +200,30 @@ def curves2nparraymix(curves):
         if not lc.IsErr:
             is_err = False
             break
+    dtype = [('time', '<f4'), ('b', 'U8'), ('mag', '<f4')]
     if is_err:
-        dtype = [('time', '<f4'), ('b', 'S1'), ('mag', '<f4'), ('err', '<f4')]
-    else:
-        dtype = [('time', '<f4'), ('b', 'S1'), ('mag', '<f4')]
+        dtype.append(('err', '<f4'))
 
     rows = np.sum([lc.Length for lc in curves])
-    data = np.empty([rows, len(dtype)], dtype=dtype)  # todo
+    data = np.zeros(rows, dtype=dtype)
+    i = 0
     for lc in curves:
-        # res = np.hstack((res, lc.Mag.reshape(lc.Length, 1)))
-        # res = np.column_stack((res, lc.Mag))
-        dtype['names'].append(lc.Band.Name)
-        data.append(lc.Mag)
-        if lc.IsErr:
-            # res = np.hstack((res, lc.Err.reshape(lc.Length, 1)))
-            # res = np.column_stack(res, lc.Err)
-            dtype['names'].append('err'+lc.Band.Name)
-            data.append(lc.Err)
+        b = lc.Band.Name
+        data['time'][i:i+lc.Length] = lc.Time
+        data['b'][i:i+lc.Length] = [b] * lc.Length
+        data['mag'][i:i+lc.Length] = lc.Mag
+        if is_err:
+            data['err'][i:i + lc.Length] = lc.MagErr
+        i += lc.Length
 
-    res = np.column_stack(data)
+
+
+    # res = np.column_stack(data)
     # res = np.dstack(data)
-    dtype['formats'] = [np.float64] * len(dtype['names'])
-    res.dtype = dtype
-    return res.ravel()
+    # dtype['formats'] = [np.float64] * len(dtype['names'])
+    # res.dtype = dtype
+    return data
+    # return res.ravel()
 
 
 def curves_compute(name, path, bands, z=0., distance=10., magnification=1.,

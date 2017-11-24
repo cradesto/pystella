@@ -77,12 +77,15 @@ def main():
         if fname_saved is None:
             path = os.getcwd()
             fname_saved = os.path.join(path, curves.Name)
-            fname_saved = '{}_{}.ubv'.format(fname_saved, '-'.join(curves.BandNames))
-        lcf.curves_save(curves, fname_saved)
-        print("Magnitudes of {} have been saved to {}".format(curves.Name, fname_saved))
-    else:
-        # plotting
-        ax = lcp.curves_plot(curves, title='Photometry', is_line=False)
+            fname_saved = '{}_{}.ubv'.format(fname_saved, '-'.join(sorted(curves.BandNames)))
+        if lcf.curves_save(curves, fname_saved):
+            print("Magnitudes of {} have been saved to {}".format(curves.Name, fname_saved))
+        else:
+            print("Error: magnitudes have not been saved [{}]".format(fname_saved))
+        sys.exit(3)
+
+    # plotting
+    ax = lcp.curves_plot(curves, title='Photometry', is_line=False)
 
     # Spectra
     if False:

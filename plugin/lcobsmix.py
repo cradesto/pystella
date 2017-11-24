@@ -47,7 +47,7 @@ def plot(ax, dic=None, mag_lim=30.):
     # tbl, cols_data = read_obs_table_header(fname, include_names=band.band_get_names_alias(), is_out=True)
     # # tbl = read_table_header_float(fname)
     # curves = table2curves(os.path.basename(fname), tbl)
-    curves = load(dic={'arg': [fname]})
+    curves = load(dic={'args': [fname]})
 
     # filter bands
     if bnames is not None:
@@ -61,10 +61,13 @@ def plot(ax, dic=None, mag_lim=30.):
         is_good = lc.Mag < (mag_lim - mshift)
         x = lc.Time[is_good] + jd_shift
         y = lc.Mag[is_good] + mshift
-        if lc.IsErr:
-            yyerr = abs(lc.Err[is_good])
+        if lc.IsErr: # todo Make plot with errors
+            yyerr = np.abs(lc.Err[is_good])
+            # is_e = np.isnan(yyerr)
             ax.errorbar(x, y, label='{0} {1}'.format(bname, fname), yerr=yyerr, fmt=marker,
                         color=bcolors[bname], ls='')
+            # ax.plot(x, y, label='{0} {1}'.format(bname, fname), color=bcolors[bname], ls='',
+            #         marker=marker, markersize=markersize)
         else:
             ax.plot(x, y, label='{0} {1}'.format(bname, fname), color=bcolors[bname], ls='',
                     marker=marker, markersize=markersize)
@@ -111,22 +114,26 @@ def load(dic=None):
     print("Load {0} tshift={1}  mshift={2}".format(fname, tshift, mshift))
 
     # read data
-    dtype = [('time', '<f4'), ('b', 'S1'), ('mag', '<f4'), ('err', '<f4')]
-    lc_data = np.loadtxt(fname, skiprows=skiprows, dtype=dtype, comments='#')  # jd filter mag mage
+    dtype = [('time', '<f4'), ('b', 'str'), ('mag', '<f4'), ('err', '<f4')]
+    # lc_data = np.loadtxt(fname, skiprows=skiprows, dtype=dtype, comments='#')  # jd filter mag mage
+    # lc_data = np.genfromtxt(fname, skip_header=skiprows, dtype=dtype, comments='#')  # jd filter mag mage
+    lc_data = np.genfromtxt(fname, skip_header=skiprows, dtype=None, names=[v[0] for v in dtype], comments='#')
     b_tot = lc_data['b']
     bnames = np.unique(b_tot)
 
     curves = SetLightCurve()
     for bname in bnames:
-        if band.band_is_exist(bname):
+        if band.band_is_exist(bname.decode()):
             # filter of the current band
-            is_good = np.array(map(lambda x: x == bname, b_tot), dtype=bool)
-            t = lc_data['time'][is_good]
-            m = lc_data['mag'][is_good]
-            e = lc_data['err'][is_good]
+            d = lc_data[np.where( lc_data['b'] == bname)]
+            # is_good = list(map(lambda x: x == bname, b_tot))
+            # t = (lc_data['time'])[is_good]
+            # m = lc_data['mag'][is_good]
+            # e = lc_data['err'][is_good]
             # add light curve
-            b = band.band_by_name(bname)
-            lc = LightCurve(b, t, m, e)
+            b = band.band_by_name(bname.decode())
+            lc = LightCurve(b, d['time'], d['mag'], d['err'])
+            # lc = LightCurve(b, t, m, e)
             curves.add(lc)
         else:
             print('Could read the light curve. There is no band: {}. '
