@@ -1,12 +1,8 @@
-import numpy as np
-import unittest
-import h5py
 import unittest
 from os.path import join, dirname, abspath
 
-import matplotlib.pyplot as plt
+import h5py
 
-import pystella.rf.light_curve_func as lcf
 from pystella.model.stella import Stella
 
 __author__ = 'bakl'

@@ -92,7 +92,7 @@ def curves_save_mags(curves, fname, sep='\t'):
     return True
 
 
-def curves_save(curves, fname, sep='\t'):
+def curves_save(curves, fname, sep='\t', is_mix=False):
     """
        Save curves to CSV-format. It required for correct operation the common time for all LC.
     :param curves:
@@ -104,14 +104,16 @@ def curves_save(curves, fname, sep='\t'):
         print("Nothing to save: curves.Length=%d" % curves.Length)
         return False
 
-    if not curves.IsCommonTime:
-        print("The curves has different time arrays.")
-        print("  LC  |  len(time)  ")
-        for lc in curves:
-            print("{:40s}   {:d}".format(lc.Name, len(lc.Time)))
-        return False
-
-    arr = curves2nparray(curves)
+    if is_mix:
+        arr = curves2nparraymix(curves)
+    else:
+        if not curves.IsCommonTime:
+            print("The curves has different time arrays.")
+            print("  LC  |  len(time)  ")
+            for lc in curves:
+                print("{:40s}   {:d}".format(lc.Name, len(lc.Time)))
+            return False
+        arr = curves2nparray(curves)
     fmt_header = "%10s " * len(arr.dtype.names)
     header = fmt_header % arr.dtype.names
     fmt = "%10.5f  " * len(arr.dtype.names)
@@ -157,6 +159,49 @@ def curves2nparray(curves):
 
     dtype = {'names': ['time']}
     data = [curves.TimeCommon]
+    for lc in curves:
+        # res = np.hstack((res, lc.Mag.reshape(lc.Length, 1)))
+        # res = np.column_stack((res, lc.Mag))
+        dtype['names'].append(lc.Band.Name)
+        data.append(lc.Mag)
+        if lc.IsErr:
+            # res = np.hstack((res, lc.Err.reshape(lc.Length, 1)))
+            # res = np.column_stack(res, lc.Err)
+            dtype['names'].append('err'+lc.Band.Name)
+            data.append(lc.Err)
+
+    res = np.column_stack(data)
+    # res = np.dstack(data)
+    dtype['formats'] = [np.float64] * len(dtype['names'])
+    res.dtype = dtype
+    return res.ravel()
+
+
+def curves2nparraymix(curves):
+    """
+    Convert curves to numpy array with mix format.
+    >>% head photometry.txt
+    jd filter mag mage
+    2457059.6228778586 V 17.493766309999998 0.0592200135089
+    :param curves:
+    :return:
+    """
+    if curves.Length == 0:
+        print("Nothing to convert: curves.Length=%d" % curves.Length)
+        return None
+
+    is_err = True
+    for lc in curves:
+        if not lc.IsErr:
+            is_err = False
+            break
+    if is_err:
+        dtype = [('time', '<f4'), ('b', 'S1'), ('mag', '<f4'), ('err', '<f4')]
+    else:
+        dtype = [('time', '<f4'), ('b', 'S1'), ('mag', '<f4')]
+
+    rows = np.sum([lc.Length for lc in curves])
+    data = np.empty([rows, len(dtype)], dtype=dtype)  # todo
     for lc in curves:
         # res = np.hstack((res, lc.Mag.reshape(lc.Length, 1)))
         # res = np.column_stack((res, lc.Mag))

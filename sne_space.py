@@ -9,6 +9,7 @@ import sys
 import matplotlib.pyplot as plt
 
 from pystella.model.SneSpace import SneSpace
+from pystella.rf import light_curve_func as lcf
 from pystella.rf import light_curve_plot as lcp
 
 __author__ = 'bakl'
@@ -46,6 +47,7 @@ def get_parser():
 
 def main():
     # fname = "~/Sn/Release/svn_kepler/stella/branches/lucy/run/res/sncurve/sn1999em/SN1999em.json"
+    fname_saved = None
     parser = get_parser()
     args, unknownargs = parser.parse_known_args()
 
@@ -71,8 +73,16 @@ def main():
 
     curves = sn.to_curves()
     print("Curves {} is computed. There are {} bands.".format(sn.Name, '-'.join(curves.BandNames)))
-    # plotting
-    ax = lcp.curves_plot(curves, title='Photometry', is_line=False)
+    if args.is_write:
+        if fname_saved is None:
+            path = os.getcwd()
+            fname_saved = os.path.join(path, curves.Name)
+            fname_saved = '{}_{}.ubv'.format(fname_saved, '-'.join(curves.BandNames))
+        lcf.curves_save(curves, fname_saved)
+        print("Magnitudes of {} have been saved to {}".format(curves.Name, fname_saved))
+    else:
+        # plotting
+        ax = lcp.curves_plot(curves, title='Photometry', is_line=False)
 
     # Spectra
     if False:
