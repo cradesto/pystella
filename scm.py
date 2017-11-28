@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
+import argparse
 import getopt
 import numpy as np
 import os
@@ -16,6 +17,7 @@ from pystella.model.stella import Stella
 from pystella.rf import band
 from pystella.rf import light_curve_func as lcf
 from pystella.util.phys_var import phys
+from pystella.util.path_misc import get_model_names
 
 __author__ = 'bakl'
 
@@ -193,12 +195,18 @@ def extract_time(t, times, mags):
     return res
 
 
-def run_scm(bands, distance, names, path, t50, t_beg, t_end, z):
+def run_scm(bands, distance, names, path, t50, t_beg, t_end, z, method='tt'):
     res = np.array(np.zeros(len(names)),
                    dtype=np.dtype({'names': ['v'] + bands,
                                    'formats': [np.float] * (1 + len(bands))}))
     for im, name in enumerate(names):
-        vels = velocity.compute_vel_res_tt(name, path, z=z, t_beg=t_beg, t_end=t_end)
+        if method=='tt':
+            vels = velocity.compute_vel_res_tt(name, path, z=z, t_beg=t_beg, t_end=t_end)
+        elif method == 'swd':
+            vels = velocity.compute_vel_swd(name, path, z=z)
+        else:
+            raise ValueError('The method [{}] for velocity computation is not supported.'.format(method))
+
         if vels is None:
             print("No enough data for %s " % name)
             continue
@@ -216,82 +224,149 @@ def run_scm(bands, distance, names, path, t50, t_beg, t_end, z):
     return res
 
 
-def usage():
-    print("Usage:")
-    print("  %s [params]" % __file__)
-    print("  -b <set_bands>: delimiter '-'. Default: V-I")
-    print("  -i <model name>.  Example: cat_R450_M15_Ni007_E7")
-    print("  -p <model path(directory)>, default: ./")
-    print("  -f  force mode: rewrite zeta-files even if it exists")
-    print("  -o  options: <fit:nofit> - fit or no fit. ")
-    print("  -s  save plot to file, default 'False'")
-    print("  -h  print usage")
-    print("   --- ")
-    # band.print_bands()
+def get_parser():
+    parser = argparse.ArgumentParser(description='Standard Candle Method.')
+    print(" Compute and plot the velocity-magnitude diagram for STELLA models")
+    parser.add_argument('-b', '--band',
+                        required=False,
+                        dest="bnames",
+                        help="-b <bands>: string, default: V-I, for example B-R-V-I")
+    parser.add_argument('-i', '--input',
+                        required=False,
+                        dest="input",
+                        help="Model name, example: cat_R450_M15_Ni007")
+    parser.add_argument('-p', '--path',
+                        required=False,
+                        type=str,
+                        default='./',
+                        dest="path",
+                        help="Model directory")
+    parser.add_argument('-v', '--vel',
+                        required=False,
+                        type=str,
+                        default='tt',
+                        dest="method_vel",
+                        help="tt OR swd - the way to get photospheric velocity, default: tt")
+    parser.add_argument('-s', '--save',
+                        required=False,
+                        type=str,
+                        default=None,
+                        dest="save_file",
+                        help="To save the result plot to pdf-file.")
+    return parser
+
+#
+# def usage():
+#     print("Usage:")
+#     print("  %s [params]" % __file__)
+#     print("  -b <set_bands>: delimiter '-'. Default: V-I")
+#     print("  -i <model name>.  Example: cat_R450_M15_Ni007_E7")
+#     print("  -p <model path(directory)>, default: ./")
+#     print("  -f  force mode: rewrite zeta-files even if it exists")
+#     print("  -o  options: <fit:nofit> - fit or no fit. ")
+#     print("  -s  save plot to file, default 'False'")
+#     print("  -h  print usage")
+#     print("   --- ")
+#     # band.print_bands()
 
 
-def main(name='', path='./'):
-    model_ext = '.tt'
-    is_save = False
-    is_fit = True
+def main(name=None):
+    model_ext = '.ph'
 
     band.Band.load_settings()
+    parser = get_parser()
+    args, unknownargs = parser.parse_known_args()
 
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], "fhstp:i:b:o:")
-    except getopt.GetoptError as err:
-        print(str(err))  # will print something like "option -a not recognized"
-        usage()
-        sys.exit(2)
-
-    if not name:
-        if len(opts) == 0:
-            usage()
-            sys.exit(2)
-        for opt, arg in opts:
-            if opt == '-i':
-                path = ROOT_DIRECTORY
-                name = str(arg)
-                break
-
-    bands = ['V', 'I']
-    # set_bands = ['B-V', 'B-V-I', 'V-I', 'J-H-K']
-    # set_bands = ['U-B-V-I', 'U-B-V-R-I', 'U-B', 'V-R', 'B-V-I', 'B-V', 'V-I']
-
-    for opt, arg in opts:
-        if opt == '-e':
-            model_ext = '.' + arg
-            continue
-        if opt == '-b':
-            bands = str(arg).split('-')
-            for b in bands:
-                if not band.band_is_exist(b):
-                    print('No such band: ' + b)
-                    sys.exit(2)
-            continue
-        if opt == '-s':
-            is_save = True
-            continue
-        if opt == '-f':
-            is_save = True
-            continue
-        if opt == '-p':
-            path = os.path.expanduser(str(arg))
-            if not (os.path.isdir(path) and os.path.exists(path)):
-                print("No such directory: " + path)
-                sys.exit(2)
-            continue
-        elif opt == '-h':
-            usage()
-            sys.exit(2)
-
+    # Set model names
     names = []
-    if name != '':
+
+    if len(unknownargs) > 0:
+        path, name = os.path.split(unknownargs[0])
+        path = os.path.expanduser(path)
+        name = name.replace(model_ext, '')
+    else:
+        if args.path:
+            path = os.path.expanduser(args.path)
+        else:
+            path = os.getcwd()
+        if args.input is not None:
+            name = os.path.splitext(os.path.basename(args.input))[0]  # remove extension
+
+    # if len(unknownargs) == 0:
+    #     parser.print_help()
+    #     sys.exit(2)
+
+    if name is None:
+        names = get_model_names(path, model_ext)  # run for all files in the path
+    else:
         names.append(name)
-    else:  # run for all files in the path
-        files = [f for f in os.listdir(path) if isfile(join(path, f)) and f.endswith(model_ext)]
-        for f in files:
-            names.append(os.path.splitext(f)[0])
+
+    # Set band names
+    bnames = ['V', 'I']
+    if args.bnames:
+        bnames = args.bnames.split('-')
+        # check bnames
+        for bname in bnames:
+            if not band.band_is_exist(bname):
+                print('No such band: ' + bname)
+                parser.print_help()
+                sys.exit(2)
+    #
+    # try:
+    #     opts, args = getopt.getopt(sys.argv[1:], "fhstp:i:b:o:")
+    # except getopt.GetoptError as err:
+    #     print(str(err))  # will print something like "option -a not recognized"
+    #     usage()
+    #     sys.exit(2)
+    #
+    # if not name:
+    #     if len(opts) == 0:
+    #         usage()
+    #         sys.exit(2)
+    #     for opt, arg in opts:
+    #         if opt == '-i':
+    #             path = ROOT_DIRECTORY
+    #             name = str(arg)
+    #             break
+    #
+    # bands = ['V', 'I']
+    # # set_bands = ['B-V', 'B-V-I', 'V-I', 'J-H-K']
+    # # set_bands = ['U-B-V-I', 'U-B-V-R-I', 'U-B', 'V-R', 'B-V-I', 'B-V', 'V-I']
+    #
+    # for opt, arg in opts:
+    #     if opt == '-e':
+    #         model_ext = '.' + arg
+    #         continue
+    #     if opt == '-b':
+    #         bands = str(arg).split('-')
+    #         for b in bands:
+    #             if not band.band_is_exist(b):
+    #                 print('No such band: ' + b)
+    #                 sys.exit(2)
+    #         continue
+    #     if opt == '-s':
+    #         is_save = True
+    #         continue
+    #     if opt == '-f':
+    #         is_save = True
+    #         continue
+    #     if opt == '-p':
+    #         path = os.path.expanduser(str(arg))
+    #         if not (os.path.isdir(path) and os.path.exists(path)):
+    #             print("No such directory: " + path)
+    #             sys.exit(2)
+    #         continue
+    #     elif opt == '-h':
+    #         usage()
+    #         sys.exit(2)
+    #
+    # names = []
+    # if name != '':
+    #     names.append(name)
+    # else:  # run for all files in the path
+    #     files = [f for f in os.listdir(path) if isfile(join(path, f)) and f.endswith(model_ext)]
+    #     for f in files:
+    #         names.append(os.path.splitext(f)[0])
 
     distance = 10.  # pc for Absolute magnitude
     # distance = 10e6  # pc for Absolute magnitude
@@ -301,23 +376,26 @@ def main(name='', path='./'):
     t_end = t50 + 10.
 
     if len(names) > 0:
-        res = run_scm(bands, distance, names, path, t50, t_beg, t_end, z)
+        res = run_scm(bnames, distance, names, path, t50, t_beg, t_end, z, method=args.method_vel)
         if len(res) > 0:
-            fig, ax_cache = plot_scm(res, bands, z)
+            fig, ax_cache = plot_scm(res, bnames, z)
             # fig, ax_cache = plot_scm(res, bands, z, ylim=(1.5, 4.))
 
-            if all(x in bands for x in ('V', 'I')):  # fit works only for 'V', 'I'
+            if all(x in bnames for x in ('V', 'I')):  # fit works only for 'V', 'I'
                 # if len(bands) == 2 and all(x in bands for x in ('V', 'I')):  # fit works only for 'V', 'I'
                 plot_scm_fit(ax_cache, ('V', 'I'), res, z)
 
             # legend
-            for bname in bands:
+            for bname in bnames:
                 ax_cache[bname].legend(prop={'size': 6})
 
             plt.show()
 
-            if is_save:
-                fsave = os.path.join(os.path.expanduser('~/'), 'scm_' + '_'.join(bands) + '.pdf')
+            if args.save_file:
+                if args.save_file == '1':
+                    fsave = os.path.join(os.path.expanduser('~/'), 'scm_' + '_'.join(bnames) + '.pdf')
+                else:
+                    fsave = args.save_file
                 print("Save plot in %s" % fsave)
                 fig.savefig(fsave, bbox_inches='tight', format='pdf')
 
