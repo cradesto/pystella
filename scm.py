@@ -1,23 +1,21 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 import argparse
-import getopt
-import numpy as np
 import os
 import sys
-from os.path import isfile, join, dirname
+from os.path import dirname
+
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib import gridspec
 from scipy import interpolate
 from scipy.optimize import fmin
 
-import matplotlib.pyplot as plt
-from matplotlib import gridspec
-
 from pystella import velocity
-from pystella.model.stella import Stella
 from pystella.rf import band
 from pystella.rf import light_curve_func as lcf
-from pystella.util.phys_var import phys
 from pystella.util.path_misc import get_model_names
+from pystella.util.phys_var import phys
 
 __author__ = 'bakl'
 
@@ -120,6 +118,7 @@ def plot_scm_fit(ax_cache, bands, models_data, z):
     # kasen
     for bname in bands:
         ax = ax_cache[bname]
+        yh = np.linspace(ylim[0], ylim[1], num=50)
         xx = scm_fit(yh, Av=0, bname=bname, z=z, src='kasen')
         if yh is not None:
             ax.plot(xx, yh, color="red", ls="--", linewidth=2.5, label='Kasen')
@@ -229,6 +228,7 @@ def get_parser():
     print(" Compute and plot the velocity-magnitude diagram for STELLA models")
     parser.add_argument('-b', '--band',
                         required=False,
+                        default='V-I',
                         dest="bnames",
                         help="-b <bands>: string, default: V-I, for example B-R-V-I")
     parser.add_argument('-i', '--input',
@@ -253,6 +253,13 @@ def get_parser():
                         default=None,
                         dest="save_file",
                         help="To save the result plot to pdf-file.")
+    parser.add_argument('-t',
+                        required=False,
+                        type=float,
+                        default=50,
+                        dest="tplateau",
+                        help="Time moment at plateau stage [day].  Default: 50 ")
+
     return parser
 
 #
@@ -274,6 +281,7 @@ def main(name=None):
     model_ext = '.ph'
 
     band.Band.load_settings()
+
     parser = get_parser()
     args, unknownargs = parser.parse_known_args()
 
@@ -302,15 +310,13 @@ def main(name=None):
         names.append(name)
 
     # Set band names
-    bnames = ['V', 'I']
-    if args.bnames:
-        bnames = args.bnames.split('-')
-        # check bnames
-        for bname in bnames:
-            if not band.band_is_exist(bname):
-                print('No such band: ' + bname)
-                parser.print_help()
-                sys.exit(2)
+    bnames = args.bnames.split('-')
+    # check bnames
+    for bname in bnames:
+        if not band.band_is_exist(bname):
+            print('No such band: ' + bname)
+            parser.print_help()
+            sys.exit(2)
     #
     # try:
     #     opts, args = getopt.getopt(sys.argv[1:], "fhstp:i:b:o:")
@@ -371,11 +377,12 @@ def main(name=None):
     distance = 10.  # pc for Absolute magnitude
     # distance = 10e6  # pc for Absolute magnitude
     z = phys.H0 * (distance / 1e6) / (phys.c / 1e5)  # convert D to Mpc, c to km/c
-    t50 = 50.
+    t50 = args.tplateau
     t_beg = max(0., t50 - 10.)
     t_end = t50 + 10.
 
     if len(names) > 0:
+        print("Parameters: vel-method {}, time of plateau = {:f}".format(args.method_vel, t50))
         res = run_scm(bnames, distance, names, path, t50, t_beg, t_end, z, method=args.method_vel)
         if len(res) > 0:
             fig, ax_cache = plot_scm(res, bnames, z)

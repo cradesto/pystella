@@ -106,7 +106,7 @@ def read_obs_table_header(fname, header=None, skip=0, colt=('time', 'JD', 'MJD')
 
     for k, v in list(cols.items()):
         # time
-        if not is_time and v.lower() in colt:
+        if not is_time and v.lower() in map(str.lower, colt):
             cols_used[k] = v
             is_time = True
         # data
