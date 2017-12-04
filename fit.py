@@ -824,6 +824,7 @@ def main():
             distance = cosmology_D_by_z(z) * 1e6
             print("Fit magnitudes on z={0:F} with cosmology D(z)={1:E} pc".format(z, distance))
     else:
+        distance = args.distance
         print("Fit magnitudes on z={0:F} at distance={1:E}".format(z, distance))
         if z > 0:
             print("  Cosmology D(z)={0:E} Mpc".format(cosmology_D_by_z(z)))
@@ -874,7 +875,7 @@ def main():
 
             with futures.ProcessPoolExecutor(max_workers=args.nodes) as executor:
                 future_to_name = {
-                    executor.submit(fit_mfl, args, curves_o, vels_o, bnames, fitter, n, path, t_diff, times):
+                    executor.submitfit(fit_mfl, args, curves_o, vels_o, bnames, fitter, n, path, t_diff, times):
                         n for n in names
                 }
                 i = 0
