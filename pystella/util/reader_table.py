@@ -147,11 +147,11 @@ def table2curves(name, tbl, bands=None, colt=('time', 'JD', 'MJD'), is_filter_ze
     for bname in bands:
         b = band.band_by_name(bname)
         mag = tbl[bname]
+        mask = ~np.isnan(mag)
         # filter
         if is_filter_zero:
-            mask = np.where(mag != 0)  # filter out values not equal 0
-        else:
-            mask = np.ones(len(mag), dtype=bool)
+            mask = np.logical_and(mask, mag != 0)  # filter out values not equal 0
+
         t = time[mask]
         m = mag[mask]
         for err_name in (prefix+bname for prefix in err_prefix):
