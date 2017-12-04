@@ -368,8 +368,10 @@ def main(name='', model_ext='.ph'):
                     if e > 0:
                         fname = '{}_E{:0.2g}'.format(fname, e)
                     fname = '{}{}'.format(fname, '.ubv')
-                lcf.curves_save(curves, fname)
-                print("Magnitudes of {} have been saved to {}".format(curves.Name, fname))
+                if lcf.curves_save(curves, fname):
+                    print("Magnitudes of {} have been saved to {}".format(curves.Name, fname))
+                else:
+                    print("Error with Magnitudes saved to {}".format(curves.Name, fname))
         # plot
         elif not is_quiet:
             if opt_grid in view_opts[1:]:

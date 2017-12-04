@@ -77,7 +77,7 @@ def get_parser():
     parser.add_argument('-d',
                         required=False,
                         type=float,
-                        default=None,
+                        default=10,
                         dest="distance",
                         help="Distance to the model [pc].  Default: 10 pc")
     parser.add_argument('-e',
@@ -662,10 +662,10 @@ def plot_squared_3d(ax, res_sorted, path='./', p=('R', 'M', 'E'), is_rbf=True, *
 
 
 def fit_mfl(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, times, Vnorm = 1e8):
-    distance = 10  # pc
+    distance = args.distance  # pc
     z = args.redshift
     # Set distance and redshift
-    if args.distance is None and z > 0:
+    if not args.distance and z > 0:
         distance = cosmology_D_by_z(z)*1e6
 
     tss_m = SetTimeSeries("Models")
@@ -732,7 +732,6 @@ def main():
     t_diff = 1.01
     name = None
     # z = 0.
-    # distance = 10  # pc
     # bnames = ['U', 'B', 'V', 'R', "I"]
     # Nbest = 5
     Nbest = 33
@@ -817,17 +816,15 @@ def main():
         bnames = [bn for bn in curves_o.BandNames if band_is_exist(bn)]
 
     # Set distance and redshift
-    distance = 10  # pc
     z = args.redshift
-    if args.distance is None:
+    if args.distance:
+        print("Fit magnitudes on z={0:F} at distance={1:E}".format(z, args.distance))
+        if z > 0:
+            print("  Cosmology D(z)={0:E} Mpc".format(cosmology_D_by_z(z)))
+    else:
         if z > 0:
             distance = cosmology_D_by_z(z) * 1e6
             print("Fit magnitudes on z={0:F} with cosmology D(z)={1:E} pc".format(z, distance))
-    else:
-        distance = args.distance
-        print("Fit magnitudes on z={0:F} at distance={1:E}".format(z, distance))
-        if z > 0:
-            print("  Cosmology D(z)={0:E} Mpc".format(cosmology_D_by_z(z)))
 
     # Time limits for models
     times = (0, float('inf'))
@@ -875,7 +872,7 @@ def main():
 
             with futures.ProcessPoolExecutor(max_workers=args.nodes) as executor:
                 future_to_name = {
-                    executor.submitfit(fit_mfl, args, curves_o, vels_o, bnames, fitter, n, path, t_diff, times):
+                    executor.submit(fit_mfl, args, curves_o, vels_o, bnames, fitter, n, path, t_diff, times):
                         n for n in names
                 }
                 i = 0

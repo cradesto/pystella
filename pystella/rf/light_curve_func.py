@@ -105,16 +105,15 @@ def curves_save(curves, fname, sep='\t', is_mix=False):
         return False
 
     if curves.IsCommonTime:
-        print("The curves has different time arrays.")
-        print("  LC  |  len(time)  ")
-        for lc in curves:
-            print("{:40s}   {:d}".format(lc.Name, len(lc.Time)))
-        return False
         arr = curves2nparray(curves)
         fmt_header = "%10s " * len(arr.dtype.names)
         header = fmt_header % arr.dtype.names
         fmt = "%10.5f  " * len(arr.dtype.names)
     else:
+        print("The curves has different time arrays.")
+        print("  LC  |  len(time)  ")
+        for lc in curves:
+            print("{:40s}   {:d}".format(lc.Name, len(lc.Time)))
         arr = curves2nparraymix(curves)
         fmt_header = "%8s " * len(arr.dtype.names)
         header = fmt_header % arr.dtype.names
