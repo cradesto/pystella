@@ -32,7 +32,7 @@ def plot_grid(models_dic, bnames, call=None, **kwargs):
     title = kwargs.get('title', '')
     # setup figure
     plt.matplotlib.rcParams.update({'font.size': kwargs.get('fontsize', 12)})
-    fig, axs = plt.subplots(int(math.ceil(len(bnames)/2)), 2, sharex='col', sharey='row',
+    fig, axs = plt.subplots(int(math.ceil(len(bnames) / 2)), 2, sharex='col', sharey='row',
                             figsize=(8, 8))
     plt.subplots_adjust(wspace=0, hspace=0)
 
@@ -48,7 +48,7 @@ def plot_grid(models_dic, bnames, call=None, **kwargs):
 
         if icol == 0:
             ax.set_ylabel('Magnitude')
-        if irow == int(len(bnames)/2)-1:
+        if irow == int(len(bnames) / 2) - 1:
             ax.set_xlabel('Time [days]')
 
         ax.legend(prop={'size': 8}, loc=4)
@@ -79,7 +79,7 @@ def plot_all(models_vels, models_dic, bnames, d=10, call=None, **kwargs):
     # setup figure
     plt.matplotlib.rcParams.update({'font.size': 12})
     fig = plt.figure(figsize=(12, 12))
-#    fig = plt.figure(num=None, figsize=(12, 12), dpi=100, facecolor='w', edgecolor='k')
+    #    fig = plt.figure(num=None, figsize=(12, 12), dpi=100, facecolor='w', edgecolor='k')
 
     if is_vel:
         gs1 = gridspec.GridSpec(4, 1)
@@ -120,13 +120,13 @@ def plot_all(models_vels, models_dic, bnames, d=10, call=None, **kwargs):
 
     # show right axes in absolute magnitudes
     if d > 10:
-        dm = -5.*math.log10(d/10.)
+        dm = -5. * math.log10(d / 10.)
         axUbvR = axUbv.twinx()
-        axUbvR.set_ylim([x+dm for x in axUbv.get_ylim()])
+        axUbvR.set_ylim([x + dm for x in axUbv.get_ylim()])
         axUbvR.minorticks_on()
     axUbv.grid(linestyle=':')
     plt.show()
-#    plt.show(block=True)
+    #    plt.show(block=True)
     return fig
 
 
@@ -311,7 +311,7 @@ def main(name='', model_ext='.ph'):
     # Set distance and redshift
     if distance is None:
         if z > 0:
-            distance = cosmology_D_by_z(z)*1e6
+            distance = cosmology_D_by_z(z) * 1e6
             print("Plot magnitudes on z={0:F} with D(z)={1:E} pc (cosmological)".format(z, distance))
         else:
             distance = 10  # pc
@@ -338,7 +338,6 @@ def main(name='', model_ext='.ph'):
             else:
                 mdl = Stella(name, path=path)
                 curves = mdl.curves(bnames, z=z, distance=distance, ebv=e, magnification=magnification)
-
 
             models_mags[name] = curves
 

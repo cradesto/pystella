@@ -18,7 +18,10 @@ def plot(ax, dic=None, mag_lim=30.):
     :param mag_lim:
     :return:
     """
-    # colors = band.bands_colors()
+
+    if isinstance(ax, (list, tuple)):
+        ax = ax[0]
+
     if dic is None:
         dic = {}
     fname = dic.get('fname', None)
