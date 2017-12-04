@@ -153,6 +153,7 @@ def usage():
     print("  -w  write magnitudes to out-file. Use '1' for the default name of out-file")
     print("  -z <redshift>.  Default: 0")
     print("  --dt=<t_diff>  time difference between two spectra")
+    print("  --curve-old  - use old procedure")
     print("  -l  write plot label")
     print("  -h  print usage")
     print("   --- ")
@@ -165,6 +166,7 @@ def main(name='', model_ext='.ph'):
     is_save_plot = False
     is_plot_time_points = False
     is_extinction = False
+    is_curve_old = False
     vel_mode = None
     view_opts = ('single', 'grid', 'gridl', 'gridm')
     opt_grid = view_opts[0]
@@ -188,7 +190,8 @@ def main(name='', model_ext='.ph'):
     band.Band.load_settings()
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hqtc:d:p:e:g:i:b:l:m:v:s:w:x:y:z:", longopts='dt=')
+        opts, args = getopt.getopt(sys.argv[1:], "hqtc:d:p:e:g:i:b:l:m:v:s:w:x:y:z:",
+                                   ['dt=', 'curve-old'])
     except getopt.GetoptError as err:
         print(str(err))  # will print something like "option -a not recognized"
         usage()
@@ -249,6 +252,9 @@ def main(name='', model_ext='.ph'):
         if opt == '-s':
             is_save_plot = True
             fsave = str.strip(arg)
+            continue
+        if opt == '--curve-old':
+            is_curve_old = True
             continue
         if opt == '-w':
             is_save_mags = True
@@ -319,17 +325,20 @@ def main(name='', model_ext='.ph'):
         models_mags = {}  # dict((k, None) for k in names)
         models_vels = {}  # dict((k, None) for k in names)
         i = 0
+        if is_curve_old:  # old
+            print("Use old proc for Stella magnitudes")
+
         for name in names:
             i += 1
-            if False:  # old
+            if is_curve_old:  # old
                 curves = lcf.curves_compute(name, path, bnames, z=z, distance=distance,
                                             magnification=magnification, t_diff=t_diff)
+                if is_extinction:
+                    curves = lcf.curves_reddening(curves, ebv=e, z=z)
             else:
                 mdl = Stella(name, path=path)
                 curves = mdl.curves(bnames, z=z, distance=distance, ebv=e, magnification=magnification)
 
-            if is_extinction:
-                curves = lcf.curves_reddening(curves, ebv=e, z=z)
 
             models_mags[name] = curves
 

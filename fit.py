@@ -20,6 +20,7 @@ import pystella.util.callback as cb
 from pystella import velocity
 from pystella.fit.fit_mcmc import FitLcMcmc
 from pystella.fit.fit_mpfit import FitMPFit
+from pystella.model.stella import Stella
 from pystella.rf import band
 from pystella.rf import light_curve_func as lcf
 from pystella.rf.band import band_is_exist
@@ -358,7 +359,7 @@ def plot_chi_par(res_sorted, path='./', p=('R', 'M', 'E'), **kwargs):
     plt.matplotlib.rcParams.update({'font.size': font_size})
 
     for i, px in enumerate(p):
-        ax = fig.add_subplot(nrow, ncol, i+1)
+        ax = fig.add_subplot(nrow, ncol, i + 1)
         x = []
         y = []
         for name, val in datatt.items():
@@ -661,12 +662,12 @@ def plot_squared_3d(ax, res_sorted, path='./', p=('R', 'M', 'E'), is_rbf=True, *
         plt.show()
 
 
-def fit_mfl(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, times, Vnorm = 1e8):
+def fit_mfl(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, times, Vnorm=1e8):
     distance = args.distance  # pc
     z = args.redshift
     # Set distance and redshift
     if not args.distance and z > 0:
-        distance = cosmology_D_by_z(z)*1e6
+        distance = cosmology_D_by_z(z) * 1e6
 
     tss_m = SetTimeSeries("Models")
     tss_o = SetTimeSeries("Obs")
@@ -674,11 +675,15 @@ def fit_mfl(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, times, V
 
     # light curves
     if curves_o is not None:
-        curves_m = lcf.curves_compute(name, path, bnames, z=z, distance=distance,
-                                      t_beg=times[0], t_end=times[1], t_diff=t_diff)
-        if args.color_excess:
-            # todo change for modern method via Stella.curves(...)
-            curves_m = lcf.curves_reddening(curves_m, ebv=args.color_excess, z=z, is_info=args.is_not_quiet)
+        if False:
+            curves_m = lcf.curves_compute(name, path, bnames, z=z, distance=distance,
+                                          t_beg=times[0], t_end=times[1], t_diff=t_diff)
+            if args.color_excess:
+                curves_m = lcf.curves_reddening(curves_m, ebv=args.color_excess, z=z, is_info=args.is_not_quiet)
+        else:
+            mdl = Stella(name, path=path)
+            curves_m = mdl.curves(bnames, z=z, distance=distance, ebv=args.color_excess,
+                                  t_beg=times[0], t_end=times[1], t_diff=t_diff)
 
         for lc in curves_m:
             tss_m.add(lc)
@@ -696,7 +701,7 @@ def fit_mfl(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, times, V
         try:
             tbl = velocity.compute_vel_swd(name, path)
             # tbl = velocity.compute_vel_res_tt(name, path)
-            vel_m = VelocityCurve('Vel', tbl['time'], tbl['vel']/Vnorm)
+            vel_m = VelocityCurve('Vel', tbl['time'], tbl['vel'] / Vnorm)
         except ValueError as ext:
             print(ext)
 

@@ -1,6 +1,6 @@
 import os
 
-from pystella.rf.reddening import ReddeningLaw, LawFitz, LawPei
+from pystella.rf.reddening import ReddeningLaw, LawFitz
 
 __author__ = 'bakl'
 
@@ -114,7 +114,7 @@ class Stella:
 
         t_beg = kwargs.get("t_beg", 0.)
         t_end = kwargs.get("t_end", float('inf'))
-        t_diff = kwargs.get("t_diff", 1.02)
+        t_diff = kwargs.get("t_diff", 1.01)
         magnification = kwargs.get("magnification", 1.)
 
         if len(bands) == 0:
