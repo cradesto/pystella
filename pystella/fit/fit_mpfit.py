@@ -120,7 +120,6 @@ class FitMPFit(FitLc):
             E = 0.002
             total = []
             for ts_m in tss_m:
-            # for name, ts_m in tss_m.items():
                 ts_o = tss_o[ts_m.Name]
                 ts_o.tshift = p[0]
                 time_o = ts_o.Time

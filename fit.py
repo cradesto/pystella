@@ -103,6 +103,12 @@ def get_parser():
                         default=None,
                         dest="dtshift",
                         help="The range of tshift in model LC. Default: None (any time). Format: {0}".format('2:50'))
+    parser.add_argument('--t_diff',
+                        required=False,
+                        type=float,
+                        default=1.02,
+                        dest="t_diff",
+                        help="The nearest-moment ratio")
     parser.add_argument('-nq', '--no-quiet',
                         action='store_const',
                         const=True,
@@ -734,7 +740,6 @@ def fit_mfl(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, times, V
 
 def main():
     model_ext = '.ph'
-    t_diff = 1.01
     name = None
     # z = 0.
     # bnames = ['U', 'B', 'V', 'R', "I"]
@@ -822,6 +827,7 @@ def main():
 
     # Set distance and redshift
     z = args.redshift
+    t_diff = args.t_diff
     if args.distance:
         print("Fit magnitudes on z={0:F} at distance={1:E}".format(z, args.distance))
         if z > 0:
