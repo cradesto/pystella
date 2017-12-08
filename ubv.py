@@ -71,6 +71,7 @@ def plot_grid(models_dic, bnames, call=None, **kwargs):
 def plot_all(models_vels, models_dic, bnames, d=10, call=None, **kwargs):
     # xlim = None, ylim = None,  is_time_points = False, title = '', bshift = None
     title = kwargs.get('title', '')
+    is_axes_right = kwargs.get('is_axes_right', True)
     # band_shift['UVW1'] = 3
     # band_shift['UVW2'] = 5
     # band_shift['i'] = -1
@@ -103,8 +104,8 @@ def plot_all(models_vels, models_dic, bnames, d=10, call=None, **kwargs):
         else:
             call.plot(axUbv)
     # finish plot
-    axUbv.set_ylabel('Magnitude')
-    axUbv.set_xlabel('Time [days]')
+    axUbv.set_ylabel('Mag')  # Magnitude  Mag
+    axUbv.set_xlabel('Time since explosion [days]')
     axUbv.minorticks_on()
 
     axUbv.legend(prop={'size': 8}, loc=4)
@@ -119,7 +120,7 @@ def plot_all(models_vels, models_dic, bnames, d=10, call=None, **kwargs):
         axVel.legend(prop={'size': 8}, loc=4)
 
     # show right axes in absolute magnitudes
-    if d > 10:
+    if is_axes_right and d > 10:
         dm = -5. * math.log10(d / 10.)
         axUbvR = axUbv.twinx()
         axUbvR.set_ylim([x + dm for x in axUbv.get_ylim()])
@@ -143,6 +144,7 @@ def usage():
     print("  -d <distance> [pc].  Default: 10 pc")
     print("  -g <single, grid, gridm, gridl> Select plot view.  single [default] = all models in one figure"
           ", grid = for each band separate figure.")
+    print("  -o <is_axes_right>.  Default: empty string")
     print("  -m <magnification>.  Default: None, used for grav lens")
     print("  -q  turn off quiet mode: print info and additional plots")
     print("  -t  plot time points")
@@ -167,6 +169,8 @@ def main(name='', model_ext='.ph'):
     is_plot_time_points = False
     is_extinction = False
     is_curve_old = False
+    is_axes_right = False
+
     vel_mode = None
     view_opts = ('single', 'grid', 'gridl', 'gridm')
     opt_grid = view_opts[0]
@@ -190,7 +194,7 @@ def main(name='', model_ext='.ph'):
     band.Band.load_settings()
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hqtc:d:p:e:g:i:b:l:m:v:s:w:x:y:z:",
+        opts, args = getopt.getopt(sys.argv[1:], "hqtb:c:d:e:g:i:l:o:m:p:v:s:w:x:y:z:",
                                    ['dt=', 'curve-old'])
     except getopt.GetoptError as err:
         print(str(err))  # will print something like "option -a not recognized"
@@ -390,7 +394,8 @@ def main(name='', model_ext='.ph'):
                                 sep=sep, is_grid=False)
             else:
                 fig = plot_all(models_vels, models_mags, bnames, d=distance, call=callback, xlim=xlim, ylim=ylim,
-                               is_time_points=is_plot_time_points, title=label, bshift=bshift)
+                               is_time_points=is_plot_time_points, title=label, bshift=bshift,
+                               is_axes_right=is_axes_right)
             if is_save_plot:
                 if len(fsave) == 0:
                     if vel_mode is not None:
