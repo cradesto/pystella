@@ -20,7 +20,7 @@ lc_lntypes = {'U': "-", 'B': "-", 'V': "-", 'R': "-", 'I': "-",
               'u': "--", 'g': "--", 'r': "--", 'i': "--", 'z': "--",
               'bol': '-'}
 
-lines = ["-", "--", "-.", ":"]
+lines = ['--', '-.', '-', ':']
 
 markers = {u'D': u'diamond', 6: u'caretup', u's': u'square', u'x': u'x',
            5: u'caretright', u'^': u'triangle_up', u'd': u'thin_diamond', u'h': u'hexagon1',
@@ -51,6 +51,8 @@ def plot_ubv_models(ax, models_dic, bands, **kwargs):
     lw = kwargs.get('lw', 2)
     markersize = kwargs.get('markersize', 6)
     is_time_points = kwargs.get('is_time_points', False)
+    is_dashes = kwargs.get('is_dashes', False)
+    linestyles = kwargs.get('lines', ['-'])
 
     is_compute_x_lim = xlim is None
     is_compute_y_lim = ylim is None
@@ -66,18 +68,27 @@ def plot_ubv_models(ax, models_dic, bands, **kwargs):
     x_max = []
     y_mid = []
     lc_min = {}
+    line_cycle = cycle(linestyles)
+    dashes = get_dashes(len(bands) + 1, scale=2)
+
     for mname, mdic in models_dic.items():
         mi += 1
-        for bname in bands:
+        for ib, bname in enumerate(bands):
             lc = mdic[bname]
             x = lc.Time
             y = lc.Mag + band_shift[bname]
             bcolor = colors[bname]
-
+            ls = next(line_cycle)
+            dash = dashes[ib]
             if len(models_dic) == 1:
-                ax.plot(x, y, label='%s  %s' % (lbl(bname, band_shift), mname), color=bcolor, ls=ls1, linewidth=lw)
+                if is_dashes:
+                    ax.plot(x, y, label='%s  %s' % (lbl(bname, band_shift), mname), color=bcolor, ls=ls1, linewidth=lw,
+                            dashes=dash)
+                else:
+                    ax.plot(x, y, label='%s  %s' % (lbl(bname, band_shift), mname), color=bcolor, ls=ls, linewidth=lw)
+            # ax.plot(x, y, label='%s  %s' % (lbl(bname, band_shift), mname), color=bcolor, ls=ls1, linewidth=lw)
             elif len(models_dic) <= len(lines):
-                ax.plot(x, y, label='%s  %s' % (lbl(bname, band_shift), mname), color=bcolor, ls=lines[mi - 1],
+                ax.plot(x, y, label='%s  %s' % (lbl(bname, band_shift), mname), color=bcolor, ls=ls,
                         linewidth=lw)
             else:
                 ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label='%s  %s' % (lbl(bname, band_shift), mname),
@@ -170,15 +181,16 @@ def plot_models_band(ax, models_dic, bname, **kwargs):
     return lc_min
 
 
-def get_dashes(nums):
+def get_dashes(nums, scale=1):
     dashes = []
+
     for i in range(nums):
         if i < 5:
-            dashes.append((4, 1 + int(i / 2)))
+            dashes.append((4, scale * (1 + int(i / 2))))
         elif i < 10:
-            dashes.append((i - 3, 1 + int(i / 2), 2, 1 + i))
+            dashes.append((i - 3, scale * (1 + int(i / 2)), 2, 1 + i))
         else:
-            dashes.append((i - 8, 1, 2, 1 + int(i / 2), 2, 1 + i))
+            dashes.append((i - 8, 1, 2, scale * (1 + int(i / 2)), 2, 1 + i))
     return dashes
 
 
@@ -568,3 +580,47 @@ def plot_shock_details_old(swd, times, **kwargs):
         i += 1
     plt.show()
     return fig
+
+
+########################################
+# from https://stackoverflow.com/questions/7358118/matplotlib-black-white-colormap-with-dashes-dots-etc
+
+
+def setAxLinesBW(ax):
+    """
+    Take each Line2D in the axes, ax, and convert the line style to be
+    suitable for black and white viewing.
+    """
+    MARKERSIZE = 3
+
+    COLORMAP = {
+        'blue': {'marker': None, 'dash': (None, None)},
+        'darkgreen': {'marker': None, 'dash': [5, 5]},
+        'red': {'marker': None, 'dash': [5, 3, 1, 3]},
+        'cyan': {'marker': None, 'dash': [1, 3]},
+        'magenta': {'marker': None, 'dash': [5, 2, 5, 2, 5, 10]},
+        'yellow': {'marker': None, 'dash': [5, 3, 1, 2, 1, 10]},
+        'k': {'marker': 'o', 'dash': (None, None)}  # [1,2,1,10]}
+    }
+
+    lines_to_adjust = ax.get_lines()
+    try:
+        lines_to_adjust += ax.get_legend().get_lines()
+    except AttributeError:
+        pass
+
+    for line in lines_to_adjust:
+        origColor = line.get_color()
+        line.set_color('black')
+        line.set_dashes(COLORMAP[origColor]['dash'])
+        line.set_marker(COLORMAP[origColor]['marker'])
+        line.set_markersize(MARKERSIZE)
+
+
+def setFigLinesBW(fig):
+    """
+    Take each axes in the figure, and for each line in the axes, make the
+    line viewable in black and white.
+    """
+    for ax in fig.get_axes():
+        setAxLinesBW(ax)

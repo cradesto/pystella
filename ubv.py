@@ -72,13 +72,16 @@ def plot_all(models_vels, models_dic, bnames, d=10, call=None, **kwargs):
     # xlim = None, ylim = None,  is_time_points = False, title = '', bshift = None
     title = kwargs.get('title', '')
     is_axes_right = kwargs.get('is_axes_right', True)
+    is_grid = kwargs.get('is_grid', True)
+    legloc = kwargs.get('legloc', 4)
+    fontsize = kwargs.get('fontsize', 12)
     # band_shift['UVW1'] = 3
     # band_shift['UVW2'] = 5
     # band_shift['i'] = -1
     is_vel = models_vels is not None
 
     # setup figure
-    plt.matplotlib.rcParams.update({'font.size': 12})
+    plt.matplotlib.rcParams.update({'font.size': fontsize})
     fig = plt.figure(figsize=(12, 12))
     #    fig = plt.figure(num=None, figsize=(12, 12), dpi=100, facecolor='w', edgecolor='k')
 
@@ -104,12 +107,12 @@ def plot_all(models_vels, models_dic, bnames, d=10, call=None, **kwargs):
         else:
             call.plot(axUbv)
     # finish plot
-    axUbv.set_ylabel('Mag')  # Magnitude  Mag
+    axUbv.set_ylabel('Magnitude')  # Magnitude  Mag
     axUbv.set_xlabel('Time since explosion [days]')
     axUbv.minorticks_on()
 
-    axUbv.legend(prop={'size': 8}, loc=4)
-    # ax.set_title(bset)
+    axUbv.legend(loc=legloc, frameon=False)
+    # axUbv.legend(prop={'size': 8}, loc=legloc)
     if title:
         axUbv.set_title(title)
 
@@ -117,7 +120,8 @@ def plot_all(models_vels, models_dic, bnames, d=10, call=None, **kwargs):
     if is_vel:
         vel.plot_vels_models(axVel, models_vels, xlim=axUbv.get_xlim())
         # vel.plot_vels_sn87a(axVel, z=1.49)
-        axVel.legend(prop={'size': 8}, loc=4)
+        axVel.legend(loc=legloc)
+        # axVel.legend(prop={'size': 8}, loc=legloc)
 
     # show right axes in absolute magnitudes
     if is_axes_right and d > 10:
@@ -125,8 +129,8 @@ def plot_all(models_vels, models_dic, bnames, d=10, call=None, **kwargs):
         axUbvR = axUbv.twinx()
         axUbvR.set_ylim([x + dm for x in axUbv.get_ylim()])
         axUbvR.minorticks_on()
-    axUbv.grid(linestyle=':')
-    plt.show()
+    if is_grid:
+        axUbv.grid(linestyle=':')
     #    plt.show(block=True)
     return fig
 
@@ -170,11 +174,13 @@ def main(name='', model_ext='.ph'):
     is_extinction = False
     is_curve_old = False
     is_axes_right = False
+    is_grid = False
 
     vel_mode = None
     view_opts = ('single', 'grid', 'gridl', 'gridm')
     opt_grid = view_opts[0]
     t_diff = 1.01
+    linestyles = ['-']
 
     label = None
     fsave = None
@@ -393,9 +399,14 @@ def main(name='', model_ext='.ph'):
                 fig = plot_grid(models_mags, bnames, call=callback, xlim=xlim, ylim=ylim,
                                 sep=sep, is_grid=False)
             else:
+                # linestyles = ['--', '-.', '-', ':']
                 fig = plot_all(models_vels, models_mags, bnames, d=distance, call=callback, xlim=xlim, ylim=ylim,
                                is_time_points=is_plot_time_points, title=label, bshift=bshift,
-                               is_axes_right=is_axes_right)
+                               is_axes_right=is_axes_right, is_grid=is_grid, legloc=1, fontsize=14,
+                               lines=linestyles)
+                # lcp.setFigLinesBW(fig)
+                # lcp.setFigMarkersBW(fig) # todo
+
             if is_save_plot:
                 if len(fsave) == 0:
                     if vel_mode is not None:
@@ -411,6 +422,9 @@ def main(name='', model_ext='.ph'):
 
                 print("Save plot to %s " % fsave)
                 fig.savefig(fsave, bbox_inches='tight', format='pdf')
+            else:
+                plt.show()
+
     else:
         print("There are no models in the directory: %s with extension: %s " % (path, model_ext))
 
