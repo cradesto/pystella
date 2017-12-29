@@ -138,8 +138,10 @@ def plot(ax, dic=None):
         if len(arg) > 0:
             jd_shift = float(arg.pop(0))
 
-    print("Plot Sn Refsdal %s, glens: %s, jd_shift: %f, path: %s, band_max=%s " %
-          (im, glens, jd_shift, d, band_max))
+    print("Plot Sn Refsdal %s, glens: %s, jd_shift: %f, band_max=%s " %
+          (im, glens, jd_shift, band_max))
+    # print("Plot Sn Refsdal %s, glens: %s, jd_shift: %f, path: %s, band_max=%s " %
+    #       (im, glens, jd_shift, d, band_max))
 
     # plot B-V
     if 'bv' in dic:

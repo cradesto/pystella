@@ -71,6 +71,7 @@ def plot_grid(models_dic, bnames, call=None, **kwargs):
 def plot_all(models_vels, models_dic, bnames, d=10, call=None, **kwargs):
     # xlim = None, ylim = None,  is_time_points = False, title = '', bshift = None
     title = kwargs.get('title', '')
+    legend = kwargs.get('legend', 'box')
     is_axes_right = kwargs.get('is_axes_right', True)
     is_grid = kwargs.get('is_grid', True)
     legloc = kwargs.get('legloc', 4)
@@ -111,7 +112,9 @@ def plot_all(models_vels, models_dic, bnames, d=10, call=None, **kwargs):
     axUbv.set_xlabel('Time since explosion [days]')
     axUbv.minorticks_on()
 
-    axUbv.legend(loc=legloc, frameon=False)
+    if legend == 'box':
+        axUbv.legend(loc=legloc, frameon=False)
+
     # axUbv.legend(prop={'size': 8}, loc=legloc)
     if title:
         axUbv.set_title(title)
@@ -404,8 +407,8 @@ def main(name='', model_ext='.ph'):
                                is_time_points=is_plot_time_points, title=label, bshift=bshift,
                                is_axes_right=is_axes_right, is_grid=is_grid, legloc=1, fontsize=14,
                                lines=linestyles)
-                # lcp.setFigLinesBW(fig)
-                # lcp.setFigMarkersBW(fig) # todo
+                # lcp.setFigMarkersBW(fig)
+                lcp.setFigLinesBW(fig)
 
             if is_save_plot:
                 if len(fsave) == 0:

@@ -16,3 +16,11 @@ def log_interp1d(x, y, kind='linear'):
     logy = np.log10(y)
     lin_interp = sp.interpolate.interp1d(logx, logy, kind=kind)
     return lambda zz: np.power(10.0, lin_interp(np.log10(zz)))
+
+
+def is_number(s):
+    try:
+        float(s)
+        return True
+    except:
+        return False

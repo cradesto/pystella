@@ -124,9 +124,11 @@ class TimeSeries(object):
 class SetTimeSeries(object):
     """Set of the TimeSeries"""
     def __init__(self, name='SetTimeSeries'):
+        from collections import OrderedDict
         """Creates a Set of TimeSeries."""
         self._name = name
-        self._set = {}
+        # self._set = {}
+        self._set = OrderedDict()
         self._loop = 0
 
     @property

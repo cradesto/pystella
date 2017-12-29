@@ -586,35 +586,40 @@ def plot_shock_details_old(swd, times, **kwargs):
 # from https://stackoverflow.com/questions/7358118/matplotlib-black-white-colormap-with-dashes-dots-etc
 
 
-def setAxLinesBW(ax):
+def setAxLinesBW(ax, color='black', markersize=3):
     """
     Take each Line2D in the axes, ax, and convert the line style to be
     suitable for black and white viewing.
     """
-    MARKERSIZE = 3
+    # https://matplotlib.org/gallery/lines_bars_and_markers/linestyles.html
+    dashList = [(5, 2), (2, 5), (4, 10), (3, 3, 2, 2), (5, 2, 20, 2)]
 
     COLORMAP = {
-        'blue': {'marker': None, 'dash': (None, None)},
-        'darkgreen': {'marker': None, 'dash': [5, 5]},
-        'red': {'marker': None, 'dash': [5, 3, 1, 3]},
-        'cyan': {'marker': None, 'dash': [1, 3]},
-        'magenta': {'marker': None, 'dash': [5, 2, 5, 2, 5, 10]},
-        'yellow': {'marker': None, 'dash': [5, 3, 1, 2, 1, 10]},
-        'k': {'marker': 'o', 'dash': (None, None)}  # [1,2,1,10]}
+        'blue': {'marker': 's', 'dash': (5, 2, 5, 2, 5, 10)},
+        'darkgreen': {'marker': 'x', 'dash': (5, 5)},
+        'red': {'marker': '*', 'dash': (5, 3, 1, 3)},
+        'cyan': {'marker': 'd', 'dash': (1, 3, 1, 1)},
+        'magenta': {'marker': 'o', 'dash': (2, 5)},
+        'yellow': {'marker': '<', 'dash': (5, 3, 1, 2, 1, 10)},
+        'k': {'marker': 'P', 'dash': (5, 2)}  # (3, 3, 2, 2)  [1,2,1,10]}
     }
 
     lines_to_adjust = ax.get_lines()
-    try:
-        lines_to_adjust += ax.get_legend().get_lines()
-    except AttributeError:
-        pass
+    # try:
+    #     lines_to_adjust += ax.get_legend().get_lines()
+    # except AttributeError:
+    #     pass
 
     for line in lines_to_adjust:
         origColor = line.get_color()
-        line.set_color('black')
-        line.set_dashes(COLORMAP[origColor]['dash'])
-        line.set_marker(COLORMAP[origColor]['marker'])
-        line.set_markersize(MARKERSIZE)
+        origLineType = line.get_linestyle()
+        line.set_color(color)
+        if origLineType is not None:
+            line.set_dashes(COLORMAP[origColor]['dash'])
+        else:
+            line.set_marker(COLORMAP[origColor]['marker'])
+            line.set_markersize(markersize)
+            line.set_linestyle('')
 
 
 def setFigLinesBW(fig):

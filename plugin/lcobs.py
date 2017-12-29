@@ -76,16 +76,18 @@ def load(dic=None):
     Load points from dat-files.
     :return SetLightCurves:
     """
+    from pystella.util.math import is_number
+
     fname = None
     tshift = 0.
     mshift = 0.
-    mag_lim = 30.
+    mag_lim = 99.
     arg = []
     is_debug = False
 
     if dic is not None:
         is_debug = dic.get('is_debug', False)
-        mag_lim = dic.get('mag_lim', 30.)
+        mag_lim = dic.get('mag_lim', mag_lim)
         if 'args' in dic:
             arg = dic['args']
 
@@ -94,7 +96,7 @@ def load(dic=None):
         fname = os.path.expanduser(fname)
     if len(arg) > 0:
         s = arg.pop(0)
-        if s.isnumeric():
+        if is_number(s):
             tshift = float(s)
         elif len(arg) > 0:
             tshift = float(arg.pop(0))

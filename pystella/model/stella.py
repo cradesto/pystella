@@ -127,7 +127,7 @@ class Stella:
         serial_spec = self.get_ph(t_diff=t_diff, t_beg=t_beg, t_end=t_end)
         # reddening
         if ebv > 0:
-            ss = serial_spec.copy(self,  wl_ab=law.LAMBDA_LIM)
+            ss = serial_spec.copy(wl_ab=law.LAMBDA_LIM)
             serial_spec = series_spec_reddening(ss, ebv=ebv, Rv=Rv, law=law, mode=mode)
         # light curves
         curves = serial_spec.flux_to_curves(bands, z=z, d=pc_to_cm(distance), magnification=magnification)
