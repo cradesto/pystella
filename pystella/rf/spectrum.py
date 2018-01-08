@@ -8,7 +8,7 @@ from scipy.optimize import fmin, curve_fit
 
 # import matplotlib.pyplot as plt
 
-import pystella.rf.rad_func as rf
+from pystella.rf import rad_func as rf
 from pystella.rf import band
 from pystella.rf.lc import LightCurve, SetLightCurve
 from pystella.rf.star import Star

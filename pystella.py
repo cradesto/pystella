@@ -1,14 +1,11 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 import os
-import io
-import sys
-import time
-
 import readline
 import subprocess
 from cmd import Cmd
 from os.path import dirname
+
 import numpy as np
 
 ROOT_DIRECTORY = dirname(os.path.abspath(__file__))
@@ -178,21 +175,33 @@ class MyPrompt(HistConsole):
         """Quits the program."""
         self.do_quit(args)
 
-    def do_ipython(self, args):
-        """Run ipython shell"""
+    @staticmethod
+    def do_ipython(args):
+        """Run ipython shell
+        Usage:
+          It was already done:  import pystella as ps
+          so you may:
+          > s = ps.Stella('model3xni')
+          > curves = s.curves(bands=('U','B','R','V'))
+          > ax = ps.light_curve_plot.curves_plot(curves)
+          > plt.show()
+          OR
+          > ax.get_figure().savefig('zz.pdf')
+          > ...
+        """
 
         import math
         import matplotlib.pyplot as plt
         from matplotlib import gridspec
-
-        import pystella.util.callback as cb
-        from pystella import velocity as vel
-        from pystella.rf import band
-        from pystella.model.stella import Stella
-        from pystella.rf import light_curve_func as lcf
-        from pystella.rf import light_curve_plot as lcp
-        from pystella.util.path_misc import get_model_names
-        from pystella.util.phys_var import cosmology_D_by_z
+        import numpy as np
+        #
+        import pystella as ps
+        # from pystella import callback as cb
+        # from pystella import velocity as vel
+        # from pystella import band
+        # from pystella import Stella
+        # from pystella import light_curve_func as lcf
+        # from pystella import light_curve_plot as lcp
 
         from IPython import embed
         embed(banner1="Hit Ctrl-D to exit interpreter and continue pystella",

@@ -16,21 +16,23 @@ from concurrent import futures
 import numpy as np
 import scipy as sci
 
-import pystella.util.callback as cb
-from pystella import velocity
-from pystella.fit.fit_mcmc import FitLcMcmc
-from pystella.fit.fit_mpfit import FitMPFit
-from pystella.model.stella import Stella
-from pystella.rf import band
-from pystella.rf import light_curve_func as lcf
-from pystella.rf.band import band_is_exist
-from pystella.rf.lc import SetLightCurve
-from pystella.rf.ts import SetTimeSeries
-from pystella.util.arr_dict import first
-from pystella.util.path_misc import get_model_names
-from pystella.util.phys_var import cosmology_D_by_z
-from pystella.util.string_misc import str2interval
-from pystella.velocity import VelocityCurve, SetVelocityCurve
+import pystella as ps
+
+# import pystella.util.callback as cb
+# from pystella import velocity
+# from pystella.fit.fit_mcmc import FitLcMcmc
+# from pystella.fit.fit_mpfit import FitMPFit
+# from pystella.model.stella import Stella
+# from pystella.rf import band
+# from pystella.rf import light_curve_func as lcf
+# from pystella.rf.band import band_is_exist
+# from pystella.rf.lc import SetLightCurve
+# from pystella.rf.ts import SetTimeSeries
+# from pystella.util.arr_dict import first
+# from pystella.util.path_misc import get_model_names
+# from pystella.util.phys_var import cosmology_D_by_z
+# from pystella.util.string_misc import str2interval
+# from pystella.velocity import VelocityCurve, SetVelocityCurve
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -149,8 +151,8 @@ def get_parser():
 
 def engines(nm=None):
     switcher = {
-        'mpfit': FitMPFit(),
-        'mcmc': FitLcMcmc(),
+        'mpfit': ps.FitMPFit(),
+        'mcmc': ps.FitLcMcmc(),
     }
     if nm is not None:
         return switcher.get(nm)
@@ -171,7 +173,7 @@ def plot_curves(curves_o, res_models, res_sorted, **kwargs):
     fig = plt.figure(figsize=(12, nrow * 4))
     plt.matplotlib.rcParams.update({'font.size': font_size})
 
-    tshift0 = first(curves_o).tshift
+    tshift0 = ps.first(curves_o).tshift
     i = 0
     for k, v in res_sorted.items():
         i += 1
@@ -231,10 +233,10 @@ def plot_curves_vel(curves_o, vels_o, res_models, res_sorted, vels_m, **kwargs):
     plt.matplotlib.rcParams.update({'font.size': font_size})
     tshift_lc = 0.
     if curves_o is not None:
-        tshift_lc = first(curves_o).tshift
+        tshift_lc = ps.first(curves_o).tshift
     tshift_vel = 0.
     if vels_o is not None:
-        tshift_vel = first(vels_o).tshift
+        tshift_vel = ps.first(vels_o).tshift
 
     i = 0
     for k, v in res_sorted.items():
@@ -673,21 +675,22 @@ def fit_mfl(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, times, V
     z = args.redshift
     # Set distance and redshift
     if not args.distance and z > 0:
-        distance = cosmology_D_by_z(z) * 1e6
+        distance = ps.cosmology_D_by_z(z) * 1e6
 
-    tss_m = SetTimeSeries("Models")
-    tss_o = SetTimeSeries("Obs")
+    tss_m = ps.SetTimeSeries("Models")
+    tss_o = ps.SetTimeSeries("Obs")
     curves_m = None
 
     # light curves
     if curves_o is not None:
         if False:
-            curves_m = lcf.curves_compute(name, path, bnames, z=z, distance=distance,
-                                          t_beg=times[0], t_end=times[1], t_diff=t_diff)
+            curves_m = ps.light_curve_func.curves_compute(name, path, bnames, z=z, distance=distance,
+                                                          t_beg=times[0], t_end=times[1], t_diff=t_diff)
             if args.color_excess:
-                curves_m = lcf.curves_reddening(curves_m, ebv=args.color_excess, z=z, is_info=args.is_not_quiet)
+                curves_m = ps.light_curve_func.curves_reddening(curves_m, ebv=args.color_excess, z=z,
+                                                                is_info=args.is_not_quiet)
         else:
-            mdl = Stella(name, path=path)
+            mdl = ps.Stella(name, path=path)
             curves_m = mdl.curves(bnames, z=z, distance=distance, ebv=args.color_excess,
                                   t_beg=times[0], t_end=times[1], t_diff=t_diff)
 
@@ -705,9 +708,9 @@ def fit_mfl(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, times, V
     if vels_o is not None:
         # compute model velocities
         try:
-            tbl = velocity.compute_vel_swd(name, path)
+            tbl = ps.vel.compute_vel_swd(name, path)
             # tbl = velocity.compute_vel_res_tt(name, path)
-            vel_m = VelocityCurve('Vel', tbl['time'], tbl['vel'] / Vnorm)
+            vel_m = ps.vel.VelocityCurve('Vel', tbl['time'], tbl['vel'] / Vnorm)
         except ValueError as ext:
             print(ext)
 
@@ -745,7 +748,7 @@ def main():
     # bnames = ['U', 'B', 'V', 'R', "I"]
     # Nbest = 5
     Nbest = 33
-    band.Band.load_settings()
+    ps.Band.load_settings()
 
     parser = get_parser()
     args, unknownargs = parser.parse_known_args()
@@ -770,7 +773,7 @@ def main():
     #     sys.exit(2)
 
     if name is None:
-        names = get_model_names(path, model_ext)  # run for all files in the path
+        names = ps.get_model_names(path, model_ext)  # run for all files in the path
     else:
         names.append(name)
 
@@ -778,7 +781,7 @@ def main():
     bnames = []
     if args.bnames:
         for bname in args.bnames.split('-'):
-            if not band.band_is_exist(bname):
+            if not ps.band.band_is_exist(bname):
                 print('No such band: ' + bname)
                 parser.print_help()
                 sys.exit(2)
@@ -791,11 +794,11 @@ def main():
         if len(args.call) > 1:
             a = []
             for line in args.call:
-                c = cb.lc_wrapper(line, method='load')
+                c = ps.cb.lc_wrapper(line, method='load')
                 a.append(c)
-            callback = cb.CallBackArray(a)
+            callback = ps.cb.CallBackArray(a)
         elif len(args.call) == 1:
-            callback = cb.lc_wrapper(args.call[0], method='load')
+            callback = ps.cb.lc_wrapper(args.call[0], method='load')
         else:
             callback = None
     else:
@@ -809,21 +812,21 @@ def main():
     obs = callback.run({'is_debug': args.is_not_quiet})
     if isinstance(obs, list):
         for o in obs:
-            if isinstance(o, SetLightCurve):
-                curves_o = SetLightCurve.Merge(curves_o, o)
-            if isinstance(o, SetVelocityCurve):
-                vels_o = SetVelocityCurve.Merge(vels_o, o)
+            if isinstance(o, ps.SetLightCurve):
+                curves_o = ps.SetLightCurve.Merge(curves_o, o)
+            if isinstance(o, ps.vel.SetVelocityCurve):
+                vels_o = ps.vel.SetVelocityCurve.Merge(vels_o, o)
     else:
-        if isinstance(obs, SetLightCurve):
+        if isinstance(obs, ps.SetLightCurve):
             curves_o = obs
-        if isinstance(obs, SetVelocityCurve):
+        if isinstance(obs, ps.vel.SetVelocityCurve):
             vels_o = obs
 
     is_vel = vels_o is not None and vels_o.Length > 0
     is_curves_o = curves_o is not None
 
     if is_curves_o and len(bnames) == 0:
-        bnames = [bn for bn in curves_o.BandNames if band_is_exist(bn)]
+        bnames = [bn for bn in curves_o.BandNames if ps.band.band_is_exist(bn)]
 
     # Set distance and redshift
     z = args.redshift
@@ -831,10 +834,10 @@ def main():
     if args.distance:
         print("Fit magnitudes on z={0:F} at distance={1:E}".format(z, args.distance))
         if z > 0:
-            print("  Cosmology D(z)={0:E} Mpc".format(cosmology_D_by_z(z)))
+            print("  Cosmology D(z)={0:E} Mpc".format(ps.cosmology_D_by_z(z)))
     else:
         if z > 0:
-            distance = cosmology_D_by_z(z) * 1e6
+            distance = ps.cosmology_D_by_z(z) * 1e6
             print("Fit magnitudes on z={0:F} with cosmology D(z)={1:E} pc".format(z, distance))
 
     # Time limits for models
@@ -851,7 +854,7 @@ def main():
 
     # The filter results by tshift
     if args.dtshift:
-        dtshift = str2interval(args.dtshift, llim=float("-inf"), rlim=float('inf'))
+        dtshift = ps.str2interval(args.dtshift, llim=float("-inf"), rlim=float('inf'))
     else:
         dtshift = (float("-inf"), float("inf"))
 
@@ -945,7 +948,7 @@ def main():
 
         # plot_squared_3d(None, res_sorted, path, p=('R', 'M', 'E'), is_polar=True)
 
-    best_mdl, res = first(res_sorted.items())
+    best_mdl, res = ps.first(res_sorted.items())
     # res = first(res_sorted.values())[0]
     print("Best fit model:")
     print("{}: time shift  = {:.2f}+/-{:.4f} Measure: {:.4f}".format(best_mdl, res.tshift, res.tsigma, res.measure))

@@ -3,6 +3,16 @@ import numpy as np
 
 
 def read(name, path='./', t_diff=1.005, t_beg=0.0, t_end=float('inf'), is_nfrus=True):
+    """
+    Read SED from ph-file.
+    :param name: model (file without extension)
+    :param path: the model directory
+    :param t_diff: minimum difference between subsequent time moments
+    :param t_beg: start time of spectrum
+    :param t_end: end time of spectrum
+    :param is_nfrus: Get nrus from the first data row
+    :return: SeriesSpectrum
+    """
     from pystella.rf.spectrum import SeriesSpectrum, Spectrum
 
     # read first line with frequencies

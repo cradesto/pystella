@@ -15,8 +15,10 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 
-from pystella.model.stella import Stella
-from pystella.rf import light_curve_plot as lcp
+import pystella as ps
+
+# from pystella.model.stella import Stella
+# from pystella.rf import light_curve_plot as lcp
 
 __author__ = 'bakl'
 
@@ -63,8 +65,8 @@ def make_cartoon(swd, times, vnorm, rnorm, lumnorm, is_legend, fout=None):
     time = np.ma.masked_outside(swd.Times, times[0], times[-1])
     # time = np.exp(np.linspace(np.log(times[0]), np.log(times[-1]), 50))
     for i, t in enumerate(time.compressed()):
-        fig = lcp.plot_shock_details(swd, times=[t], vnorm=vnorm, rnorm=rnorm,
-                                     lumnorm=lumnorm, is_legend=is_legend)
+        fig = ps.light_curve_plot.plot_shock_details(swd, times=[t], vnorm=vnorm, rnorm=rnorm,
+                                                     lumnorm=lumnorm, is_legend=is_legend)
         fsave = os.path.expanduser("img{0}{1:04d}.png".format(swd.Name, i))
         print("Save plot to {0} at t={1}".format(fsave, t))
         fig.savefig(fsave, bbox_inches='tight')
@@ -189,7 +191,7 @@ def main():
         name = name.replace('.swd', '')  # remove extension
 
         print("Run swd-model %s %s for %s moments" % (path, name, args.times))
-        stella = Stella(name, path=path)
+        stella = ps.Stella(name, path=path)
         swd = stella.get_swd().load()
 
         if args.is_uph:
@@ -215,8 +217,8 @@ def main():
             make_cartoon(swd, times, vnorm=args.vnorm, rnorm=args.rnorm,
                          lumnorm=args.lumnorm, is_legend=is_legend)
         else:
-            fig = lcp.plot_shock_details(swd, times=times, vnorm=args.vnorm, rnorm=args.rnorm,
-                                         lumnorm=args.lumnorm, is_legend=is_legend)
+            fig = ps.light_curve_plot.plot_shock_details(swd, times=times, vnorm=args.vnorm, rnorm=args.rnorm,
+                                                         lumnorm=args.lumnorm, is_legend=is_legend)
 
             plt.show(block=False)
             if args.is_save:

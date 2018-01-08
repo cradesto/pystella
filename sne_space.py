@@ -8,9 +8,10 @@ import sys
 
 import matplotlib.pyplot as plt
 
-from pystella.model.SneSpace import SneSpace
-from pystella.rf import light_curve_func as lcf
-from pystella.rf import light_curve_plot as lcp
+import pystella as ps
+# from pystella.model.SneSpace import SneSpace
+# from pystella.rf import light_curve_func as lcf
+# from pystella.rf import light_curve_plot as lcp
 
 __author__ = 'bakl'
 
@@ -66,7 +67,7 @@ def main():
         parser.print_help()
         sys.exit(2)
 
-    sn = SneSpace()
+    sn = ps.SneSpace()
     print("Load {0}".format(fname))
     sn.load(fname)
     print("{} is loaded.".format(sn.Name))
@@ -78,14 +79,14 @@ def main():
             path = os.getcwd()
             fname_saved = os.path.join(path, curves.Name)
             fname_saved = '{}_{}.ubv'.format(fname_saved, '-'.join(sorted(curves.BandNames)))
-        if lcf.curves_save(curves, fname_saved):
+        if ps.light_curve_func.curves_save(curves, fname_saved):
             print("Magnitudes of {} have been saved to {}".format(curves.Name, fname_saved))
         else:
             print("Error: magnitudes have not been saved [{}]".format(fname_saved))
         sys.exit(3)
 
     # plotting
-    ax = lcp.curves_plot(curves, title='Photometry', is_line=False)
+    ax = ps.light_curve_plot.curves_plot(curves, title='Photometry', is_line=False)
 
     # Spectra
     if False:
@@ -95,7 +96,7 @@ def main():
         mu = 1.
         # mu = (10./sn.lumdist)**2
         curves_spectra = serial_spec.flux_to_curves(curves.BandNames, d=None, magnification=mu)
-        lcp.curves_plot(curves_spectra, title='From spectra', is_line=False)
+        ps.light_curve_plot.curves_plot(curves_spectra, title='From spectra', is_line=False)
         # lcp.curves_plot(curves_spectra, ax=ax, is_line=True)
 
     plt.show()

@@ -4,9 +4,9 @@ from os.path import join, dirname, abspath
 import matplotlib.pyplot as plt
 import numpy as np
 
+import pystella as ps
 import pystella.rf.light_curve_func as lcf
 import pystella.rf.light_curve_plot as lcp
-from pystella.model.stella import Stella
 
 __author__ = 'bakl'
 
@@ -17,7 +17,7 @@ class TestStellaLightCurves(unittest.TestCase):
         path = join(dirname(abspath(__file__)), 'data', 'stella')
         bands = ('U', 'B', 'V')
 
-        mdl = Stella(name, path=path)
+        mdl = ps.Stella(name, path=path)
         curves = mdl.curves(bands)
 
         self.assertTrue((np.array(sorted(curves.BandNames) == sorted(bands))).all(),
@@ -31,7 +31,7 @@ class TestStellaLightCurves(unittest.TestCase):
         path = join(dirname(abspath(__file__)), 'data', 'stella')
         bands = ('U', 'B', 'V', 'R', 'I')
 
-        mdl = Stella(name, path=path)
+        mdl = ps.Stella(name, path=path)
         curves = mdl.curves(bands)
 
         tt = mdl.get_tt().read()
@@ -55,12 +55,17 @@ class TestStellaLightCurves(unittest.TestCase):
         ebv = 1
 
         # mags reddening
-        cs = lcf.curves_compute(name, path, bands)
-        curves_mags = lcf.curves_reddening(cs, ebv=ebv)
+        cs = lcf.curves_compute(name, path, bands, t_diff=1.05)
 
-        mdl = Stella(name, path=path)
-        curves = mdl.curves(bands, ebv=ebv)  # best SML
-        # curves = mdl.curves(bands, ebv=ebv, law=LawFitz, mode=ReddeningLaw.SMC)  # best SML
+        mdl = ps.Stella(name, path=path)
+        is_SMC = False
+        if is_SMC:
+            curves_mags = lcf.curves_reddening(cs, ebv=ebv, law='Rv2.1')
+            curves = mdl.curves(bands, ebv=ebv, t_diff=1.05, mode=ps.ReddeningLaw.SMC)  # best SMC MW
+        else:
+            curves_mags = lcf.curves_reddening(cs, ebv=ebv, law=ps.extinction.law_default)
+            curves = mdl.curves(bands, ebv=ebv, t_diff=1.05,  mode=ps.ReddeningLaw.MW)
+        # curves = mdl.curves(bands, ebv=ebv, law=LawFitz, mode=ReddeningLaw.SMC)  # best SMC
 
         self.assertTrue((np.array(sorted(curves.BandNames) == sorted(curves_mags.BandNames))).all(),
                         msg="Error for the initial band names [%s] "

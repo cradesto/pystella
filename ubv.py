@@ -13,15 +13,9 @@ import math
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 
-import pystella.util.callback as cb
-from pystella import velocity as vel
-from pystella.model.stella import Stella
-from pystella.rf import band
-from pystella.rf import light_curve_func as lcf
-from pystella.rf import light_curve_plot as lcp
-from pystella.util.path_misc import get_model_names
-from pystella.util.phys_var import cosmology_D_by_z
-from pystella.util.string_misc import str2interval
+import pystella as ps
+from pystella import light_curve_func as lcf
+from pystella import light_curve_plot as lcp
 
 __author__ = 'bakl'
 
@@ -121,7 +115,7 @@ def plot_all(models_vels, models_dic, bnames, d=10, call=None, **kwargs):
 
     # plot velocities
     if is_vel:
-        vel.plot_vels_models(axVel, models_vels, xlim=axUbv.get_xlim())
+        ps.vel.plot_vels_models(axVel, models_vels, xlim=axUbv.get_xlim())
         # vel.plot_vels_sn87a(axVel, z=1.49)
         axVel.legend(loc=legloc)
         # axVel.legend(prop={'size': 8}, loc=legloc)
@@ -166,7 +160,7 @@ def usage():
     print("  -l  write plot label")
     print("  -h  print usage")
     print("   --- ")
-    band.print_bands()
+    ps.band.print_bands()
 
 
 def main(name='', model_ext='.ph'):
@@ -200,7 +194,7 @@ def main(name='', model_ext='.ph'):
     # bshift = None
     bshift = None
 
-    band.Band.load_settings()
+    ps.band.Band.load_settings()
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hqtb:c:d:e:g:i:l:o:m:p:v:s:w:x:y:z:",
@@ -239,15 +233,15 @@ def main(name='', model_ext='.ph'):
                         bshift[bname] = float(shift)
                 else:
                     bname = b
-                if not band.band_is_exist(bname):
+                if not ps.band.band_is_exist(bname):
                     print('No such band: ' + bname)
                     sys.exit(2)
                 bnames.append(bname)
             continue
         if opt == '-c':
-            c = cb.lc_wrapper(str(arg))
+            c = ps.cb.lc_wrapper(str(arg))
             if callback is not None:
-                c = cb.CallBackArray((callback, c))
+                c = ps.cb.CallBackArray((callback, c))
             callback = c
             continue
         if opt == '--dt':
@@ -293,10 +287,10 @@ def main(name='', model_ext='.ph'):
             label = str.strip(arg)
             continue
         if opt == '-x':
-            xlim = str2interval(arg, llim=0, rlim=float('inf'))
+            xlim = ps.str2interval(arg, llim=0, rlim=float('inf'))
             continue
         if opt == '-y':
-            ylim = str2interval(arg, llim=-10, rlim=-22)
+            ylim = ps.str2interval(arg, llim=-10, rlim=-22)
             continue
         if opt == '-p':
             path = os.path.expanduser(str(arg))
@@ -319,19 +313,19 @@ def main(name='', model_ext='.ph'):
         names.append(name)
 
     if len(names) == 0:  # run for all files in the path
-        names = get_model_names(path, model_ext)
+        names = ps.path.get_model_names(path, model_ext)
 
     # Set distance and redshift
     if distance is None:
         if z > 0:
-            distance = cosmology_D_by_z(z) * 1e6
+            distance = ps.cosmology_D_by_z(z) * 1e6
             print("Plot magnitudes on z={0:F} with D(z)={1:E} pc (cosmological)".format(z, distance))
         else:
             distance = 10  # pc
     else:
         print("Plot magnitudes on z={0:F} at distance={1:E}".format(z, distance))
         if z > 0:
-            print("  Cosmology D(z)={0:E} Mpc".format(cosmology_D_by_z(z)))
+            print("  Cosmology D(z)={0:E} Mpc".format(ps.cosmology_D_by_z(z)))
 
     # Run models
     if len(names) > 0:
@@ -349,16 +343,16 @@ def main(name='', model_ext='.ph'):
                 if is_extinction:
                     curves = lcf.curves_reddening(curves, ebv=e, z=z)
             else:
-                mdl = Stella(name, path=path)
+                mdl = ps.Stella(name, path=path)
                 curves = mdl.curves(bnames, z=z, distance=distance, ebv=e, magnification=magnification)
 
             models_mags[name] = curves
 
             if vel_mode is not None:
                 if vel_mode == 'ttres':
-                    vels = vel.compute_vel_res_tt(name, path, z=z)
+                    vels = ps.vel.compute_vel_res_tt(name, path, z=z)
                 elif vel_mode == 'swd':
-                    vels = vel.compute_vel_swd(name, path, z=z)
+                    vels = ps.vel.compute_vel_swd(name, path, z=z)
                 else:
                     raise ValueError('This mode [{}] for velocity is not supported'.format(vel_mode))
 
@@ -408,7 +402,7 @@ def main(name='', model_ext='.ph'):
                                is_axes_right=is_axes_right, is_grid=is_grid, legloc=1, fontsize=14,
                                lines=linestyles)
                 # lcp.setFigMarkersBW(fig)
-                lcp.setFigLinesBW(fig)
+                # lcp.setFigLinesBW(fig)
 
             if is_save_plot:
                 if len(fsave) == 0:
