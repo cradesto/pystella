@@ -239,7 +239,7 @@ class PreSN(object):
         elements = kwargs.get('elements', eve_elements)
         lntypes = kwargs.get('lntypes', eve_lntypes)
         colors = kwargs.get('colors', eve_colors)
-        loc = kwargs.get('leg_loc', 3)
+        loc = kwargs.get('leg_loc', 8)
         leg_ncol = kwargs.get('leg_ncol', 4)
         lw = kwargs.get('lw', 2)
         marker = kwargs.get('marker', None)
@@ -309,7 +309,7 @@ class PreSN(object):
 
         if is_new_plot:
             ax.set_ylabel(r'$X_i$')
-            ax.legend(prop={'size': 9}, loc=loc, ncol=leg_ncol, fancybox=False, frameon=True, markerscale=0)
+            ax.legend(prop={'size': 9}, loc=loc, ncol=leg_ncol, fancybox=False, frameon=False, markerscale=0)
             # ax.legend(prop={'size': 9}, loc=3, ncol=4, fancybox=True, shadow=True)
             # plt.grid()
             # plt.show()
@@ -321,6 +321,8 @@ class PreSN(object):
         lw = kwargs.get('lw', 2)
         ls = kwargs.get('ls', '-')
         color = kwargs.get('color', 'black')
+        marker = kwargs.get('marker', None)
+        markersize = kwargs.get('markersize', 4)
 
         is_new_plot = ax is None
         # setup figure
@@ -348,7 +350,7 @@ class PreSN(object):
             ax.set_xlabel(r'R [cm]')
 
         y = self.rho
-        ax.semilogy(x, y, color=color, ls=ls, linewidth=lw)
+        ax.semilogy(x, y, color=color, ls=ls, linewidth=lw, marker=marker, markersize=markersize)
 
         if not is_x_lim and len(x) > 0:
             xlim = [np.min(x), np.max(x)]

@@ -47,7 +47,8 @@ def get_parser():
     parser.add_argument('-x',
                         required=False,
                         dest="x",
-                        metavar="<r OR m OR lgR>",
+                        default='m',
+                        metavar="<m OR r OR lgR>",
                         help="Setup abscissa: Rho(r) or Rho(m)")
 
     parser.add_argument('-s', '--save',
@@ -170,7 +171,7 @@ def main():
         ax2.legend(handles=handles_nm, loc=4, fancybox=False, frameon=False)
     # plt.gca().add_artist(lgd)
 
-    plt.grid()
+    # plt.grid()
     plt.show()
 
     if args.is_save_plot:

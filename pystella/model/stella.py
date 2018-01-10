@@ -67,10 +67,12 @@ class Stella:
         # fname = os.path.join(self.path, self.name + '.flx')
         # return os.path.isfile(fname)
 
-    def get_eve(self, name, path=None):
+    def get_eve(self, name=None, path=None):
         from pystella.model import sn_eve
+        if name is None:
+            name = self.Name
         if path is None:
-            path = self.path
+            path = self.Path
         eve = sn_eve.load_rho(os.path.join(path, name + '.rho'))
         return eve
 

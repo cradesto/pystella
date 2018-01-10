@@ -14,7 +14,7 @@ from . import fit
 from .util import callback as cb
 from .util import phys_var as phys
 from .util import path_misc as path
-
+from .model import sn_eve as eve
 
 # classes
 from .model.stella import Stella
