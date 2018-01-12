@@ -47,15 +47,26 @@ also the same could be done with key '-p' without model's name.
 
 #### Install:
 ```bash
-
 >>> git clone https://github.com/baklanovp/pystella.git
-
 >>> cd pystella
+```
+and work
 
+```bash
+>>> ./pystella.py
+```
+OR
+```bash
 >>> ./ubv.py [params]
 ```
 
-### Install the libraries
+### Requirements
+
+```bash
+>>> pip3 install -r requirements.txt
+```
+
+OR manually
 
 To plot light curves [ubv] and shock wave details [swd]
 ```bash
@@ -65,7 +76,6 @@ To plot light curves [ubv] and shock wave details [swd]
 ??? apt-get install python3-tk
 ```
 
-
 To fit observations  
 ```bash
 >>> apt-get install -y python3-pip
@@ -74,6 +84,18 @@ To fit observations
 >>> pip3 install gptools
 >>> pip3 install corner
 ```
+
+## Tests
+
+```bash
+>>> python3 -m unittest discover ./tests/
+```
+
+Testing can take a long time.
+
+Some tests plot the comparison charts, they must be closed to continue the work.
+It is not necessary that all tests show OK. Some of them are non-working yet.
+
 
 Acknowledgments:
     Some of the passbands was taken from  SNPY (see http://csp.obs.carnegiescience.edu/data/snpy/) and
