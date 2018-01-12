@@ -20,7 +20,7 @@ lc_lntypes = {'U': "-", 'B': "-", 'V': "-", 'R': "-", 'I': "-",
               'u': "--", 'g': "--", 'r': "--", 'i': "--", 'z': "--",
               'bol': '-'}
 
-lines = ['--', '-.', '-', ':']
+linestyles = ('-', '--', '-.', ':')
 
 markers = {u'D': u'diamond', 6: u'caretup', u's': u'square', u'x': u'x',
            5: u'caretright', u'^': u'triangle_up', u'd': u'thin_diamond', u'h': u'hexagon1',
@@ -43,6 +43,7 @@ def lbl(b, band_shift):
 
 def plot_ubv_models(ax, models_dic, bands, **kwargs):
     # bshift=None, xlim=None, ylim=None, colors=lc_colors, is_time_points=False):
+    global linestyles
     xlim = kwargs.get('xlim', None)
     ylim = kwargs.get('ylim', None)
     bshift = kwargs.get('bshift', None)
@@ -52,7 +53,8 @@ def plot_ubv_models(ax, models_dic, bands, **kwargs):
     markersize = kwargs.get('markersize', 6)
     is_time_points = kwargs.get('is_time_points', False)
     is_dashes = kwargs.get('is_dashes', False)
-    linestyles = kwargs.get('lines', ['-'])
+    line_styles = kwargs.get('linestyles', linestyles)
+#    linestyles = kwargs.get('linestyles', ['-'])
 
     is_compute_x_lim = xlim is None
     is_compute_y_lim = ylim is None
@@ -68,17 +70,17 @@ def plot_ubv_models(ax, models_dic, bands, **kwargs):
     x_max = []
     y_mid = []
     lc_min = {}
-    line_cycle = cycle(linestyles)
+    line_cycle = cycle(line_styles)
     dashes = get_dashes(len(bands) + 1, scale=2)
 
     for mname, mdic in models_dic.items():
         mi += 1
+        ls = next(line_cycle)
         for ib, bname in enumerate(bands):
             lc = mdic[bname]
             x = lc.Time
             y = lc.Mag + band_shift[bname]
             bcolor = colors[bname]
-            ls = next(line_cycle)
             dash = dashes[ib]
             if len(models_dic) == 1:
                 if is_dashes:
@@ -87,7 +89,7 @@ def plot_ubv_models(ax, models_dic, bands, **kwargs):
                 else:
                     ax.plot(x, y, label='%s  %s' % (lbl(bname, band_shift), mname), color=bcolor, ls=ls, linewidth=lw)
             # ax.plot(x, y, label='%s  %s' % (lbl(bname, band_shift), mname), color=bcolor, ls=ls1, linewidth=lw)
-            elif len(models_dic) <= len(lines):
+            elif len(models_dic) <= len(line_styles):
                 ax.plot(x, y, label='%s  %s' % (lbl(bname, band_shift), mname), color=bcolor, ls=ls,
                         linewidth=lw)
             else:
@@ -154,7 +156,7 @@ def plot_models_band(ax, models_dic, bname, **kwargs):
                         markersize=4, ls=":", linewidth=lw)
             else:
                 ax.plot(x, y, label='%s  %s' % (bname, mname), dashes=next(dashes_cycler), linewidth=lw)
-                # ax.plot(x, y, label='%s  %s' % (bname, mname), ls=lines[mi % (len(lines) - 1)], linewidth=lw)
+                # ax.plot(x, y, label='%s  %s' % (bname, mname), ls=line_styles[mi % (len(line_styles) - 1)], linewidth=lw)
 
         idx = np.argmin(y)
         lc_min[bname] = (x[idx], y[idx])

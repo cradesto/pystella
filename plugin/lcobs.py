@@ -28,7 +28,7 @@ def plot(ax, dic=None, mag_lim=30.):
     jd_shift = dic.get('jd_shift', 0.)
     mshift = dic.get('mshift', 0.)
     marker = dic.get('marker', 'o')
-    markersize = dic.get('markersize', 9)
+    markersize = dic.get('markersize', 5)
     bnames = dic.get('bnames', None)
     bcolors = dic.get('bcolors', band.bands_colors())
 
