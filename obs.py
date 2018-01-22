@@ -176,7 +176,8 @@ def main():
         usage()
         sys.exit(2)
 
-    bnames = ['U', 'B', 'V', 'R', "I"]
+    bnames = None
+    # bnames = ['U', 'B', 'V', 'R', "I"]
     # bands = ['U', 'B', 'V', 'R', "I", 'UVM2', "UVW1", "UVW2", 'g', "r", "i"]
 
     for opt, arg in opts:
