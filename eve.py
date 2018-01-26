@@ -31,7 +31,7 @@ logger.setLevel(logging.INFO)
 markers = {u'x': u'x', u'd': u'thin_diamond',
            u'+': u'plus', u'*': u'star', u'o': u'circle', u'v': u'triangle_down', u'<': u'triangle_left'}
 markers_style = list(markers.keys())
-lines_style = lcp.lines
+lines_style = lcp.linestyles
 
 
 def get_parser():
@@ -84,6 +84,11 @@ def get_parser():
                         default='H-He-C-O-Si-Fe-Ni-Ni56',
                         dest="elements",
                         help="Elements directory. \n   Available: {0}".format('-'.join(sneve.eve_elements)))
+    parser.add_argument('-w', '--write',
+                        action='store_const',
+                        const=True,
+                        dest="is_write",
+                        help="To write the data to txt-file.")
     return parser
 
 
@@ -141,6 +146,18 @@ def main():
 
         marker = next(markers_cycler)
         ls = next(lines_cycler)
+
+        if args.is_write:
+            fname = os.path.join(path, name)
+            f = fname+'.eve.abn'
+            if eve.write_abn(f):
+                print(" abn have been saved to {}".format(f))
+            else:
+                print("Error with abn saving to {}".format(f))
+            if eve.write_hyd(f):
+                print(" hyd have been saved to {}".format(f))
+            else:
+                print("Error with hyd saving to {}".format(f))
 
         if args.is_chem:
             # print "Plot eve-model %s" % name

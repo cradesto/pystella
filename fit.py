@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 """
 This program finds the time offset that minimizes chi-square.
-
-
 """
 import argparse
 import logging
@@ -17,22 +15,6 @@ import numpy as np
 import scipy as sci
 
 import pystella as ps
-
-# import pystella.util.callback as cb
-# from pystella import velocity
-# from pystella.fit.fit_mcmc import FitLcMcmc
-# from pystella.fit.fit_mpfit import FitMPFit
-# from pystella.model.stella import Stella
-# from pystella.rf import band
-# from pystella.rf import light_curve_func as lcf
-# from pystella.rf.band import band_is_exist
-# from pystella.rf.lc import SetLightCurve
-# from pystella.rf.ts import SetTimeSeries
-# from pystella.util.arr_dict import first
-# from pystella.util.path_misc import get_model_names
-# from pystella.util.phys_var import cosmology_D_by_z
-# from pystella.util.string_misc import str2interval
-# from pystella.velocity import VelocityCurve, SetVelocityCurve
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -138,7 +120,7 @@ def get_parser():
                         required=False,
                         type=str,
                         default=None,
-                        dest="times",
+                        dest="tlim",
                         help="The range of fitting in model LC. Default: None (all points). Format: {0}".format('2:50'))
     parser.add_argument('-z',
                         required=False,
@@ -164,9 +146,8 @@ def plot_curves(curves_o, res_models, res_sorted, **kwargs):
     from matplotlib import pyplot as plt
 
     font_size = kwargs.get('font_size', 8)
-
-    xlim = None
-    ylim = None
+    xlim = kwargs.get('xlim', None)
+    ylim = kwargs.get('ylim', None)
     num = len(res_sorted)
     nrow = int(num / 2.1) + 1
     ncol = 2 if num > 1 else 1
@@ -182,10 +163,13 @@ def plot_curves(curves_o, res_models, res_sorted, **kwargs):
         tshift_best = v.tshift
         curves = res_models[k]
         lcp.curves_plot(curves, ax=ax, figsize=(12, 8), linewidth=1, is_legend=False)
-        xlim = ax.get_xlim()
+        if xlim is None:
+            xlim = ax.get_xlim()
+        else:
+            ax.set_xlim(xlim)
         lt = {lc.Band.Name: 'o' for lc in curves_o}
         curves_o.set_tshift(tshift0 + tshift_best)
-        lcp.curves_plot(curves_o, ax, xlim=xlim, lt=lt, markersize=2, is_legend=False)
+        lcp.curves_plot(curves_o, ax, xlim=xlim, lt=lt, markersize=4, is_legend=False)
 
         ax.text(0.99, 0.94, k, horizontalalignment='right', transform=ax.transAxes)
         ax.text(0.98, 0.85, "dt={:.2f}".format(tshift_best), horizontalalignment='right', transform=ax.transAxes)
@@ -223,8 +207,8 @@ def plot_curves_vel(curves_o, vels_o, res_models, res_sorted, vels_m, **kwargs):
     font_size = kwargs.get('font_size', 10)
     linewidth = kwargs.get('linewidth', 2.0)
     markersize = kwargs.get('markersize', 5)
+    xlim = kwargs.get('xlim', None)
 
-    xlim = None
     ylim = None
     num = len(res_sorted)
     nrow = int(num / 2.1) + 1
@@ -256,7 +240,9 @@ def plot_curves_vel(curves_o, vels_o, res_models, res_sorted, vels_m, **kwargs):
             lcp.curves_plot(curves, ax=axUbv, figsize=(12, 8), linewidth=1, is_legend=False)
             lt = {lc.Band.Name: 'o' for lc in curves_o}
             curves_o.set_tshift(tshift_lc + tshift_best)
-            lcp.curves_plot(curves_o, axUbv, xlim=axUbv.get_xlim(), lt=lt, markersize=2, is_legend=False)
+            if xlim is None:
+                xlim = axUbv.get_xlim()
+            lcp.curves_plot(curves_o, axUbv, xlim=xlim, lt=lt, markersize=2, is_legend=False)
             # legend
             axUbv.legend(curves.BandNames, loc='lower right', frameon=False, ncol=min(5, len(curves.BandNames)),
                          fontsize='small', borderpad=1)
@@ -670,7 +656,7 @@ def plot_squared_3d(ax, res_sorted, path='./', p=('R', 'M', 'E'), is_rbf=True, *
         plt.show()
 
 
-def fit_mfl(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, times, Vnorm=1e8):
+def fit_mfl(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, tlim, Vnorm=1e8):
     distance = args.distance  # pc
     z = args.redshift
     # Set distance and redshift
@@ -685,14 +671,14 @@ def fit_mfl(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, times, V
     if curves_o is not None:
         if False:
             curves_m = ps.light_curve_func.curves_compute(name, path, bnames, z=z, distance=distance,
-                                                          t_beg=times[0], t_end=times[1], t_diff=t_diff)
+                                                          t_beg=tlim[0], t_end=tlim[1], t_diff=t_diff)
             if args.color_excess:
                 curves_m = ps.light_curve_func.curves_reddening(curves_m, ebv=args.color_excess, z=z,
                                                                 is_info=args.is_not_quiet)
         else:
             mdl = ps.Stella(name, path=path)
             curves_m = mdl.curves(bnames, z=z, distance=distance, ebv=args.color_excess,
-                                  t_beg=times[0], t_end=times[1], t_diff=t_diff)
+                                  t_beg=tlim[0], t_end=tlim[1], t_diff=t_diff)
 
         for lc in curves_m:
             tss_m.add(lc)
@@ -841,11 +827,11 @@ def main():
             print("Fit magnitudes on z={0:F} with cosmology D(z)={1:E} pc".format(z, distance))
 
     # Time limits for models
-    times = (0, float('inf'))
+    tlim = (0, float('inf'))
 
-    if args.times:
-        times = list(map(float, args.times.split(':')))
-    print('Time limits for models: {}'.format(':'.join(map(str, times))))
+    if args.tlim:
+        tlim = list(map(float, args.tlim.split(':')))
+    print('Time limits for models: {}'.format(':'.join(map(str, tlim))))
 
     # The fit engine
     fitter = engines(args.engine)
@@ -865,14 +851,14 @@ def main():
     if len(names) == 1:
         name = names[0]
         if args.is_not_quiet:
-            if times is not None:
-                print("Fitting for model %s %s for %s moments" % (path, name, times))
+            if tlim is not None:
+                print("Fitting for model %s %s for %s moments" % (path, name, tlim))
             else:
                 print("Fitting for model %s %s " % (path, name))
         # curves_m = lcf.curves_compute(name, path, bnames, z=args.redshift, distance=args.distance,
-        #                               t_beg=times[0], t_end=times[1], t_diff=t_diff)
+        #                               t_beg=tlim[0], t_end=tlim[1], t_diff=t_diff)
         # res = fitter.fit_curves(curves_o, curves_m)
-        curves_m, vel_m, res = fit_mfl(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, times)
+        curves_m, vel_m, res = fit_mfl(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, tlim)
 
         print("{}: time shift  = {:.2f}+/-{:.4f} Measure: {:.4f}".format(name, res.tshift, res.tsigma, res.measure))
         # best_tshift = res.tshift
@@ -886,7 +872,7 @@ def main():
 
             with futures.ProcessPoolExecutor(max_workers=args.nodes) as executor:
                 future_to_name = {
-                    executor.submit(fit_mfl, args, curves_o, vels_o, bnames, fitter, n, path, t_diff, times):
+                    executor.submit(fit_mfl, args, curves_o, vels_o, bnames, fitter, n, path, t_diff, tlim):
                         n for n in names
                 }
                 i = 0
@@ -913,7 +899,7 @@ def main():
                 else:
                     sys.stdout.write(u"\u001b[1000D" + txt)
                     sys.stdout.flush()
-                curves_m, vel_m, res = fit_mfl(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, times)
+                curves_m, vel_m, res = fit_mfl(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, tlim)
                 res_models[name] = curves_m
                 vels_m[name] = vel_m
                 res_chi[name] = res
@@ -964,7 +950,7 @@ def main():
         # vel_o.tshift = best_tshift
         fig = plot_curves_vel(curves_o, vels_o, res_models, res_sorted, vels_m)
     else:
-        fig = plot_curves(curves_o, res_models, res_sorted)
+        fig = plot_curves(curves_o, res_models, res_sorted, xlim=tlim)
 
     if args.save_file is not None:
         fsave = args.save_file

@@ -208,7 +208,7 @@ class PreSN(object):
                 f.write(' %4d %15.7e %15.7e %15.7e %15.7e %15.7e  %8.1e  %8.1e\n' % _)
         return os.path.isfile(fname)
 
-    def write_abn(self, fname):
+    def write_abn(self, fname, is_header=False, is_dum=False):
         """
         Write data to file in abn format.
         See code readheger.trf:
@@ -226,17 +226,28 @@ class PreSN(object):
         logger.info(' Write abn-data to %s' % fname)
         with open(fname, 'w') as f:
             # f.write('%d\n' % self.nzon_abn)
+            if is_header:
+                if is_dum:
+                    s = '%4s  %10s %10s %10s' % ('# zn', ' ', ' ', ' ')
+                else:
+                    s = '%4s' % '# zn'
+                for ename in PreSN.presn_elements:
+                    s += ' %10s' % ename
+                f.write('%s\n' % s)
             for i in range(self.nzon):
-                s = '%4d  %10.3e %10.3e %10.3e' % (i + 1, dum, dum, dum)
+                if is_dum:
+                    s = '%4d  %10.3e %10.3e %10.3e' % (i + 1, dum, dum, dum)
+                else:
+                    s = '%4d' % (i + 1)
                 for ename in PreSN.presn_elements:
                     s += ' %10.3e' % self.el(ename)[i]
                 f.write('%s\n' % s)
         return os.path.isfile(fname)
 
-    def plot_chem(self, x='m', ax=None, xlim=None, ylim=None, **kwargs):
+    def plot_chem(self, x='m', elements=eve_elements, ax=None, xlim=None, ylim=None, **kwargs):
         if not is_matplotlib:
             return
-        elements = kwargs.get('elements', eve_elements)
+        # elements = kwargs.get('elements', eve_elements)
         lntypes = kwargs.get('lntypes', eve_lntypes)
         colors = kwargs.get('colors', eve_colors)
         loc = kwargs.get('leg_loc', 8)
