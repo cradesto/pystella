@@ -151,6 +151,7 @@ def table2curves(name, tbl, bands=None, colt=('time', 'JD', 'MJD'), is_filter_ze
         # filter
         if is_filter_zero:
             mask = np.logical_and(mask, mag != 0)  # filter out values not equal 0
+        mask = np.logical_and(mask, mag < 99)
 
         t = time[mask]
         m = mag[mask]

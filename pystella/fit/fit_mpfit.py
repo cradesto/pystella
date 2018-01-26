@@ -122,15 +122,24 @@ class FitMPFit(FitLc):
             for ts_m in tss_m:
                 ts_o = tss_o[ts_m.Name]
                 ts_o.tshift = p[0]
-                time_o = ts_o.Time
                 # model interpolation
+                # check = np.where((ts_o.Time > min(ts_m.Time)) & (ts_o.Time < max(ts_m.Time)))
+                # check = range(1, len(ts_o.Time))
+                # time_o = ts_o.Time[check]
+                # V_o = ts_o.V[check]
+                time_o = ts_o.Time
+                V_o = ts_o.V
+
                 m = np.interp(time_o, ts_m.Time, ts_m.V)  # One-dimensional linear interpolation.
-                w = np.ones(len(m))
+                # w = np.ones(len(m))
+                # w = np.exp(-2*len(check)/len(ts_o.Time)) * np.abs(1. - A * (time_o - min(time_o)) / (max(time_o) - min(time_o)))  # weight
                 w = np.abs(1. - A * (time_o - min(time_o)) / (max(time_o) - min(time_o)))  # weight
                 if ts_o.IsErr:
-                    res = np.abs((ts_o.V - m) / (abs(m)*E + ts_o.Err)) * w
+                    # err_o = ts_o.Err[check]
+                    # res = np.abs((V_o - m) / (abs(m)*E + err_o)) * w
+                    res = np.abs((V_o - m) / (abs(m)*E + ts_o.Err)) * w
                 else:
-                    res = np.abs(ts_o.V - m) * w
+                    res = np.abs(V_o - m) * w
                 total = np.append(total, res)
             return 0, total
 

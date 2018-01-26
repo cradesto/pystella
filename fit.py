@@ -72,9 +72,10 @@ def get_parser():
                         dest="color_excess",
                         help="Color excess E(B-V) is used to compute extinction via  A_nu = R_nu*E(B-V).  Default: 0")
     parser.add_argument('-i', '--input',
+                        nargs='+',
                         required=False,
                         dest="input",
-                        help="Model name, example: cat_R450_M15_Ni007")
+                        help="Model name, example: cat_R450_M15_Ni007 OR set of names: model1  model2")
     parser.add_argument('-p', '--path',
                         required=False,
                         type=str,
@@ -144,14 +145,18 @@ def engines(nm=None):
 def plot_curves(curves_o, res_models, res_sorted, **kwargs):
     from pystella.rf import light_curve_plot as lcp
     from matplotlib import pyplot as plt
+    import math
 
-    font_size = kwargs.get('font_size', 8)
+    font_size = kwargs.get('font_size', 10)
     xlim = kwargs.get('xlim', None)
     ylim = kwargs.get('ylim', None)
     num = len(res_sorted)
-    nrow = int(num / 2.1) + 1
-    ncol = 2 if num > 1 else 1
-    fig = plt.figure(figsize=(12, nrow * 4))
+    # nrow = int(num / 2.1) + 1
+    # ncol = 2 if num > 1 else 1
+    ncol = int(np.sqrt(num))  # 2 if num > 1 else 1
+    nrow = math.ceil(num / ncol)
+    # fig = plt.figure(figsize=(12, nrow * 4))
+    fig = plt.figure(figsize=(min(ncol, 2)*4, min(nrow, 2) * 4))
     plt.matplotlib.rcParams.update({'font.size': font_size})
 
     tshift0 = ps.first(curves_o).tshift
@@ -163,7 +168,7 @@ def plot_curves(curves_o, res_models, res_sorted, **kwargs):
         tshift_best = v.tshift
         curves = res_models[k]
         lcp.curves_plot(curves, ax=ax, figsize=(12, 8), linewidth=1, is_legend=False)
-        if xlim is None:
+        if xlim is None or xlim[1] == float('inf'):
             xlim = ax.get_xlim()
         else:
             ax.set_xlim(xlim)
@@ -184,11 +189,12 @@ def plot_curves(curves_o, res_models, res_sorted, **kwargs):
             # ax.set_ylabel('')
             # ax.set_yticklabels([])
             # ax2.set_ylabel('Magnitude')
-        else:
+        elif i % ncol == 1:
             ax.yaxis.tick_left()
             ax.yaxis.set_label_position("left")
-            # ax.set_ylabel('Magnitude')
-        ax.yaxis.set_ticks_position('both')
+            ax.set_ylabel('Magnitude')
+        else:
+            ax.yaxis.set_ticks_position('both')
         # legend
         ax.legend(curves.BandNames, loc='lower right', frameon=False, ncol=min(5, len(curves.BandNames)),
                   fontsize='small', borderpad=1)
@@ -746,22 +752,21 @@ def main():
         path, name = os.path.split(unknownargs[0])
         path = os.path.expanduser(path)
         name = name.replace(model_ext, '')
+        names.append(name)
     else:
         if args.path:
             path = os.path.expanduser(args.path)
         else:
             path = os.getcwd()
         if args.input is not None:
-            name = os.path.splitext(os.path.basename(args.input))[0]  # remove extension
+            names = [os.path.splitext(os.path.basename(nm))[0] for nm in args.input]  # remove extension
 
-    # if len(unknownargs) == 0:
-    #     parser.print_help()
-    #     sys.exit(2)
-
-    if name is None:
+    if len(names) == 0:
         names = ps.get_model_names(path, model_ext)  # run for all files in the path
-    else:
-        names.append(name)
+
+    if len(names) == 0:
+        parser.print_help()
+        sys.exit(2)
 
     # Set band names
     bnames = []
@@ -962,7 +967,7 @@ def main():
         fig.savefig(fsave, bbox_inches='tight')
     else:
         from matplotlib import pyplot as plt
-        plt.subplots_adjust(left=0.07, right=0.96, top=0.97, bottom=0.06)
+        # plt.subplots_adjust(left=0.07, right=0.96, top=0.97, bottom=0.06)
         plt.show()
 
 
