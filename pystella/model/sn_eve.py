@@ -331,6 +331,7 @@ class PreSN(object):
             return
         lw = kwargs.get('lw', 2)
         ls = kwargs.get('ls', '-')
+        label = kwargs.get('label', '')
         color = kwargs.get('color', 'black')
         marker = kwargs.get('marker', None)
         markersize = kwargs.get('markersize', 4)
@@ -346,31 +347,34 @@ class PreSN(object):
             ax = fig.add_subplot(gs1[0, 0])
             ax.set_ylabel(r'$\rho, [g/cm^3]$ ')
 
+            if x == 'r':
+                ax.set_xlabel(r'R [cm]')
+            elif x == 'm':
+                ax.set_xlabel(r'M [$M_\odot$]')
+            else:
+                ax.set_xscale('log')
+                ax.set_xlabel(r'R [cm]')
+
         is_x_lim = xlim is not None
         is_y_lim = ylim is not None
 
         if x == 'r':
-            x = self.r
-            ax.set_xlabel(r'R [cm]')
+            xi = self.r
         elif x == 'm':
-            x = self.m / phys.M_sun
-            ax.set_xlabel(r'M [$M_\odot$]')
+            xi = self.m / phys.M_sun
         else:
-            x = self.r
-            ax.set_xscale('log')
-            ax.set_xlabel(r'R [cm]')
+            xi = self.r
 
         y = self.rho
-        ax.semilogy(x, y, color=color, ls=ls, linewidth=lw, marker=marker, markersize=markersize)
-
-        if not is_x_lim and len(x) > 0:
-            xlim = [np.min(x), np.max(x)]
-        if not is_y_lim and len(y) > 0:
-            ylim = [np.min(y), np.max(y)]
+        ax.semilogy(xi, y, color=color, ls=ls, linewidth=lw, marker=marker, markersize=markersize, label=label)
 
         if is_new_plot:
-            ax.set_xlim(xlim)
-            ax.set_ylim(ylim)
+            if not is_x_lim and len(xi) > 0:
+                xlim = [np.min(xi), np.max(xi)]
+                ax.set_xlim(xlim)
+            if not is_y_lim and len(y) > 0:
+                ylim = [np.min(y), np.max(y)]
+                ax.set_ylim(ylim)
 
         return ax
 
