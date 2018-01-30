@@ -22,7 +22,7 @@ class TestStellaTt(unittest.TestCase):
 
     def test_info_parse_print(self):
         tt_header = """
-                              <===== HYDRODYNAMIC RUN OF MODEL cat_R1000_M15_Ni007_E15.prf                                                     =====>
+                              <===== HYDRODYNAMIC RUN OF MODEL cat_R1000_M15_Ni007_E15.prf            =====>
 
                               MASS(SOLAR)=15.000       RADIUS(SOLAR)= 1000.000
                               EXPLOSION ENERGY(10**50 ERG)= 1.50000E+01
@@ -72,7 +72,7 @@ class TestStellaTt(unittest.TestCase):
         self.assertEquals(info.E, tmp, "Ebstht [%f] should be %f" % (info.E, tmp))
 
     def test_tt_vs_ph(self):
-        curves_tt = self.tt.read_curves_tt()
+        curves_tt = self.tt.read_curves()
         bands = curves_tt.BandNames
 
         serial_spec = self.stella.get_ph(t_diff=1.00001)
@@ -108,7 +108,7 @@ class TestStellaTt(unittest.TestCase):
         plt.show()
 
     def test_tt_vs_gri_vs_ph(self):
-        curves_tt = self.tt.read_curves_tt()
+        curves_tt = self.tt.read_curves()
         bands_tt = curves_tt.BandNames
 
         curves_gri = self.tt.read_curves_gri()

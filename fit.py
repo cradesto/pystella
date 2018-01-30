@@ -129,6 +129,12 @@ def get_parser():
                         default=0,
                         dest="redshift",
                         help="Redshift for the model .  Default: 0")
+    parser.add_argument('--curve-tt',
+                        action='store_const',
+                        const=True,
+                        dest="is_curve_tt",
+                        help="The curves [ UBVRI+bol] was taken from tt-file. Default: False"
+                             " IMPORTANT: distance=10 pc, z=0, E(B-V)=0")
     return parser
 
 
@@ -683,8 +689,16 @@ def fit_mfl(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, tlim, Vn
                                                                 is_info=args.is_not_quiet)
         else:
             mdl = ps.Stella(name, path=path)
-            curves_m = mdl.curves(bnames, z=z, distance=distance, ebv=args.color_excess,
-                                  t_beg=tlim[0], t_end=tlim[1], t_diff=t_diff)
+            if args.is_curve_tt:  # tt
+                print("The curves [UBVRI+bol] was taken from tt-file {}. ".format(name) +
+                      "IMPORTANT: distance: 10 pc, z=0, E(B-V) = 0")
+                curves_m = mdl.get_tt().read_curves()
+                excluded = [bn for bn in curves_m.BandNames if bn not in bnames]
+                for bn in excluded:
+                    curves_m.rm(bn)
+            else:
+                curves_m = mdl.curves(bnames, z=z, distance=distance, ebv=args.color_excess,
+                                      t_beg=tlim[0], t_end=tlim[1], t_diff=t_diff)
 
         for lc in curves_m:
             tss_m.add(lc)
@@ -735,11 +749,8 @@ def fit_mfl(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, tlim, Vn
 
 def main():
     model_ext = '.ph'
-    name = None
-    # z = 0.
-    # bnames = ['U', 'B', 'V', 'R', "I"]
     # Nbest = 5
-    Nbest = 33
+    Nbest = 15
     ps.Band.load_settings()
 
     parser = get_parser()

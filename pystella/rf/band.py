@@ -192,7 +192,17 @@ class BandUni(Band):
 
     @property
     def Norm(self):
-        return 1.
+        if False:
+            x = np.array(self.freq)
+            y = np.array(self.resp_fr)
+        else:
+            x = np.array(self.wl)
+            y = np.array(self.resp_wl)
+        # resp_b = np.ones(len(nu_b))
+        d = integralfunc(y/x, x)
+        return d
+
+        # return 1.
 
     @classmethod
     def get_bol(cls):  # todo check this filter: values less then g-u etc.

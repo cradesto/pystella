@@ -439,7 +439,7 @@ class SeriesSpectrum(object):
         times = []
         mags = []
         for k, t in enumerate(self.Time):
-            star = Star(k, self.get_spec(k))
+            star = Star(k, self.get_spec(k), is_flux_eq_luminosity=True)
             star.set_distance(d)
             star.set_redshift(z)
             star.set_magnification(magnification)

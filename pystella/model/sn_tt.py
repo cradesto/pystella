@@ -61,7 +61,7 @@ class StellaTt:
         else:
             return None
 
-    def read_curves_tt(self):
+    def read_curves(self):
         block = self.read()
         header = 'Mbol MU MB MV MI MR'.split()
         curves = SetLightCurve(self.name)

@@ -98,9 +98,9 @@ def plot_all(models_vels, models_dic, bnames, d=10, call=None, **kwargs):
     # plot callback
     if call is not None:
         if is_vel:
-            call.plot((axUbv, axVel))
+            call.plot((axUbv, axVel), dic={'bnames': bnames})
         else:
-            call.plot(axUbv)
+            call.plot(axUbv, dic={'bnames': bnames})
     # finish plot
     axUbv.set_ylabel('Magnitude')  # Magnitude  Mag
     axUbv.set_xlabel('Time since explosion [days]')
@@ -157,6 +157,7 @@ def usage():
     print("  -z <redshift>.  Default: 0")
     print("  --dt=<t_diff>  time difference between two spectra")
     print("  --curve-old  - use old procedure")
+    print("  --curve-tt  - take curves from tt-file: UBVRI+bol")
     print("  -l  write plot label")
     print("  -h  print usage")
     print("   --- ")
@@ -170,6 +171,7 @@ def main(name='', model_ext='.ph'):
     is_plot_time_points = False
     is_extinction = False
     is_curve_old = False
+    is_curve_tt = False
     is_axes_right = False
     is_grid = False
 
@@ -198,7 +200,7 @@ def main(name='', model_ext='.ph'):
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hqtb:c:d:e:g:i:l:o:m:p:v:s:w:x:y:z:",
-                                   ['dt=', 'curve-old'])
+                                   ['dt=', 'curve-old', 'curve-tt'])
     except getopt.GetoptError as err:
         print(str(err))  # will print something like "option -a not recognized"
         usage()
@@ -262,6 +264,9 @@ def main(name='', model_ext='.ph'):
             continue
         if opt == '--curve-old':
             is_curve_old = True
+            continue
+        if opt == '--curve-tt':
+            is_curve_tt = True
             continue
         if opt == '-w':
             is_save_mags = True
@@ -332,18 +337,21 @@ def main(name='', model_ext='.ph'):
         models_mags = {}  # dict((k, None) for k in names)
         models_vels = {}  # dict((k, None) for k in names)
         i = 0
-        if is_curve_old:  # old
-            print("Use old proc for Stella magnitudes")
 
         for name in names:
             i += 1
-            if is_curve_old:  # old
+            mdl = ps.Stella(name, path=path)
+
+            if is_curve_tt:  # tt
+                print("The curves [UBVRI+bol] was taken from tt-file. IMPORTANT: distance: 10 pc, z=0, E(B-V) = 0")
+                curves = mdl.get_tt().read_curves()
+            elif is_curve_old:  # old
+                print("Use old proc for Stella magnitudes")
                 curves = lcf.curves_compute(name, path, bnames, z=z, distance=distance,
                                             magnification=magnification, t_diff=t_diff)
                 if is_extinction:
                     curves = lcf.curves_reddening(curves, ebv=e, z=z)
             else:
-                mdl = ps.Stella(name, path=path)
                 curves = mdl.curves(bnames, z=z, distance=distance, ebv=e, magnification=magnification)
 
             models_mags[name] = curves

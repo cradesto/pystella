@@ -39,3 +39,5 @@ from .util.phys_var import cosmology_D_by_z
 from .util.string_misc import str2interval
 from .util.path_misc import get_model_names
 from .util.arr_dict import first
+from .util.reader_table import read_obs_table_header
+from .util.reader_table import curves2table, table2curves
