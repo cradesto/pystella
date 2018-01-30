@@ -200,6 +200,8 @@ def plot_curves(curves_o, res_models, res_sorted, **kwargs):
             ax.yaxis.set_label_position("left")
             ax.set_ylabel('Magnitude')
         else:
+            ax.set_ylabel('')
+            ax.set_yticklabels([])
             ax.yaxis.set_ticks_position('both')
         # legend
         ax.legend(curves.BandNames, loc='lower right', frameon=False, ncol=min(5, len(curves.BandNames)),
