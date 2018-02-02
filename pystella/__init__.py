@@ -18,6 +18,7 @@ from .model import sn_eve as eve
 
 # classes
 from .model.stella import Stella
+from .model.h5stella import H5Stella, H5Fh
 from .model.SneSpace import SneSpace
 from .rf.band import Band, BandUni
 from .rf.spectrum import SeriesSpectrum, Spectrum, SpectrumDilutePlanck, SpectrumPlanck

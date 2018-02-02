@@ -69,6 +69,16 @@ class Spectrum(object):
         popt, pcov = curve_fit(func, self.Freq, self.Flux, p0=Tinit)
         return popt[0]
 
+    def cut_wl(self, wl_ab):
+        if wl_ab is None:
+            raise ValueError(wl_ab)
+        # freq limits
+        f_l = phys.c / (wl_ab[1] * phys.angs_to_cm)
+        f_h = float("inf") if wl_ab[0] <= 0. else phys.c / (wl_ab[0] * phys.angs_to_cm)
+        is_freq = (self.Freq > f_l) & (self.Freq < f_h)
+        sp = Spectrum(self.Name, self.Freq[is_freq], flux=self.Flux[is_freq])
+        return sp
+
     def T_color_zeta(self, is_mpfit=True, is_quiet=True):
         from pystella.fit import mpfit
         """
