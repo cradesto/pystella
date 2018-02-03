@@ -11,7 +11,7 @@ __author__ = 'bakl'
 Tools for reading HDF5 Stella's output 
 """
 
-logging.basicConfig(stream=sys.stderr, level=logging.INFO)
+logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 
 
 class H5Stella(object):
@@ -39,6 +39,13 @@ class H5Stella(object):
         logging.debug('Fh from {}'.format(self.Fname))
         with h5py.File(self.Fname, "r") as h5f:
             res = H5Fh('Fh').fill(h5f)
+        return res
+
+    @property
+    def Fj(self):
+        logging.debug('Fj from {}'.format(self.Fname))
+        with h5py.File(self.Fname, "r") as h5f:
+            res = H5Fj('Fj').fill(h5f)
         return res
 
     def ds_write(self, path, ds, attrs=None):
@@ -119,6 +126,12 @@ class H5TimeElement(object):
             return idx, self.V[idx]
         return None, None
 
+    def ValueByTime(self, nt):
+        return self.V[nt, :, :]
+
+    def ValueByZone(self, nz):
+        return self.V[:, :, nz]
+
     def Info(self):
         print("Ntime={} self.Nzon={} Nfreq={} ".format(self.Ntime, self.Nzon, self.Nfreq))
 
@@ -128,5 +141,8 @@ class H5Fh(H5TimeElement):
         self._name = name
         super(H5Fh, self).__init__(name, path='/timing/Fh')
 
-    def FluxByZone(self, nz):
-        return self.V[:, :, nz]
+
+class H5Fj(H5TimeElement):
+    def __init__(self, name):
+        self._name = name
+        super(H5Fj, self).__init__(name, path='/timing/Fj')

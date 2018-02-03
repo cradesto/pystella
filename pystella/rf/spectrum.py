@@ -79,7 +79,7 @@ class Spectrum(object):
         sp = Spectrum(self.Name, self.Freq[is_freq], flux=self.Flux[is_freq])
         return sp
 
-    def T_color_zeta(self, is_mpfit=True, is_quiet=True):
+    def T_color_zeta(self, is_mpfit=True, is_quiet=True, is_Fj=False):
         from pystella.fit import mpfit
         """
         Fitting Spectrum by planck function and find the color temperature
@@ -92,7 +92,10 @@ class Spectrum(object):
         def least_sq(p, fjac):
             T = p[0]
             w = p[1]
-            wbb = np.pi * w * rf.planck(self.Freq, T, inp="Hz", out="freq")
+            if is_Fj:
+                wbb = w * rf.planck(self.Freq, T, inp="Hz", out="freq")
+            else:
+                wbb = np.pi * w * rf.planck(self.Freq, T, inp="Hz", out="freq")
 
             # model interpolation
             res = np.abs(self.Flux - wbb)
