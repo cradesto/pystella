@@ -12,7 +12,7 @@ from . import velocity as vel
 from . import fit
 
 from .util import callback as cb
-from .util import phys_var as phys
+from .util.phys_var import phys
 from .util import path_misc as path
 from .model import sn_eve as eve
 

@@ -97,10 +97,12 @@
       <w>ncols</w>
       <w>ndarray</w>
       <w>ndim</w>
+      <w>nend</w>
       <w>nfreq</w>
       <w>nmax</w>
       <w>nrow</w>
       <w>nrows</w>
+      <w>nstart</w>
       <w>nsteps</w>
       <w>ntimes</w>
       <w>nugent</w>

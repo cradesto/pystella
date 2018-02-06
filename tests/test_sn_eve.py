@@ -44,6 +44,41 @@ class SnEveTests(unittest.TestCase):
         eve = sn_eve.load_hyd_abn(name, path=path)
         self.assertTrue(eve.is_set('Rho'), "hyd-file have not been loaded: %s" % name)
 
+    def test_hyd_load_hyd_abn_no_dum(self):
+        name = 'u50fenv'
+        path = '/home/bakl/Sn/my/papers/18/fischer/model'
+        # eve = StellaHydAbn(name, path=path).load_hyd()
+        eve = sn_eve.load_hyd_abn(name, path=path, is_dum=False)
+        self.assertTrue(eve.is_set('Rho'), "hyd-file have not been loaded: %s" % name)
+
+    def test_presn_reshape(self):
+        name = 'u50fenv'
+        path = '/home/bakl/Sn/my/papers/18/fischer/model'
+        # eve = StellaHydAbn(name, path=path).load_hyd()
+        eve = sn_eve.load_hyd_abn(name, path=path, is_dum=False)
+
+        # for same size must be the same
+        nstart = 1
+        nzon = eve.nzon
+        evenew = eve.reshape(nz=eve.nzon)
+        self.assertEqual(evenew.nzon, eve.nzon,
+                         "Reshape PreSn: you have {} zone, but it should be {}".format(eve.nzon, eve.nzon))
+        # todo check range for Rho, V, T
+        k = 0
+        self.assertEqual(eve.m[k], evenew.m[k],
+                         "Mass PreSn: you have the first zone where old mass {} = new {}".format(eve.m[k], evenew.m[k]))
+        k = -1
+        self.assertEqual(eve.m[k], evenew.m[k],
+                         "Mass PreSn: you have the last zone where old mass {} = new {}".format(eve.m[k], evenew.m[k]))
+
+        nzon = 300
+        nstart = 309
+        evenew = eve.reshape(nz=nzon, nstart=nstart, nend=None)
+        evenew.plot_chem()
+        plt.show()
+        self.assertEqual(evenew.nzon, nstart + nzon,
+                         "Reshape PreSn: you have {} zone, but it should be {}".format(eve.nzon, nstart + nzon))
+
     def test_hyd_write(self):
         name = 'm030307mhh'
         path = join(dirname(abspath(__file__)), 'data', 'stella')
@@ -113,10 +148,10 @@ class SnEveTests(unittest.TestCase):
 
         presn = snec.to_presn(prb_snec)
 
-        fname = presn.name+'.hyd'
+        fname = presn.name + '.hyd'
         res = presn.write_hyd(fname)
         self.assertTrue(res, "Fail to write in %s" % fname)
-        fname = presn.name+'.abn'
+        fname = presn.name + '.abn'
         res = presn.write_abn(fname)
         self.assertTrue(res, "Fail to write in %s" % fname)
 

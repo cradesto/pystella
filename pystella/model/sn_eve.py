@@ -5,6 +5,7 @@ import os
 try:
     import matplotlib.pyplot as plt
     from matplotlib import gridspec
+
     is_matplotlib = True
 except:
     is_matplotlib = False
@@ -44,7 +45,7 @@ class PreSN(object):
 
     def __init__(self, name, nzon):
         """Creates a PreSN model instance.  Required parameters:  name, nzon"""
-        self.name = name
+        self._name = name
         self._nzon = nzon
         self._data_hyd = np.empty(nzon, dtype=PreSN.dtype_hyd())
         self._data_chem = np.empty(nzon, dtype=PreSN.dtype_chem())
@@ -63,8 +64,12 @@ class PreSN(object):
 
     def show_info(self):
         print("-" * 20)
-        print(" Name: %s    nzon: %d" % (self.name, self.nzon))
+        print(" Name: %s    nzon: %d" % (self.Name, self.nzon))
         print(" m_tot: {:5.3f} r_cen: {:12.6e}".format(self.m_tot, self.r_cen))
+
+    @property
+    def Name(self):
+        return self._name
 
     @property
     def nzon(self):
@@ -202,10 +207,10 @@ class PreSN(object):
             # for _ in zip(zones, self.m/phys.M_sun, dum, self.r, dum, self.rho, dum, self.T, self.V):
             #     f.write(' %4d %12.4e %12.4e %12.4e %12.4e %12.4e %12.4e %12.4e %12.4e \n' % _)
             # 'evehyd.trf: idum,dum,Radius(j),RHOeve(j),TMPR(j),VELOC(j), dum,dum; '
-            a = '#No. M  R  Rho T   V   dum  dum '.split()
-            f.write('  ' + '            '.join(a) + '\n')
-            for _ in zip(zones, self.m / phys.M_sun, self.r, self.rho, self.T, self.V, dum, dum):
-                f.write(' %4d %15.7e %15.7e %15.7e %15.7e %15.7e  %8.1e  %8.1e\n' % _)
+            a = '#No. M  R  Rho T   V   M  dum '.split()
+            f.write('  ' + '             '.join(a) + '\n')
+            for _ in zip(zones, self.m / phys.M_sun, self.r, self.rho, self.T, self.V, self.m / phys.M_sun, dum):
+                f.write(' %4d %15.7e %15.7e %15.7e %15.7e %15.7e  %15.7e  %8.1e\n' % _)
         return os.path.isfile(fname)
 
     def write_abn(self, fname, is_header=False, is_dum=False):
@@ -298,9 +303,13 @@ class PreSN(object):
             if self.is_set(el):
                 # y = self.lg_el(el)
                 y = self.el(el)
+                # x = y[np.nonzero(y)]
+                # y = y[np.nonzero(y)]
                 # y[y<=0] == 1e-15
-                ax.semilogy(x, y, label='{0}'.format(el), color=colors[el], ls=lntypes[el], linewidth=lw
+                ax.plot(x, y, label='{0}'.format(el), color=colors[el], ls=lntypes[el], linewidth=lw
                             , marker=marker, markersize=markersize)
+                # ax.semilogy(x, y, label='{0}'.format(el), color=colors[el], ls=lntypes[el], linewidth=lw
+                #             , marker=marker, markersize=markersize)
 
                 if not is_y_lim:
                     y_min.append(np.min(y))
@@ -317,7 +326,7 @@ class PreSN(object):
 
         if is_y_lim or not is_new_plot:
             ax.set_ylim(ylim)
-
+        ax.set_yscale('log')
         if is_new_plot:
             ax.set_ylabel(r'$X_i$')
             ax.legend(prop={'size': 9}, loc=loc, ncol=leg_ncol, fancybox=False, frameon=False, markerscale=0)
@@ -402,6 +411,45 @@ class PreSN(object):
         else:
             self._data_chem[name] = vec
 
+    def reshape(self, nz=300, nstart=0, nend=None):
+        """
+        Reshape parameters of envelope from nstart to nend to nz-zones
+        :param nz: new zones
+        :param nstart: zone number to start reshaping. Default: 0 (first zone)
+        :param nend: zone number to end reshaping. Default: None,  (equal last zone)
+        :return: new preSN with reshaping zones
+        """
+        nznew = nstart + nz
+        newPreSN = PreSN(self.Name, nznew)
+        if nend is None:
+            nend = self.nzon
+
+        def interp(x, v, start=nstart, end=nend):
+            res = []
+            if start > 0:
+                res = v[:start]  # save points before start
+            xi = x[start:end]
+            yi = v[start:end]
+            xx = np.linspace(xi[0], xi[-1], nz)  # new x-points
+            yy = np.interp(xx, xi, yi)
+            res = np.append(res, yy)
+            return res
+
+        # hyd reshape
+        m = self.m
+        for v in PreSN.presn_hydro:
+            old = self.hyd(v)
+            new = interp(m, old)
+            newPreSN.set_hyd(v, new)
+
+        # abn reshape
+        for el in PreSN.presn_elements:
+            old = self.el(el)
+            new = interp(m, old)
+            newPreSN.set_chem(el, new)
+
+        return newPreSN
+
 
 # ==============================================
 def load_rho(fname, path=None):
@@ -435,7 +483,7 @@ def load_rho(fname, path=None):
     return presn
 
 
-def load_hyd_abn(name, path='.'):
+def load_hyd_abn(name, path='.', is_dum=True):
     """
     Code readheger.trf:
       BM1=cutmass; -- core Mass
@@ -446,7 +494,7 @@ def load_hyd_abn(name, path='.'):
         write(12,'(1x,i4,1p,e12.4,e18.10,3e15.7,2e12.4)')
            km, dum, rHyd(km), rhoHyd(km), TpHyd(km), uHyd(km), aMr(km), dum;
       enddo;
-    :return:
+    :return: PreSN
     """
 
     # hydro
@@ -459,12 +507,16 @@ def load_hyd_abn(name, path='.'):
     logger.info(' Load hyd-data from  %s' % hyd_file)
 
     # read table data
-    col_names = "zone dum1 R Rho T V M dum2".split()
+    if is_dum:
+        col_names = "zone dm R Rho T V M dum2".split()
+    else:
+        col_names = "zone dm R Rho T V M".split()
     dt = np.dtype({'names': col_names,
                    'formats': ['i4'] + np.repeat('f8', len(col_names) - 1).tolist()})
 
     data_hyd = np.loadtxt(hyd_file, comments='#', skiprows=1, dtype=dt)
     nz = len(data_hyd['R'])
+    data_hyd[PreSN.sM] = data_hyd[PreSN.sM] * phys.M_sun
     col_map = {PreSN.sR, PreSN.sM, PreSN.sT, PreSN.sRho, PreSN.sV}
     presn = PreSN(name, nz)
     for v in col_map:
@@ -499,7 +551,10 @@ def load_hyd_abn(name, path='.'):
     logger.info(' Load abn-data from  %s' % abn_file)
     abn_elements = 'H He C N O Ne Na  Mg  Al  Si  S  Ar  Ca  Fe  Ni Ni56'.split()
     abn_elements_iso = 'H He C N O Ne Na  Mg  Al  Si  S  Ar  Ca  Fe  Ni Ni56 Fe52 Cr48'.split()
-    col_names = ("zone dum1 dum2 dum3 " + ' '.join(abn_elements)).split()
+    if is_dum:
+        col_names = ("zone dum1 dum2 dum3 " + ' '.join(abn_elements)).split()
+    else:
+        col_names = ("zone " + ' '.join(abn_elements)).split()
     dt = np.dtype({'names': col_names, 'formats': np.repeat('f8', len(col_names))})
     data_chem = np.loadtxt(abn_file, comments='#', dtype=dt)
 
