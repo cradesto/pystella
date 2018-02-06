@@ -411,18 +411,26 @@ class PreSN(object):
         else:
             self._data_chem[name] = vec
 
-    def reshape(self, nz=300, nstart=0, nend=None):
+    def reshape(self, nz=300, nstart=0, nend=None, xmode='rlog', kind='np'):
         """
         Reshape parameters of envelope from nstart to nend to nz-zones
         :param nz: new zones
         :param nstart: zone number to start reshaping. Default: 0 (first zone)
         :param nend: zone number to end reshaping. Default: None,  (equal last zone)
+        :param xmode: [lin OR rlog] - linear OR reversed log10
+        :param kind: [np OR interp1d(..kind)], kind is  ('linear', 'nearest', 'zero', 'slinear', 'quadratic, 'cubic')
         :return: new preSN with reshaping zones
         """
+        from scipy.interpolate import interp1d
         nznew = nstart + nz
         newPreSN = PreSN(self.Name, nznew)
         if nend is None:
             nend = self.nzon
+
+        def rlogspace(s, e, n):
+            r = np.exp(np.linspace(np.log(s), np.log(e), n))
+            r = (e - r + s)
+            return r[::-1]
 
         def interp(x, v, start=nstart, end=nend):
             res = []
@@ -430,8 +438,19 @@ class PreSN(object):
                 res = v[:start]  # save points before start
             xi = x[start:end]
             yi = v[start:end]
-            xx = np.linspace(xi[0], xi[-1], nz)  # new x-points
-            yy = np.interp(xx, xi, yi)
+            if xmode == 'lin':
+                xx = np.linspace(xi[0], xi[-1], nz)  # new x-points
+            elif xmode == 'rlog':
+                xx = rlogspace(xi[0], xi[-1], nz)  # new x-points
+            else:
+                xx = np.linspace(xi[0], xi[-1], nz)  # new x-points
+
+            if kind == 'np':
+                yy = np.interp(xx, xi, yi)
+            else:
+                interp_linear = interp1d(xi, yi, kind=kind)
+                yy = interp_linear(xx)
+
             res = np.append(res, yy)
             return res
 
