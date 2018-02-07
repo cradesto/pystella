@@ -411,7 +411,7 @@ class PreSN(object):
         else:
             self._data_chem[name] = vec
 
-    def reshape(self, nz=300, nstart=0, nend=None, xmode='rlog', kind='np'):
+    def reshape(self, nz=300, nstart=0, nend=None, xmode='lin', kind='np'):
         """
         Reshape parameters of envelope from nstart to nend to nz-zones
         :param nz: new zones
@@ -432,14 +432,23 @@ class PreSN(object):
             r = (e - r + s)
             return r[::-1]
 
+        def smooth(a, kernel_size=None):
+            from scipy.signal import medfilt
+            return medfilt(a, kernel_size=kernel_size)
+        
         def interp(x, v, start=nstart, end=nend):
             res = []
             if start > 0:
                 res = v[:start]  # save points before start
             xi = x[start:end]
             yi = v[start:end]
-            if xmode == 'lin':
-                xx = np.linspace(xi[0], xi[-1], nz)  # new x-points
+            if xmode == 'smooth':
+                xx = smooth(xx)
+            elif xmode == 'spline':
+                #xx = interp1d(x, , kind='cubic')(new_x)
+                #xx = np.interp(, range(len(x)), x)
+                zones = np.linspace(int(start*0.8), len(x), nz, dtype=int)  # new x-points
+                xx = np.interp(zones, range(len(x)), x)
             elif xmode == 'rlog':
                 xx = rlogspace(xi[0], xi[-1], nz)  # new x-points
             else:
@@ -455,7 +464,7 @@ class PreSN(object):
             return res
 
         # hyd reshape
-        m = self.m
+        m = self.r
         for v in PreSN.presn_hydro:
             old = self.hyd(v)
             new = interp(m, old)
