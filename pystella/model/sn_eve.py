@@ -411,6 +411,71 @@ class PreSN(object):
         else:
             self._data_chem[name] = vec
 
+    def zone_reduce(self, by=sM, diff=1.01, start=0, end=None, mode='g'):
+        """
+
+        :param by: 'Rho' 'M' 'T' 'R' 'V', default: 'M'
+        :param diff: geom progression, default: 1.01
+        :param start:
+        :param end:
+        :param mode:
+        :return:
+        """
+        from pystella.util.math import shrink, portion_index
+
+        x = self.hyd(by)
+
+        def where(a):
+            return shrink(a, diff=diff, mode=mode)
+
+        idxs = portion_index(x, where, start=start, end=end, isByEl=False)
+
+        newPreSN = PreSN(self.Name, len(idxs))
+        # hyd reshape
+        for v in PreSN.presn_hydro:
+            old = self.hyd(v)
+            new = old[idxs]
+            newPreSN.set_hyd(v, new)
+
+        # abn reshape
+        for el in PreSN.presn_elements:
+            old = self.el(el)
+            new = old[idxs]
+            newPreSN.set_chem(el, new)
+
+        return newPreSN
+
+    def bad_zone_reduce(self, diff=1.05, start=0, end=None, mode='g'):
+        from pystella.util.math import shrink
+        x = self.m
+        if end is None:
+            end = len(x)
+        idxs = np.arange(len(x))
+
+        xx = x[start:end]
+        idx = shrink(xx, diff=diff, mode=mode)
+        idxs = np.concatenate((np.arange(start), idx, np.arange(end, len(x))))
+
+        if start > 0:
+            idxs = idxs[:start-1]
+        else:
+            idxs = []
+
+        newPreSN = PreSN(self.Name, len(idxs))
+        # hyd reshape
+        for v in PreSN.presn_hydro:
+            old = self.hyd(v)
+            new = old[idxs]
+            newPreSN.set_hyd(v, new)
+
+        # abn reshape
+        for el in PreSN.presn_elements:
+            old = self.el(el)
+            new = old[idxs]
+            newPreSN.set_chem(el, new)
+
+        return newPreSN
+
     def reshape(self, nz=300, nstart=0, nend=None, xmode='rlog', kind='np'):
         """
         Reshape parameters of envelope from nstart to nend to nz-zones

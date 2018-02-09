@@ -1,10 +1,13 @@
 import os
 from os.path import dirname, abspath, join
 import unittest
-from pystella.model import sn_eve
 import matplotlib.pyplot as plt
 
+import numpy as np
+
 from pystella.model import snec
+import pystella as ps
+from pystella.model import sn_eve
 
 __author__ = 'bakl'
 
@@ -78,6 +81,32 @@ class SnEveTests(unittest.TestCase):
         plt.show()
         self.assertEqual(evenew.nzon, nstart + nzon,
                          "Reshape PreSn: you have {} zone, but it should be {}".format(eve.nzon, nstart + nzon))
+
+    def test_presn_zone_reduce(self):
+        name = 'u50fenv'
+        path = '/home/bakl/Sn/my/papers/18/fischer/model'
+        # eve = StellaHydAbn(name, path=path).load_hyd()
+        eve = sn_eve.load_hyd_abn(name, path=path, is_dum=False)
+
+        # evenew = eve.zone_reduce(diff=1.005, start=110, end=-20)
+        evenew = eve.zone_reduce(by='M', diff=1.01, start=309, end=-100)
+
+        ii = np.arange(evenew.nzon)
+        if not np.all(np.diff(evenew.m) > 0.):
+            print("Not np.all(np.diff(evenew.m) > 0.): {}".format(ii[np.diff(evenew.m) < 0.]))
+        self.assertTrue(np.all(np.diff(evenew.m) > 0.), " Any M[i] < M[i+1]")
+        self.assertTrue(np.all(np.diff(evenew.r) > 0.), " Any R[i] < R[i+1]")
+
+        # plot
+        plt.plot(evenew.m / ps.phys.M_sun, np.log10(evenew.rho), marker='d', ls='', label='eveinterp',
+                 linewidth=4)
+        plt.plot(evenew.m / ps.phys.M_sun, np.log10(evenew.rho), ls='', marker='<', label='evenew', markersize='3')
+        plt.plot(eve.m / ps.phys.M_sun, np.log10(eve.rho), ls='--', label='u50fenv', linewidth=2)
+        plt.xlabel('M, [Msun]')
+        plt.ylabel(r'$log_{10}(\rho)$')
+
+        plt.legend(loc='best')
+        plt.show()
 
     def test_hyd_write(self):
         name = 'm030307mhh'
