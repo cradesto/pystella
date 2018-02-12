@@ -8,6 +8,7 @@ import numpy as np
 from pystella.model import snec
 import pystella as ps
 from pystella.model import sn_eve
+from pystella.model.sn_eve import PreSN
 
 __author__ = 'bakl'
 
@@ -106,6 +107,42 @@ class SnEveTests(unittest.TestCase):
         plt.ylabel(r'$log_{10}(\rho)$')
 
         plt.legend(loc='best')
+        plt.show()
+
+    def test_presn_chem_norm(self):
+        nzon = 10
+        presn = PreSN('sol', nzon)
+        data = np.ones(presn.nzon)
+        for ename in PreSN.presn_elements:
+            presn.set_chem(ename, data)
+
+        for k in np.arange(1, presn.nzon):
+            self.assertTrue(sum(presn.abun(k)) > 1., msg=" Norm should be large 1 ")
+        # normalize
+        for k in np.arange(1, presn.nzon):
+            presn.chem_norm(k)
+        # check
+        for k in np.arange(1, presn.nzon):
+            self.assertAlmostEqual(sum(presn.abun(k)), 1., msg="  Norm should be 1 ")
+
+    def test_presn_set_composition(self):
+        nzon = 10
+        presn = PreSN('sol', nzon)
+        presn.set_hyd(PreSN.sM, np.arange(1, presn.nzon+1)*ps.phys.M_sun)
+        # set chemical
+        data = np.ones(presn.nzon)
+        for ename in PreSN.presn_elements:
+            presn.set_chem(ename, data)
+
+        for k in np.arange(1, presn.nzon+1):
+            presn.chem_norm(k)
+
+        # set solar composition
+        zones = range(3, presn.nzon-3)
+        presn.set_composition(zones, is_add=False)
+
+        # plot
+        presn.plot_chem()
         plt.show()
 
     def test_hyd_write(self):
