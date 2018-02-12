@@ -137,6 +137,13 @@ class SnEveTests(unittest.TestCase):
         for k in np.arange(1, presn.nzon+1):
             presn.chem_norm(k)
 
+        idxs = np.arange(presn.nzon)
+        zones = idxs[presn.el('S') > 0.01]+1
+        # Remove S
+        sample = {'S': 1e-4}
+        presn.set_composition(zones, sample=sample, is_add=False, is_normalize=True)
+        ax = presn.plot_chem(ylim=(1e-6, 1.1))
+
         # set solar composition
         zones = range(3, presn.nzon-3)
         presn.set_composition(zones, is_add=False)
