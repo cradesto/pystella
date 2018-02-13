@@ -182,14 +182,14 @@ class PreSN(object):
         :param k:
         :return: array
         """
-        res = [self.el(e)[k-1] for e in PreSN.presn_elements]
+        res = [self.el(e)[k - 1] for e in PreSN.presn_elements]
         return res
 
     def chem_norm(self, k=None, norm=None):
         if norm is None:
             norm = sum(self.abun(k))
         for e in PreSN.presn_elements:
-            self._data_chem[e][k-1] = self.el(e)[k-1] / norm
+            self._data_chem[e][k - 1] = self.el(e)[k - 1] / norm
 
     def el(self, el):
         if el not in PreSN.presn_elements:
@@ -322,7 +322,7 @@ class PreSN(object):
                 # y = y[np.nonzero(y)]
                 # y[y<=0] == 1e-15
                 ax.plot(x, y, label='{0}'.format(el), color=colors[el], ls=lntypes[el], linewidth=lw
-                            , marker=marker, markersize=markersize)
+                        , marker=marker, markersize=markersize)
                 # ax.semilogy(x, y, label='{0}'.format(el), color=colors[el], ls=lntypes[el], linewidth=lw
                 #             , marker=marker, markersize=markersize)
 
@@ -473,9 +473,9 @@ class PreSN(object):
             y = self.el(el)
             for k in zones:
                 if is_add:
-                    y[k-1] += Xi
+                    y[k - 1] += Xi
                 else:
-                    y[k-1] = Xi
+                    y[k - 1] = Xi
             self.set_chem(el, y)
 
         if is_normalize:
@@ -494,7 +494,7 @@ class PreSN(object):
         idxs = np.concatenate((np.arange(start), idx, np.arange(end, len(x))))
 
         if start > 0:
-            idxs = idxs[:start-1]
+            idxs = idxs[:start - 1]
         else:
             idxs = []
 
@@ -684,10 +684,11 @@ def load_hyd_abn(name, path='.', is_dum=True):
 
     return presn
 
+
 def sample_sol():
     el = dict(H=7.0600E-01, He=2.7500E-01, C=3.0700E-03, N=1.1100E-03, O=9.6100E-03, Ne=1.7500E-03, Na=3.3400E-05,
               Mg=6.6000E-04, Al=5.8100E-05, Si=7.1100E-04, S=4.1800E-04, Ar=9.2800E-05, Ca=6.2000E-05,
               Fe=1.3700E-03, Ni=7.3400e-05)
     norm = sum(el.values())
-    el = {e: v/norm for e,v in el.items()}
+    el = {e: v / norm for e, v in el.items()}
     return el
