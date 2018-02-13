@@ -155,7 +155,7 @@ class Stella:
             info.show()
 
 
-def stella_ls(path, pattern='*', exts=stella_extensions):
+def stella_ls(path='./', pattern='*', exts=stella_extensions):
     """Print information list about models in the path
     :param path: working directory
     :param pattern:  pathname, which must be a string containing a path specification. 

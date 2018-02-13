@@ -35,6 +35,8 @@ class StellaTt:
         """
         Read tt-data
         Columns: time Tbb rbb Teff Rlast_sc Rph Mbol MU MB MV MI MR   Mbolavg  gdepos
+        :type ext: extension of tt-file, default: 'tt'
+        :param line_header: skip_rows - 1
         :return: data in np.array
         """
 

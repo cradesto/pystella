@@ -749,10 +749,21 @@ def fit_mfl(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, tlim, Vn
     return curves_m, vel_m, res
 
 
+def merge_obs(inp, type_el):
+    result = None
+    if isinstance(inp, list):
+        for o in inp:
+            if isinstance(o, type_el):
+                result = type_el.Merge(result, o)
+    else:
+        if isinstance(inp, type_el):
+            result = inp
+    return result
+
+
 def main():
     model_ext = '.ph'
-    # Nbest = 5
-    Nbest = 15
+    n_best = 15
     ps.Band.load_settings()
 
     parser = get_parser()
@@ -791,45 +802,19 @@ def main():
                 sys.exit(2)
             bnames.append(bname)
 
-    # if args.distance:
-    # distance = args.distance
-
-    if args.call:
-        if len(args.call) > 1:
-            a = []
-            for line in args.call:
-                c = ps.cb.lc_wrapper(line, method='load')
-                a.append(c)
-            callback = ps.cb.CallBackArray(a)
-        elif len(args.call) == 1:
-            callback = ps.cb.lc_wrapper(args.call[0], method='load')
-        else:
-            callback = None
-    else:
+    # Get observations
+    observations = ps.cb.observations(args)
+    if observations is None:
         print('No obs data. Use key: -c: ')
         parser.print_help()
         sys.exit(2)
 
-    # Get observations
-    curves_o = None
-    vels_o = None
-    obs = callback.run({'is_debug': args.is_not_quiet})
-    if isinstance(obs, list):
-        for o in obs:
-            if isinstance(o, ps.SetLightCurve):
-                curves_o = ps.SetLightCurve.Merge(curves_o, o)
-            if isinstance(o, ps.vel.SetVelocityCurve):
-                vels_o = ps.vel.SetVelocityCurve.Merge(vels_o, o)
-    else:
-        if isinstance(obs, ps.SetLightCurve):
-            curves_o = obs
-        if isinstance(obs, ps.vel.SetVelocityCurve):
-            vels_o = obs
+    # curves
+    curves_o = merge_obs(observations, ps.SetLightCurve)
+    vels_o = merge_obs(observations, ps.vel.SetVelocityCurve)
 
-    is_vel = vels_o is not None and vels_o.Length > 0
-    is_curves_o = curves_o is not None
-
-    if is_curves_o and len(bnames) == 0:
+    # set bands  as observed
+    if curves_o is not None and len(bnames) == 0:
         bnames = [bn for bn in curves_o.BandNames if ps.band.band_is_exist(bn)]
 
     # Set distance and redshift
@@ -941,7 +926,7 @@ def main():
     for k, v in res_sorted.items():
         print("{:40s} || {:7.2f}+/-{:7.4f} || {:.4f}".format(k, v.tshift, v.tsigma, v.measure))
 
-    if len(res_sorted) >= Nbest:
+    if len(res_sorted) >= n_best:
         # plot chi squared
         plot_squared_grid(res_sorted, path, is_not_quiet=args.is_not_quiet)
         plot_chi_par(res_sorted, path)
@@ -964,7 +949,7 @@ def main():
     while len(res_sorted) > args.plotnbest:
         res_sorted.popitem()
 
-    if is_vel:
+    if vels_o is not None and vels_o.Length > 0:
         # vel_o.tshift = best_tshift
         fig = plot_curves_vel(curves_o, vels_o, res_models, res_sorted, vels_m)
     else:

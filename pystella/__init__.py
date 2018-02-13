@@ -33,8 +33,11 @@ from .fit.fit_mpfit import FitMPFit
 from .fit.fit_mcmc import FitLcMcmc
 
 # functions
+from .model.stella import stella_ls as ls
+
 from .rf.light_curve_plot import curves_plot
 from .rf.extinction import reddening, reddening_z
+from .rf.light_curve_func import curves_save, curves_read
 
 from .util.phys_var import cosmology_D_by_z
 from .util.string_misc import str2interval

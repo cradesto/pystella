@@ -128,7 +128,7 @@ def usage():
           "You can add parameters in format func:params")
     print("  -g <single, grid, gridm, gridl> Select plot view.  single [default] = all models in one figure"
           ", grid = for each band separate figure.")
-    print("  -s  without extension. Save plot to pdf-file. Default: ubv_obs.pdf")
+    print("  -s  without extension. Save plot to pdf-file. Default: if 1, fname =  'ubv_obs.pdf'")
     print("  -x  <xbeg:xend> - xlim, ex: 0:12. Default: None, used all days.")
     print("  -l  write plot label")
     print("  -h  print usage")
@@ -153,7 +153,6 @@ def old_lc_wrapper(param, p=None):
 
 
 def main():
-    is_save_plot = False
     view_opts = ('single', 'grid', 'gridl', 'gridm')
     opt_grid = view_opts[0]
 
@@ -211,12 +210,11 @@ def main():
                 print('No such view option: {0}. Can be '.format(opt_grid, '|'.join(view_opts)))
                 sys.exit(2)
             continue
-        if opt == '-s':
-            is_save_plot = True
-            fsave = str.strip(arg)
-            continue
         if opt == '-l':
             label = str.strip(arg)
+            continue
+        if opt == '-s':
+            fsave = str.strip(arg)
             continue
         if opt == '-x':
             xlim = list(float(x) for x in str(arg).split(':'))
@@ -244,8 +242,8 @@ def main():
     plt.show()
     # plt.show(block=False)
 
-    if is_save_plot:
-        if fsave is None or len(fsave) == 0:
+    if fsave is not None:
+        if fsave == 1:
             fsave = "ubv_obs"
         d = os.path.expanduser('~/')
         fsave = os.path.join(d, os.path.splitext(fsave)[0]) + '.pdf'

@@ -67,11 +67,9 @@ class LightCurve(TimeSeries):
             res = np.array([self.Time, self.Mag])
         return res.T
 
-    def copy(self, name=None, tlim=None):
+    def copy(self, tlim=None):
         errs = None
-        if name is None:
-            name = self.Name
-            
+
         if tlim is not None:
             is_good = np.where((self.Time >= tlim[0]) & (self.Time <= tlim[1]))
             time = self.T[is_good]
@@ -115,6 +113,19 @@ class LightCurve(TimeSeries):
             errs = e[sorti]
         res = LightCurve(bname, time, mags, errs=errs)
         return res
+
+
+def LC_interp(orig, time):
+    mags = np.interp(time, orig.Time, orig.M)
+    if orig.IsErr:
+        errs = np.interp(time, orig.Time, orig.MagErr)
+        lc = LightCurve(orig.Band, time, mags, errs)
+    else:
+        lc = LightCurve(orig.Band, time, mags)
+
+    lc.tshift = orig.tshift
+    lc.mshift = orig.mshift
+    return lc
 
 
 class SetLightCurve(SetTimeSeries):
@@ -179,3 +190,5 @@ class SetLightCurve(SetTimeSeries):
                 res.add(lc)
 
         return res
+
+

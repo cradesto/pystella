@@ -94,17 +94,18 @@ def curves_save_mags(curves, fname, sep='\t'):
 
 def curves_save(curves, fname, sep='\t', is_mix=False):
     """
-       Save curves to CSV-format. It required for correct operation the common time for all LC.
-    :param curves:
-    :param fname:
-    :param sep:
-    :return:
+    Save curves to CSV-format. For band-column format it's required the  common time for all LC.
+    :param curves: saved curves
+    :param fname: output file
+    :param sep: string or character separating columns.
+    :param is_mix: format flag. If True, save rows format
+    :return: True if Success, otherwise False
     """
     if curves.Length == 0:
         print("Nothing to save: curves.Length=%d" % curves.Length)
         return False
 
-    if curves.IsCommonTime:
+    if curves.IsCommonTime and not is_mix:
         arr = curves2nparray(curves)
         fmt_header = "%10s " * len(arr.dtype.names)
         header = fmt_header % arr.dtype.names
@@ -214,8 +215,6 @@ def curves2nparraymix(curves):
         if is_err:
             data['err'][i:i + lc.Length] = lc.MagErr
         i += lc.Length
-
-
 
     # res = np.column_stack(data)
     # res = np.dstack(data)

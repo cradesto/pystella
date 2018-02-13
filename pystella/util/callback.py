@@ -7,13 +7,6 @@ __author__ = 'bakl'
 ROOT_DIRECTORY = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 plugin_path = os.path.join(ROOT_DIRECTORY, 'plugin')
 
-#
-# def lc_wrapper(param, path=plugin_path):
-#     a = param.split(':')
-#     func = a.pop(0)
-#     c = CallBack(func, path=path, args=a, load=1)
-#     return c
-
 
 def lc_wrapper(param, p=None, method='plot'):
     a = param.split(':')
@@ -29,6 +22,32 @@ def lc_wrapper(param, p=None, method='plot'):
     c = CallBack(fname, path=p, args=a, method=method, load=1)
     print("Call: %s from %s" % (c.Func, c.FuncFileFull))
     return c
+
+
+def observations(args):
+    """
+    Get observations from argument line
+    :param args: argument line parsed with argparse.ArgumentParser
+    :return: data from callbacks
+    """
+    if not args.call or len(args.call) == 0:
+        return None
+
+    if len(args.call) == 1:
+        callback = lc_wrapper(args.call[0], method='load')
+    else:  # len(args.call) > 1
+        a = []
+        for line in args.call:
+            c = lc_wrapper(line, method='load')
+            a.append(c)
+        callback = CallBackArray(a)
+
+    if callback is None:
+        return None
+
+    # Get observations
+    obs = callback.run({'is_debug': args.is_not_quiet})
+    return obs
 
 
 class CallBack(object):

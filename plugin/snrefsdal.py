@@ -2,8 +2,6 @@ import numpy as np
 import os
 from scipy import interpolate
 
-from pystella.rf.lc import SetLightCurve, LightCurve
-
 path_data = os.path.expanduser('~/Sn/my/papers/2016/snrefsdal/data')
 grav_lens_def = 'ogu-g'
 marker_glens = {'ogu-g': 'o', 'ogu-a': 's', 'gri-g': '+', 'sha-g': '*', 'sha-a': '*', 'die-a': 'd',
@@ -259,11 +257,8 @@ def plot_ubv(ax, path, jd_shift, band_max, glens, image, bnames=None, is_lens_sh
     marker_s = {'S1': 'o', 'S2': 's', 'S3': 'd', 'S4': '*', 'SX': '+'}
     colS = sn_images[image]  # S1 - 2, col  S2 - 4, S3 - 6, S4 - 8 col
 
-    def m_mu(x):
-        return 10 ** (-x * 0.4)
-
-    def mu_m(x):
-        return -2.5 * np.log10(x)
+    def mu_m(mu):
+        return -2.5 * np.log10(mu)
 
     for b in bands:
         bn = 'F%sW' % int(b)
@@ -273,7 +268,7 @@ def plot_ubv(ax, path, jd_shift, band_max, glens, image, bnames=None, is_lens_sh
         if bn in bands_excluded:
             continue
 
-        data = lc_data[lc_data[:, 0] == b,]
+        data = lc_data[lc_data[:, 0] == b, ]
         x = data[:, 1] + jd_shift - time_delay[image]
         y = data[:, colS]
         if is_lens_shift:
@@ -303,7 +298,7 @@ def plot_ubv(ax, path, jd_shift, band_max, glens, image, bnames=None, is_lens_sh
             yerr = [-0.5 * np.ones(xxx.shape), np.zeros(xxx.shape)]
             ax.errorbar(xxx, yyy, yerr=yerr, lolims=True, fmt='kv', color=bcolor, lw=1.2)
 
-    data = lc_data[lc_data[:, 0] == int(band_max[1:4]),]  # extract maximum for F160W
+    data = lc_data[lc_data[:, 0] == int(band_max[1:4]), ]  # extract maximum for F160W
     data = data[data[:, colS] > 0., :]  # remove 0
     t_min = data[np.argmin(data[:, colS]), 1]
     return t_min
@@ -350,7 +345,8 @@ def read_lc(path=path_data):
 
 
 def read_curves(path=path_data, image='S1', bnames=None):
-    curves = SetLightCurve("SN Refsdal, image: %s" % image)
+    import pystella as ps
+    curves = ps.SetLightCurve("SN Refsdal, image: %s" % image)
 
     lc_data, sn_images = read_lc(path)
     bands = np.unique(lc_data[:, 0])
@@ -360,7 +356,7 @@ def read_curves(path=path_data, image='S1', bnames=None):
         bname = 'F%sW' % int(ib)
         if bnames is not None and bname not in bnames:
             continue
-        data = lc_data[lc_data[:, 0] == ib,]
+        data = lc_data[lc_data[:, 0] == ib, ]
         t = data[:, 1]
         m = data[:, colS]
         e = data[:, colS + 1]
@@ -371,7 +367,7 @@ def read_curves(path=path_data, image='S1', bnames=None):
         time = t[is_good]
         mags = m[is_good]
         yerr = e[is_good]
-        lc = LightCurve(bname, time, mags, errs=yerr)
+        lc = ps.LightCurve(bname, time, mags, errs=yerr)
         curves.add(lc)
     return curves
 
