@@ -319,4 +319,4 @@ def plot_swd(ax, b, **kwargs):
         ax2.legend(loc=1, prop={'size': 8}, ncol=2)
 
     if is_grid:
-        ax.grid(linestyle=':')
+        ax2.grid(linestyle=':')

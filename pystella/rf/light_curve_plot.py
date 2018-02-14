@@ -512,6 +512,7 @@ def plot_shock_details(swd, times, **kwargs):
     lumnorm = kwargs.get('lumnorm', 1e40)
     font_size = kwargs.get('font_size', 12)
     is_grid = kwargs.get('is_grid', False)
+    is_adjust = kwargs.get('is_adjust', True)
 
     xlim = None
     ylim = None
@@ -548,14 +549,16 @@ def plot_shock_details(swd, times, **kwargs):
         b = swd.block_nearest(t)
         ax2 = fig.add_subplot(nrow, ncol, ncol * i + 2)
         sn_swd.plot_swd(ax2, b, is_xlabel=(i == len(times) - 1), vnorm=vnorm, lumnorm=lumnorm,
-                        rnorm='m', is_legend=i == 0, is_yllabel=False, text_posy=0.92, is_day=False)
+                        rnorm='m', is_legend=i == 0, is_yllabel=False, text_posy=0.92, is_day=False,
+                        is_grid=is_grid)
         # Set limits
         ax = fig.add_subplot(nrow, ncol, ncol * i + 1)
         ax.set_xlim(xlim)
         ax.set_ylim(ylim)
         ax2.set_ylim(ylim)
 
-    fig.subplots_adjust(wspace=0, hspace=0)
+    if is_adjust:
+        fig.subplots_adjust(wspace=0, hspace=0)
     return fig
 
 
