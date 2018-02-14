@@ -13,6 +13,7 @@
 numpy
 scipy
 matplotlib
+h5py
 
 Cython
 emcee
