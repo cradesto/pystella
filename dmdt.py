@@ -1,5 +1,6 @@
-#!/usr/bin/python3
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
+# #!/usr/bin/python3
+
 import getopt
 import numpy as np
 import os
@@ -207,7 +208,7 @@ def main(name='', path='./'):
             i += 1
             mags = compute_mag(name, path, bands, z=z, distance=distance, t_cut=0.1, t_up=5.,
                                tdiff=0.5)
-            dmdt = compute_dmdt(mags, bands,  is_spline=True, s=0.)
+            dmdt = compute_dmdt(mags, bands, is_spline=True, s=0.)
             dic_results[name] = dict(m=mags, d=dmdt)
             print("Finish: %s [%d/%d]" % (name, i, len(names)))
         plot_dmdt(dic_results, bands, is_time_points=is_time_points)

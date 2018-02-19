@@ -1,5 +1,6 @@
-#!/usr/bin/python3
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
+# #!/usr/bin/python3
+
 """
 This program finds the time offset that minimizes chi-square.
 """
