@@ -34,12 +34,12 @@
 -  -h  print usage
 
 
-```bash
+```shell
 >>>./ubv.py  -i cat_R1000_M15_Ni007_E15  -p stella/res/tt  -b U:2-B-V-R:_1 -z 2 -d 16e9
 ```
 
 Run script for all *.ph-files in the DIR:
-```bash
+```shell
 >>> find DIR  -name "*.ph" | sed -r 's/\.ph$//' | while read fn; do ./ubv.py -i $(basename  $fn)  -d $(dirname $fn) -s; done
 ```
 also the same could be done with key '-p' without model's name. 
@@ -52,24 +52,32 @@ also the same could be done with key '-p' without model's name.
 ```
 and work
 
-```bash
+```shell
 >>> ./pystella.py
 ```
 OR
-```bash
+```shell
 >>> ./ubv.py [params]
+```
+OR
+
+```shell
+>>> ipython
+ipython> import sys
+ipython> sys.path.append('path-to-root-pystella')
+ipython> import pystella as ps
 ```
 
 ### Requirements
 
-```bash
+```shell
 >>> pip3 install -r requirements.txt
 ```
 
 OR manually
 
 To plot light curves [ubv] and shock wave details [swd]
-```bash
+```shell
 >>> apt-get install python3
 >>> apt-get install python3-numpy python3-scipy
 >>> apt-get install python3-matplotlib
@@ -77,7 +85,7 @@ To plot light curves [ubv] and shock wave details [swd]
 ```
 
 To fit observations  
-```bash
+```shell
 >>> apt-get install -y python3-pip
 >>> pip3 install emcee
 >>> pip3 install cython
@@ -87,7 +95,7 @@ To fit observations
 
 ## Tests
 
-```bash
+```shell
 >>> python3 -m unittest discover ./tests/
 ```
 

@@ -54,7 +54,7 @@ def plot_ubv_models(ax, models_dic, bands, **kwargs):
     is_time_points = kwargs.get('is_time_points', False)
     is_dashes = kwargs.get('is_dashes', False)
     line_styles = kwargs.get('linestyles', linestyles)
-#    linestyles = kwargs.get('linestyles', ['-'])
+    #    linestyles = kwargs.get('linestyles', ['-'])
 
     is_compute_x_lim = xlim is None
     is_compute_y_lim = ylim is None
@@ -341,9 +341,11 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname='', **k
         ls = {lc.Band.Name: c for lc in curves}
     is_legend = kwargs.get('is_legend', True)
     is_line = kwargs.get('is_line', True)
-    if 'lt' in kwargs:
+    if 'marker' in kwargs:
         is_line = False
-    lt = kwargs.get('lt', {lc.Band.Name: 'o' for lc in curves})
+    marker = kwargs.get('marker', 'o')
+    if not isinstance(marker, (list, dict, tuple)):
+        marker = {lc.Band.Name: marker for lc in curves}
     colors = kwargs.get('colors', lc_colors)
     linewidth = kwargs.get('linewidth', 2.0)
     markersize = kwargs.get('markersize', 5)
@@ -384,13 +386,13 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname='', **k
         else:
             if lc.IsErr:
                 yyerr = abs(lc.Err)
-                ax.errorbar(x, y, label='{0} {1}'.format(bname, fname), yerr=yyerr, fmt=lt[bname],
+                ax.errorbar(x, y, label='{0} {1}'.format(bname, fname), yerr=yyerr, fmt=marker[bname],
                             color=colors[bname], ls='', markersize=markersize)
             else:
                 # ax.plot(x, y, label='{0} {1}'.format(bname, fname), color=bcolors[bname], ls='',
                 #         marker=marker, markersize=markersize)
                 ax.plot(x, y, label='{0} {1}'.format(bname, curves.Name),
-                        color=colors[bname], ls='', marker=lt[bname], markersize=markersize)
+                        color=colors[bname], ls='', marker=marker[bname], markersize=markersize)
 
         if is_xlim:
             xlim[0] = min(xlim[0], np.min(x))
