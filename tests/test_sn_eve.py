@@ -189,6 +189,14 @@ class SnEveTests(unittest.TestCase):
         self.assertTrue(eve.nzon > 0,
                         "Zones numbers should be more 0 [%d]." % eve.nzon)
 
+    # def test_hyd_abn_load_fischer(self):
+    #     name = 'u50fenv'
+    #     path = join(dirname(abspath(__file__)), 'data', 'stella')
+    #     eve = sn_eve.load_hyd_abn(name, path='/home/bakl/Sn/my/papers/18/fischer/model', is_dum=False)
+    #
+    #     self.assertTrue(eve.nzon > 0,
+    #                     "Zones numbers should be more 0 [%d]." % eve.nzon)
+
     def test_hyd_abn_load_H(self):
         name = 'm030307mhh'
         path = join(dirname(abspath(__file__)), 'data', 'stella')
