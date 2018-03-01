@@ -123,7 +123,7 @@ def LC_interp(orig, time):
     else:
         lc = LightCurve(orig.Band, time, mags)
 
-    lc.tshift = orig.tshift
+    # lc.tshift = orig.tshift
     lc.mshift = orig.mshift
     return lc
 
