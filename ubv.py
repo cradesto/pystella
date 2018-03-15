@@ -140,7 +140,8 @@ def usage():
     print("  -i <model name>.  Example: cat_R450_M15_Ni007_E7")
     print("  -p <model directory>, default: ./")
     print("  -e <extinction, E(B-V)> is used to define A_nu, default: 0 ")
-    print("  -c <callback> [lcobs:fname:marker:dt:dm, velobs:fname:marker:dt:vnorm(1e8), popov[:R:M:E[FOE]:Mni]]. "
+    print("  -c <callback> [lcobs:fname:marker:dt:dm, velobs:fname:marker:dt:vnorm(1e8), "
+          "popov[:R:M:E[FOE]:Mni], lcobssm as lcobs, but for sm-format data-files]. "
           "You can add parameters in format func:params")
     print("  -d <distance> [pc].  Default: 10 pc")
     print("  -g <single, grid, gridm, gridl> Select plot view.  single [default] = all models in one figure"

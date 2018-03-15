@@ -1,5 +1,6 @@
 ##
-#  Plot from file
+#  Same as lcobs except load data files.
+# Comments = !
 ##
 
 import os
@@ -7,6 +8,8 @@ import os
 from pystella.rf import band
 from pystella.rf.lc import SetLightCurve, LightCurve
 from pystella.util.reader_table import table2curves, read_obs_table_header
+
+import plugin.lcobs as lcobs
 
 
 def plot(ax, dic=None, mag_lim=30.):
@@ -46,8 +49,12 @@ def plot(ax, dic=None, mag_lim=30.):
 
     print("Plot {0} [{1}]  jd_shift={2}  mshift={3}".format(fname, marker, jd_shift, mshift))
 
+    # read header
+    with open(fname) as f:
+        a = f.readline().split()
+        header = ' '.join(a[1:])  # to remove #
     # read data
-    tbl, cols_data = read_obs_table_header(fname, include_names=band.band_get_names_alias(),
+    tbl, cols_data = read_obs_table_header(fname, header=header, include_names=band.band_get_names_alias(),
                                            is_out=True, comments=comments)
     # tbl = read_table_header_float(fname)
     curves = table2curves(os.path.basename(fname), tbl)
@@ -72,7 +79,6 @@ def plot(ax, dic=None, mag_lim=30.):
             ax.plot(x, y, label='{0} {1}'.format(bname, fname), color=bcolors[bname], ls='',
                     marker=marker, markersize=markersize)
 
-
 def load(dic=None):
     """
     Load points from dat-files.
@@ -86,6 +92,7 @@ def load(dic=None):
     mag_lim = 99.
     arg = []
     is_debug = False
+    comments = '#'
 
     if dic is not None:
         is_debug = dic.get('is_debug', False)
@@ -109,7 +116,8 @@ def load(dic=None):
 
     # read data
     # tbl = read_table_header_float(fname)
-    tbl, cols_data = read_obs_table_header(fname, include_names=band.band_get_names_alias(), is_out=is_debug)
+    tbl, cols_data = read_obs_table_header(fname, include_names=band.band_get_names_alias(),
+                                           is_out=is_debug, comments=comments)
     curves = table2curves(os.path.basename(fname), tbl)
 
     # remove bad data
@@ -130,41 +138,4 @@ def load(dic=None):
 
 
 def load_curves(fname, skiprows=1):
-    """
-    Reader data-file with mix bname data, like:
-    >>% head photometry.txt
-    jd filter mag mage
-    2457059.6228778586 V 17.493766309999998 0.0592200135089
-    2457059.6244578934 V 17.539956019999998
-    0.0542402986717 2457059.6261980557 g 17.782871193345898
-    0.0454000142503 2457059.6287036575 g 17.7782469177482 0.0395424488201
-
-    :param fname: file with data
-    :return: curves
-    """
-    import numpy as np
-    # dtype = [('JD', 'f'), ('b', 'S1'), ('mag', 'f4'), ('err', '<f4')])
-    dtype = [('time', '<f4'), ('b', 'S1'), ('mag', '<f4'), ('err', '<f4')]
-    lc_data = np.loadtxt(fname, skiprows=skiprows, dtype=dtype, comments='#')  # jd filter mag mage
-    b_tot = lc_data['b']
-    bnames = np.unique(b_tot)
-    # time_tot = lc_data['JD']
-    # mags_tot = lc_data['mag']
-    # err_tot = lc_data['err']
-
-    curves = SetLightCurve()
-    for bname in bnames:
-        if band.band_is_exist(bname):
-            # filter of the current band
-            is_good = np.array(map(lambda x: x == bname, b_tot), dtype=bool)
-            t = lc_data['time'][is_good]
-            m = lc_data['mag'][is_good]
-            e = lc_data['err'][is_good]
-            # add light curve
-            b = band.band_by_name(bname)
-            lc = LightCurve(b, t, m, e)
-            curves.add(lc)
-        else:
-            print('Could read the light curve. There is no band: {}. '
-                  'You may try to add it to dir data/bands'.format(bname))
-    return curves
+    return lcobs.load_curves(fname, skiprows)
