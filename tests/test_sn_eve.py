@@ -229,10 +229,10 @@ class SnEveTests(unittest.TestCase):
 
         presn = snec.to_presn(prb_snec)
 
-        fname = presn.name + '.hyd'
+        fname = presn.Name + '.hyd'
         res = presn.write_hyd(fname)
         self.assertTrue(res, "Fail to write in %s" % fname)
-        fname = presn.name + '.abn'
+        fname = presn.Name + '.abn'
         res = presn.write_abn(fname)
         self.assertTrue(res, "Fail to write in %s" % fname)
 
