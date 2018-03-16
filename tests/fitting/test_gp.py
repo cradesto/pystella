@@ -6,6 +6,7 @@ import gptools
 
 from plugin import sn1999em, snrefsdal
 from pystella.rf import band
+from pystella.rf.lc import LightCurve
 
 __author__ = 'bakl'
 
@@ -379,3 +380,56 @@ class TestFitGaussianProcess(unittest.TestCase):
         fmu, fsig = rel_errors([x2, x1], [sigX2, sigX1], lambda arg: arg[0] / arg[1], num=10000)
         print('fmu= %f fsig = %f' % (fmu, fsig))
 
+    def test_lc_gp(self):
+        from plugin import sn1999em
+        from pystella.fit.fit_gp import FitGP
+
+        colors = band.bands_colors()
+        fig, ax = plt.subplots(figsize=(12, 10))
+        ax.invert_yaxis()
+
+        curves_o = sn1999em.read_curves()
+        for bname in curves_o.BandNames:
+            lc_o = curves_o.get(bname)
+            lc_o_gp, gp = FitGP.fit_lc(lc_o)
+            # plot
+            ax.errorbar(lc_o.Time, lc_o.Mag, label='{0} {1}'.format(bname, 'obs'), yerr=lc_o.MagErr,
+                        fmt='o', color=colors[bname], ls='', markersize=2.5)
+            x = lc_o_gp.Time
+            y_pred = lc_o_gp.Mag
+            sigma = lc_o_gp.MagErr
+            ax.fill(np.concatenate([x, x[::-1]]),
+                    np.concatenate([y_pred - sigma,
+                                    (y_pred + sigma)[::-1]]),
+                    #              np.concatenate([y_pred - 1.9600 * sigma,
+                    #                             (y_pred + 1.9600 * sigma)[::-1]]),
+                    alpha=.7, fc='grey', ec='None', label='95% confidence interval')
+        plt.show()
+
+    def test_lc_gp_Ntime(self):
+        from plugin import sn1999em
+        from pystella.fit.fit_gp import FitGP
+
+        Ntime = 50
+        colors = band.bands_colors()
+        fig, ax = plt.subplots(figsize=(12, 10))
+        ax.invert_yaxis()
+
+        curves_o = sn1999em.read_curves()
+        for bname in curves_o.BandNames:
+            lc_o = curves_o.get(bname)
+            lc_o_gp, gp = FitGP.fit_lc(lc_o, Ntime=Ntime)
+            # plot
+            ax.errorbar(lc_o.Time, lc_o.Mag, label='{0} {1}'.format(bname, 'obs'), yerr=lc_o.MagErr,
+                        fmt='s', color=colors[bname], ls='', markersize=2.5)
+            x = lc_o_gp.Time
+            y_pred = lc_o_gp.Mag
+            sigma = lc_o_gp.MagErr
+            ax.fill(np.concatenate([x, x[::-1]]),
+                    np.concatenate([y_pred - sigma,
+                                    (y_pred + sigma)[::-1]]),
+                    #              np.concatenate([y_pred - 1.9600 * sigma,
+                    #                             (y_pred + 1.9600 * sigma)[::-1]]),
+                    alpha=.7, fc='grey', ec='None', label='95% confidence interval')
+            ax.plot(x, y_pred, ls='', marker='o', markersize=2, color=colors[bname])
+        plt.show()
