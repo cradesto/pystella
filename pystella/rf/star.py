@@ -1,6 +1,7 @@
 import numpy as np
 from scipy import integrate
 from scipy import interpolate
+from scipy.integrate import simps
 
 from pystella.rf.rad_func import Flux2MagAB
 from pystella.util.phys_var import phys
@@ -213,6 +214,18 @@ class Star:
         # mag = -2.5 * np.log10(conv) + phys.ZP_AB - band.zp
         mag = Flux2MagAB(response / b.Norm) - b.zp
         return mag
+
+    def magBol(self, b):
+        """
+        Bolometric magnitude
+        todo MAybe range frequencies as bandUni
+        :param b:
+        :return:
+        """
+        lum = simps(self.Flux[::-1], self.Freq[::-1])
+        M = phys.Mag_sun + 5. * np.log10(self.distance/phys.pc) - 5
+        bol = M - 2.5 * np.log10(np.abs(lum) / phys.L_sun)
+        return bol
 
     def k_cor(self, band_r, band_o, z=0.):
         """

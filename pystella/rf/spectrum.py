@@ -335,6 +335,19 @@ class SeriesSpectrum(object):
     def Data(self):
         return self._data
 
+    # for cycle
+    def __getitem__(self, index):
+        return self.get_spec(index)
+
+    # def __iter__(self):
+    #     self._loop = 0
+    #     return self
+    def __iter__(self):
+        for ts in self._data:
+            yield ts
+
+    def __len__(self):
+        return len(self._data)
     # def set_times(self, times):
     #     if times is None or len(times) == 0:
     #         raise ValueError("times must be array with len > 0.")
@@ -458,7 +471,10 @@ class SeriesSpectrum(object):
             star.set_magnification(magnification)
             # mag = star.flux_to_mag(b)
             try:
-                mag = star.magAB(b)
+                if b.Name == band.Band.NameBol:
+                    mag = star.magBol(b)
+                else:
+                    mag = star.magAB(b)
                 times.append(t)
                 mags.append(mag)
             except ValueError as ex:

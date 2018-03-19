@@ -50,9 +50,27 @@ class TestLightCurve(unittest.TestCase):
         lc1 = lc_create('U', dt=0.)
         lc2 = lc_create('U', dt=0.)
 
-        # self.assertItemsEqual(bands, curves.BandNames,
-        #                       msg="Error for band names.\n \
-        #         Now band is %s but  lc.Band.Name is  %s." % (' '.join(bands), ' '.join(curves.BandNames)))
+    def test_lc_bol(self):
+        import matplotlib.pyplot as plt
+        from scipy.integrate import simps
+
+        m1 = ps.Stella('cat_R500_M15_Ni006_E12', path='data/stella')
+        tt1 = m1.get_tt().read()
+        curves = m1.curves(bands=['bol'])
+        ax = ps.light_curve_plot.curves_plot(curves, xlim=(-10, 155), ylim=(-9, -20), is_line=False)
+        t = tt1['time']
+        ax.plot(t, tt1['Mbol'], label='tt-bolometric LC ', color='red', lw=2, ls=':')
+        # ph
+        if False:
+            ph = m1.get_ph()
+            m_bol = []
+            for spec in ph:
+                lum = simps(spec.Flux[::-1], spec.Freq[::-1])
+                bol = 4.75 - 2.5 * np.log10(np.abs(lum)/3.86e33)
+                m_bol.append(bol)
+            ax.plot(ph.Time, m_bol, label='ph-bolometric LC ', color='green', lw=2, ls='-.')
+        ax.legend()
+        plt.show()
 
 
 class TestSetLightCurve(unittest.TestCase):

@@ -36,6 +36,7 @@ class Band(object):
         self.__wl = None  # wavelength of response [cm]
         self._resp = None  # response
         self._is_load = False
+        self._norm = None
         if is_load:  # and os.path.isfile(self.fname):
             self.load()
 
@@ -89,10 +90,11 @@ class Band(object):
 
     @property
     def Norm(self):
-        nu_b = np.array(self.freq)
-        resp_b = np.array(self.resp_fr)
-        d = integralfunc(resp_b / nu_b, nu_b)
-        return d
+        if self._norm is None:
+            nu_b = np.array(self.freq)
+            resp_b = np.array(self.resp_fr)
+            self._norm = integralfunc(resp_b / nu_b, nu_b)
+        return self._norm
 
     @property
     def wave_range(self):
