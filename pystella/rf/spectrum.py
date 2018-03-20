@@ -2,16 +2,7 @@ import logging
 import math
 import numpy as np
 
-from scipy import interpolate, integrate
-from scipy import ndimage
-from scipy.optimize import fmin, curve_fit
-
-# import matplotlib.pyplot as plt
-
 from pystella.rf import rad_func as rf
-from pystella.rf import band
-from pystella.rf.lc import LightCurve, SetLightCurve
-from pystella.rf.star import Star
 from pystella.util.phys_var import phys
 
 __author__ = 'bakl'
@@ -61,6 +52,7 @@ class Spectrum(object):
         Fitting Spectrum by planck function and find the color temperature
         :return:   color temperature
         """
+        from scipy.optimize import curve_fit
 
         def func(nu, T):
             return np.pi * rf.planck(nu, T, inp="Hz", out="freq")
@@ -79,15 +71,12 @@ class Spectrum(object):
         sp = Spectrum(self.Name, self.Freq[is_freq], flux=self.Flux[is_freq])
         return sp
 
-    def T_color_zeta(self, is_mpfit=True, is_quiet=True, is_Fj=False):
+    def T_color_zeta(self, is_quiet=True, is_Fj=False):
         from pystella.fit import mpfit
         """
         Fitting Spectrum by planck function and find the color temperature
         :return:   color temperature adn dilution
         """
-
-        def func(nu, T, w):
-            return np.pi * w * rf.planck(nu, T, inp="Hz", out="freq")
 
         def least_sq(p, fjac):
             T = p[0]
@@ -102,17 +91,28 @@ class Spectrum(object):
             return 0, res
 
         Tinit, W = self.T_wien, 1.
-        if is_mpfit:
-            xtol = 1e-10
-            ftol = 1e-10
-            gtol = 1e-10
-            parinfo = [{'value': Tinit, 'limited': [1, 1], 'limits': [10., 1e6]},
-                       {'value': 1., 'limited': [1, 1], 'limits': [0., 1e9]}]
-            result = mpfit.mpfit(least_sq, parinfo=parinfo, quiet=is_quiet, maxiter=200,
-                                 ftol=ftol, gtol=gtol, xtol=xtol)
-            popt = result.params
-        else:
-            popt, pcov = curve_fit(func, self.Freq, self.Flux, p0=(Tinit, W))
+        xtol = 1e-10
+        ftol = 1e-10
+        gtol = 1e-10
+        parinfo = [{'value': Tinit, 'limited': [1, 1], 'limits': [10., 1e6]},
+                   {'value': 1., 'limited': [1, 1], 'limits': [0., 1e9]}]
+        result = mpfit.mpfit(least_sq, parinfo=parinfo, quiet=is_quiet, maxiter=200,
+                             ftol=ftol, gtol=gtol, xtol=xtol)
+        popt = result.params
+
+        # if is_mpfit:
+        #     xtol = 1e-10
+        #     ftol = 1e-10
+        #     gtol = 1e-10
+        #     parinfo = [{'value': Tinit, 'limited': [1, 1], 'limits': [10., 1e6]},
+        #                {'value': 1., 'limited': [1, 1], 'limits': [0., 1e9]}]
+        #     result = mpfit.mpfit(least_sq, parinfo=parinfo, quiet=is_quiet, maxiter=200,
+        #                          ftol=ftol, gtol=gtol, xtol=xtol)
+        #     popt = result.params
+        # else:
+        #     def func(nu, T, w):
+        #         return np.pi * w * rf.planck(nu, T, inp="Hz", out="freq")
+        #     popt, pcov = curve_fit(func, self.Freq, self.Flux, p0=(Tinit, W))
         return popt
 
     @property
@@ -125,6 +125,9 @@ class Spectrum(object):
         Find temperature of Spectrum as Wien's law by interpolation
         :return: Wien's temperature
         """
+        from scipy import interpolate
+        from scipy.optimize import fmin
+
         wl = self.Wl
         tck = interpolate.splrep(wl, self.FluxWl)
 
@@ -162,10 +165,12 @@ class Spectrum(object):
         return mean
 
     def compute_flux_nu_bol(self):
+        from scipy import integrate
         Hnu = integrate.simps(self._flux * self._freq, self._freq)
         return abs(Hnu)  # due to order freq
 
     def compute_flux_bol(self):
+        from scipy import integrate
         H = integrate.simps(self.Flux, self.Freq)
         return abs(H)  # due to order freq
 
@@ -202,6 +207,7 @@ class Spectrum(object):
         @param smoothPix: size of uniform filter applied to SED, in pixels
 
         """
+        from scipy import ndimage
         smoothed = ndimage.uniform_filter1d(self._flux, smoothPix)
         self._flux = smoothed
 
@@ -436,6 +442,8 @@ class SeriesSpectrum(object):
         return self.get_spec(idx)
 
     def flux_to_mags(self, b, z=0., d=0., magnification=1.):
+        from pystella.rf.star import Star
+
         if b is None:
             raise ValueError("Band must be defined.")
         if not self.is_time:
@@ -456,6 +464,10 @@ class SeriesSpectrum(object):
         return mags
 
     def to_mags(self, b, z=0., d=None, magnification=1.):
+        from pystella.rf.star import Star
+        from pystella.rf import band
+        # from pystella.rf.lc import LightCurve, SetLightCurve
+
         if b is None:
             raise ValueError("Band must be defined.")
         if not self.is_time:
@@ -483,6 +495,7 @@ class SeriesSpectrum(object):
         return times, mags
 
     def flux_to_curve(self, b, z=0., d=0., magnification=1.):
+        from pystella.rf.lc import LightCurve
         if b is None:
             raise ValueError("Band must be defined.")
         if not self.is_time:
@@ -515,6 +528,9 @@ class SeriesSpectrum(object):
         :param magnification:
         :return:
         """
+        from pystella.rf.lc import SetLightCurve
+        from pystella.rf import band
+
         curves = SetLightCurve(self.Name)
         for bname in bands:
             b = band.band_by_name(bname)
@@ -527,6 +543,8 @@ class SeriesSpectrum(object):
         return curves
 
     def mags_bands(self, bands, z=0., d=rf.pc_to_cm(10.), magnification=1.):
+        from pystella.rf import band
+
         mags = dict((k, None) for k in bands)
         for n in bands:
             b = band.band_by_name(n)

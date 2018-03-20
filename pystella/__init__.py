@@ -18,8 +18,16 @@ from .model import sn_eve as eve
 
 # classes
 from .model.stella import Stella
-from .model.h5stella import H5Stella, H5Fh
-from .model.SneSpace import SneSpace
+try:
+    from .model.h5stella import H5Stella, H5Fh
+except ImportError:
+    pass
+
+try:
+    from .model.SneSpace import SneSpace
+except ImportError:
+    pass
+
 from .rf.band import Band, BandUni
 from .rf.spectrum import SeriesSpectrum, Spectrum, SpectrumDilutePlanck, SpectrumPlanck
 from .rf.lc import SetLightCurve, LightCurve

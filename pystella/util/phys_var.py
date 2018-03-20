@@ -1,11 +1,8 @@
-import numpy as np
-from scipy.integrate import quad
 
 __author__ = 'bakl'
 
 
 #  CGS
-
 class phys:
     h = 6.626068e-27  # erg s
     c = 2.9979245800e10  # cm/s
@@ -40,6 +37,9 @@ class phys:
 
 
 def cosmology_D_by_z(z, H0=67.7, Omega_m=0.31, Omega_e=0.69):
+    from scipy.integrate import quad
+    import numpy as np
+
     c = 2.998e5
     D = (1. + z) * c / H0 * \
         quad(lambda zz: 1 / np.sqrt(Omega_m * (1. + zz) ** 3 + Omega_e), 0, z)[0]
