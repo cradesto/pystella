@@ -353,7 +353,8 @@ def main(name='', model_ext='.ph'):
                 if is_extinction:
                     curves = lcf.curves_reddening(curves, ebv=e, z=z)
             else:
-                curves = mdl.curves(bnames, z=z, distance=distance, ebv=e, magnification=magnification)
+                curves = mdl.curves(bnames, z=z, distance=distance, ebv=e, magnification=magnification,
+                                    t_diff=t_diff)
 
             models_mags[name] = curves
 

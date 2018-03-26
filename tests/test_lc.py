@@ -2,9 +2,6 @@ import numpy as np
 import unittest
 
 import pystella as ps
-# from pystella.rf.band import Band
-# from pystella.rf.lc import SetLightCurve, LightCurve, LC_interp
-# from pystella.rf.light_curve_func import curves_save, curves_read
 
 __author__ = 'bakl'
 
