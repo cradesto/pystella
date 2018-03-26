@@ -5,6 +5,7 @@
 import os
 
 import pystella.util.reader_table as rtbl
+from pystella import first
 from pystella.velocity import VelocityCurve, SetVelocityCurve
 
 
@@ -26,6 +27,7 @@ def plot(ax, dic=None, colt=('time', 'JD', 'MJD')):
     marker = dic.get('marker', 'o')
     markersize = dic.get('markersize', 9)
     color = dic.get('color', 'blue')
+    is_load = dic.get('is_load', True)
 
     arg = dic.get('args', [])
     if len(arg) > 0:
@@ -41,9 +43,13 @@ def plot(ax, dic=None, colt=('time', 'JD', 'MJD')):
     print("Plot {0} [{1}]  jd_shift={2}  mshift={3}".format(fname, marker, tshift, vshift))
 
     # read data
-    tbl, cols_data = rtbl.read_obs_table_header(fname, is_out=True)
-    vel_o = tbl2vel(tbl, cname, colt, vshift)
-    vel_o.tshift = tshift
+    if is_load:
+        vels = load({'args': [fname, tshift, vshift]}, colt=colt)
+        vel_o = first(vels)
+    else:
+        tbl, cols_data = rtbl.read_obs_table_header(fname, is_out=True)
+        vel_o = tbl2vel(tbl, cname, colt, vshift)
+        vel_o.tshift = tshift
 
     x = vel_o.Time
     y = vel_o.Vel / 1e8
@@ -71,7 +77,7 @@ def load(dic=None, colt=('time', 'JD', 'MJD')):
 
     fname = None
     tshift = 0.
-    mshift = 1.
+    vshift = 1.
     arg = []
 
     if 'args' in dic:
@@ -82,14 +88,16 @@ def load(dic=None, colt=('time', 'JD', 'MJD')):
         fname = os.path.expanduser(fname)
     if len(arg) > 0:
         s = arg.pop(0)
-        if s.isnumeric():
+        if isinstance(s, (int, float)):
+            tshift = s
+        elif s.isnumeric():
             tshift = float(s)
         elif len(arg) > 0:
             tshift = float(arg.pop(0))
     if len(arg) > 0:
-        mshift = float(arg.pop(0))
+        vshift = float(arg.pop(0))
 
-    print("Load {0} tshift={1}  mshift={2}".format(fname, tshift, mshift))
+    print("Load {0} tshift={1}  mshift={2}".format(fname, tshift, vshift))
 
     # read data
     # tbl = read_table_header_float(fname)
@@ -98,21 +106,21 @@ def load(dic=None, colt=('time', 'JD', 'MJD')):
 
     vels_o = SetVelocityCurve("Vel-{}".format(fname))
     for i, cname in cols_data.items():
-        vel_o = tbl2vel(tbl, cname, colt, mshift)
+        vel_o = tbl2vel(tbl, cname, colt, vshift)
         vels_o.add(vel_o)
 
     vels_o.set_tshift(tshift)
     return vels_o
 
 
-def tbl2vel(tbl, cname, colt, mshift):
+def tbl2vel(tbl, cname, colt, vshift):
     for nm in colt:
         if nm in tbl.dtype.names:
             time = tbl[nm]
             break
     else:
         raise ValueError("The table should contain a column with name in [{0}]".format(', '.join(colt)))
-    values = tbl[cname] * mshift
+    values = tbl[cname] * vshift
     # filter
     mask = values > 0
     t = time[mask]

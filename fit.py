@@ -49,7 +49,8 @@ def get_parser():
                         help="-b <bands>: string, default: U-B-V-R-I, for example g-i-r-UVW2")
     parser.add_argument('-c', '--call',
                         required=True,
-                        nargs='+',
+                        action='append',
+                        # nargs='+',
                         type=str,
                         dest='call',
                         help='Call observational data, for example: '
@@ -63,7 +64,7 @@ def get_parser():
     parser.add_argument('-d',
                         required=False,
                         type=float,
-                        default=10,
+                        default=None,
                         dest="distance",
                         help="Distance to the model [pc].  Default: 10 pc")
     parser.add_argument('-e',
@@ -698,7 +699,7 @@ def fit_mfl(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, tlim, Vn
                 curves_m = mdl.get_tt().read_curves()
                 excluded = [bn for bn in curves_m.BandNames if bn not in bnames]
                 for bn in excluded:
-                    curves_m.rm(bn)
+                    curves_m.pop(bn)
             else:
                 curves_m = mdl.curves(bnames, z=z, distance=distance, ebv=args.color_excess,
                                       t_beg=tlim[0], t_end=tlim[1], t_diff=t_diff)
@@ -821,14 +822,16 @@ def main():
     # Set distance and redshift
     z = args.redshift
     t_diff = args.t_diff
-    if args.distance:
+    if args.distance is not None:
         print("Fit magnitudes on z={0:F} at distance={1:E}".format(z, args.distance))
         if z > 0:
             print("  Cosmology D(z)={0:E} Mpc".format(ps.cosmology_D_by_z(z)))
     else:
+        distance = 10 # pc
         if z > 0:
             distance = ps.cosmology_D_by_z(z) * 1e6
             print("Fit magnitudes on z={0:F} with cosmology D(z)={1:E} pc".format(z, distance))
+        args.distance = distance
 
     # Time limits for models
     tlim = (0, float('inf'))

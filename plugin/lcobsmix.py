@@ -54,7 +54,7 @@ def plot(ax, dic=None, mag_lim=30.):
         bands = curves.BandNames
         for b in bands:
             if b not in bnames:
-                curves.rm(b)
+                curves.pop(b)
     # plot data
     for lc in curves:
         bname = lc.Band.Name

@@ -173,7 +173,7 @@ class SetTimeSeries(object):
 
     @property
     def TimeCommon(self):
-        lc = self.get(first(self.Set))
+        lc = first(self.Set)
         return lc.Time
 
     @property
@@ -185,8 +185,8 @@ class SetTimeSeries(object):
         return name in self.Names
 
     # for cycle
-    def __getitem__(self, index):
-        return self.Set[index]
+    def __getitem__(self, nm):
+        return self.Set[nm]
 
     # def __iter__(self):
     #     self._loop = 0
@@ -201,7 +201,7 @@ class SetTimeSeries(object):
     def add(self, ts):
         self._set[ts.Name] = ts
 
-    def rm(self, name):
+    def pop(self, name):
         return self._set.pop(name, None)
 
     def get(self, bn, default=None):
