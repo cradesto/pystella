@@ -1,5 +1,8 @@
 # pystella
 
+IMPORTANT: the package is under heavy development. 
+Keep this in mind if you want to use it on your research.
+
 ## Command shell
 
   Run the script "PATH-to-PYSTELLA/pystella.py" in the directory with models.
