@@ -344,13 +344,13 @@ def read_lc(path=path_data):
     return lc_data, col_pos
 
 
-def read_curves(path=path_data, image='S1', bnames=None):
+def read_curves(path=path_data, image='S1', bnames=None, no_limits=False):
     import pystella as ps
     curves = ps.SetLightCurve("SN Refsdal, image: %s" % image)
 
     lc_data, sn_images = read_lc(path)
     bands = np.unique(lc_data[:, 0])
-    colS = sn_images[image]  # S1 - 2, col  S2 - 4, S3 - 6, S4 - 8 col
+    colS = sn_images[image]  # S1 - 2, col  S2 - 4, S3 - 6, S4 - 8 col, SX - 10 col
 
     for ib in bands:
         bname = 'F%sW' % int(ib)
@@ -364,9 +364,17 @@ def read_curves(path=path_data, image='S1', bnames=None):
             continue
         # filter data
         is_good = m > 0
+        is_err =  e > 0
+        if no_limits:
+            is_good = np.where((is_good) & (is_err)) 
+#            is_good = np.where((is_good) & (e > 0)) 
+
+#        from IPython.core.debugger import Tracer; Tracer()()
+        
         time = t[is_good]
         mags = m[is_good]
         yerr = e[is_good]
+            
         lc = ps.LightCurve(bname, time, mags, errs=yerr)
         curves.add(lc)
     return curves
