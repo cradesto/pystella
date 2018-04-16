@@ -208,6 +208,12 @@ class H5Hyd(H5TimeElement):
     def Nvars(self):
         return self.Shape[-1]
 
+    @property
+    def Columns(self):
+        return self.Attrs['columns']
+
+    def Var(self, ncol):
+        return self.V[:, :, ncol]
 
 def main():
     import matplotlib.pyplot as plt
