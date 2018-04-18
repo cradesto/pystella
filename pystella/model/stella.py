@@ -97,7 +97,7 @@ class Stella:
         res = flx.flx_reader(os.path.join(self.path, self.name + '.flx'))
         return res
 
-    def get_ph(self, t_diff=1.005, t_beg=0.0, t_end=float('inf'), is_nfrus=True):
+    def get_ph(self, t_diff=1.005, t_beg=float('-inf'), t_end=float('inf'), is_nfrus=True):
         import pystella.model.sn_ph as ph
         res = ph.read(self.name, self.path, t_diff=t_diff, t_beg=t_beg, t_end=t_end, is_nfrus=is_nfrus)
         return res
@@ -117,7 +117,7 @@ class Stella:
         from pystella.rf.light_curve_func import series_spec_reddening
         from pystella.rf.rad_func import pc_to_cm
 
-        t_beg = kwargs.get("t_beg", 0.)
+        t_beg = kwargs.get("t_beg", float('-inf'))
         t_end = kwargs.get("t_end", float('inf'))
         t_diff = kwargs.get("t_diff", 1.01)
         magnification = kwargs.get("magnification", 1.)

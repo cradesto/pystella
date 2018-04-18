@@ -2,7 +2,7 @@ import os
 import numpy as np
 
 
-def read(name, path='./', t_diff=1.005, t_beg=0.0, t_end=float('inf'), is_nfrus=True):
+def read(name, path='./', t_diff=1.005, t_beg=float('-inf'), t_end=float('inf'), is_nfrus=True):
     """
     Read SED from ph-file.
     :param name: model (file without extension)
@@ -35,11 +35,11 @@ def read(name, path='./', t_diff=1.005, t_beg=0.0, t_end=float('inf'), is_nfrus=
     k = 1
     for i, t in enumerate(times):
         if t < t_beg:
-            k = i
+            k = i+1
             continue
         if t > t_end:
             break
-        if abs(times[k]) > 0. and np.abs(t / times[k]) > t_diff:
+        if abs(times[k]) > 0. and np.abs(t / times[k] -1.) > t_diff-1.:
             is_times[k] = True
             k = i
     # is_times[0] = True  # times[0] > 0.
@@ -47,9 +47,8 @@ def read(name, path='./', t_diff=1.005, t_beg=0.0, t_end=float('inf'), is_nfrus=
     is_times[-1] = True
 
     series = SeriesSpectrum(name)
-    for i in range(len(times)):
+    for i, t in enumerate(times):
         if is_times[i]:
-            t = times[i]
             if is_nfrus:
                 nfrus = int(data[i, 1])  # exact number of used (saved) freqs
                 freqs = freqs[:nfrus]

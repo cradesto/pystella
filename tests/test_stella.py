@@ -20,10 +20,24 @@ class TestStellaLightCurves(unittest.TestCase):
         mdl = ps.Stella(name, path=path)
         curves = mdl.curves(bands)
 
+        print(ps.first(curves).Time[:300])
         self.assertTrue((np.array(sorted(curves.BandNames) == sorted(bands))).all(),
                         msg="Error for the initial band names [%s] "
                             "VS secondary BandNames are %s."
                             % (' '.join(bands), ' '.join(curves.BandNames)))
+
+    def test_stella_curves_tbeg(self):
+        name = 'cat_R500_M15_Ni006_E12'
+        path = join(dirname(abspath(__file__)), 'data', 'stella')
+        bands = ('U', 'B', 'V')
+
+        mdl = ps.Stella(name, path=path)
+        t_beg = 1.
+        curves = mdl.curves(bands, t_beg=t_beg)
+
+        print(ps.first(curves).Time[:3])
+        self.assertTrue(np.any(ps.first(curves).Time >= t_beg),
+                        msg="There ara values Time less then t_beg = {}".format(t_beg))
 
     def test_stella_curves_VS_tt_plot(self):
         from pystella.rf.band import bands_colors
