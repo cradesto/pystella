@@ -67,7 +67,7 @@ class LightCurve(TimeSeries):
             res = np.array([self.Time, self.Mag])
         return res.T
 
-    def copy(self, tlim=None):
+    def copy_tlim(self, tlim=None):
         errs = None
 
         if tlim is not None:
@@ -84,6 +84,11 @@ class LightCurve(TimeSeries):
 
         lc = LightCurve(self.Band, time, mags, errs)
         lc.tshift = self.tshift
+        lc.mshift = self.mshift
+        return lc
+
+    def copy(self, name=None, f=None):
+        lc = super(type(self), self).copy(name=name, f=f)
         lc.mshift = self.mshift
         return lc
 

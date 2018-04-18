@@ -104,10 +104,10 @@ class Stella:
 
     def curves(self, bands, z=0., distance=10., ebv=0., Rv=None, law=LawFitz, mode=ReddeningLaw.SMC, **kwargs):
         """
-            Compute magnitude in bands for the 'name' model.
+            Compute model magnitudes of the photometric bands.
         :param bands: photometric bands
         :param z: redshift, default 0
-        :param distance: distance to star in parsec, default 10 pc
+        :param distance: distance to the source in parsec, default 10 pc
         :param ebv: color excess, default: 0
         :param Rv:  R_V
         :param law: the law of extinction curve
@@ -136,7 +136,6 @@ class Stella:
             serial_spec = series_spec_reddening(ss, ebv=ebv, Rv=Rv, law=law, mode=mode)
         # light curves
         curves = serial_spec.flux_to_curves(bands, z=z, d=pc_to_cm(distance), magnification=magnification)
-
         return curves
 
     def info(self):

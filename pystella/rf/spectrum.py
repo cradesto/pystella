@@ -484,7 +484,7 @@ class SeriesSpectrum(object):
             # mag = star.flux_to_mag(b)
             try:
                 if b.Name == band.Band.NameBol:
-                    mag = star.magBol(b)
+                    mag = star.magBol()
                 else:
                     mag = star.magAB(b)
                 times.append(t)

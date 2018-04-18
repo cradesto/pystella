@@ -33,16 +33,17 @@ def read(name, path='./', t_diff=1.005, t_beg=0.0, t_end=float('inf'), is_nfrus=
     times = np.array(data[:, 0])
     is_times = np.zeros(len(times), dtype=bool)
     k = 1
-    for i in range(len(times)):
-        if times[i] < t_beg:
+    for i, t in enumerate(times):
+        if t < t_beg:
             k = i
             continue
-        if times[i] > t_end:
+        if t > t_end:
             break
-        if np.abs(times[i] / times[k]) > t_diff:
+        if abs(times[k]) > 0. and np.abs(t / times[k]) > t_diff:
             is_times[k] = True
             k = i
-    is_times[0] = True  # times[0] > 0.
+    # is_times[0] = True  # times[0] > 0.
+    is_times[0] = times[0] >= t_beg
     is_times[-1] = True
 
     series = SeriesSpectrum(name)

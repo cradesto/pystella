@@ -31,7 +31,7 @@ class TestLightCurve(unittest.TestCase):
         time = np.linspace(10, 50, 5)
         lc_interp = ps.rf.lc.LC_interp(lc, time)
 
-        self.assertEqual(len(time), lc_interp.Length, msg='The lenght of Interp LC should be equal len(time)')
+        self.assertEqual(len(time), lc_interp.Length, msg='The length of Interp LC should be equal len(time)')
 
         # plot
         from matplotlib import pyplot as plt
@@ -47,27 +47,47 @@ class TestLightCurve(unittest.TestCase):
         lc1 = lc_create('U', dt=0.)
         lc2 = lc_create('U', dt=0.)
 
+    def test_lc_copy(self):
+        ps.band.Band.load_settings()
+        lc1 = lc_create('U', dt=0.)
+        lc2 = lc1.copy()
+        self.assertEqual(lc1.Length, lc2.Length, msg='The length of copy  should be equal the original length')
+        self.assertEqual(lc1.Band.Name, lc2.Band.Name, msg='The band of copy  should be equal the original band')
+        np.testing.assert_array_equal(lc1.Time, lc2.Time)
+        np.testing.assert_array_equal(lc1.Mag, lc2.Mag)
+
+    def test_lc_clone(self):
+        lc1 = lc_create('U', dt=0.)
+        lc2, tshift, mshift = lc1.clone()
+        self.assertEqual(lc1.Length, lc2.Length, msg='The length of clone  should be equal the original length')
+        self.assertEqual(lc1.Band.Name, lc2.Band.Name, msg='The band of clone  should be equal the original band')
+        np.testing.assert_array_equal(lc1.Time, lc2.Time)
+        np.testing.assert_array_equal(lc1.Mag, lc2.Mag)
+
     def test_lc_bol(self):
         import matplotlib.pyplot as plt
         from scipy.integrate import simps
 
         m1 = ps.Stella('cat_R500_M15_Ni006_E12', path='data/stella')
         tt1 = m1.get_tt().read()
-        curves = m1.curves(bands=['bol'])
-        ax = ps.light_curve_plot.curves_plot(curves, xlim=(-10, 155), ylim=(-9, -20), is_line=False)
+        curves = m1.curves(bands=['bol'], t_diff=1.0000001)
+        # ax = ps.light_curve_plot.curves_plot(curves, xlim=(0.7, 1), ylim=(-14, -24), is_line=False)
+        ax = ps.light_curve_plot.curves_plot(curves, xlim=(-10, 155), ylim=(-14, -24), is_line=False)
         t = tt1['time']
         ax.plot(t, tt1['Mbol'], label='tt-bolometric LC ', color='red', lw=2, ls=':')
         # ph
-        if False:
+        if True:
             ph = m1.get_ph()
             m_bol = []
             for spec in ph:
                 lum = simps(spec.Flux[::-1], spec.Freq[::-1])
-                bol = 4.75 - 2.5 * np.log10(np.abs(lum)/3.86e33)
+                bol = 4.75 - 2.5 * np.log10(np.abs(lum) / 3.86e33)
                 m_bol.append(bol)
             ax.plot(ph.Time, m_bol, label='ph-bolometric LC ', color='green', lw=2, ls='-.')
         ax.legend()
         plt.show()
+        import warnings
+        warnings.warn("Should be check for shorck breakout")
 
 
 class TestSetLightCurve(unittest.TestCase):

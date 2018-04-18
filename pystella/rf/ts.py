@@ -116,7 +116,8 @@ class TimeSeries(object):
             if self.IsErr:
                 errs = self.Err
 
-        new = TimeSeries(name, t, v, errs)
+        type_ts = type(self)
+        new = type_ts(name, t, v, errs)
         new.tshift = self.tshift
         return new
 
