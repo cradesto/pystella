@@ -142,9 +142,12 @@ class SetTimeSeries(object):
     # check common time
     @property
     def IsCommonTime(self):
-        if self.Length <= 1:
+        if self.Length == 0:
+            return False
+        if self.Length == 1:
             return True
         t = self.TimeCommon
+        # comparison with all LC
         for ts in self:
             if not np.array_equal(ts.Time, t):
                 return False
@@ -173,7 +176,9 @@ class SetTimeSeries(object):
 
     @property
     def TimeCommon(self):
-        lc = first(self.Set)
+        if len(self.Set) == 0:
+            raise ValueError('There are no bands in SetLightCurve.')
+        lc = first(self.Set.values())
         return lc.Time
 
     @property

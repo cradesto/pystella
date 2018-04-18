@@ -87,7 +87,7 @@ class LightCurve(TimeSeries):
         lc.mshift = self.mshift
         return lc
 
-    def shifted(self):
+    def clone(self):
         errs = None
         if self.IsErr:
             errs = self.Err
@@ -115,16 +115,26 @@ class LightCurve(TimeSeries):
         return res
 
 
-def LC_interp(orig, time):
-    mags = np.interp(time, orig.Time, orig.M)
+def LC_interp(orig, time, is_spline=True):
+    if is_spline:
+        from scipy.interpolate import InterpolatedUnivariateSpline
+        s = InterpolatedUnivariateSpline(orig.Time, orig.Mag, k=1)
+        mags = s(time)
+    else:
+        mags = np.interp(time, orig.Time, orig.Mag)
     if orig.IsErr:
-        errs = np.interp(time, orig.Time, orig.MagErr)
+        if is_spline:
+            from scipy.interpolate import InterpolatedUnivariateSpline
+            s = InterpolatedUnivariateSpline(orig.Time, orig.MagErr, k=1)
+            errs = s(time)
+        else:
+            errs = np.interp(time, orig.Time, orig.MagErr)
         lc = LightCurve(orig.Band, time, mags, errs)
     else:
         lc = LightCurve(orig.Band, time, mags)
 
     # lc.tshift = orig.tshift
-    lc.mshift = orig.mshift
+    # lc.mshift = orig.mshift
     return lc
 
 
@@ -168,6 +178,13 @@ class SetLightCurve(SetTimeSeries):
         for n, lc in self.Set.items():
             lc.mshift = mshift
 
+    def clone(self):
+        res = SetLightCurve(self.Name)
+        for lc in self:
+            clone = lc.clone()
+            res.add(clone)
+        return res
+
     @classmethod
     def Merge(cls, curves1, curves2):
         if curves1 is None:
@@ -190,5 +207,3 @@ class SetLightCurve(SetTimeSeries):
                 res.add(lc)
 
         return res
-
-

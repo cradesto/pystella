@@ -709,7 +709,7 @@ def fit_mfl(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, tlim, Vn
             # tss_m[lc.Band.Name] = lc
 
         for lc in curves_o:
-            l, tshift, mshift = lc.shifted()
+            l, tshift, mshift = lc.clone()
             tss_o.add(l)
             # tss_o[lc.Band.Name], tshift, mshift = lc.shifted()
             # tshifts[lc.Band.Name] = tshift
