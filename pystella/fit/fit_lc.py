@@ -37,6 +37,7 @@ class FitLc:
 class FitLcResult:
     def __init__(self):
         self._mshift = 0.
+        self._msigma = 0.
         self._tshift = 0.
         self._tsigma = 0.
         self._measure = None
@@ -65,6 +66,14 @@ class FitLcResult:
     @mshift.setter
     def mshift(self, v):
         self._mshift = v
+
+    @property
+    def msigma(self):
+        return self._msigma
+
+    @msigma.setter
+    def msigma(self, v):
+        self._msigma = v
 
     @property
     def measure(self):
