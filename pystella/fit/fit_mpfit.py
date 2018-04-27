@@ -23,8 +23,7 @@ class FitMPFit(FitLc):
         dt0 = curves_o.get(curves_o.BandNames[0]).tshift
         dm0 = curves_o.get(curves_o.BandNames[0]).mshift
 
-        result = self.best_curves(curves_o, curves_m, dt0=dt0, dm0=dm0,
-                                  is_debug=self.is_debug, is_info=self.is_info)
+        result = self.best_curves(curves_o, curves_m, dt0=dt0, dm0=dm0)
 
         tshift = dt0 + result.params[0]
         mshift = dm0 + result.params[1]
@@ -75,7 +74,7 @@ class FitMPFit(FitLc):
             # model interpolation
             if is_spline:
                 s = InterpolatedUnivariateSpline(lc_m.Time, lc_m.Mag, k=1)
-                m = s(lc_o.Time)
+                m = s(lc_o.Time )
             else:
                 m = np.interp(lc_o.Time, lc_m.Time, lc_m.Mag)  # One-dimensional linear interpolation.
             w = np.ones(len(m))
@@ -83,7 +82,7 @@ class FitMPFit(FitLc):
             # w = np.abs(lc_o.Time / max(lc_o.Time))  # weight
             diff = lc_o.Mag - m
             if lc_o.IsErr:
-                res = diff**2 / lc_o.Err**2  * w
+                res = diff**2 / lc_o.MagErr**2  * w
                 # res = np.abs((lc_o.Mag - m) / lc_o.MagErr) * w
             else:
                 res = diff**2 * w
@@ -180,49 +179,58 @@ class FitMPFit(FitLc):
 
         return result
 
-    @staticmethod
-    def best_curves(curves_o, curves_m, dt0=0., dm0=0., is_dm=False, is_spline=True, At=0., err_mdl=0.,
-                    is_debug=False, is_info=True, xtol=1e-10, ftol=1e-10, gtol=1e-10):
-        dm = 0.
-        if dm0 is not None:
-            dm = dm0
+    def best_curves(self, curves_o, curves_m, dt0=None, dm0=None, is_spline=True,
+                    At=0., err_mdl=0.,  xtol=1e-10, ftol=1e-10, gtol=1e-10):
+        dt_init = {lc.Band.Name: lc.tshift for lc in curves_o}
+        dm_init = {lc.Band.Name: lc.mshift for lc in curves_o}
 
         def least_sq(p, fjac):
-            A = At
             total = []
             for lc_m in curves_m:
                 lc_o = curves_o.get(lc_m.Band.Name)
-                lc_o.tshift = dt0 + p[0]
-                lc_o.mshift = dm + p[1]
+                lc_o.tshift = dt_init[lc_m.Band.Name] + p[0]
+                lc_o.mshift = dm_init[lc_m.Band.Name] + p[1]
                 # model interpolation
                 if is_spline:
                     s = InterpolatedUnivariateSpline(lc_m.Time, lc_m.Mag, k=1)
                     m = s(lc_o.Time)
                 else:
                     m = np.interp(lc_o.Time, lc_m.Time, lc_m.Mag)  # One-dimensional linear interpolation.
-                w = np.ones(len(m))
-                w = np.abs(1. - A * (lc_o.Time - lc_o.TimeMin) / (lc_o.TimeMax - lc_o.TimeMin))  # weight
+                #                w = np.ones(len(m))
+                w = np.abs(1. - At * (lc_o.Time - lc_o.TimeMin) / (lc_o.TimeMax - lc_o.TimeMin))  # weight
                 diff = lc_o.Mag - m
                 if lc_o.IsErr:
-                    res = (np.abs(diff) / (err_mdl + lc_o.Err)) * w
+                    res = (diff/(err_mdl + lc_o.MagErr))**2 * w
                 else:
-                    res = np.abs(diff) * w
+                    res = diff**2 * w
                 total = np.append(total, res)
             return 0, total
 
-        parinfo = [{'value': 0., 'limited': [1, 1], 'limits': [-250., 250.]}]
-        if is_dm:
-            parinfo.append({'value': 0., 'limited': [1, 1], 'limits': [-50., 50.]})
+        parinfo = []
+        if dt0 is not None:
+            parinfo.append({'value': dt0, 'limited': [1, 1], 'limits': [-250., 250.]})
         else:
             parinfo.append({'value': 0., 'fixed': 1})
-
-        result = mpfit.mpfit(least_sq, parinfo=parinfo, quiet=not is_debug, maxiter=200,
+            
+        if dm0 is not None:
+            parinfo.append({'value': dm0, 'limited': [1, 1], 'limits': [-5., 5.]})
+        else:
+            parinfo.append({'value': 0., 'fixed': 1})
+            
+        result = mpfit.mpfit(least_sq, parinfo=parinfo, quiet=not self.is_info, maxiter=200,
                              ftol=ftol, gtol=gtol, xtol=xtol)
-        if is_info:
 
+        # return initial states
+        for lc in curves_o:
+            lc.tshift = dt_init[lc.Band.Name]
+            lc.mshift = dm_init[lc.Band.Name]
+
+        if self.is_info:
             print("status: ", result.status)
             if result.status <= 0:
                 print('error message = ', result.errmsg)
+                print('parameters = ', result.params)
+                raise ValueError(result.errmsg)
             elif result.status == 5:
                 print('Maximum number of iterations exceeded in mangle_spectrum')
             else:
@@ -230,4 +238,23 @@ class FitMPFit(FitLc):
                 print("Fitted pars: ", result.params)
                 print("Uncertainties: ", result.perror)
 
-        return result
+        # time and magnitude shifts
+        tshift = result.params[0]
+        dof = np.sum([lc.Length for lc in curves_o])
+        if dt0 is not None:
+            dof -= 1
+        if dm0 is not None:
+            dof -= 1
+            
+        # scaled uncertainties
+        pcerror = result.perror * np.sqrt(result.fnorm / dof)
+        tsigma = pcerror[0]  # todo tsigma check
+
+        dmshift = result.params[1]
+        dmsigma = pcerror[1]
+
+        if self.is_info:
+            print("The final params are: tshift=%f+-%f mshift=%f+-%f  chi2: %e" % (tshift, tsigma, dmshift, dmsigma, result.fnorm))
+        res = {'dt': tshift, 'dtsig': tsigma, 'dm': dmshift, 'dmsig': dmsigma, 'chi2': result.fnorm, 'dof': result.dof}
+        return res
+#        return result
