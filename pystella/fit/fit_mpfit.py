@@ -200,9 +200,11 @@ class FitMPFit(FitLc):
                 w = np.abs(1. - At * (lc_o.Time - lc_o.TimeMin) / (lc_o.TimeMax - lc_o.TimeMin))  # weight
                 diff = lc_o.Mag - m
                 if lc_o.IsErr:
-                    res = (diff/(err_mdl + lc_o.MagErr))**2 * w
+                    res = diff/(err_mdl + lc_o.MagErr) * w
+#                    res = (diff/(err_mdl + lc_o.MagErr))**2 * w
                 else:
-                    res = diff**2 * w
+                    res = diff * w
+#                    res = diff**2 * w
                 total = np.append(total, res)
             return 0, total
 
@@ -225,13 +227,14 @@ class FitMPFit(FitLc):
             lc.tshift = dt_init[lc.Band.Name]
             lc.mshift = dm_init[lc.Band.Name]
 
+        if result.status <= 0:
+            print('error message = ', result.errmsg)
+            print('parameters = ', result.params)
+            raise ValueError(result.errmsg)
+            
         if self.is_info:
             print("status: ", result.status)
-            if result.status <= 0:
-                print('error message = ', result.errmsg)
-                print('parameters = ', result.params)
-                raise ValueError(result.errmsg)
-            elif result.status == 5:
+            if result.status == 5:
                 print('Maximum number of iterations exceeded in mangle_spectrum')
             else:
                 print("Iterations: ", result.niter)
