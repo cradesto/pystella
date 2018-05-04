@@ -218,9 +218,19 @@ class FitMPFit(FitLc):
             parinfo.append({'value': dm0, 'limited': [1, 1], 'limits': [-5., 5.]})
         else:
             parinfo.append({'value': 0., 'fixed': 1})
-            
-        result = mpfit.mpfit(least_sq, parinfo=parinfo, quiet=not self.is_info, maxiter=200,
-                             ftol=ftol, gtol=gtol, xtol=xtol)
+
+        if dt0 is not None or dm0 is not None:
+            result = mpfit.mpfit(least_sq, parinfo=parinfo, quiet=not self.is_info, maxiter=200,
+                                 ftol=ftol, gtol=gtol, xtol=xtol)
+        else:
+            dum, r = least_sq([x['value'] for x in parinfo], None)  # just return the weight diff
+            r = np.array(r)
+            chi2 = np.sum(r**2)
+            if self.is_info:
+                print("No fit: only run least_sq: len(r)={}  chi2={}".format(len(r), chi2))
+                      
+            res = {'dt': None, 'dtsig': None, 'dm': None, 'dmsig': None, 'chi2': chi2, 'dof': len(r)}
+            return res
 
         # return initial states
         for lc in curves_o:
