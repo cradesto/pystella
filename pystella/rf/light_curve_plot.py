@@ -1,13 +1,22 @@
-import matplotlib.pyplot as plt
 import numpy as np
 from itertools import cycle
 
-from matplotlib import gridspec
 # from matplotlib import colors as mcolors
 # import seaborn as sns
 
 from pystella.model import sn_swd
 from pystella.rf import band
+
+try:
+    import matplotlib.pyplot as plt
+    from matplotlib import gridspec
+except ImportError as ex:
+    import os, sys, traceback
+    exc_type, exc_obj, exc_tb = sys.exc_info()
+    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+    print(exc_type, fname, exc_tb.tb_lineno, ex)
+#    print(ex)
+    pass
 
 __author__ = 'bakl'
 
