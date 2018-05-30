@@ -4,7 +4,7 @@ __all__ = ['fit', 'model', 'rf', 'util']
 
 from .rf import band
 from .rf import light_curve_func
-#from .rf import light_curve_plot
+from .rf import light_curve_plot
 from .rf import extinction
 from .fit import mpfit
 
