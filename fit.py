@@ -182,13 +182,14 @@ def plot_curves(curves_o, res_models, res_sorted, **kwargs):
             ax.set_xlim(xlim)
         lt = {lc.Band.Name: 'o' for lc in curves_o}
         curves_o.set_tshift(tshift0 + tshift_best)
-        lcp.curves_plot(curves_o, ax, xlim=xlim, lt=lt, markersize=4, is_legend=False)
+        lcp.curves_plot(curves_o, ax, xlim=xlim, lt=lt, markersize=4, is_legend=False, is_line=False)
 
         ax.text(0.99, 0.94, k, horizontalalignment='right', transform=ax.transAxes)
         ax.text(0.98, 0.85, "dt={:.2f}".format(tshift_best), horizontalalignment='right', transform=ax.transAxes)
         ax.text(0.01, 0.05, "$\chi^2: {:.2f}$".format(v.measure), horizontalalignment='left', transform=ax.transAxes,
                 bbox=dict(facecolor='green', alpha=0.3))
-        # ax.text(0.9, 0.9, "{:.2f}".format(v.measure), horizontalalignment='right', transform=ax.transAxes, bbox=dict(facecolor='green', alpha=0.3))
+        # ax.text(0.9, 0.9, "{:.2f}".format(v.measure), horizontalalignment='right', transform=ax.transAxes,
+        # bbox=dict(facecolor='green', alpha=0.3))
 
         # fix axes
         if i % ncol == 0:
