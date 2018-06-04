@@ -46,11 +46,6 @@ def val_to_wl(val, inp="Hz"):
         raise ValueError("inp must be 'Hz', 'A','cm'")
 
 
-def pc_to_cm(parsec):
-    """Takes in a measurement in parsecs and returns cm"""
-    return parsec * p.pc
-
-
 def au_to_cm(dist):
     """Takes in a measurement in AU and returns cm"""
     return dist * p.AU

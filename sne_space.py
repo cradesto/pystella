@@ -67,7 +67,7 @@ def main():
         parser.print_help()
         sys.exit(2)
 
-    sn = ps.SneSpace()
+    sn = ps.model.SneSpace()
     print("Load {0}".format(fname))
     sn.load(fname)
     print("{} is loaded.".format(sn.Name))

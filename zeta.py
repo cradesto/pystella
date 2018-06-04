@@ -13,13 +13,15 @@ from matplotlib import gridspec
 from scipy import interpolate
 from scipy.optimize import fmin
 
-import pystella.rf.rad_func as rf
-from pystella.model.stella import Stella
-from pystella.rf import band, spectrum
-from pystella.rf.star import Star
-from pystella.util.path_misc import get_model_names
-from pystella.util.phys_var import phys
-from pystella.util.string_misc import cache_load, cache_save
+# import pystella.rf.rad_func as rf
+# from pystella.model.stella import Stella
+# from pystella.rf import band, spectrum
+# from pystella.rf.star import Star
+# from pystella.util.path_misc import get_model_names
+# from pystella.util.phys_var import phys
+# from pystella.util.string_misc import cache_load, cache_save
+
+import pystella as ps
 
 __author__ = 'bakl'
 
@@ -34,7 +36,7 @@ markers = {u'D': u'diamond', 6: u'caretup', u's': u'square', u'x': u'x',
            5: u'caretright', u'^': u'triangle_up', u'd': u'thin_diamond', u'h': u'hexagon1',
            u'+': u'plus', u'*': u'star', u'o': u'circle', u'p': u'pentagon', u'3': u'tri_left',
            u'H': u'hexagon2', u'v': u'triangle_down', u'8': u'octagon', u'<': u'triangle_left'}
-markers = markers.keys()
+markers = list(markers.keys())
 
 epm_coef = {
     'dessart': {
@@ -177,8 +179,8 @@ def plot_zeta(models_dic, set_bands, theta_dic, t_cut=4.9,
     ib = 0
     for bset in set_bands:
         ib += 1
-        icol = (ib - 1) % 2
-        irow = (ib - 1) / 2
+        icol = int((ib - 1) % 2)
+        irow = int((ib - 1) / 2)
         ax = fig.add_subplot(gs1[irow, icol])
         ax_cache[bset] = ax
         # ax.legend(prop={'size': 6})
@@ -208,7 +210,7 @@ def plot_zeta(models_dic, set_bands, theta_dic, t_cut=4.9,
     for bset in set_bands:
         ib += 1
         mi = 0
-        for mname, tbl in models_dic[bset].iteritems():
+        for mname, tbl in models_dic[bset].items():
             ax = ax_cache[bset]
             mi += 1
             # i += 1
@@ -474,7 +476,7 @@ def zeta_fit_coef_my(models_dic, bset, t_beg, t_end=None):
 
 def epsilon_fit_zeta(x, models_dic, bset, t_beg, t_end=None):
     e = 0
-    for mname, tbl in models_dic[bset].iteritems():
+    for mname, tbl in models_dic[bset].items():
         Tcol = tbl['Tcol']
         zeta = tbl['zeta']
         z = tbl['time']
@@ -500,14 +502,14 @@ def epsilon(theta, freq, mag, bands, radius, dist, z):
             e += mag[b] ** 2
         return e
     # sp = spectrum.SpectrumDilutePlanck(freq, temp_color, W=zeta**2)
-    sp = spectrum.SpectrumDilutePlanck(freq, temp_color, W=zeta ** 2)
+    sp = ps.SpectrumDilutePlanck(freq, temp_color, W=zeta ** 2)
     # sp.correct_zeta(zeta)
 
-    star = Star("bb", sp)
+    star = ps.Star("bb", sp)
     star.set_radius_ph(radius)
     star.set_distance(dist)
     star.set_redshift(z)
-    mag_bb = {b: star.magAB(band.band_by_name(b)) for b in bands}
+    mag_bb = {b: star.magAB(ps.band.band_by_name(b)) for b in bands}
     for b in bands:
         e += (mag[b] - mag_bb[b]) ** 2
     return e
@@ -543,7 +545,7 @@ def compute_Tnu_w(serial_spec, tt):
     temp_eff = list()
     W = list()
     Rph_spline = interpolate.splrep(tt['time'], tt['Rph'], s=0)
-    x_bb = rf.compute_x_bb()
+    x_bb = ps.rf.compute_x_bb()
     for nt in range(len(serial_spec.Time)):
         t, spec = serial_spec.get_tspec(nt)
         if t < min(tt['time']):
@@ -556,8 +558,8 @@ def compute_Tnu_w(serial_spec, tt):
         radius = interpolate.splev(t, Rph_spline)
         H /= 4. * np.pi * radius ** 2
 
-        Tnu = phys.h / phys.k * nu_bb / x_bb
-        Teff = (H / phys.sigma_SB) ** 0.25
+        Tnu = ps.phys.h / ps.phys.k * nu_bb / x_bb
+        Teff = (H / ps.phys.sigma_SB) ** 0.25
         dilution = (Teff / Tnu) ** 4
 
         temp_nu.append(Tnu)
@@ -566,8 +568,8 @@ def compute_Tnu_w(serial_spec, tt):
     return temp_nu, temp_eff, W
 
 
-def compute_tcolor(name, path, bands, d=rf.pc_to_cm(10.), z=0., t_cut=1.):
-    model = Stella(name, path=path)
+def compute_tcolor(name, path, bands, d=ps.phys.pc2cm(10.), z=0., t_cut=1., t_diff=1.05):
+    model = ps.Stella(name, path=path)
 
     if not model.is_ph:
         print("No ph-data for: " + str(model))
@@ -579,10 +581,11 @@ def compute_tcolor(name, path, bands, d=rf.pc_to_cm(10.), z=0., t_cut=1.):
 
     # serial_spec = model.read_series_spectrum(t_diff=1.)
     # curves = serial_spec.flux_to_curves(bands, d=distance)
-    serial_spec = model.read_series_spectrum(t_diff=1.05, t_beg=t_cut)
-    # curves = serial_spec.
+    serial_spec = model.get_ph(t_diff=t_diff, t_beg=t_cut)
+    # # curves = serial_spec.
     mags = serial_spec.mags_bands(bands, z=z, d=d)
 
+    # curves = model.curves(bands, z=z, distance=d)
     # read R_ph
     tt = model.get_tt().read()
     tt = tt[tt['time'] > t_cut]  # time cut  days
@@ -628,7 +631,7 @@ def fit_bayesian(models_zt, is_debug=True, is_info=False, title=''):
 
     def log_posterior(theta, models):
         p = log_prior(theta)
-        for mname, tbl in models.iteritems():
+        for mname, tbl in models.items():
             p += log_likelihood_t(theta, tbl)
         return p
 
@@ -712,7 +715,7 @@ def usage():
     print("  -h  print usage")
     print("  ---  ")
 
-    band.print_bands()
+    ps.band.print_bands()
 
 
 def print_coef(theta):
@@ -726,24 +729,26 @@ def print_coef(theta):
 
 
 def cache_name(name, path, bands, z=0.):
-    fname = os.path.join(path, "%s.%s" % (name, bands))
+    fname = os.path.join(path, "zeta_%s.%s" % (name, bands))
     if z > 0.:
         fname += ".z%.2f" % z
-    fname += ".zeta"
+    fname += ".pkl"
     return fname
 
 
 def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, is_plot_time_points=False):
+    import pickle as pickle
+
     is_info = False
     is_fit = False
     is_save_plot = False
     is_fit_bakl = False
     model_ext = '.tt'
     theta_dic = None
-    distance = rf.pc_to_cm(10.)  # pc
+    distance = ps.phys.pc2cm(10.)  # pc
     z = 0.
 
-    band.Band.load_settings()
+    ps.Band.load_settings()
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], "fhswtb:d:e:i:p:o:z:")
@@ -777,7 +782,7 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
             set_bands = str(arg).split('_')
             for bset in set_bands:
                 for b in bset.split('-'):
-                    if not band.band_is_exist(b):
+                    if not ps.band.band_is_exist(b):
                         print('No such band: ' + b)
                         sys.exit(2)
             continue
@@ -785,7 +790,7 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
             z = float(arg)
             continue
         if opt == '-d':
-            distance = rf.pc_to_cm(float(arg))
+            distance = ps.phys.pc2cm(float(arg))
             continue
         if opt == '-s':
             is_save_plot = True
@@ -814,11 +819,18 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
             usage()
             sys.exit(2)
 
+    # Set model names
     names = []
-    if name != '':
+    if not name:
+        for opt, arg in opts:
+            if opt == '-i':
+                name = os.path.splitext(os.path.basename(str(arg)))[0]
+                names.append(name)
+    else:
         names.append(name)
-    else:  # run for all files in the path
-        names = get_model_names(path, model_ext)
+
+    if len(names) == 0:  # run for all files in the path
+        names = ps.path.get_model_names(path, model_ext)
 
     if len(names) > 0:
         results = {}  # dict((k, None) for k in names)
@@ -833,14 +845,18 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
                 im += 1
                 print("Run: %s [%d/%d]" % (name, im, len(names)))
                 is_err = False
-                fname = cache_name(name, path, bset)
+                fname = cache_name(name, path, bset, z)
                 if not is_force and os.path.exists(fname):
-                    res = cache_load(fname)
+                    # res = ps.util.cache_load(fname)
+                    with open(fname, 'rb') as f:
+                        res = pickle.load(f)
                 else:
-                    res = compute_tcolor(name, path, bset.split('-'), d=distance, z=z, t_cut=0.9)
+                    res = compute_tcolor(name, path, bset.split('-'), d=distance, z=z, t_cut=0.9, t_diff=1.1)
                     if is_save and res is not None:
                         print("Save Tcolor & Zeta for %s in %s" % (bset, fname))
-                        cache_save(res, fname=fname)
+                        with open(fname, 'wb') as output:
+                            pickle.dump(res, output, pickle.HIGHEST_PROTOCOL)
+                        # ps.util.cache_save(res, fname=fname)
 
                 dic[name] = res
                 # check for errors
@@ -862,7 +878,7 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
                 tlim = (7., 80)
                 if tlim is not None:
                     models_zt_new = {}
-                    for mname, tbl in models.iteritems():
+                    for mname, tbl in models.items():
                         models_zt_new[mname] = table_cut_by_col(tbl, tlim, 'time')
                     models = models_zt_new
 

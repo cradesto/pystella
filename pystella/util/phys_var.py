@@ -1,4 +1,3 @@
-
 __author__ = 'bakl'
 
 
@@ -35,8 +34,14 @@ class phys:
     d2s = 24. * 60. * 60.  # convert days to seconds
     ev2erg = 1.6021764630e-12  # convert eV to erg
 
+    @staticmethod
+    def pc2cm(parsec):
+        """Takes in a measurement in parsecs and returns cm"""
+        return parsec * phys.pc
+
 
 def cosmology_D_by_z(z, H0=67.7, Omega_m=0.31, Omega_e=0.69):
+    """Compute the photometric distance for Lambda-CDM model of cosmology"""
     from scipy.integrate import quad
     import numpy as np
 

@@ -115,7 +115,7 @@ class Stella:
         :return: light curves for the photometric bands
         """
         from pystella.rf.light_curve_func import series_spec_reddening
-        from pystella.rf.rad_func import pc_to_cm
+        from pystella.util.phys_var import phys
 
         t_beg = kwargs.get("t_beg", float('-inf'))
         t_end = kwargs.get("t_end", float('inf'))
@@ -135,7 +135,7 @@ class Stella:
             ss = serial_spec.copy(wl_ab=law.LAMBDA_LIM)
             serial_spec = series_spec_reddening(ss, ebv=ebv, Rv=Rv, law=law, mode=mode)
         # light curves
-        curves = serial_spec.flux_to_curves(bands, z=z, d=pc_to_cm(distance), magnification=magnification)
+        curves = serial_spec.flux_to_curves(bands, z=z, d=phys.pc2cm(distance), magnification=magnification)
         return curves
 
     def info(self):

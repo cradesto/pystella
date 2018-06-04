@@ -258,7 +258,7 @@ def plot_curves_vel(curves_o, vels_o, res_models, res_sorted, vels_m, **kwargs):
             curves_o.set_tshift(tshift_lc + tshift_best)
             if xlim is None:
                 xlim = axUbv.get_xlim()
-            lcp.curves_plot(curves_o, axUbv, xlim=xlim, lt=lt, markersize=2, is_legend=False)
+            lcp.curves_plot(curves_o, axUbv, xlim=xlim, lt=lt, markersize=2, is_legend=False, is_line=False)
             # legend
             axUbv.legend(curves.BandNames, loc='lower right', frameon=False, ncol=min(5, len(curves.BandNames)),
                          fontsize='small', borderpad=1)

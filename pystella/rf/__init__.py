@@ -7,3 +7,5 @@ from .lc import SetLightCurve, LightCurve
 from .reddening import ReddeningLaw, LawFitz, LawPei
 from .star import Star, Flux2MagAB
 from .ts import SetTimeSeries, TimeSeries
+
+from .rad_func import compute_x_bb

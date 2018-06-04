@@ -222,19 +222,20 @@ class TestFit(unittest.TestCase):
         fitter = FitMPFit()
         fitter.is_debug = True
         lc_o = curves_obs.get('V')
-        res = fitter.fit_lc(lc_o, curves_mdl.get(lc_o.Band.Name))
+        res = fitter.fit_lc(lc_o, curves_mdl.get(lc_o.Band.Name), dt0=0.)
 
         # print
-        txt = '{0:10} {1:.4e} \n'.format('tshift:', res.tshift) + \
-              '{0:10} {1:.4e} \n'.format('tsigma:', res.tsigma)
-        print(txt)
+        print("tshift:   {:.2f} +- {:.4f} ".format(res.tshift, res.tsigma))
+        # txt = '{0:10} {1:.4e} \n'.format('tshift:', res.tshift) + \
+        #       '{0:10} {1:.4e} \n'.format('tsigma:', res.tsigma)
+        # print(txt)
         # plot model
         curves_obs.set_tshift(res.tshift)
         # curves_mdl.set_tshift(0.)
         ax = lcp.curves_plot(curves_mdl)
 
         lt = {lc.Band.Name: 'o' for lc in curves_obs}
-        lcp.curves_plot(curves_obs, ax, lt=lt, xlim=(-10, 300))
+        lcp.curves_plot(curves_obs, ax, lt=lt, xlim=(-10, 300), is_line=False)
         plt.show()
 
     # @unittest.skip("just for plot")
@@ -273,5 +274,5 @@ class TestFit(unittest.TestCase):
         ax = lcp.curves_plot(curves_mdl)
 
         lt = {lc.Band.Name: 'o' for lc in curves_obs}
-        lcp.curves_plot(curves_obs, ax, lt=lt, xlim=(-10, 300))
+        lcp.curves_plot(curves_obs, ax, lt=lt, xlim=(-10, 300), is_line=False)
         plt.show()

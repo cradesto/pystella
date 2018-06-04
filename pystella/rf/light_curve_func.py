@@ -2,12 +2,14 @@ import csv
 import os
 
 import numpy as np
-import pystella.rf.rad_func as rf
+
+from .rad_func import Fnu2Fwl, Fwl2Fnu
+from pystella.util.phys_var import phys
 from pystella.model.stella import Stella
-from pystella.rf import extinction
-from pystella.rf.lc import LightCurve, SetLightCurve
-from pystella.rf.reddening import ReddeningLaw
-from pystella.rf.reddening import LawFitz
+from . import extinction
+from .lc import LightCurve, SetLightCurve
+from .reddening import ReddeningLaw
+from .reddening import LawFitz
 
 __author__ = 'bakl'
 
@@ -39,7 +41,7 @@ def compute_mag(name, path, bands, ext=None, z=0., distance=10., magnification=1
         return None
 
     serial_spec = model.get_ph(t_diff=t_diff)
-    mags = serial_spec.mags_bands(bands, z=z, d=rf.pc_to_cm(distance), magnification=magnification)
+    mags = serial_spec.mags_bands(bands, z=z, d=phys.pc2cm(distance), magnification=magnification)
 
     if mags is not None:
         fname = os.path.join(path, name + '.ubv')
@@ -254,7 +256,7 @@ def curves_compute(name, path, bands, z=0., distance=10., magnification=1.,
         model.info()
 
     serial_spec = model.get_ph(t_diff=t_diff, t_beg=t_beg, t_end=t_end)
-    curves = serial_spec.flux_to_curves(bands, z=z, d=rf.pc_to_cm(distance), magnification=magnification)
+    curves = serial_spec.flux_to_curves(bands, z=z, d=phys.pc2cm(distance), magnification=magnification)
 
     if is_show_info:
         # print the time of maximum LC
@@ -280,11 +282,11 @@ def flux_reddening(freq, flux, ebv, Rv=None, law=LawFitz, mode=ReddeningLaw.MW):
     """
     from pystella.util.phys_var import phys
 
-    flux_wl = rf.Fnu2Fwl(freq, flux)
+    flux_wl = Fnu2Fwl(freq, flux)
     # flux_wl = flux * freq ** 2 / phys.c
     wl = np.array(phys.c / freq) * phys.cm_to_angs
     res = flux_reddening_wl(wl, flux_wl, ebv, Rv=Rv, law=law, mode=mode)
-    res = rf.Fwl2Fnu(freq, res)
+    res = Fwl2Fnu(freq, res)
     # res = flux_reddening_wl(wl, flux_wl, ebv, law) * phys.c / freq**2
     return res
 

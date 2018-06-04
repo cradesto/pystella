@@ -148,7 +148,7 @@ class SetLightCurve(SetTimeSeries):
     def __init__(self, name=''):
         """Creates a Set of Light Curves."""
         super().__init__(name)
-        self._loop = 0
+        # self._loop = 0
 
     @property
     def Bands(self):

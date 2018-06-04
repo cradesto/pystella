@@ -258,6 +258,7 @@ class SpectrumDilutePlanck(Spectrum):
     """
 
     def __init__(self, freq, temperature, W, name='wbb'):
+        freq = np.array(freq)
         flux = math.pi * W * rf.planck(freq, temperature=temperature)
         Spectrum.__init__(self, name, freq=freq, flux=flux)
         self._W = W
@@ -519,7 +520,7 @@ class SeriesSpectrum(object):
         lc.attrs('magnification', magnification)
         return lc
 
-    def flux_to_curves(self, bands, z=0., d=rf.pc_to_cm(10.), magnification=1.):
+    def flux_to_curves(self, bands, z=0., d=phys.pc2cm(10.), magnification=1.):
         """
 
         :param bands:
@@ -542,7 +543,7 @@ class SeriesSpectrum(object):
                              format(self.Name, bname, ex))
         return curves
 
-    def mags_bands(self, bands, z=0., d=rf.pc_to_cm(10.), magnification=1.):
+    def mags_bands(self, bands, z=0., d=phys.pc2cm(10.), magnification=1.):
         from pystella.rf import band
 
         mags = dict((k, None) for k in bands)
