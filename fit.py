@@ -98,6 +98,7 @@ def get_parser():
                         help="The nearest-moment ratio")
     parser.add_argument('-nq', '--no-quiet',
                         action='store_const',
+                        default=False,
                         const=True,
                         dest="is_not_quiet",
                         help="Result with additional information")

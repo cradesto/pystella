@@ -116,16 +116,16 @@ def load(dic=None):
     res_curves = SetLightCurve(curves.Name)
     for lc_orig in curves:
         is_good = lc_orig.Mag < mag_lim
-        t = lc_orig.Time[is_good]
-        m = lc_orig.Mag[is_good]
+        t = lc_orig.Time[is_good] + tshift
+        m = lc_orig.Mag[is_good] + mshift
         e = None
         if lc_orig.IsErr:
             e = lc_orig.Err[is_good]
         lc = LightCurve(lc_orig.Band, t, m, e)
         res_curves.add(lc)
 
-    res_curves.set_tshift(tshift)
-    res_curves.set_mshift(mshift)
+    # res_curves.set_tshift(tshift)
+    # res_curves.set_mshift(mshift)
     return res_curves
 
 
