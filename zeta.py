@@ -155,14 +155,14 @@ def plot_zeta_oneframe(models_dic, set_bands, t_cut=4.9, is_fit=False, is_plot_T
     plt.show()
 
 
-def plot_zeta(models_dic, set_bands, theta_dic, t_cut=4.9,
+def plot_zeta(models_dic, set_bands, theta_dic, t_cut=4.9, t_points=None,
               is_plot_Tcolor=True, is_plot_Tnu=True, is_fit=False,
-              is_fit_bakl=False, is_time_points=False):
-    t_points = [1, 5, 10, 30, 80, 140]
-    # t_points = [1, 2, 3, 4, 5, 10, 30, 80, 150]
+              is_fit_bakl=False, is_save=False, xlim=(0, 18000), ylim=(0, 2.5)):
 
-    xlim = [0, 18000]
-    ylim = [0, 2.5]
+    # t_points = [1, 2, 3, 4, 5, 10, 30, 80, 150]
+    is_time_points = t_points is not None
+
+
 
     # setup figure
     plt.matplotlib.rcParams.update({'font.size': 14})
@@ -176,11 +176,11 @@ def plot_zeta(models_dic, set_bands, theta_dic, t_cut=4.9,
     ax_cache = {}
 
     # create the grid of figures
-    ib = 0
-    for bset in set_bands:
-        ib += 1
-        icol = int((ib - 1) % 2)
-        irow = int((ib - 1) / 2)
+    # ib = 0
+    for ib, bset in enumerate(set_bands):
+        # ib += 1
+        icol = int(ib % 2)
+        irow = int(ib / 2)
         ax = fig.add_subplot(gs1[irow, icol])
         ax_cache[bset] = ax
         # ax.legend(prop={'size': 6})
@@ -206,9 +206,9 @@ def plot_zeta(models_dic, set_bands, theta_dic, t_cut=4.9,
 
     # plot data
     # i = 0
-    ib = 0
-    for bset in set_bands:
-        ib += 1
+    # ib = 0
+    for ib, bset in enumerate(set_bands):
+        # ib += 1
         mi = 0
         for mname, tbl in models_dic[bset].items():
             ax = ax_cache[bset]
@@ -339,7 +339,14 @@ def plot_zeta(models_dic, set_bands, theta_dic, t_cut=4.9,
 
     # plt.title('; '.join(set_bands) + ' filter response')
     # plt.grid()
-    plt.show()
+    if is_save:
+        fsave = "~/zeta_{}__Len{}.pdf".format('_'.join(set_bands), len(models_dic))
+        fsave = os.path.expanduser(fsave)
+        # fsave = "{}.{}".format(os.path.join(d, os.path.splitext(fsave)[0]), 'pdf')
+        print("Save plot to %s " % fsave)
+        fig.savefig(fsave, bbox_inches='tight', format='pdf')
+    else:
+        plt.show()
     return fig
 
 
