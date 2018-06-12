@@ -44,7 +44,7 @@ def read(name, path='./', t_diff=1.005, t_beg=float('-inf'), t_end=float('inf'),
             k = i
     # is_times[0] = True  # times[0] > 0.
     is_times[0] = times[0] >= t_beg
-    is_times[-1] = True
+    is_times[-1] = times[-1] <= t_end
 
     series = SeriesSpectrum(name)
     for i, t in enumerate(times):

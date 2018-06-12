@@ -89,7 +89,7 @@ def plot_zeta_oneframe(models_dic, set_bands, t_cut=4.9, is_fit=False, is_plot_T
 
     mi = 0
     ib = 0
-    for mname, mdic in models_dic.iteritems():
+    for mname, mdic in models_dic.items():
         mi += 1
         for bset in set_bands:
             ib += 1
@@ -158,11 +158,8 @@ def plot_zeta_oneframe(models_dic, set_bands, t_cut=4.9, is_fit=False, is_plot_T
 def plot_zeta(models_dic, set_bands, theta_dic, t_cut=4.9, t_points=None,
               is_plot_Tcolor=True, is_plot_Tnu=True, is_fit=False,
               is_fit_bakl=False, is_save=False, xlim=(0, 18000), ylim=(0, 2.5)):
-
     # t_points = [1, 2, 3, 4, 5, 10, 30, 80, 150]
     is_time_points = t_points is not None
-
-
 
     # setup figure
     plt.matplotlib.rcParams.update({'font.size': 14})
@@ -207,64 +204,65 @@ def plot_zeta(models_dic, set_bands, theta_dic, t_cut=4.9, t_points=None,
     # plot data
     # i = 0
     # ib = 0
-    for ib, bset in enumerate(set_bands):
-        # ib += 1
-        mi = 0
-        for mname, tbl in models_dic[bset].items():
-            ax = ax_cache[bset]
-            mi += 1
-            # i += 1
+    if len(models_dic) > 0:
+        for ib, bset in enumerate(set_bands):
+            # ib += 1
+            mi = 0
+            for mname, tbl in models_dic[bset].items():
+                ax = ax_cache[bset]
+                mi += 1
+                # i += 1
 
-            if is_plot_Tcolor:
-                x = tbl['Tcol']
-                y = tbl['zeta']
-                z = tbl['time']
-                x = x[z > t_cut]
-                y = y[z > t_cut]
-                z = z[z > t_cut]
-                # bcolor = "black"
-                bcolor = _colors[ib % (len(_colors) - 1)]
+                if is_plot_Tcolor:
+                    x = tbl['Tcol']
+                    y = tbl['zeta']
+                    z = tbl['time']
+                    x = x[z > t_cut]
+                    y = y[z > t_cut]
+                    z = z[z > t_cut]
+                    # bcolor = "black"
+                    bcolor = _colors[ib % (len(_colors) - 1)]
 
-                if is_time_points:
-                    integers = [np.abs(z - t).argmin() for t in t_points]  # set time points
-                    ax.plot(x[integers], y[integers], marker=markers[mi % (len(markers) - 1)], label='',
-                            markersize=5, color=bcolor, ls="", linewidth=1.5)
-                else:
-                    ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label='',  # mname, # label='T_mag ' + mname,
-                            markersize=5, color=bcolor, ls="", linewidth=1.5)
+                    if is_time_points:
+                        integers = [np.abs(z - t).argmin() for t in t_points]  # set time points
+                        ax.plot(x[integers], y[integers], marker=markers[mi % (len(markers) - 1)], label='',
+                                markersize=5, color=bcolor, ls="", linewidth=1.5)
+                    else:
+                        ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label='',  # mname, # label='T_mag ' + mname,
+                                markersize=5, color=bcolor, ls="", linewidth=1.5)
 
-                if is_time_points and mi % 10 == 1:
-                    # integers = [np.abs(z - t).argmin() for t in t_points]  # set time points
-                    for (X, Y, Z) in zip(x[integers], y[integers], z[integers]):
-                        ax.annotate('{:.0f}'.format(Z), xy=(X, Y), xytext=(20, 20), ha='right',
-                                    textcoords='offset points', color=bcolor,
-                                    arrowprops=dict(arrowstyle='->', shrinkA=0))
-                        # t_min = z[y[x > 5000.].argmin()]
-                        # print "t_min( %s) = %f" % (bset, t_min)
-            if is_plot_Tnu:
-                z = tbl['time']
-                xTnu = tbl['Tnu']
-                zTeff = tbl['Teff']
-                yW = tbl['W']
-                xTnu = xTnu[z > t_cut]
-                yW = yW[z > t_cut]
-                yW = np.sqrt(yW)
-                zTeff = zTeff[z > t_cut]
-                z = z[z > t_cut]
-                ax.plot(xTnu, yW, label='T_nu ' + mname, markersize=5, color="magenta",
-                        ls="-", linewidth=2.5)
-                ax.plot(zTeff, yW, label='T_eff ' + mname, markersize=5, color="red",
-                        ls="-", linewidth=2.5)
-                if is_time_points:
-                    integers = [np.abs(z - t).argmin() for t in t_points]  # set time points
-                    for (X, Y, Z) in zip(xTnu[integers], yW[integers], z[integers]):
-                        ax.annotate('{:.0f}'.format(Z), xy=(X, Y), xytext=(-10, 20), ha='right',
-                                    textcoords='offset points', color='magenta',
-                                    arrowprops=dict(arrowstyle='->', shrinkA=0))
-                    for (X, Y, Z) in zip(zTeff[integers], yW[integers], z[integers]):
-                        ax.annotate('{:.0f}'.format(Z), xy=(X, Y), xytext=(-10, 20), ha='right',
-                                    textcoords='offset points', color='red',
-                                    arrowprops=dict(arrowstyle='->', shrinkA=0))
+                    if is_time_points and mi % 10 == 1:
+                        # integers = [np.abs(z - t).argmin() for t in t_points]  # set time points
+                        for (X, Y, Z) in zip(x[integers], y[integers], z[integers]):
+                            ax.annotate('{:.0f}'.format(Z), xy=(X, Y), xytext=(20, 20), ha='right',
+                                        textcoords='offset points', color=bcolor,
+                                        arrowprops=dict(arrowstyle='->', shrinkA=0))
+                            # t_min = z[y[x > 5000.].argmin()]
+                            # print "t_min( %s) = %f" % (bset, t_min)
+                if is_plot_Tnu:
+                    z = tbl['time']
+                    xTnu = tbl['Tnu']
+                    zTeff = tbl['Teff']
+                    yW = tbl['W']
+                    xTnu = xTnu[z > t_cut]
+                    yW = yW[z > t_cut]
+                    yW = np.sqrt(yW)
+                    zTeff = zTeff[z > t_cut]
+                    z = z[z > t_cut]
+                    ax.plot(xTnu, yW, label='T_nu ' + mname, markersize=5, color="magenta",
+                            ls="-", linewidth=2.5)
+                    ax.plot(zTeff, yW, label='T_eff ' + mname, markersize=5, color="red",
+                            ls="-", linewidth=2.5)
+                    if is_time_points:
+                        integers = [np.abs(z - t).argmin() for t in t_points]  # set time points
+                        for (X, Y, Z) in zip(xTnu[integers], yW[integers], z[integers]):
+                            ax.annotate('{:.0f}'.format(Z), xy=(X, Y), xytext=(-10, 20), ha='right',
+                                        textcoords='offset points', color='magenta',
+                                        arrowprops=dict(arrowstyle='->', shrinkA=0))
+                        for (X, Y, Z) in zip(zTeff[integers], yW[integers], z[integers]):
+                            ax.annotate('{:.0f}'.format(Z), xy=(X, Y), xytext=(-10, 20), ha='right',
+                                        textcoords='offset points', color='red',
+                                        arrowprops=dict(arrowstyle='->', shrinkA=0))
 
     # find & plot fit zeta-Tcol for Stella
     if is_fit:  # dessart, eastman, hamuy
@@ -296,7 +294,7 @@ def plot_zeta(models_dic, set_bands, theta_dic, t_cut=4.9, t_points=None,
             if theta_dic is not None:
                 yf = zeta_fit_rev_temp(xx, theta_dic[bset]['v'])
                 bcolor = "orange"
-                ax.plot(xx, yf, color=bcolor, dashes=[12, 6, 12, 6, 3, 6], linewidth=2.5, label='Baklanov 16')
+                ax.plot(xx, yf, color=bcolor, dashes=[12, 6, 12, 6, 3, 6], linewidth=2.5, label=r' New $\zeta-T$')
 
         # PRINT coef
         for bset in set_bands:
@@ -575,7 +573,7 @@ def compute_Tnu_w(serial_spec, tt):
     return temp_nu, temp_eff, W
 
 
-def compute_tcolor(name, path, bands, d=ps.phys.pc2cm(10.), z=0., t_cut=1., t_diff=1.05):
+def compute_tcolor(name, path, bands, d=ps.phys.pc2cm(10.), z=0., t_cut=(1., np.inf), t_diff=1.05):
     model = ps.Stella(name, path=path)
 
     if not model.is_ph:
@@ -588,14 +586,14 @@ def compute_tcolor(name, path, bands, d=ps.phys.pc2cm(10.), z=0., t_cut=1., t_di
 
     # serial_spec = model.read_series_spectrum(t_diff=1.)
     # curves = serial_spec.flux_to_curves(bands, d=distance)
-    serial_spec = model.get_ph(t_diff=t_diff, t_beg=t_cut)
+    serial_spec = model.get_ph(t_diff=t_diff, t_beg=t_cut[0], t_end=t_cut[1])
     # # curves = serial_spec.
     mags = serial_spec.mags_bands(bands, z=z, d=d)
 
     # curves = model.curves(bands, z=z, distance=d)
     # read R_ph
     tt = model.get_tt().read()
-    tt = tt[tt['time'] > t_cut]  # time cut  days
+    tt = tt[np.logical_and(t_cut[0] <= tt['time'], tt['time'] <= t_cut[1])]  # time cut  days
 
     # compute Tnu, W
     Tnu, Teff, W = compute_Tnu_w(serial_spec, tt=tt)
@@ -632,9 +630,9 @@ def fit_bayesian(models_zt, is_debug=True, is_info=False, title=''):
         zeta = tbl_zt['zeta']
         z_fit = zeta_fit_rev_temp(Tcol, theta)
         e = 0.01 * zeta
-        l = -0.5 * np.sum(np.log(2 * np.pi * (e ** 2)) + (zeta - z_fit) ** 2 / e ** 2)
+        lhood = -0.5 * np.sum(np.log(2 * np.pi * (e ** 2)) + (zeta - z_fit) ** 2 / e ** 2)
         # print "epsilon: err=%f" % l
-        return l
+        return lhood
 
     def log_posterior(theta, models):
         p = log_prior(theta)
@@ -858,7 +856,7 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
                     with open(fname, 'rb') as f:
                         res = pickle.load(f)
                 else:
-                    res = compute_tcolor(name, path, bset.split('-'), d=distance, z=z, t_cut=0.9, t_diff=1.1)
+                    res = compute_tcolor(name, path, bset.split('-'), d=distance, z=z, t_cut=(0.9, 100.), t_diff=1.1)
                     if is_save and res is not None:
                         print("Save Tcolor & Zeta for %s in %s" % (bset, fname))
                         with open(fname, 'wb') as output:
@@ -904,8 +902,7 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False, i
 
         # fig = plot_zeta(results, set_bands, theta_dic, t_cut=1.9, is_fit=is_fit, is_fit_bakl=is_fit_bakl,
         fig = plot_zeta(results_filter, set_bands, theta_dic, t_cut=1.9, is_fit=is_fit,
-                        is_fit_bakl=is_fit_bakl, is_plot_Tnu=is_plot_Tnu,
-                        is_time_points=is_plot_time_points)
+                        is_fit_bakl=is_fit_bakl, is_plot_Tnu=is_plot_Tnu)
         if is_save_plot and len(results) > 0:
             fsave = os.path.join(os.path.expanduser('~/'), 'epm_' + '_'.join(set_bands) + '.pdf')
             print("Save plot in %s" % fsave)

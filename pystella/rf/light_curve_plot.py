@@ -1,11 +1,12 @@
-import numpy as np
 from itertools import cycle
 
-# from matplotlib import colors as mcolors
-# import seaborn as sns
+import numpy as np
 
 from pystella.model import sn_swd
 from pystella.rf import band
+
+# from matplotlib import colors as mcolors
+# import seaborn as sns
 
 try:
     import matplotlib.pyplot as plt
@@ -389,19 +390,18 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname='', **k
         x = lc.Time
         y = lc.Mag
         bname = lc.Band.Name
+        label = '{0} {1}'.format(bname, curves.Name.replace("_", ""))
         if is_line:
-            ax.plot(x, y, label='{0} {1}'.format(bname, curves.Name),
-                    color=colors[bname], ls=ls[bname], linewidth=linewidth)
+            ax.plot(x, y, label=label, color=colors[bname], ls=ls[bname], linewidth=linewidth)
         else:
             if lc.IsErr:
                 yyerr = abs(lc.Err)
-                ax.errorbar(x, y, label='{0} {1}'.format(bname, fname), yerr=yyerr, fmt=marker[bname],
+                ax.errorbar(x, y, label=label, yerr=yyerr, fmt=marker[bname],
                             color=colors[bname], ls='', markersize=markersize)
             else:
                 # ax.plot(x, y, label='{0} {1}'.format(bname, fname), color=bcolors[bname], ls='',
                 #         marker=marker, markersize=markersize)
-                ax.plot(x, y, label='{0} {1}'.format(bname, curves.Name),
-                        color=colors[bname], ls='', marker=marker[bname], markersize=markersize)
+                ax.plot(x, y, label=label, color=colors[bname], ls='', marker=marker[bname], markersize=markersize)
 
         if is_xlim:
             xlim[0] = min(xlim[0], np.min(x))
