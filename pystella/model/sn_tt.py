@@ -145,7 +145,7 @@ class StellaTtInfo:
 
     @property
     def E(self):
-        return self._dict['Ebstht']
+        return self._dict['Ebstht'] / 10.  # to FOE
 
     @property
     def Mni(self):

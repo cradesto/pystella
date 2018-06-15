@@ -87,7 +87,7 @@ class MyPrompt(HistConsole):
         """Plot Stella Light Curves. For detailed help type 'ubv -h'.
         """
         if len(args) == 0:
-            name = 'Please provide a ph-file.'
+            name = 'Please provide a model-file.'
         else:
             name = args
         print("ubv %s" % name)
@@ -99,7 +99,7 @@ class MyPrompt(HistConsole):
         """Fit with Stella  Obs Light Curves. For detailed help type 'fit -h'.
         """
         if len(args) == 0:
-            name = 'Please provide a ph-file.'
+            name = 'Please provide a model-file AND/OR some options'
         else:
             name = args
         print("fit %s" % name)
@@ -164,6 +164,18 @@ class MyPrompt(HistConsole):
             name = args
         print("bands %s" % name)
         script = os.path.join(ROOT_DIRECTORY, 'plot_bands.py')
+        MyPrompt.call_cmd(script, args)
+
+    @staticmethod
+    def do_zeta(args):
+        """Plot Tcolor-Zeta diagrams. For detailed help type 'zeta -h'.
+        """
+        if len(args) == 0:
+            name = 'Please provide some options'
+        else:
+            name = args
+        print("zeta %s" % name)
+        script = os.path.join(ROOT_DIRECTORY, 'zeta.py')
         MyPrompt.call_cmd(script, args)
 
     def do_quit(self, args):

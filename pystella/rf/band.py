@@ -225,7 +225,7 @@ def bands_colors(bname=None):
         BesU="blue", BesB="cyan", BesV="darkgreen", BesR="red", BesI="magenta",
         SwiftU="blue", SwiftB="cyan", SwiftV="darkgreen",
         KaitU="blue", KaitB="cyan", KaitV="darkgreen", KaitR="red", KaitI="magenta",
-        J="darkred", H="rosybrown", K="saddlebrown",
+        J="blueviolet", H="plum", K="saddlebrown",  # darkred rosybrown blueviolet
         massJ="green", massH="cyan", massK="black",
         LcoJ="green", LcoH="cyan", LcoK="black",
         UVM2="skyblue", UVW1="orange", UVW2="blue",

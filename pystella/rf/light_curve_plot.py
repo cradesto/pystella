@@ -425,6 +425,7 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname='', **k
         plt.title(title)
         # ax.text(0.17, 0.07, title, family='monospace')
     if fname != '':
+        print('Save plot to {}'.format(fname))
         # plt.savefig("ubv_%s.png" % fname, format='png')
         plt.savefig(fname)
     # if is_new_fig:
