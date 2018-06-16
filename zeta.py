@@ -149,7 +149,7 @@ epm_coef = {
 #     plt.show()
 
 
-def plot_zeta(models_dic, set_bands, theta_dic, t_points=None,
+def plot_zeta(models_dic, set_bands, theta, t_points=None,
               is_plot_Tcolor=True, is_plot_Tnu=True,
               is_fit=False, is_fit_bakl=False,
               xlim=(0, 18000), ylim=(0, 2.5), tcut=None, t_fit_lim=None):
@@ -211,8 +211,8 @@ def plot_zeta(models_dic, set_bands, theta_dic, t_points=None,
                     x = tbl['Tcol']
                     y = tbl['zeta']
                     z = tbl['time']
-                    # bcolor = "black"
-                    bcolor = _colors[ib % (len(_colors) - 1)]
+                    bcolor = "grey"
+                    # bcolor = _colors[ib % (len(_colors) - 1)]
 
                     if is_time_points:
                         integers = [np.abs(z - t).argmin() for t in t_points]  # set time points
@@ -276,60 +276,56 @@ def plot_zeta(models_dic, set_bands, theta_dic, t_points=None,
             # if yb is not None:
             #     bcolor = "orange"
             #     ax.plot(xx, yb, color=bcolor, ls="-", linewidth=2.5, label='Baklanov 18')
+            # PRINT coef
+            for bset in set_bands:
+                print(bset + "  a_i coefficients")
+                if zeta_fit_coef_exists(bset, 'dessart'):
+                    for nm in ["eastman", "hamuy", "dessart"]:
+                        print("  {:8s}: {}".format(nm, ' '.join(map(str, zeta_fit_coef(bset, nm)))))
 
-            # new fit
-            if theta_dic is not None:
-                yf = zeta_fit_rev_temp(xx, theta_dic[bset]['v'])
-                bcolor = "orange"
-                ax.plot(xx, yf, color=bcolor, dashes=[12, 6, 12, 6, 3, 6], linewidth=2.5, label=r'MCMC $\zeta-T$')
+    # new fit
+    if theta is not None:
+        xx = np.linspace(max(100, xlim[0]), xlim[1], num=50)
+        for bset in set_bands:
+            ax = ax_cache[bset]
+            yf = zeta_fit_rev_temp(xx, theta[bset]['v'])
+            bcolor = "orange"
+            ax.plot(xx, yf, color=bcolor, dashes=[12, 6, 12, 6, 3, 6], linewidth=2.5, label=r'MCMC $\zeta-T$')
 
         # PRINT coef
-        for bset in set_bands:
             print(bset + "  a_i coefficients")
-            if zeta_fit_coef_exists(bset, 'dessart'):
-                for nm in ["eastman", "hamuy", "dessart"]:
-                    print("  {:8s}: {}".format(nm, ' '.join(map(str, zeta_fit_coef(bset, nm)))))
+            print("  {:8s}: {}".format('MCMC', ' & '.join(map(str, np.round(theta[bset]['v'], 2)))))
+            # print("    MCMC zeta-T %s: %s " % (bset, ' '.join(map(str, np.round(theta_dic[bset]['v'], 4)))))
 
-            #     print("Dessart zeta-T: %s " % (' '.join(map(str, zeta_fit_coef(bset, "dessart")))))
-            # if zeta_fit_coef_exists(bset, 'eastman'):
-            #     print("Eastman zeta-T  %s: %s " % (bset, ' '.join(map(str, zeta_fit_coef(bset, "eastman")))))
-            # if zeta_fit_coef_exists(bset, 'hamuy'):
-            #     print("Hamuy01 zeta-T  %s: %s " % (bset, ' '.join(map(str, zeta_fit_coef(bset, "hamuy")))))
-            # if zeta_fit_coef_exists(bset, 'bakl'):
-            #     print("Baklanov zeta-T %s: %s " % (bset, ' '.join(map(str, zeta_fit_coef(bset, "bakl")))))
-            if theta_dic is not None:
-                print("  {:8s}: {}".format('MCMC', ' '.join(map(str, np.round(theta_dic[bset]['v'], 4)))))
-                # print("    MCMC zeta-T %s: %s " % (bset, ' '.join(map(str, np.round(theta_dic[bset]['v'], 4)))))
+    if is_fit_bakl:  # bakl fit
+            # find a_coef
+        a = {}
+        err = {}
+        total_zt = models_join(models_dic)
+        for bset, tbl in total_zt.items():
+            # filter data
+            if t_fit_lim is not None:
+                tbl = table_cut_by_col(tbl, t_fit_lim, 'time')
+                if t_fit_lim[1] == t_fit_zeta_max:
+                    idx = np.argmax(tbl['zeta'])
+                    cut = np.zeros(len(tbl['zeta']), dtype=bool)
+                    cut[:idx] = True
+                    tbl = tbl[cut]
 
-        if is_fit_bakl:  # bakl fit
-                # find a_coef
-            a = {}
-            err = {}
-            total_zt = models_join(models_dic)
-            for bset, tbl in total_zt.items():
-                # filter data
-                if t_fit_lim is not None:
-                    tbl = table_cut_by_col(tbl, t_fit_lim, 'time')
-                    if t_fit_lim[1] == t_fit_zeta_max:
-                        idx = np.argmax(tbl['zeta'])
-                        cut = np.zeros(len(tbl['zeta']), dtype=bool)
-                        cut[:idx] = True
-                        tbl = tbl[cut]
+            a[bset], err[bset] = zeta_fit_coef_my(tbl)
+            # print "%s & %s " % (bset, ', '.join([str(round(x, 4)) for x in a[bset]]))
+            print(" Baklan zeta-T  {}: {} : err {:.3f}".
+                  format(bset, ' '.join([str(round(x, 4)) for x in a[bset]]), err[bset]))
+            # print " Baklan errors  %s: %s " % (bset, ' '.join([str(round(x, 4)) for x in ]))
+            # print("")
 
-                a[bset], err[bset] = zeta_fit_coef_my(tbl)
-                # print "%s & %s " % (bset, ', '.join([str(round(x, 4)) for x in a[bset]]))
-                print(" Baklan zeta-T  {}: {} : err {:.3f}".
-                      format(bset, ' '.join([str(round(x, 4)) for x in a[bset]]), err[bset]))
-                # print " Baklan errors  %s: %s " % (bset, ' '.join([str(round(x, 4)) for x in ]))
-                # print("")
-
-                # show fit
-                xx = np.linspace(max(100, xlim[0]), xlim[1], num=50)
-                bcolor = "orange"
-                ax = ax_cache[bset]
-                yb = zeta_fit_rev_temp(xx, a[bset])
-                if yb is not None:
-                    ax.plot(xx, yb, color=bcolor, ls="--", linewidth=2., label='models fit')
+            # show fit
+            xx = np.linspace(max(100, xlim[0]), xlim[1], num=50)
+            bcolor = "orange"
+            ax = ax_cache[bset]
+            yb = zeta_fit_rev_temp(xx, a[bset])
+            if yb is not None:
+                ax.plot(xx, yb, color=bcolor, ls="--", linewidth=2., label='models fit')
 
     # legend
     for bset in set_bands:
@@ -537,10 +533,13 @@ def epsilon(theta, freq, mag, bands, radius, dist, z):
 
 
 def compute_Tcolor_zeta(mags, tt, bands, freq, d, z):
+    from scipy.interpolate import InterpolatedUnivariateSpline
+
     temp = list()
     zeta_radius = list()
     times = list()
-    Rph_spline = interpolate.splrep(tt['time'], tt['Rph'], s=0)
+    # Rph_spline = interpolate.splrep(tt['time'], tt['Rph'], s=0)
+    Rph_spline = InterpolatedUnivariateSpline(tt['time'], tt['Rph'], k=1)
     lc_time = mags["time"]
 
     for nt in range(len(lc_time)):
@@ -550,7 +549,8 @@ def compute_Tcolor_zeta(mags, tt, bands, freq, d, z):
         if t > max(tt['time']):
             break
         mag = {b: mags[b][nt] for b in bands}
-        radius = interpolate.splev(t, Rph_spline)
+        # radius = interpolate.splev(t, Rph_spline)
+        radius = Rph_spline(t)
         # res = minimize(lambda x: epsilon(x, freq, mag, bands, radius, d, z),
         #                x0=[1.e4, 1], method='Nelder-Mead', tol=1e-4)
         # tcolor, w = res.x
@@ -609,6 +609,7 @@ def compute_tcolor(name, path, bands, d=ps.phys.pc2cm(10.), z=0., t_cut=(1., np.
     # curves = model.curves(bands, z=z, distance=d)
     # read R_ph
     tt = model.get_tt().read()
+    tt = tbl_rm_equal_el(tt, 'time')
     tt = tt[np.logical_and(t_cut[0] <= tt['time'], tt['time'] <= t_cut[1])]  # time cut  days
 
     # compute Tnu, W
@@ -836,6 +837,21 @@ def tcut2str(tcut):
     return s
 
 
+def gen_check_increasing(a):
+    prev = -np.inf
+    for i, t in enumerate(a):
+        if prev >= t:
+            # print("{} {}".format(i, prev))
+            yield i
+        prev = t
+
+
+def tbl_rm_equal_el(tbl, col):
+    idx = [i for i in gen_check_increasing(tbl[col])]
+    res = np.delete(tbl, idx, None)
+    return res
+
+
 def cache_name(name, path, bands, z=0., tcut=None):
     fname = os.path.join(path, "zeta_%s.%s" % (name, bands))
     if z > 0.:
@@ -856,10 +872,10 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False):
     is_fit_bakl = False
     is_fit_only = False
     model_ext = '.tt'
-    theta_dic = None
+    theta = None
     distance = ps.phys.pc2cm(10.)  # pc
     z = 0.
-    t_cut = (1., np.inf)
+    t_cut = (1.5, np.inf)
     xlim = (8., t_fit_zeta_max)
     is_fit_zeta_max = True
     # if bset == 'J-H-K':
@@ -1007,7 +1023,7 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False):
             # join all data
             total_zt = models_join(results)
 
-            theta_dic = {}
+            theta = {}
             print("Fitting with MCMC")
             if xlim is not None:
                 print("   tbeg={}  tend={}".format(xlim[0], xlim[1]))
@@ -1026,11 +1042,11 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False):
                 # theta = fit_bayesian(models, is_debug=True, is_info=is_info, title=bset)
                 theta_mcmc = fit_bayesian(tbl, is_debug=True, is_info=is_info, title=bset)
                 # results_filter[bset] = total_zt[bset]
-                theta_dic[bset] = theta_mcmc
+                theta[bset] = theta_mcmc
                 # print_coef(theta)
                 print("{}: {}".format(bset, fitcoef2str(theta_mcmc)))
 
-        fig = plot_zeta(results, set_bands, theta_dic, tcut=t_cut, t_fit_lim=xlim, is_fit=is_fit,
+        fig = plot_zeta(results, set_bands, theta=theta, tcut=t_cut, t_fit_lim=xlim, is_fit=is_fit,
                         is_fit_bakl=is_fit_bakl, is_plot_Tnu=is_plot_Tnu)
 
         if is_save_plot and len(results) > 0:
