@@ -270,7 +270,7 @@ class PreSN(object):
         # elements = kwargs.get('elements', eve_elements)
         lntypes = kwargs.get('lntypes', eve_lntypes)
         colors = kwargs.get('colors', eve_colors)
-        loc = kwargs.get('leg_loc', 8)
+        loc = kwargs.get('leg_loc', 3)
         leg_ncol = kwargs.get('leg_ncol', 4)
         lw = kwargs.get('lw', 2)
         marker = kwargs.get('marker', None)

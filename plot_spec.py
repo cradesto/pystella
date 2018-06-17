@@ -18,12 +18,7 @@ from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.mlab import griddata
 from mpl_toolkits.mplot3d import Axes3D
 
-import pystella.rf.rad_func as rf
-from pystella.model.stella import Stella
-from pystella.rf import band, spectrum
-from pystella.rf.spectrum import SpectrumPlanck, SpectrumDilutePlanck, Spectrum
-from pystella.rf.star import Star
-from pystella.util.phys_var import phys
+import pystella as ps
 
 __author__ = 'bakl'
 
@@ -52,7 +47,7 @@ def plot_spec(dic_stars, times, set_bands, is_planck=False, is_filter=False):
 
     # setup figure
     plt.matplotlib.rcParams.update({'font.size': 14})
-    fig = plt.figure(num=len(set_bands), figsize=(9, 9), dpi=100, facecolor='w', edgecolor='k')
+    fig = plt.figure(num=len(set_bands), figsize=(8, len(set_bands)*4), dpi=100, facecolor='w', edgecolor='k')
     gs1 = gridspec.GridSpec(len(set_bands), 1)
     gs1.update(wspace=0.3, hspace=0.3, left=0.1, right=0.9)
 
@@ -70,16 +65,16 @@ def plot_spec(dic_stars, times, set_bands, is_planck=False, is_filter=False):
 
         for it in range(len(times)):
             star = dic_stars[it]
-            x = star.Wl * phys.cm_to_angs
+            x = star.Wl * ps.phys.cm_to_angs
             y = star.FluxAB
             # y = star.FluxWlObs
             bcolor = _colors[it % (len(_colors) - 1)]
             ax.plot(x, y, marker=markers[it % (len(markers) - 1)],
                     label=r'$%4.0f^d: T=%7.1e\,K, \zeta=%0.2f$' % (times[it], star.get_Tcol(bset), star.get_zeta(bset)),
-                    markersize=5, color=bcolor, ls="--", linewidth=1.5)
+                    markersize=5, color=bcolor, ls="", linewidth=1.5)
             if is_planck:
                 star_bb = planck_fit(star, bset)
-                xx = star_bb.Wl * phys.cm_to_angs
+                xx = star_bb.Wl * ps.phys.cm_to_angs
                 yy = star_bb.FluxAB
                 # yy = star_bb.FluxWlObs
                 if yy is not None:
@@ -98,8 +93,8 @@ def plot_spec(dic_stars, times, set_bands, is_planck=False, is_filter=False):
             # ax2.set_ylabel("Filter Response")
             bands = bset.split('-')
             for n in bands:
-                b = band.band_by_name(n)
-                xx = b.wl * phys.cm_to_angs
+                b = ps.band.band_by_name(n)
+                xx = b.wl * ps.phys.cm_to_angs
                 yy = b.resp_wl
                 # ax2.plot(xx, yy, color=colors_band[n], ls="--", linewidth=1.5, label=n)
                 ax2.fill_between(xx, 0, yy, color=colors_band[n], alpha=0.2)
@@ -127,7 +122,7 @@ def plot_spec(dic_stars, times, set_bands, is_planck=False, is_filter=False):
         # else:
         ax.legend(prop={'size': 11}, loc=4, borderaxespad=0.)
     # plt.title('; '.join(set_bands) + ' filter response')
-    plt.grid()
+    # plt.grid()
     return fig
 
 
@@ -216,7 +211,7 @@ def plot_spec_poly(series, moments=None, fcut=1.e-20, is_info=False):
         spec.cut_flux(fcut * max(spec.Flux))  # cut flux
         ys = spec.Flux
         # ys = np.log10(ys)
-        wl = spec.Wl * phys.cm_to_angs
+        wl = spec.Wl * ps.phys.cm_to_angs
         verts.append(list(zip(wl, ys)))
 
         x_lim[0] = min(x_lim[0], np.min(wl))
@@ -265,15 +260,15 @@ def plot_fit_bands(model, series, set_bands, times):
     tt = model.get_tt().read()
     tt = tt[tt['time'] > min(times) - 1.]  # time cut  days
     Rph_spline = interpolate.splrep(tt['time'], tt['Rph'], s=0)
-    distance = rf.pc_to_cm(10.)  # pc for Absolute magnitude
+    distance = ps.phys.pc2cm(10.)  # pc for Absolute magnitude
     dic_results = {}  # dict((k, None) for k in names)
     # it = 0
     for it, time in enumerate(times):
         print("\nRun: %s t=%f [%d/%d]" % (name, time, it, len(times)))
         spec = series.get_spec_by_time(time)
-        spec.cut_flux(max(spec.Flux) * .1e-5)  # cut flux
+        spec.cut_flux(max(spec.Flux) * .1e-6)  # cut flux
 
-        star = Star("%s: %f" % (name, time), spec=spec, is_flux_eq_luminosity=True)
+        star = ps.Star("%s: %f" % (name, time), spec=spec, is_flux_eq_luminosity=True)
         star.set_distance(distance)
         radius = interpolate.splev(time, Rph_spline)
         star.set_radius_ph(radius)
@@ -306,9 +301,9 @@ def plot_fit_wl(model, series, wl_ab, times=None, fsave=None):
             sp = series_cut.get_spec(i)
             # sp = series_cut.get_spec_by_time(t)
             R = radiuses[i]
-            star_cut = Star("bb_cut", sp)
+            star_cut = ps.Star("bb_cut", sp)
             star_cut.set_distance(R)
-            sp_obs = Spectrum('cut', star_cut.Freq, star_cut.FluxObs)
+            sp_obs = ps.Spectrum('cut', star_cut.Freq, star_cut.FluxObs)
             Tc = sp_obs.T_color
             Tw = sp_obs.T_wien
             w = np.power(Tw/Tc, 4)
@@ -401,32 +396,32 @@ def plot_spec_wl(times, series, tt, wl_ab, **kwargs):
         spec.cut_flux(max(spec.Flux) * 1e-6)  # cut flux
         R = radiuses[i]
 
-        star_bb = Star("bb", spec)
+        star_bb = ps.Star("bb", spec)
         star_bb.set_distance(R)
 
-        spec_cut = series_cut.get_spec_by_time(t)
-        star_cut = Star("bb_cut", spec_cut)
+        spec_cut = ps.series_cut.get_spec_by_time(t)
+        star_cut = ps.Star("bb_cut", spec_cut)
         star_cut.set_distance(R)
 
         # spectrum
-        ax.semilogy(star_bb.Wl*phys.cm_to_angs, star_bb.FluxWlObs, label="Spec Ph")
+        ax.semilogy(star_bb.Wl*ps.phys.cm_to_angs, star_bb.FluxWlObs, label="Spec Ph")
         # Tcolor
-        spec_obs = Spectrum('wbb', star_cut.Freq, star_cut.FluxObs)
+        spec_obs = ps.Spectrum('wbb', star_cut.Freq, star_cut.FluxObs)
         Tcol = spec_obs.T_color
         T_wien = spec_obs.T_wien
         zeta = (T_wien/Tcol)**4
-        wbb = SpectrumDilutePlanck(spec.Freq, Tcol, zeta)
-        ax.semilogy(wbb.Wl*phys.cm_to_angs, wbb.FluxWl, label="Tcol={:.0f} W={:.2f}".format(Tcol, zeta),
+        wbb = ps.SpectrumDilutePlanck(spec.Freq, Tcol, zeta)
+        ax.semilogy(wbb.Wl*ps.phys.cm_to_angs, wbb.FluxWl, label="Tcol={:.0f} W={:.2f}".format(Tcol, zeta),
                     marker='<', **marker_style)
         # diluted
         Tdil, W = spec_obs.T_color_zeta()
-        dil = SpectrumDilutePlanck(spec.Freq, Tdil, W)
-        ax.semilogy(dil.Wl*phys.cm_to_angs, dil.FluxWl, label="Tdil={:.0f} W={:.2f}".format(Tdil, W),
+        dil = ps.SpectrumDilutePlanck(spec.Freq, Tdil, W)
+        ax.semilogy(dil.Wl*ps.phys.cm_to_angs, dil.FluxWl, label="Tdil={:.0f} W={:.2f}".format(Tdil, W),
                     marker='>', **marker_style)
         # Tbb
         Tbb = Tbbes[i]
-        bb = SpectrumPlanck(spec.Freq, Tbb)
-        ax.semilogy(bb.Wl*phys.cm_to_angs, bb.FluxWl, label="Tbb={:.0f}".format(Tbb),
+        bb = ps.SpectrumPlanck(spec.Freq, Tbb)
+        ax.semilogy(bb.Wl*ps.phys.cm_to_angs, bb.FluxWl, label="Tbb={:.0f}".format(Tbb),
                     marker='d', **marker_style)
 
         # wl range
@@ -458,7 +453,7 @@ def plot_spec_t(series, wl_lim=None, moments=None):
             spec_array.append(series.get_spec(i).Flux)
             pos += 1
 
-    y_data = series.Wl * phys.cm_to_angs
+    y_data = series.Wl * ps.phys.cm_to_angs
     spec_array = np.array(spec_array)
 
     x_data, y_data = np.meshgrid(t_data, y_data)
@@ -538,8 +533,8 @@ def plot_spec_t(series, wl_lim=None, moments=None):
 
 
 def planck_fit(star, bset):
-    sp = spectrum.SpectrumDilutePlanck(star.Freq, star.get_Tcol(bset), star.get_zeta(bset) ** 2)
-    star_bb = Star("bb", sp)
+    sp = ps.SpectrumDilutePlanck(star.Freq, star.get_Tcol(bset), star.get_zeta(bset) ** 2)
+    star_bb = ps.Star("bb", sp)
     star_bb.set_radius_ph(star.radius_ph)
     star_bb.set_distance(star.distance)
     return star_bb
@@ -547,12 +542,12 @@ def planck_fit(star, bset):
 
 def epsilon_mag(x, freq, mag, bands, radius, dist):
     temp_color, zeta = x
-    sp = spectrum.SpectrumDilutePlanck(freq, temp_color, zeta ** 2)
+    sp = ps.SpectrumDilutePlanck(freq, temp_color, zeta ** 2)
 
-    star = Star("bb", sp)
+    star = ps.Star("bb", sp)
     star.set_radius_ph(radius)
     star.set_distance(dist)
-    mag_bb = {b: star.magAB(band.band_by_name(b)) for b in bands}
+    mag_bb = {b: star.magAB(ps.band.band_by_name(b)) for b in bands}
     e = 0
     for b in bands:
         e += abs(mag[b] - mag_bb[b])
@@ -562,11 +557,11 @@ def epsilon_mag(x, freq, mag, bands, radius, dist):
 def compute_tcolor(star, bands):
     mags = {}
     for n in bands:
-        b = band.band_by_name(n)
+        b = ps.band.band_by_name(n)
         mags[n] = star.magAB(b)
 
     Tcol, zeta = fmin(epsilon_mag, x0=np.array([1.e4, 1]),
-                      args=(star.Freq, mags, bands, star.radius_ph, star.distance), disp=0)
+                      args=(star.Freq, mags, bands, star.radius_ph, star.distance), disp=False)
     return Tcol, zeta
 
 
@@ -585,7 +580,7 @@ def interval2float(v):
 
 
 def usage():
-    bands = band.band_get_names()
+    bands = ps.band.band_get_names()
     print("Usage: show F(t,nu) from ph-file")
     print("  plot_spec.py [params]")
     print("  -b <set_bands>: delimiter '_'. Default: B-V.\n"
@@ -615,8 +610,8 @@ def write_magAB(series, d=10):
         # freq = s.Freq
         # flux = spec.Flux
         # mAB = rf.Flux2MagAB(flux)
-        star = Star("%s: %f" % (series.Name, t), spec=spec, is_flux_eq_luminosity=True)
-        star.set_distance(d * phys.pc)
+        star = ps.Star("%s: %f" % (series.Name, t), spec=spec, is_flux_eq_luminosity=True)
+        star.set_distance(d * ps.phys.pc)
         # print("{0}  {1} ".format(t, '  '.join(map(str, star.Flux))))
         print("{0}  {1} ".format(t, '  '.join(map(str, star.FluxAB))))
         # print("{0}  {1} ".format(t, '  '.join(map(str, flux))))
@@ -640,7 +635,7 @@ def main():
 
     name = ''
     path = os.getcwd()
-    band.Band.load_settings()
+    ps.Band.load_settings()
     # name = 'cat_R500_M15_Ni006_E12'
 
     if not name:
@@ -666,7 +661,7 @@ def main():
             set_bands = str(arg).split('_')
             for bset in set_bands:
                 for b in bset.split('-'):
-                    if not band.band_is_exist(b):
+                    if not ps.band.band_is_exist(b):
                         print('No such band: ' + b)
                         sys.exit(2)
             continue
@@ -707,7 +702,7 @@ def main():
         print("No model. Use key -i.")
         sys.exit(2)
 
-    model = Stella(name, path=path)
+    model = ps.Stella(name, path=path)
     series = model.get_ph(t_diff=1.05)
 
     if not model.is_ph:

@@ -48,15 +48,15 @@ epm_coef = {
         'V-I': [0.7013, -0.5304, 0.2646, 0.029],
         'J-H-K': [1.4787, -0.4799, 0., 0.046]
     },
-    # 'bakl': {  # dir /home/bakl/Sn/Release/seb_git/res/tt/tcolor/r500/1
-    #     'B-V': [0.5948, -0.5891, 0.4784],
-    #     'B-V-I': [0.6416, -0.3788, 0.2955],
-    #     'V-I': [0.9819, -0.7699, 0.3919],
-    #     'J-H-K': [1.331, -0.4201, 0.0891],
-    #     'g-r': [0.69, -0.58, 0.42],
-    #     'g-r-i': [0.72, -0.49, 0.33],
-    #     'r-i': [0.82, -0.49, 0.26]
-    # }
+    'bakl': {  # dir /home/bakl/Sn/Release/seb_git/res/tt/tcolor/r500/1
+        'B-V': [0.64, -0.69, 0.51],
+        'B-V-I': [0.65, -0.55, 0.4],
+        'V-I': [0.83, -0.7, 0.41],
+        'J-H-K':  [-0.7, 2.76, -0.99],
+        'g-r': [0.64, -0.65, 0.47],
+        'g-r-i': [0.68, -0.62, 0.43],
+        'r-i': [0.95, -0.86, 0.46]
+    }
 }
 
 
@@ -149,15 +149,14 @@ epm_coef = {
 #     plt.show()
 
 
-def plot_zeta(models_dic, set_bands, theta, t_points=None,
+def plot_zeta(models_dic, set_bands, theta, t_points=None, is_time_points_only=False,
               is_plot_Tcolor=True, is_plot_Tnu=True,
-              is_fit=False, is_fit_bakl=False,
+               is_fit_bakl=False, fits=None,
               xlim=(0, 18000), ylim=(0, 2.5), tcut=None, t_fit_lim=None):
     import matplotlib.pyplot as plt
     import matplotlib.ticker as ticker
 
     # t_points = [1, 2, 3, 4, 5, 10, 30, 80, 150]
-    is_time_points = t_points is not None
 
     # setup figure
     plt.matplotlib.rcParams.update({'font.size': 14})
@@ -214,10 +213,8 @@ def plot_zeta(models_dic, set_bands, theta, t_points=None,
                     bcolor = "grey"
                     # bcolor = _colors[ib % (len(_colors) - 1)]
 
-                    if is_time_points:
+                    if t_points is not None:
                         integers = [np.abs(z - t).argmin() for t in t_points]  # set time points
-                        ax.plot(x[integers], y[integers], marker=markers[mi % (len(markers) - 1)], label='',
-                                markersize=5, color=bcolor, ls="", linewidth=1.5)
                         if mi % 10 == 1:
                             # integers = [np.abs(z - t).argmin() for t in t_points]  # set time points
                             for (X, Y, Z) in zip(x[integers], y[integers], z[integers]):
@@ -226,6 +223,13 @@ def plot_zeta(models_dic, set_bands, theta, t_points=None,
                                             arrowprops=dict(arrowstyle='->', shrinkA=0))
                                 # t_min = z[y[x > 5000.].argmin()]
                                 # print "t_min( %s) = %f" % (bset, t_min)
+                        if is_time_points_only:
+                            ax.plot(x[integers], y[integers], marker=markers[mi % (len(markers) - 1)], label='',
+                                    markersize=5, color=bcolor, ls="", linewidth=1.5)
+                        else:
+                            ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label='',
+                                    # mname, # label='T_mag ' + mname,
+                                    markersize=5, color=bcolor, ls="", linewidth=1.5)
                     else:
                         ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label='',
                                 # mname, # label='T_mag ' + mname,
@@ -240,47 +244,53 @@ def plot_zeta(models_dic, set_bands, theta, t_points=None,
                             ls="-", linewidth=2.5)
                     ax.plot(zTeff, yW, label='T_eff ' + mname, markersize=5, color="red",
                             ls="-", linewidth=2.5)
-                    if is_time_points:
-                        integers = [np.abs(z - t).argmin() for t in t_points]  # set time points
-                        for (X, Y, Z) in zip(xTnu[integers], yW[integers], z[integers]):
-                            ax.annotate('{:.0f}'.format(Z), xy=(X, Y), xytext=(-10, 20), ha='right',
-                                        textcoords='offset points', color='magenta',
-                                        arrowprops=dict(arrowstyle='->', shrinkA=0))
-                        for (X, Y, Z) in zip(zTeff[integers], yW[integers], z[integers]):
-                            ax.annotate('{:.0f}'.format(Z), xy=(X, Y), xytext=(-10, 20), ha='right',
-                                        textcoords='offset points', color='red',
-                                        arrowprops=dict(arrowstyle='->', shrinkA=0))
+                    if t_points is not None:
+                        if is_time_points_only:
+                            integers = [np.abs(z - t).argmin() for t in t_points]  # set time points
+                            for (X, Y, Z) in zip(xTnu[integers], yW[integers], z[integers]):
+                                ax.annotate('{:.0f}'.format(Z), xy=(X, Y), xytext=(-10, 20), ha='right',
+                                            textcoords='offset points', color='magenta',
+                                            arrowprops=dict(arrowstyle='->', shrinkA=0))
+                        else:
+                            for (X, Y, Z) in zip(zTeff, yW, z):
+                                ax.annotate('{:.0f}'.format(Z), xy=(X, Y), xytext=(-10, 20), ha='right',
+                                            textcoords='offset points', color='red',
+                                            arrowprops=dict(arrowstyle='->', shrinkA=0))
 
     # find & plot fit zeta-Tcol for Stella
-    if is_fit:  # dessart, eastman, hamuy
+    if fits is not None:  # dessart, eastman, hamuy
         xx = np.linspace(max(100, xlim[0]), xlim[1], num=50)
         for bset in set_bands:
             ax = ax_cache[bset]
-            if True:
+            if "hamuy" in fits:
                 yh = zeta_fit(xx, bset, "hamuy")
                 if yh is not None:
                     bcolor = "skyblue"
                     ax.plot(xx, yh, color=bcolor, ls="-.", linewidth=2.5, label='Hamuy 01')
 
-            ye = zeta_fit(xx, bset, "eastman")
-            if ye is not None:
-                bcolor = "tomato"
-                ax.plot(xx, ye, color=bcolor, ls="-.", linewidth=2.5, label='Eastman 96')
+            if "eastman" in fits:
+                ye = zeta_fit(xx, bset, "eastman")
+                if ye is not None:
+                    bcolor = "tomato"
+                    ax.plot(xx, ye, color=bcolor, ls="-.", linewidth=2.5, label='Eastman 96')
 
-            yd = zeta_fit(xx, bset, "dessart")
-            if yd is not None:
-                bcolor = "darkviolet"
-                ax.plot(xx, yd, color=bcolor, ls="--", linewidth=2.5, label='Dessart 05')
+            if "dessart" in fits:
+                yd = zeta_fit(xx, bset, "dessart")
+                if yd is not None:
+                    bcolor = "darkviolet"
+                    ax.plot(xx, yd, color=bcolor, ls="--", linewidth=2.5, label='Dessart 05')
 
-            # yb = zeta_fit(xx, bset, "bakl")
-            # if yb is not None:
-            #     bcolor = "orange"
-            #     ax.plot(xx, yb, color=bcolor, ls="-", linewidth=2.5, label='Baklanov 18')
+            if "bakl" in fits:
+                yb = zeta_fit(xx, bset, "bakl")
+                if yb is not None:
+                    bcolor = "orange"
+                    ax.plot(xx, yb, color=bcolor, ls="--", linewidth=2.5, label='Baklanov')
+
             # PRINT coef
-            for bset in set_bands:
-                print(bset + "  a_i coefficients")
-                if zeta_fit_coef_exists(bset, 'dessart'):
-                    for nm in ["eastman", "hamuy", "dessart"]:
+            print(bset + "  a_i coefficients")
+            if zeta_fit_coef_exists(bset, 'dessart'):
+                for nm in ["eastman", "hamuy", "dessart", 'bakl']:
+                    if nm in fits:
                         print("  {:8s}: {}".format(nm, ' '.join(map(str, zeta_fit_coef(bset, nm)))))
 
     # new fit
@@ -294,7 +304,7 @@ def plot_zeta(models_dic, set_bands, theta, t_points=None,
 
         # PRINT coef
             print(bset + "  a_i coefficients")
-            print("  {:8s}: {}".format('MCMC', ' & '.join(map(str, np.round(theta[bset]['v'], 2)))))
+            print("  {:8s}: {}".format('MCMC', ', '.join(map(str, np.round(theta[bset]['v'], 2)))))
             # print("    MCMC zeta-T %s: %s " % (bset, ' '.join(map(str, np.round(theta_dic[bset]['v'], 4)))))
 
     if is_fit_bakl:  # bakl fit
@@ -325,7 +335,7 @@ def plot_zeta(models_dic, set_bands, theta, t_points=None,
             ax = ax_cache[bset]
             yb = zeta_fit_rev_temp(xx, a[bset])
             if yb is not None:
-                ax.plot(xx, yb, color=bcolor, ls="--", linewidth=2., label='models fit')
+                ax.plot(xx, yb, color=bcolor, ls="--", linewidth=2., label=' Baklan')
 
     # legend
     for bset in set_bands:
