@@ -350,8 +350,11 @@ class SeriesSpectrum(object):
     #     self._loop = 0
     #     return self
     def __iter__(self):
-        for ts in self._data:
-            yield ts
+        for i, ts in enumerate(self.Time):
+            yield ts, self.Data[i]
+    # def __iter__(self):
+    #     for ts in self._data:
+    #         yield ts
 
     def __len__(self):
         return len(self._data)

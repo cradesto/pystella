@@ -223,7 +223,7 @@ class FitMPFit(FitLc):
             parinfo.append({'value': 0., 'fixed': 1})
 
         if dm0 is not None:
-            parinfo.append({'value': dm0, 'limited': [1, 1], 'limits': [-5., 5.]})
+            parinfo.append({'value': dm0, 'limited': [1, 1], 'limits': [-5.+dm0, 5.+dm0]})
         else:
             parinfo.append({'value': 0., 'fixed': 1})
 
