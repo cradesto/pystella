@@ -444,6 +444,9 @@ def lc_plot(lc, ax=None, xlim=None, ylim=None, title=None, fname='', **kwargs):
     if 'lt' in kwargs:
         is_line = False
     lt = kwargs.get('lt', {lc.Band.Name: 'o'})
+    if isinstance(lt, str):
+        c = lt.strip()
+        lt = {lc.Band.Name: c}
     colors = kwargs.get('colors', lc_colors)
     linewidth = kwargs.get('linewidth', 2.0)
     markersize = kwargs.get('markersize', 5)
