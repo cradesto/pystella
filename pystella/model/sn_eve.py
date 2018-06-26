@@ -92,11 +92,21 @@ class PreSN(object):
         return self.par(p, d)
 
     @property
-    def m_tot(self):
+    def m_core(self):
         """Total mass"""
         p = 'm_tot'
         if self.is_set(PreSN.sM):
             d = self.hyd(PreSN.sM)[0]
+        else:
+            d = 0.
+        return self.par(p, d)
+
+    @property
+    def m_tot(self):
+        """Total mass"""
+        p = 'm_tot'
+        if self.is_set(PreSN.sM):
+            d = self.hyd(PreSN.sM)[-1]
         else:
             d = 0.
         return self.par(p, d)
@@ -228,42 +238,6 @@ class PreSN(object):
                 f.write(' %4d %15.7e %15.7e %15.7e %15.7e %15.7e  %15.7e  %8.1e\n' % _)
         return os.path.isfile(fname)
 
-    def write_abn(self, fname, is_header=False, is_dum=False):
-        """
-        Write data to file in abn format.
-        See code readheger.trf:
-         _do km=1,NzoneHyd;
-            write(13,'(i4,1p,19e10.3)')km,dum,dum,dum,
-        -- No.  Mr    X(H He C N O Ne Na Mg Al Si S Ar Ca Fe Co Ni 56Ni)
-              bh(km), bhe(km),bc(km),
-              bn(km),bo(km),bne(km),bna(km),bmg(km),bal(km),bsi(km),
-              bs(km),bar(km),bca(km),bfe(km),
-              bni58(km),bni56(km); -- with Ni58 separated
-         _od;
-        :return:
-        """
-        dum = 0.
-        logger.info(' Write abn-data to %s' % fname)
-        with open(fname, 'w') as f:
-            # f.write('%d\n' % self.nzon_abn)
-            if is_header:
-                if is_dum:
-                    s = '%4s  %10s %10s %10s' % ('# zn', ' ', ' ', ' ')
-                else:
-                    s = '%4s' % '# zn'
-                for ename in PreSN.presn_elements:
-                    s += ' %10s' % ename
-                f.write('%s\n' % s)
-            for i in range(self.nzon):
-                if is_dum:
-                    s = '%4d  %10.3e %10.3e %10.3e' % (i + 1, dum, dum, dum)
-                else:
-                    s = '%4d' % (i + 1)
-                for ename in PreSN.presn_elements:
-                    s += ' %10.3e' % self.el(ename)[i]
-                f.write('%s\n' % s)
-        return os.path.isfile(fname)
-
     def plot_chem(self, x='m', elements=eve_elements, ax=None, xlim=None, ylim=None, **kwargs):
         if not is_matplotlib:
             return
@@ -350,6 +324,42 @@ class PreSN(object):
             # plt.show()
         return ax
 
+    def write_abn(self, fname, is_header=False, is_dum=False):
+        """
+        Write data to file in abn format.
+        See code readheger.trf:
+         _do km=1,NzoneHyd;
+            write(13,'(i4,1p,19e10.3)')km,dum,dum,dum,
+        -- No.  Mr    X(H He C N O Ne Na Mg Al Si S Ar Ca Fe Co Ni 56Ni)
+              bh(km), bhe(km),bc(km),
+              bn(km),bo(km),bne(km),bna(km),bmg(km),bal(km),bsi(km),
+              bs(km),bar(km),bca(km),bfe(km),
+              bni58(km),bni56(km); -- with Ni58 separated
+         _od;
+        :return:
+        """
+        dum = 0.
+        logger.info(' Write abn-data to %s' % fname)
+        with open(fname, 'w') as f:
+            # f.write('%d\n' % self.nzon_abn)
+            if is_header:
+                if is_dum:
+                    s = '%4s  %10s %10s %10s' % ('# zn', ' ', ' ', ' ')
+                else:
+                    s = '%4s' % '# zn'
+                for ename in PreSN.presn_elements:
+                    s += ' %10s' % ename
+                f.write('%s\n' % s)
+            for i in range(self.nzon):
+                if is_dum:
+                    s = '%4d  %10.3e %10.3e %10.3e' % (i + 1, dum, dum, dum)
+                else:
+                    s = '%4d' % (i + 1)
+                for ename in PreSN.presn_elements:
+                    s += ' %10.3e' % self.el(ename)[i]
+                f.write('%s\n' % s)
+        return os.path.isfile(fname)
+
     def plot_rho(self, x='m', ax=None, xlim=None, ylim=None, **kwargs):
         if not is_matplotlib:
             return
@@ -382,9 +392,7 @@ class PreSN(object):
         is_x_lim = xlim is not None
         is_y_lim = ylim is not None
 
-        if x == 'r':
-            xi = self.r
-        elif x == 'm':
+        if x == 'm':
             xi = self.m / phys.M_sun
         else:
             xi = self.r
@@ -401,6 +409,65 @@ class PreSN(object):
                 ax.set_ylim(ylim)
 
         return ax
+
+    def plot_structure(self, elements=eve_elements, xlimR=None, xlimM=None, ylimRho=None, ylimChem=None,
+                       title=None, figsize=(12, 8)):
+        def set_xlim(ax, lim):
+            if lim is not None:
+                ax.set_xlim(lim)
+
+        def set_ylim(ax, lim):
+            if lim is not None:
+                ax.set_ylim(lim)
+
+        def lims(ain, aout, lim):
+            res = np.interp(lim, ain, aout)
+            return res
+
+        if xlimR is not None and xlimM is None:
+            xlimM = lims(self.r, self.m/phys.M_sun, xlimR)
+            print("xlimM = {} for xlimR={}".format(xlimM, xlimR))
+        elif xlimM is not None and xlimR is None:
+            xlimR = lims(self.m/phys.M_sun, self.r, xlimM)
+            print("xlimR = {} for xlimM={}".format(xlimR, xlimM))
+
+        # Set up the axes with gridspec
+        fig = plt.figure(figsize=figsize)
+        # fig.subplots_adjust(hspace=0.4, wspace=0.4)
+        grid = plt.GridSpec(2, 3, hspace=0.2, wspace=0.4)
+        axR = fig.add_subplot(grid[0, 0:2])
+        axM = fig.add_subplot(grid[1, 0:2])
+        axRhoR = fig.add_subplot(grid[0, 2])
+        axRhoM = fig.add_subplot(grid[1, 2])
+
+        self.plot_chem(ax=axR, x='lgR', elements=elements)
+        axR.set_xlabel('R, cm')
+        axR.set_ylabel(r'$X_i$')
+        axR.legend(frameon=False, ncol=4)
+        set_xlim(axR, xlimR)
+        set_ylim(axR, ylimChem)
+
+        self.plot_chem(ax=axM, x='m', elements=elements)
+        axM.set_xlabel(r'$M, M_\odot$')
+        axM.set_ylabel(r'$X_i$')
+        set_xlim(axM, xlimM)
+        set_ylim(axM, ylimChem)
+
+        self.plot_rho(ax=axRhoR, x='lgR')
+        axRhoR.set_xlabel('R, cm')
+        axRhoR.set_ylabel(r'$\rho, g/cm^3$')
+        set_xlim(axRhoR, xlimR)
+        set_ylim(axRhoR, ylimRho)
+
+        self.plot_rho(ax=axRhoM, x='m')
+        axRhoM.set_xlabel(r'$M, M_\odot$')
+        axRhoM.set_ylabel(r'$\rho, g/cm^3$')
+        set_xlim(axRhoM, xlimM)
+        set_ylim(axRhoM, ylimRho)
+
+        if title is not None:
+            axR.text(0.5, 1.07, title, transform=axR.transAxes, fontsize=14)
+        return fig
 
     def is_set(self, name):
         return name in self._loads

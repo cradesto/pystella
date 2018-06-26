@@ -64,6 +64,8 @@ def get_parser():
     #                     default=True,
     #                     dest="is_chem",
     #                     help="Show chemical composition, default: True")
+    parser.add_argument('--structure', dest='is_structure', action='store_true',
+                        help="Show the chemical composition and rho with R/M coordinates.")
     parser.add_argument('--chem', dest='is_chem', action='store_true', help="Show chemical composition [default].")
     parser.add_argument('--no-chem', dest='is_chem', action='store_false', help="Not show chemical composition")
     parser.set_defaults(is_chem=True)
@@ -96,6 +98,7 @@ def main():
     parser = get_parser()
     args, unknownargs = parser.parse_known_args()
     markersize = 4
+    fig = None
 
     if args.path:
         pathDef = os.path.expanduser(args.path)
@@ -159,36 +162,32 @@ def main():
             else:
                 print("Error with hyd saving to {}".format(f))
 
-        if args.is_chem:
-            # print "Plot eve-model %s" % name
-            ax = eve.plot_chem(elements=elements, ax=ax, x=args.x, ylim=(1e-8, 1.), marker=marker,
-                               markersize=markersize)
-
-        if args.rho:
+        if args.is_structure:
+            fig = eve.plot_structure(elements=elements, title=name)
+        else:
             if args.is_chem:
+                # print "Plot eve-model %s" % name
+                ax = eve.plot_chem(elements=elements, ax=ax, x=args.x, ylim=(1e-8, 1.), marker=marker,
+                                   markersize=markersize)
+
+            if args.rho:
+                if args.is_chem:
+                    if ax2 is None:
+                        ax2 = ax.twinx()
+                        ax2.set_ylabel(r'$\rho, [g/cm^3]$ ')
+                else:
+                    ax2 = ax
+                ax = eve.plot_rho(x=args.x, ax=ax2, ls=ls)
+            else:
+                ls = 'None'
+
+            handle = mlines.Line2D([], [], color='black', marker=marker,
+                                   markersize=markersize, label=name, linestyle=ls)
+            handles_nm.append(handle)
+            if len(names) > 1:
                 if ax2 is None:
                     ax2 = ax.twinx()
-                    ax2.set_ylabel(r'$\rho, [g/cm^3]$ ')
-            else:
-                ax2 = ax
-            ax = eve.plot_rho(x=args.x, ax=ax2, ls=ls)
-        else:
-            ls = 'None'
-
-        handle = mlines.Line2D([], [], color='black', marker=marker,
-                               markersize=markersize, label=name, linestyle=ls)
-        handles_nm.append(handle)
-
-    # plt.legend()
-    # ax.legend(prop={'size': 9}, loc=3, ncol=4, fancybox=False, frameon=True)
-
-    if len(names) > 1:
-        if ax2 is None:
-            ax2 = ax.twinx()
-        ax2.legend(handles=handles_nm, loc=4, fancybox=False, frameon=False)
-    # plt.gca().add_artist(lgd)
-
-    # plt.grid()
+                ax2.legend(handles=handles_nm, loc=4, fancybox=False, frameon=False)
     plt.show()
 
     if args.is_save_plot:
@@ -197,7 +196,9 @@ def main():
         else:
             fsave = os.path.join(os.path.expanduser('~/'), 'chem_%s.pdf' % names[0])
         logger.info(" Save plot to %s " % fsave)
-        ax.get_figure().savefig(fsave, bbox_inches='tight', format='pdf')
+        if fig is None:
+            fig = ax.get_figure()
+        fig.savefig(fsave, bbox_inches='tight')
 
 
 if __name__ == '__main__':

@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-def ls_long(models, path='.', pars=('R', 'M', 'Mni', 'E'), sep=' & ', is_verbose=False):
+def ls_long(models, path='.', pars=('R', 'M', 'Mni', 'E'), sep=' |', is_verbose=False):
     """
     Print model list with parameters
         TODO  filter by parameters
@@ -33,6 +33,7 @@ def ls_long(models, path='.', pars=('R', 'M', 'Mni', 'E'), sep=' & ', is_verbose
     :return:
     """
 
+    units = {'R': 'Rsun', 'M': 'Msun', 'Mni': 'Msun', 'E': 'FOE'}
     is_dict = type(models) is dict
     if is_dict:
         mnanes = list(models.keys())
@@ -43,14 +44,14 @@ def ls_long(models, path='.', pars=('R', 'M', 'Mni', 'E'), sep=' & ', is_verbose
     s1 = '{:>40s} '.format('Name')
     s2 = '{:40s} '.format('-' * 40)
     for k in pars:
-        s1 += '{}  {:7s}'.format(sep, k)
-        s2 += '{}  {:7s}'.format(sep, '-' * 7)
+        s1 += '{} {:>3s}({:4s})'.format(sep, k, units[k])
+        s2 += '{}  {:8s}'.format(sep, '-' * 8)
     s1 += '{}  {}'.format(sep, 'comment')
-    s2 += '{}  {}'.format(sep, '-' * 7)
+    s2 += '{}  {}'.format(sep, '-' * 8)
     print(s1)
     print(s2)
-    # print("| %40s |  %7s |  %6s | %6s |  %s" % ('Name', 'R', 'M', 'E', 'comment'))
-    # print("| %40s |  %7s |  %6s | %6s |  %s" % ('-' * 40, '-' * 7, '-' * 6, '-' * 6, '-' * 7))
+    # print("| %40s |  %8s |  %6s | %6s |  %s" % ('Name', 'R', 'M', 'E', 'comment'))
+    # print("| %40s |  %8s |  %6s | %6s |  %s" % ('-' * 40, '-' * 8, '-' * 6, '-' * 6, '-' * 8))
     for mdl in mnanes:
         stella = ps.Stella(mdl, path=path)
         exts = models[mdl] if is_dict else ''
@@ -60,13 +61,13 @@ def ls_long(models, path='.', pars=('R', 'M', 'Mni', 'E'), sep=' & ', is_verbose
                 s = '{:>40s} '.format(info.Name)
                 for k in pars:
                     v = getattr(info, k)
-                    s += '{}  {:7.3f}'.format(sep, v)
+                    s += '{}  {:8.3f}'.format(sep, v)
                 s += '{}  {}'.format(sep, exts)
                 print(s)
             except KeyError as ex:
-                print("| %40s |  %7s |  %6s | %6s | %s  | KeyError: %s" % (info.Name, '', '', '', exts, ex))
+                print("| %40s |  %8s |  %6s | %6s | %s  | KeyError: %s" % (info.Name, '', '', '', exts, ex))
             except:
-                print("| %40s |  %7s |  %6s | %6s | %s  | Unexpected error: %s"
+                print("| %40s |  %8s |  %6s | %6s | %s  | Unexpected error: %s"
                       % (info.Name, '', '', '', exts, sys.exc_info()[0]))
         else:
             if is_verbose:
@@ -132,7 +133,7 @@ def get_parser():
                         help="List of parameters. Default: " + ':'.join(('R', 'M', 'Mni', 'E')))
     parser.add_argument('--sep',
                         required=False,
-                        default=' | ',
+                        default=' |',
                         dest="sep",
                         help="String separator Default: |")
     parser.add_argument('--summary',
