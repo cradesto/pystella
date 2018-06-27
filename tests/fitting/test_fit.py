@@ -118,7 +118,7 @@ class TestFit(unittest.TestCase):
         # x = lc.Time + jd_shift + res
         y = lc.Mag
         ax.plot(x, y, label='%s SN 1999em' % lc.Band.Name,
-                ls=".", color='red', markersize=8, marker="o")
+                ls=":", color='red', markersize=8, marker="o")
         plt.show()
 
     # @unittest.skip("just for plot")

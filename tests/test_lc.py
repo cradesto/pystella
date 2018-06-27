@@ -72,7 +72,7 @@ class TestLightCurve(unittest.TestCase):
         tt1 = m1.get_tt().read()
         curves = m1.curves(bands=['bol'], t_diff=1.0000001)
         # ax = ps.light_curve_plot.curves_plot(curves, xlim=(0.7, 1), ylim=(-14, -24), is_line=False)
-        ax = ps.light_curve_plot.curves_plot(curves, xlim=(-10, 155), ylim=(-14, -24), is_line=False)
+        ax = ps.lcp.curves_plot(curves, xlim=(-10, 155), ylim=(-14, -24), is_line=False)
         t = tt1['time']
         ax.plot(t, tt1['Mbol'], label='tt-bolometric LC ', color='red', lw=2, ls=':')
         # ph
@@ -98,8 +98,8 @@ class TestSetLightCurve(unittest.TestCase):
             curves.add(lc_create(b))
 
         self.assertCountEqual(bands, curves.BandNames,
-                              msg="Error for band names.\n \
-                Now band is %s but  lc.Band.Name is  %s." % (' '.join(bands), ' '.join(curves.BandNames)))
+                              msg="Error for band names.\n \ Now band is %s but  lc.Band.Name is  %s."
+                                  % (' '.join(bands), ' '.join(curves.BandNames)))
 
     def test_SetLightCurve_save_true(self):
         bands = ['U', 'B', 'V']

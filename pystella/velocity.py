@@ -142,7 +142,7 @@ def plot_vels_models(ax, models_dic, xlim=None, ylim=None, vnorm=1e8):
     ax.set_xlabel('Time [days]')
 
 
-def plot_vel(ax, vel, xlim=None, ylim=None, color='blue', label='Velocity'):
+def plot_vel(ax, vel, xlim=None, ylim=None, vnorm=1e8, color='blue', label='Velocity'):
     is_x_lim = xlim is None
     is_y_lim = ylim is None
 
@@ -150,7 +150,7 @@ def plot_vel(ax, vel, xlim=None, ylim=None, color='blue', label='Velocity'):
     x_max = []
     y_mid = []
     x = vel['time']
-    y = vel['vel'] / 1e8
+    y = vel['vel'] / vnorm
     ax.plot(x, y, label=label, color=color, ls="-", linewidth=lw)
     if is_x_lim:
         x_max.append(np.max(x))
@@ -162,11 +162,11 @@ def plot_vel(ax, vel, xlim=None, ylim=None, color='blue', label='Velocity'):
     ax.set_xlim(xlim)
 
     if is_y_lim:
-        ylim = [1e-1, np.max(y_mid) + 1]
+        ylim = [1e-1, np.max(y_mid) + 5]
         # ylim = [np.min(y_mid) + 7., np.min(y_mid) - 2.]
     ax.set_ylim(ylim)
 
-    ax.set_ylabel('Velocity')
+    ax.set_ylabel('Velocity [{:.0e} km/s]'.format(vnorm/1e5))
     ax.set_xlabel('Time [days]')
     ax.grid()
 

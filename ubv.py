@@ -14,8 +14,6 @@ import matplotlib.pyplot as plt
 from matplotlib import gridspec
 
 import pystella as ps
-from pystella import light_curve_func as lcf
-from pystella import light_curve_plot as lcp
 
 __author__ = 'bakl'
 
@@ -34,7 +32,7 @@ def plot_grid(models_dic, bnames, call=None, **kwargs):
         icol = i % 2
         irow = int(i / 2)
         ax = axs[irow, icol]
-        lcp.plot_models_band(ax, models_dic, bname, **kwargs)
+        ps.lcp.plot_models_band(ax, models_dic, bname, **kwargs)
 
         # plot callback
         if call is not None:
@@ -91,7 +89,7 @@ def plot_all(models_vels, models_dic, bnames, d=10, call=None, **kwargs):
     gs1.update(wspace=0.3, hspace=0.3, left=0.1, right=0.95)
 
     # plot the light curves
-    lcp.plot_ubv_models(axUbv, models_dic, bnames, **kwargs)
+    ps.lcp.plot_ubv_models(axUbv, models_dic, bnames, **kwargs)
     # lcp.plot_ubv_models(axUbv, models_dic, bands, band_shift=band_shift, xlim=xlim, ylim=ylim,
     #                     is_time_points=is_time_points)
 
@@ -348,10 +346,10 @@ def main(name='', model_ext='.ph'):
                 curves = mdl.get_tt().read_curves()
             elif is_curve_old:  # old
                 print("Use old proc for Stella magnitudes")
-                curves = lcf.curves_compute(name, path, bnames, z=z, distance=distance,
-                                            magnification=magnification, t_diff=t_diff)
+                curves = ps.lcf.curves_compute(name, path, bnames, z=z, distance=distance,
+                                               magnification=magnification, t_diff=t_diff)
                 if is_extinction:
-                    curves = lcf.curves_reddening(curves, ebv=e, z=z)
+                    curves = ps.lcf.curves_reddening(curves, ebv=e, z=z)
             else:
                 curves = mdl.curves(bnames, z=z, distance=distance, ebv=e, magnification=magnification,
                                     t_diff=t_diff)
@@ -393,7 +391,7 @@ def main(name='', model_ext='.ph'):
                     if e > 0:
                         fname = '{}_E{:0.2g}'.format(fname, e)
                     fname = '{}{}'.format(fname, '.ubv')
-                if lcf.curves_save(curves, fname):
+                if ps.lcf.curves_save(curves, fname):
                     print("Magnitudes of {} have been saved to {}".format(curves.Name, fname))
                 else:
                     print("Error with Magnitudes saved to {}".format(curves.Name, fname))

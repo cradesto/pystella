@@ -8,4 +8,4 @@ from .reddening import ReddeningLaw, LawFitz, LawPei
 from .star import Star, Flux2MagAB
 from .ts import SetTimeSeries, TimeSeries
 
-from .rad_func import compute_x_bb
+from .rad_func import compute_x_bb, val_to_hz, val_to_wl, Lum2MagBol, MagAB2Flux

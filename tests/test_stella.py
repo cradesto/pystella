@@ -5,8 +5,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import pystella as ps
-import pystella.rf.light_curve_func as lcf
-import pystella.rf.light_curve_plot as lcp
 
 __author__ = 'bakl'
 
@@ -50,7 +48,7 @@ class TestStellaLightCurves(unittest.TestCase):
 
         tt = mdl.get_tt().read()
 
-        ax = lcp.curves_plot(curves)
+        ax = ps.lcp.curves_plot(curves)
         for bname in bands:
             ax.plot(tt['time'], tt['M'+bname], label="tt "+bname, color=bands_colors(bname),
                     marker='*', markersize=3, ls='')
@@ -69,15 +67,15 @@ class TestStellaLightCurves(unittest.TestCase):
         ebv = 1
 
         # mags reddening
-        cs = lcf.curves_compute(name, path, bands, t_diff=1.05)
+        cs = ps.lcf.curves_compute(name, path, bands, t_diff=1.05)
 
         mdl = ps.Stella(name, path=path)
         is_SMC = False
         if is_SMC:
-            curves_mags = lcf.curves_reddening(cs, ebv=ebv, law='Rv2.1')
+            curves_mags = ps.lcf.curves_reddening(cs, ebv=ebv, law='Rv2.1')
             curves = mdl.curves(bands, ebv=ebv, t_diff=1.05, mode=ps.ReddeningLaw.SMC)  # best SMC MW
         else:
-            curves_mags = lcf.curves_reddening(cs, ebv=ebv, law=ps.extinction.law_default)
+            curves_mags = ps.lcf.curves_reddening(cs, ebv=ebv, law=ps.extinction.law_default)
             curves = mdl.curves(bands, ebv=ebv, t_diff=1.05,  mode=ps.ReddeningLaw.MW)
         # curves = mdl.curves(bands, ebv=ebv, law=LawFitz, mode=ReddeningLaw.SMC)  # best SMC
 
@@ -92,10 +90,10 @@ class TestStellaLightCurves(unittest.TestCase):
         axUbv = fig.add_subplot(gs1[:-1, 0])
         axDM = fig.add_subplot(gs1[3, 0])
         lt = {lc.Band.Name: 'o' for lc in curves_mags}
-        ax = lcp.curves_plot(curves_mags, ax=axUbv, lt=lt, markersize=2, is_legend=False)
+        ax = ps.lcp.curves_plot(curves_mags, ax=axUbv, lt=lt, markersize=2, is_legend=False)
         xlim = ax.get_xlim()
 
-        lcp.curves_plot(curves, ax=axUbv)
+        ps.lcp.curves_plot(curves, ax=axUbv)
 
         x = curves.TimeCommon
         for b in bands:

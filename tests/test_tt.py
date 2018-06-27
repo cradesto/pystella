@@ -5,8 +5,7 @@ from os.path import dirname, abspath, join
 import matplotlib.pyplot as plt
 import numpy as np
 
-from pystella.model.stella import Stella
-from pystella.rf import light_curve_plot as lcp
+import pystella as ps
 
 __author__ = 'bakl'
 
@@ -17,7 +16,7 @@ class TestStellaTt(unittest.TestCase):
         name = 'cat_R500_M15_Ni006_E12'
         # name = 'cat_R1000_M15_Ni007_E15'
         path = join(dirname(abspath(__file__)), 'data', 'stella')
-        self.stella = Stella(name, path=path)
+        self.stella = ps.Stella(name, path=path)
         self.tt = self.stella.get_tt()
 
     def test_info_parse_print(self):
@@ -84,7 +83,7 @@ class TestStellaTt(unittest.TestCase):
         plt.matplotlib.rcParams.update({'font.size': 14})
         fig, ax = plt.subplots(1, 1)
 
-        lcp.plot_models_curves_fixed_bands(ax, models_dic, bands, lc_types=lc_types, ylim=(-10, -24))
+        ps.lcp.plot_models_curves_fixed_bands(ax, models_dic, bands, lc_types=lc_types, ylim=(-10, -24))
         # lcf.plot_models_curves(ax, models_dic, bands, lc_types=lc_types, ylim=(-10, -24), xlim=(0, 20))
         plt.legend()
         plt.show()
@@ -103,7 +102,7 @@ class TestStellaTt(unittest.TestCase):
         plt.matplotlib.rcParams.update({'font.size': 14})
         fig, ax = plt.subplots(1, 1)
 
-        lcp.plot_models_curves(ax, models_dic, lc_types=lc_types, ylim=(-10, -23), lw=3)
+        ps.lcp.plot_models_curves(ax, models_dic, lc_types=lc_types, ylim=(-10, -23), lw=3)
         plt.legend()
         plt.show()
 
@@ -125,7 +124,7 @@ class TestStellaTt(unittest.TestCase):
         plt.matplotlib.rcParams.update({'font.size': 14})
         fig, ax = plt.subplots(1, 1)
 
-        lcp.plot_models_curves(ax, models_dic, lc_types=lc_types, ylim=(-10, -19), lw=3)
+        ps.lcp.plot_models_curves(ax, models_dic, lc_types=lc_types, ylim=(-19, -10), lw=3)
         # lcf.plot_models_curves_fixed_bands(ax, models_dic, bands=('B', 'V'), lc_types=lc_types, ylim=(-13, -23), lw=3)
         plt.legend()
         plt.show()
