@@ -53,16 +53,16 @@ def popov_fit(lc, R0, M0, Mni0=None, E0=None, dt0=None, is_verbose=True, xtol=1e
         l_dt = p[4]
         t = time + l_dt
         m = mdl.MagBol(t)
-        res = (lc.Mag - m)**2 / m
-        w = np.exp(-(max(abs(lc.Mag)) - abs(lc.Mag))*2)  # weight
+        res = (lc.Mag - m) ** 2 / m
+        w = np.exp(-(max(abs(lc.Mag)) - abs(lc.Mag)) * 2)  # weight
         w = 1.
         # w = w / max(w)
         if lc.IsErr:
             res = res * w / lc.Err
         return 0, res
 
-    parinfo = [{'value': R0,   'limited': [1, 1], 'limits': [10., 1500e0]},
-               {'value': M0,   'limited': [1, 1], 'limits': [1., 150.]}
+    parinfo = [{'value': R0, 'limited': [1, 1], 'limits': [10., 1500e0]},
+               {'value': M0, 'limited': [1, 1], 'limits': [1., 150.]}
                # {'value': Mni0, 'limited': [1, 1], 'limits': [0.0000001, 0.00001]},
                # , {'value': E0,   'limited': [1, 1], 'limits': [0.01, 5.]}
                # , {'value': dt0,  'limited': [1, 1], 'limits': [-200., 250.]}
@@ -72,11 +72,11 @@ def popov_fit(lc, R0, M0, Mni0=None, E0=None, dt0=None, is_verbose=True, xtol=1e
     else:
         parinfo.append({'value': 0.01, 'fixed': 1})
     if E0 is not None:
-        parinfo.append({'value': E0,   'limited': [1, 1], 'limits': [0.01, 5.]})
+        parinfo.append({'value': E0, 'limited': [1, 1], 'limits': [0.01, 5.]})
     else:
         parinfo.append({'value': 1., 'fixed': 1})
     if dt0 is not None:
-        parinfo.append({'value': dt0,  'limited': [1, 1], 'limits': [-200., 250.]})
+        parinfo.append({'value': dt0, 'limited': [1, 1], 'limits': [-200., 250.]})
     else:
         parinfo.append({'value': 0., 'fixed': 1})
 
@@ -270,6 +270,45 @@ class TestFit(unittest.TestCase):
         print(txt)
         # plot model
         curves_obs.set_tshift(res.tshift)
+        # curves_mdl.set_tshift(0.)
+        ax = lcp.curves_plot(curves_mdl)
+
+        lt = {lc.Band.Name: 'o' for lc in curves_obs}
+        lcp.curves_plot(curves_obs, ax, lt=lt, xlim=(-10, 300), is_line=False)
+        plt.show()
+
+    # @unittest.skip("just for plot")
+    def test_best_curves_gp_SN1999em(self):
+        from pystella.rf import light_curve_func as lcf
+        from pystella.rf import light_curve_plot as lcp
+        # matplotlib.rcParams['backend'] = "TkAgg"
+        # matplotlib.rcParams['backend'] = "Qt4Agg"
+        # from matplotlib import pyplot as plt
+        # Get observations
+        D = 11.5e6  # pc
+        dm = -5. * np.log10(D) + 5
+        # dm = -30.4  # D = 12.e6 pc
+        curves_obs = sn1999em.read_curves()
+        curves_obs.set_mshift(dm)
+
+        # Get model
+        name = 'cat_R500_M15_Ni006_E12'
+        path = join(dirname(dirname(abspath(__file__))), 'data', 'stella')
+
+        curves_mdl = lcf.curves_compute(name, path, curves_obs.BandNames)
+
+        # fit
+        # fitter = FitLcMcmc()
+        fitter = FitMPFit()
+        fitter.is_info = True
+        fitter.is_debug = True
+        res = fitter.best_curves_gp(curves_obs, curves_mdl, dt0=0., dm0=0.)
+        # print
+        txt = '{0:10} {1:.4e} \n'.format('tshift:', res['dt']) + \
+              '{0:10} {1:.4e} \n'.format('tsigma:', res['dtsig'])
+        print(txt)
+        # plot model
+        curves_obs.set_tshift(res['dt'])
         # curves_mdl.set_tshift(0.)
         ax = lcp.curves_plot(curves_mdl)
 

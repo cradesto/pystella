@@ -39,11 +39,14 @@ def read(name, path='./', t_diff=1.005, t_beg=float('-inf'), t_end=float('inf'),
             continue
         if t > t_end:
             break
-        if abs(times[k]) > 0. and np.abs(t / times[k] -1.) > t_diff-1.:
+        if abs(times[k]) > 0. and np.abs(t/times[k] - 1.) > t_diff-1.:
             is_times[k] = True
             k = i
     # is_times[0] = True  # times[0] > 0.
     is_times[0] = times[0] >= t_beg
+    if len(times) > 1:
+        is_times[0] = times[0] < times[1]
+
     is_times[-1] = times[-1] <= t_end
 
     series = SeriesSpectrum(name)

@@ -160,7 +160,7 @@ class FitMPFit(FitLc):
 
                 m = np.interp(time_o, ts_m.Time, ts_m.V)  # One-dimensional linear interpolation.
                 # w = np.ones(len(m)) w = np.exp(-2*len(check)/len(ts_o.Time)) *7 np.abs(1. - A * (time_o - min(
-                                        # time_o)) / (max(time_o) - min(time_o)))  # weight
+                # time_o)) / (max(time_o) - min(time_o)))  # weight
                 w = np.abs(1. - A * (time_o - min(time_o)) / (max(time_o) - min(time_o)))  # weight
                 if ts_o.IsErr:
                     # err_o = ts_o.Err[check]
@@ -192,6 +192,11 @@ class FitMPFit(FitLc):
         dt_init = {lc.Band.Name: lc.tshift for lc in curves_o}
         dm_init = {lc.Band.Name: lc.mshift for lc in curves_o}
 
+        # заменить наблюдения их сплайном
+        curves_m_spline = {}
+        for lc_m in curves_m:
+            curves_m_spline[lc_m.Band.Name] = InterpolatedUnivariateSpline(lc_m.Time, lc_m.Mag, k=1)
+
         def least_sq(p, fjac):
             total = []
             for lc_m in curves_m:
@@ -200,7 +205,7 @@ class FitMPFit(FitLc):
                 lc_o.mshift = dm_init[lc_m.Band.Name] + p[1]
                 # model interpolation
                 if is_spline:
-                    s = InterpolatedUnivariateSpline(lc_m.Time, lc_m.Mag, k=1)
+                    s = curves_m_spline[lc_m.Band.Name]
                     m = s(lc_o.Time)
                 else:
                     m = np.interp(lc_o.Time, lc_m.Time, lc_m.Mag)  # One-dimensional linear interpolation.
@@ -223,7 +228,122 @@ class FitMPFit(FitLc):
             parinfo.append({'value': 0., 'fixed': 1})
 
         if dm0 is not None:
-            parinfo.append({'value': dm0, 'limited': [1, 1], 'limits': [-5.+dm0, 5.+dm0]})
+            parinfo.append({'value': dm0, 'limited': [1, 1], 'limits': [-5. + dm0, 5. + dm0]})
+        else:
+            parinfo.append({'value': 0., 'fixed': 1})
+
+        if dt0 is not None or dm0 is not None:
+            result = mpfit.mpfit(least_sq, parinfo=parinfo, quiet=not self.is_info, maxiter=200,
+                                 ftol=ftol, gtol=gtol, xtol=xtol)
+        else:
+            dum, r = least_sq([x['value'] for x in parinfo], None)  # just return the weight diff
+            r = np.array(r)
+            chi2 = np.sum(r ** 2)
+            if self.is_info:
+                print("No fit: only run least_sq: len(r)={}  chi2={}".format(len(r), chi2))
+
+            res = {'dt': None, 'dtsig': None, 'dm': None, 'dmsig': None, 'chi2': chi2, 'dof': len(r)}
+            return res
+
+        # return initial states
+        for lc in curves_o:
+            lc.tshift = dt_init[lc.Band.Name]
+            lc.mshift = dm_init[lc.Band.Name]
+
+        if result.status <= 0:
+            print('status = ', result.status)
+            print('error message = ', result.errmsg)
+            print('parameters = ', result.params)
+            raise ValueError(result.errmsg)
+
+        if self.is_info:
+            print("status: ", result.status)
+            if result.status == 5:
+                print('Maximum number of iterations exceeded in mangle_spectrum')
+            else:
+                print("Iterations: ", result.niter)
+                print("Fitted pars: ", result.params)
+                print("Uncertainties: ", result.perror)
+
+        # time and magnitude shifts
+        tshift = result.params[0]
+        dof = np.sum([lc.Length for lc in curves_o])
+        if dt0 is not None:
+            dof -= 1
+        if dm0 is not None:
+            dof -= 1
+
+        # scaled uncertainties
+        pcerror = result.perror * np.sqrt(result.fnorm / dof)
+        tsigma = pcerror[0]  # todo tsigma check
+
+        dmshift = result.params[1]
+        dmsigma = pcerror[1]
+
+        if self.is_info:
+            print("The final params are: tshift=%f+-%f mshift=%f+-%f  chi2: %e" % (
+                tshift, tsigma, dmshift, dmsigma, result.fnorm))
+        res = {'dt': tshift, 'dtsig': tsigma, 'dm': dmshift, 'dmsig': dmsigma, 'chi2': result.fnorm, 'dof': result.dof}
+        return res
+
+    #        return result
+
+    def best_curves_gp(self, curves_o, curves_m, dt0=None, dm0=None, Npoints=None,
+                       At=0., err_mdl=0., xtol=1e-10, ftol=1e-10, gtol=1e-10):
+        from pystella.fit.fit_gp import FitGP
+
+        dt_init = {lc.Band.Name: lc.tshift for lc in curves_o}
+        dm_init = {lc.Band.Name: lc.mshift for lc in curves_o}
+
+        # заменить модель на  сплайны
+        curves_m_spline = {}
+        for lc_m in curves_m:
+            curves_m_spline[lc_m.Band.Name] = InterpolatedUnivariateSpline(lc_m.Time, lc_m.Mag, k=1)
+
+        # Вычислить chi2
+        def least_sq(p, fjac):
+            total = []
+            for lc_m in curves_m:
+                lc_o = curves_o.get(lc_m.Band.Name)
+                lc_o.tshift = dt_init[lc_m.Band.Name] + p[0]
+                lc_o.mshift = dm_init[lc_m.Band.Name] + p[1]
+                N = Npoints if Npoints is not None else lc_o.Length
+                # to = lc_o.Time
+                # Chick time ranges
+                tmin = max(lc_o.TimeMin, lc_m.TimeMin)
+                tmax = min(lc_o.TimeMax, lc_m.TimeMax)
+
+                # заменить наблюдения их гауссовым процессом
+                if True and lc_o.IsErr:
+                    to_gp = np.linspace(tmin, tmax, N)
+                    gp_o = FitGP.lc2gp(lc_o)
+                    mo, err_o = gp_o.predict(to_gp.reshape(-1, 1), return_std=True)
+                else:
+                    to_gp = lc_o.Time
+                    mo = lc_o.Mag
+                    err_o = lc_o.MagErr
+
+                # model interpolation
+                s = curves_m_spline[lc_m.Band.Name]
+                m = s(to_gp)
+                #                w = np.ones(len(m))
+                w = np.abs(1. - At * (to_gp - tmin) / (tmax - tmin))  # weight
+                diff = mo - m
+                if lc_o.IsErr:
+                    deviates = diff * w / (err_mdl + err_o)
+                else:
+                    deviates = diff * w
+                total = np.append(total, deviates)
+            return 0, total
+
+        parinfo = []
+        if dt0 is not None:
+            parinfo.append({'value': dt0, 'limited': [1, 1], 'limits': [-250.+dt0, 250.+dt0]})
+        else:
+            parinfo.append({'value': 0., 'fixed': 1})
+
+        if dm0 is not None:
+            parinfo.append({'value': dm0, 'limited': [1, 1], 'limits': [-5. + dm0, 5. + dm0]})
         else:
             parinfo.append({'value': 0., 'fixed': 1})
 

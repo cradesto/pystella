@@ -359,9 +359,11 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname='', **k
     colors = kwargs.get('colors', lc_colors)
     linewidth = kwargs.get('linewidth', 2.0)
     markersize = kwargs.get('markersize', 5)
-    rect = kwargs.get('rect', (0.1, 0.2, 0.8, 0.65))
+    # rect = kwargs.get('rect', (0.1, 0.2, 0.8, 0.65))
     fontsize = kwargs.get('fontsize', 18)
     figsize = kwargs.get('figsize', (20, 10))
+    legncol = kwargs.get('legncol', 1)
+    legloc = kwargs.get('legloc', 1)
 
     is_new_fig = ax is None
     if is_new_fig:
@@ -417,20 +419,16 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname='', **k
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
     if is_legend:
-        ax.legend()
+        ax.legend(ncol=legncol, loc=legloc)
     ax.set_ylabel('Magnitude')
     ax.set_xlabel('Time [days]')
-    ax.grid()
+    # ax.grid()
     if title is not None:
-        plt.title(title)
+        ax.get_figure().title(title)
         # ax.text(0.17, 0.07, title, family='monospace')
     if fname != '':
         print('Save plot to {}'.format(fname))
-        # plt.savefig("ubv_%s.png" % fname, format='png')
-        plt.savefig(fname)
-    # if is_new_fig:
-    #     plt.show()
-    # plt.close()
+        ax.get_figure().savefig(fname)
     return ax
 
 

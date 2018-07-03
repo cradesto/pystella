@@ -228,7 +228,7 @@ def bands_colors(bname=None):
         J="blueviolet", H="plum", K="saddlebrown",  # darkred rosybrown blueviolet
         massJ="green", massH="cyan", massK="black",
         LcoJ="green", LcoH="cyan", LcoK="black",
-        UVM2="skyblue", UVW1="orange", UVW2="blue",
+        UVM2="skyblue", UVW1="orange", UVW2="mediumpurple",
         UVM2o="deepskyblue", UVW1o="darkviolet", UVW2o="darkblue",
         USNO40i="blue", USNO40g="cyan", USNO40z="darkgreen", USNO40r="darkviolet", USNO40u="magenta",
         F105W="magenta", F435W="skyblue", F606W="cyan", F125W="g", F140W="orange", F160W="r", F814W="blue",

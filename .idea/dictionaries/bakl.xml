@@ -80,6 +80,7 @@
       <w>lcobs</w>
       <w>lhood</w>
       <w>lims</w>
+      <w>linewidth</w>
       <w>lntypes</w>
       <w>logx</w>
       <w>lumdist</w>
@@ -162,6 +163,7 @@
       <w>tinit</w>
       <w>tion</w>
       <w>tlim</w>
+      <w>tmax</w>
       <w>tmin</w>
       <w>toarray</w>
       <w>tolstov</w>

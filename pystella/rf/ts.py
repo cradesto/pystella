@@ -78,6 +78,11 @@ class TimeSeries(object):
         idx = np.argmin(self.V)
         return self.T[idx]
 
+    @property
+    def TimeVmax(self):
+        idx = np.argmin(self.V)
+        return self.Time[idx]
+
     @classmethod
     def Merge(cls, ts1, ts2):
         if ts1.Name != ts2.Name:
@@ -183,9 +188,24 @@ class SetTimeSeries(object):
         return lc.Time
 
     @property
-    def tmin(self):
-        res = [ts.tmin for name, ts in self.Set.items()]
+    def Tmin(self):
+        res = [ts.Tmin for name, ts in self.Set.items()]
         return min(res)
+
+    @property
+    def Tmax(self):
+        res = [ts.Tmax for name, ts in self.Set.items()]
+        return max(res)
+
+    @property
+    def TimeMin(self):
+        res = [ts.TimeMin for name, ts in self.Set.items()]
+        return min(res)
+
+    @property
+    def TimeMax(self):
+        res = [ts.TimeMax for name, ts in self.Set.items()]
+        return max(res)
 
     def IsName(self, name):
         return name in self.Names
