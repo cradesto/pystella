@@ -144,7 +144,7 @@ def get_parser():
 def engines(nm=None):
     switcher = {
         'mpfit': ps.FitMPFit(),
-        'mcmc': ps.FitLcMcmc(),
+        'mcmc': ps.FitMCMC(),
     }
     if nm is not None:
         return switcher.get(nm)
@@ -748,7 +748,7 @@ def fit_mfl(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, tlim, Vn
             # tss_o['Vel'] = vels_o
 
     # fit
-    res = fitter.fit_tss(tss_o, tss_m)
+    res = fitter.fit_tss(tss_m, tss_o)
 
     return curves_m, vel_m, res
 

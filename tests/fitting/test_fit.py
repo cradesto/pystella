@@ -6,6 +6,7 @@ import numpy as np
 from scipy import interpolate
 
 from plugin import sn1999em, sn87a, rednova
+from pystella import FitMCMC
 from pystella.fit import mpfit
 from pystella.fit.fit_mpfit import FitMPFit
 from pystella.model.popov import Popov
@@ -239,7 +240,7 @@ class TestFit(unittest.TestCase):
         plt.show()
 
     # @unittest.skip("just for plot")
-    def test_fit_curves_Stella_SN1999em(self):
+    def test_fit_mpfit_curves_Stella_SN1999em(self):
         from pystella.rf import light_curve_func as lcf
         from pystella.rf import light_curve_plot as lcp
         # matplotlib.rcParams['backend'] = "TkAgg"
@@ -266,10 +267,48 @@ class TestFit(unittest.TestCase):
 
         # print
         txt = '{0:10} {1:.4e} \n'.format('tshift:', res.tshift) + \
-              '{0:10} {1:.4e} \n'.format('tsigma:', res.tsigma)
+              '{0:10} {1:.4e} \n'.format('tsigma:', res.tsigma) + \
+              '{0}\n'.format(res.comm)
         print(txt)
         # plot model
         curves_obs.set_tshift(res.tshift)
+        # curves_mdl.set_tshift(0.)
+        ax = lcp.curves_plot(curves_mdl)
+
+        lt = {lc.Band.Name: 'o' for lc in curves_obs}
+        lcp.curves_plot(curves_obs, ax, lt=lt, xlim=(-10, 300), is_line=False)
+        plt.show()
+
+    # @unittest.skip("just for plot")
+    def test_fit_mcmc_curves_Stella_SN1999em(self):
+        from pystella.rf import light_curve_func as lcf
+        from pystella.rf import light_curve_plot as lcp
+        # Get observations
+        D = 11.5e6  # pc
+        dm = -5. * np.log10(D) + 5
+        # dm = -30.4  # D = 12.e6 pc
+        curves_obs = sn1999em.read_curves()
+        curves_obs.set_mshift(dm)
+
+        # Get model
+        name = 'cat_R500_M15_Ni006_E12'
+        path = join(dirname(dirname(abspath(__file__))), 'data', 'stella')
+
+        curves_mdl = lcf.curves_compute(name, path, curves_obs.BandNames)
+
+        # fit
+        # fitter = FitLcMcmc()
+        fitter = FitMCMC()
+        fitter.is_debug = True
+        fitter.is_info = True
+        res = fitter.best_curves(curves_mdl, curves_obs, dt0=0 )
+
+        # print
+        txt = '{0:10} {1:.4e} \n'.format('tshift:', res['dt']) + \
+              '{0:10} {1:.4e} \n'.format('tsigma:', res['dtsig'])
+        print(txt)
+        # plot model
+        curves_obs.set_tshift(res['dt'])
         # curves_mdl.set_tshift(0.)
         ax = lcp.curves_plot(curves_mdl)
 

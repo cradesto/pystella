@@ -9,7 +9,39 @@ class FitMPFit(FitLc):
     def __init__(self):
         super().__init__("MPFit")
 
-    def fit_lc(self, lc_o, lc_m, dt0=0., dm0=None):
+    @property
+    def xtol(self):
+        return self.get('xtol', 1e-10)
+
+    @xtol.setter
+    def xtol(self, v):
+        self._par['xtol'] = v
+
+    @property
+    def ftol(self):
+        return self.get('ftol', 1e-10)
+
+    @ftol.setter
+    def ftol(self, v):
+        self._par['ftol'] = v
+
+    @property
+    def gtol(self):
+        return self.get('gtol', 1e-10)
+
+    @gtol.setter
+    def gtol(self, v):
+        self._par['gtol'] = v
+
+    @property
+    def maxiter(self):
+        return self.get('maxiter', 200)
+
+    @maxiter.setter
+    def maxiter(self, v):
+        self._par['maxiter'] = v
+
+    def fit_lc(self, lc_m, lc_o, dt0=0., dm0=None):
         #   res = {'dt': tshift, 'dtsig': tsigma, 'dm': dmshift, 'dmsig': dmsigma}
         res = self.best_lc(lc_o, lc_m, dt0=dt0, dm0=dm0)
 
@@ -20,7 +52,7 @@ class FitMPFit(FitLc):
         fit_result.msigma = res['dmsig']
         return fit_result
 
-    def fit_curves(self, curves_o, curves_m):
+    def fit_curves(self, curves_m, curves_o):
         dt0 = curves_o.get(curves_o.BandNames[0]).tshift
         dm0 = curves_o.get(curves_o.BandNames[0]).mshift
 
@@ -49,9 +81,9 @@ class FitMPFit(FitLc):
         #        fit_result.comm = 'The value of the summed squared residuals for the returned parameter values.'
         return fit_result
 
-    def fit_tss(self, tss_o, tss_m):
+    def fit_tss(self, tss_m, tss_o):
 
-        result = self.best_time_series(tss_o, tss_m, is_debug=self.is_debug, is_info=self.is_info)
+        result = self.best_time_series(tss_m, tss_o, is_debug=self.is_debug, is_info=self.is_info)
 
         tshift = result.params[0]
         pcerror = result.perror
@@ -71,7 +103,7 @@ class FitMPFit(FitLc):
         #        fit_result.comm = 'The value of the summed squared residuals for the returned parameter values.'
         return fit_result
 
-    def best_lc(self, lc_o, lc_m, dt0=None, dm0=None, At=0., xtol=1e-10, ftol=1e-10, gtol=1e-10, is_spline=True):
+    def best_lc(self, lc_m, lc_o, dt0=None, dm0=None, At=0., is_spline=True):
         dt_init = lc_o.tshift
         dm_init = lc_o.mshift
 
@@ -107,8 +139,8 @@ class FitMPFit(FitLc):
             parinfo.append({'value': 0., 'fixed': 1})
 
         #        print(parinfo)
-        result = mpfit.mpfit(least_sq, parinfo=parinfo, quiet=not self.is_info, maxiter=200,
-                             ftol=ftol, gtol=gtol, xtol=xtol)
+        result = mpfit.mpfit(least_sq, parinfo=parinfo, quiet=not self.is_info, maxiter=self.maxiter,
+                             ftol=self.ftol, gtol=self.gtol, xtol=self.xtol)
         if result.status == 5:
             print('Maximum number of iterations exceeded in mangle_spectrum')
         elif result.status <= 0:
@@ -142,7 +174,7 @@ class FitMPFit(FitLc):
         return res
 
     @staticmethod
-    def best_time_series(tss_o, tss_m, is_debug=False, is_info=True, xtol=1e-10, ftol=1e-10, gtol=1e-10):
+    def best_time_series(tss_m, tss_o, is_debug=False, is_info=True, xtol=1e-10, ftol=1e-10, gtol=1e-10):
         def least_sq(p, fjac):
             A = 0.5
             E = 0.002
@@ -187,15 +219,16 @@ class FitMPFit(FitLc):
 
         return result
 
-    def best_curves(self, curves_o, curves_m, dt0=None, dm0=None, is_spline=True,
-                    At=0., err_mdl=0., xtol=1e-10, ftol=1e-10, gtol=1e-10):
+    def best_curves(self, curves_m, curves_o, dt0=None, dm0=None, is_spline=True,
+                    At=0., err_mdl=0.):
         dt_init = {lc.Band.Name: lc.tshift for lc in curves_o}
         dm_init = {lc.Band.Name: lc.mshift for lc in curves_o}
 
-        # заменить наблюдения их сплайном
+        # заменить модели их сплайном
         curves_m_spline = {}
-        for lc_m in curves_m:
-            curves_m_spline[lc_m.Band.Name] = InterpolatedUnivariateSpline(lc_m.Time, lc_m.Mag, k=1)
+        if is_spline:
+            for lc_m in curves_m:
+                    curves_m_spline[lc_m.Band.Name] = InterpolatedUnivariateSpline(lc_m.Time, lc_m.Mag, k=1)
 
         def least_sq(p, fjac):
             total = []
@@ -213,12 +246,11 @@ class FitMPFit(FitLc):
                 w = np.abs(1. - At * (lc_o.Time - lc_o.TimeMin) / (lc_o.TimeMax - lc_o.TimeMin))  # weight
                 diff = lc_o.Mag - m
                 if lc_o.IsErr:
-                    res = diff / (err_mdl + lc_o.MagErr) * w
-                #                    res = (diff/(err_mdl + lc_o.MagErr))**2 * w
+                    chi = diff * w / (err_mdl + lc_o.MagErr)
                 else:
-                    res = diff * w
+                    chi = diff * w
                 #                    res = diff**2 * w
-                total = np.append(total, res)
+                total = np.append(total, chi)
             return 0, total
 
         parinfo = []
@@ -233,8 +265,8 @@ class FitMPFit(FitLc):
             parinfo.append({'value': 0., 'fixed': 1})
 
         if dt0 is not None or dm0 is not None:
-            result = mpfit.mpfit(least_sq, parinfo=parinfo, quiet=not self.is_info, maxiter=200,
-                                 ftol=ftol, gtol=gtol, xtol=xtol)
+            result = mpfit.mpfit(least_sq, parinfo=parinfo, quiet=not self.is_info, maxiter=self.maxiter,
+                                 ftol=self.ftol, gtol=self.gtol, xtol=self.xtol)
         else:
             dum, r = least_sq([x['value'] for x in parinfo], None)  # just return the weight diff
             r = np.array(r)
@@ -288,8 +320,8 @@ class FitMPFit(FitLc):
 
     #        return result
 
-    def best_curves_gp(self, curves_o, curves_m, dt0=None, dm0=None, Npoints=None,
-                       At=0., err_mdl=0., xtol=1e-10, ftol=1e-10, gtol=1e-10):
+    def best_curves_gp(self, curves_m, curves_o, dt0=None, dm0=None, Npoints=None,
+                       At=0., err_mdl=0.):
         from pystella.fit.fit_gp import FitGP
 
         dt_init = {lc.Band.Name: lc.tshift for lc in curves_o}
@@ -300,7 +332,7 @@ class FitMPFit(FitLc):
         for lc_m in curves_m:
             curves_m_spline[lc_m.Band.Name] = InterpolatedUnivariateSpline(lc_m.Time, lc_m.Mag, k=1)
 
-        # Вычислить chi2
+        # Вычислить chi
         def least_sq(p, fjac):
             total = []
             for lc_m in curves_m:
@@ -348,8 +380,8 @@ class FitMPFit(FitLc):
             parinfo.append({'value': 0., 'fixed': 1})
 
         if dt0 is not None or dm0 is not None:
-            result = mpfit.mpfit(least_sq, parinfo=parinfo, quiet=not self.is_info, maxiter=200,
-                                 ftol=ftol, gtol=gtol, xtol=xtol)
+            result = mpfit.mpfit(least_sq, parinfo=parinfo, quiet=not self.is_info, maxiter=self.maxiter,
+                                 ftol=self.ftol, gtol=self.gtol, xtol=self.xtol)
         else:
             dum, r = least_sq([x['value'] for x in parinfo], None)  # just return the weight diff
             r = np.array(r)
@@ -400,4 +432,3 @@ class FitMPFit(FitLc):
                 tshift, tsigma, dmshift, dmsigma, result.fnorm))
         res = {'dt': tshift, 'dtsig': tsigma, 'dm': dmshift, 'dmsig': dmsigma, 'chi2': result.fnorm, 'dof': result.dof}
         return res
-#        return result

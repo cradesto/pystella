@@ -42,6 +42,10 @@ class LightCurve(TimeSeries):
         return self._b
 
     @property
+    def BName(self):
+        return self.Band.Name
+
+    @property
     def mshift(self):
         return self._mshift
 

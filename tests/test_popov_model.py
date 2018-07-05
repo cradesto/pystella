@@ -2,7 +2,7 @@ import numpy as np
 import unittest
 import matplotlib.pyplot as plt
 
-from pystella.fit.fit_mcmc import FitLcMcmc
+from pystella.fit.fit_mcmc import FitMCMC
 from pystella.model.popov import Popov
 import pystella.rf.light_curve_plot as lcp
 from plugin import sn87a
@@ -80,7 +80,7 @@ class TestPopovModel(unittest.TestCase):
         lc_o = curves_o.get('V')
         lc_o.mshift = dm
         print("Run: find tshift with bayesian: obs band %s with %s ..." % (lc_o.Band.Name, popov))
-        fitter = FitLcMcmc()
+        fitter = FitMCMC()
         fitter.is_debug = True
         res = fitter.fit_lc(lc_o, lc_m)
         tshift, tsigma = res.tshift, res.tsigma

@@ -1,16 +1,15 @@
 class FitLc:
     def __init__(self, name):
         self._name = name
-        self._is_info = False
-        self._is_debug = False
+        self._par = {'is_info': False, 'is_debug': False}
 
     def fit_lc(self, lc_o, lc_m):
         pass
 
-    def fit_curves(self, curves_o, curves_m):
+    def fit_curves(self, curves_m, curves_o):
         pass
 
-    def fit_tss(self, tss_o, tss_m):
+    def fit_tss(self, tss_m, tss_o):
         pass
 
     @property
@@ -19,19 +18,27 @@ class FitLc:
 
     @property
     def is_info(self):
-        return self._is_info
+        return self.get('is_info')
 
     @is_info.setter
     def is_info(self, v):
-        self._is_info = v
+        self._par['is_info'] = v
 
     @property
     def is_debug(self):
-        return self._is_debug
+        return self.get('is_debug')
 
     @is_debug.setter
     def is_debug(self, v):
-        self._is_debug = v
+        self._par['is_debug'] = v
+
+    def get(self, k, default=None):
+        if k in self._par:
+            return self._par[k]
+        return default
+
+    def set_param(self, k, v):
+        self._par[k] = v
 
 
 class FitLcResult:
