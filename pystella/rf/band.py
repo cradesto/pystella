@@ -232,7 +232,7 @@ def bands_colors(bname=None):
         UVM2o="deepskyblue", UVW1o="darkviolet", UVW2o="darkblue",
         USNO40i="blue", USNO40g="cyan", USNO40z="darkgreen", USNO40r="darkviolet", USNO40u="magenta",
         F105W="magenta", F435W="skyblue", F606W="cyan", F125W="g", F140W="orange", F160W="r", F814W="blue",
-        Kepler="magenta",
+        Kepler="magenta", Lum="orchid",
         g="olive", r="red", i="plum", u="darkslateblue", z="chocolate",
         Sdssg="olive", Sdssr="pink", Sdssi="magenta", Sdssu="blue", Sdssz="chocolate",
         PS1g="olive", PS1r="red", PS1i="magenta", PS1u="blue", PS1z="chocolate", PS1y="cyan", PS1w="orange",
