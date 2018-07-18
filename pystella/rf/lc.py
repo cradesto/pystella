@@ -194,6 +194,10 @@ class SetLightCurve(SetTimeSeries):
             res.add(clone)
         return res
 
+    def merge(self, curves2):
+        res = SetLightCurve.Merge(self, curves2)
+        return res
+
     @classmethod
     def Merge(cls, curves1, curves2):
         if curves1 is None:

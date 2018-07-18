@@ -351,6 +351,7 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname='', **k
         ls = {lc.Band.Name: c for lc in curves}
     is_legend = kwargs.get('is_legend', True)
     is_line = kwargs.get('is_line', True)
+    is_fill = kwargs.get('is_fill', False)
     if 'marker' in kwargs:
         is_line = False
     marker = kwargs.get('marker', 'o')
@@ -404,6 +405,10 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname='', **k
                 # ax.plot(x, y, label='{0} {1}'.format(bname, fname), color=bcolors[bname], ls='',
                 #         marker=marker, markersize=markersize)
                 ax.plot(x, y, label=label, color=colors[bname], ls='', marker=marker[bname], markersize=markersize)
+        if is_fill:
+            yyerr = abs(lc.Err)
+            ax.fill(np.concatenate([x, x[::-1]]), np.concatenate([y - yyerr, (y + yyerr)[::-1]]),
+                    alpha=.5, fc=colors[bname], ec='None', label=label)  # '95% confidence interval')
 
         if is_xlim:
             xlim[0] = min(xlim[0], np.min(x))
