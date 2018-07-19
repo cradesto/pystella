@@ -39,6 +39,7 @@ from .rf.ts import SetTimeSeries, TimeSeries
 from .fit.fit_lc import FitLc, FitLcResult
 from .fit.fit_mpfit import FitMPFit
 from .fit.fit_mcmc import FitMCMC
+from .fit import mpfit
 
 # functions
 from .model.stella import stella_ls as ls

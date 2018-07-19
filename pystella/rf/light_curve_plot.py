@@ -408,7 +408,7 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname='', **k
         if is_fill:
             yyerr = abs(lc.Err)
             ax.fill(np.concatenate([x, x[::-1]]), np.concatenate([y - yyerr, (y + yyerr)[::-1]]),
-                    alpha=.5, fc=colors[bname], ec='None', label=label)  # '95% confidence interval')
+                    alpha=.3, fc=colors[bname], ec='None', label=label)  # '95% confidence interval')
 
         if is_xlim:
             xlim[0] = min(xlim[0], np.min(x))

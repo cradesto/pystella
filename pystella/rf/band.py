@@ -178,6 +178,49 @@ class Band(object):
         Band.IsLoad = True
         return True
 
+    def response(self, nu, flux):
+        return Band.response_nu(nu, flux, self)
+
+    @staticmethod
+    def response_nu(nu, flux, b):
+        from scipy import integrate
+        """
+        Compute response flux using provided spectral band.
+        see: http://www.astro.ljmu.ac.uk/~ikb/research/mags-fluxes/
+        :param nu: the frequencies of SED
+        :param flux: the flux of SED
+        :param b:  photometric band
+        :return:
+        """
+        from pystella.util.math import log_interp1d
+
+        # nu_s = self.Freq
+        # sort
+        sorti = np.argsort(nu)
+        nu_s = nu[sorti]
+        flux_s = flux[sorti]
+
+        nu_b = np.array(b.freq)
+        resp_b = np.array(b.resp_fr)
+
+        if np.min(nu_s) > nu_b[0] or np.max(nu_s) < nu_b[-1]:
+            # decrease wave length range of the band
+            f = (np.min(nu_s) < nu_b) & (nu_b < np.max(nu_s))
+
+            # f = map(lambda x: min(nu_s) < x < max(nu_s), nu_b)
+            nu_b = nu_b[f]
+            if len(nu_b) < 3:
+                raise ValueError("The filter bandwidth [{}] should be included in the bandwidth of the SED. "
+                                 "There are only {} points in the filter wavelength range."
+                                 .format(b.Name, len(nu_b)))
+            resp_b = resp_b[f]
+
+        log_interp = log_interp1d(nu_s, flux_s)
+        flux_interp = log_interp(nu_b)
+
+        a = integrate.simps(flux_interp * resp_b / nu_b, nu_b)
+        return a
+
 
 class BandUni(Band):
     def __init__(self, name='bol', wlrange=(1e1, 5e4), length=999):

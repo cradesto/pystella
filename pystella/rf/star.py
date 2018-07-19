@@ -2,6 +2,7 @@ import numpy as np
 from scipy import integrate
 from scipy import interpolate
 
+from pystella.rf import Band
 from pystella.rf.rad_func import Flux2MagAB
 from pystella.util.phys_var import phys
 
@@ -166,47 +167,8 @@ class Star:
         a = integrate.simps(flux_spline * band.resp_wl * wl_b, wl_b) / (phys.c * phys.cm_to_angs) / phys.h
         return a
 
-    @staticmethod
-    def response_nu(nu, flux, b):
-        """
-        Compute response flux using provided spectral band.
-        see: http://www.astro.ljmu.ac.uk/~ikb/research/mags-fluxes/
-        :param nu: the frequencies of SED
-        :param flux: the flux of SED
-        :param b:  photometric band
-        :return:
-        """
-        from pystella.util.math import log_interp1d
-
-        # nu_s = self.Freq
-        # sort
-        sorti = np.argsort(nu)
-        nu_s = nu[sorti]
-        flux_s = flux[sorti]
-
-        nu_b = np.array(b.freq)
-        resp_b = np.array(b.resp_fr)
-
-        if np.min(nu_s) > nu_b[0] or np.max(nu_s) < nu_b[-1]:
-            # decrease wave length range of the band
-            f = (np.min(nu_s) < nu_b) & (nu_b < np.max(nu_s))
-
-            # f = map(lambda x: min(nu_s) < x < max(nu_s), nu_b)
-            nu_b = nu_b[f]
-            if len(nu_b) < 3:
-                raise ValueError("The filter bandwidth [{}] should be included in the bandwidth of the SED. "
-                                 "There are only {} points in the filter wavelength range."
-                                 .format(b.Name, len(nu_b)))
-            resp_b = resp_b[f]
-
-        log_interp = log_interp1d(nu_s, flux_s)
-        flux_interp = log_interp(nu_b)
-
-        a = integrate.simps(flux_interp * resp_b / nu_b, nu_b)
-        return a
-
     def magAB(self, b):
-        response = Star.response_nu(self.Freq, self.FluxObs, b)
+        response = Band.response_nu(self.Freq, self.FluxObs, b)
         if response <= 0:
             raise ValueError("Spectrum should be more 0: %f" % response)
 
