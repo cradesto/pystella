@@ -1,9 +1,10 @@
 import numpy as np
 import unittest
 
-import pystella.rf.rad_func as rf
-import pystella.rf.spectrum as spectrum
-from pystella.util.phys_var import phys
+import pystella as ps
+# import pystella.rf.rad_func as rf
+# import pystella.rf.spectrum as spectrum
+# from pystella.util.phys_var import phys
 
 __author__ = 'bakl'
 
@@ -13,13 +14,13 @@ class TestSeriesSpectrum(unittest.TestCase):
         T = 5500
         nf, start, end = 100, 10., 1e5
         wl = np.exp(np.linspace(np.log(end), np.log(start), nf))
-        freq = rf.val_to_hz(wl, inp="A")
+        freq = ps.rf.val_to_hz(wl, inp="A")
 
         times = np.linspace(0., 200., 20)
-        ss = spectrum.SeriesSpectrum("test_SeriesSpectrum")
+        ss = ps.SeriesSpectrum("test_SeriesSpectrum")
 
         for k, t in enumerate(times):
-            s = spectrum.SpectrumPlanck(freq=freq, temperature=T, name='test_spectrum')
+            s = ps.SpectrumPlanck(freq=freq, temperature=T, name='test_spectrum')
             ss.add(t, s)
 
         self.series = ss
@@ -37,10 +38,10 @@ class TestSeriesSpectrum(unittest.TestCase):
         ss = self.series.copy(wl_ab=(wl_l, wl_h))
         for i, t in enumerate(ss.Time):
             s = ss.get_spec(i)
-            self.assertTrue(np.min(s.Wl) * phys.cm_to_angs >= wl_l,
+            self.assertTrue(np.min(s.Wl) * ps.phys.cm_to_angs >= wl_l,
                             "Low wave length boundary for t=%f (idx=%d) should be equal 0, "
                             "but np.min(cp.Wl) = %f" % (t, i, np.min(s.Wl)))
-            self.assertTrue(np.max(s.Wl) * phys.cm_to_angs <= wl_h,
+            self.assertTrue(np.max(s.Wl) * ps.phys.cm_to_angs <= wl_h,
                             "Max wave length boundary should be less %f, but np.max(cp.Wl) = %f" % (wl_h, np.max(s.Wl)))
 
     def test_series_get_T_color(self):
@@ -64,6 +65,66 @@ class TestSeriesSpectrum(unittest.TestCase):
             self.assertAlmostEqual(s.T_wien, aT_wien[k],
                                    "The temperatures shoild be the same "
                                    "but k,time= [{},{}] s.T_color = {:f} ".format(k, t, s.T_wien, aT_wien[k]))
+
+    def test_series_redshift(self):
+        import matplotlib.pyplot as plt
+        x = np.linspace(-10, 10, 10)
+        y = 10. - x**2
+        # norm
+        freq = x - np.min(x)
+        flux = y + np.min(y)
+        times = [10]
+        ss = ps.SeriesSpectrum("test_SeriesSpectrum")
+
+        for k, t in enumerate(times):
+            s = ps.Spectrum(freq=freq, flux=flux, name='test_spectrum')
+            ss.add(t, s)
+
+        z = 1.
+        series = ss
+        series_z = series.redshift(z)
+
+        # plot
+        for t, sp in series:
+            plt.plot(sp.Freq, sp.Flux, marker='', ls=':', label='origin t={:f}'.format(t))
+
+        for t, sp in series_z:
+            plt.plot(sp.Freq, sp.Flux, marker='', ls=':', label='   z t={:f}'.format(t))
+
+        plt.xlabel('Freq')
+        plt.ylabel('Flux')
+        plt.legend(loc='best')
+        plt.show()
+
+    def test_series_redshift2rest(self):
+        import matplotlib.pyplot as plt
+        x = np.linspace(-10, 10, 10)
+        y = 10. - x**2
+        # norm
+        freq = x - np.min(x)
+        flux = y + np.min(y)
+        times = [10]
+        ss = ps.SeriesSpectrum("test_SeriesSpectrum")
+
+        for k, t in enumerate(times):
+            s = ps.Spectrum(freq=freq, flux=flux, name='test_spectrum')
+            ss.add(t, s)
+
+        z = 1.
+        series = ss
+        series_z = series.redshift2rest(z)
+
+        # plot
+        for t, sp in series:
+            plt.plot(sp.Freq, sp.Flux, marker='', ls=':', label='origin t={:f}'.format(t))
+
+        for t, sp in series_z:
+            plt.plot(sp.Freq, sp.Flux, marker='', ls=':', label='   z t={:f}'.format(t))
+
+        plt.xlabel('Freq')
+        plt.ylabel('Flux')
+        plt.legend(loc='best')
+        plt.show()
 
 
 def main():
