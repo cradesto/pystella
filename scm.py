@@ -122,16 +122,19 @@ def plot_scm_fit(ax_cache, bands, models_data, z):
         yh = np.linspace(ylim[0], ylim[1], num=50)
         xx = scm_fit(yh, Av=0, bname=bname, z=z, src='kasen')
         if yh is not None:
-            ax.plot(xx, yh, color="red", ls="--", linewidth=2.5, label='Kasen')
+            ax.plot(xx, yh, color="red", ls="-.", linewidth=2.5, label='Kasen')
     # nugent
     bname = 'I'
     if bname in bands:
-        yn = np.linspace(ylim[0], ylim[1], num=len(models_data['V']))
         ax = ax_cache[bname]
+        ylim = ax.get_ylim()
+        yn = np.linspace(ylim[0], ylim[1], num=len(models_data['V']))
         V_I = models_data['V'] - models_data['I']  # todo make for any bands
         xn = scm_fit(yn, Av=V_I, src='nugent')
+        xnZhl = scm_fit(yn, Av=V_I, src='nugentZhl')
         if yn is not None:
             ax.plot(xn, yn, label='Nugent', color="blue", ls="--")
+            ax.plot(xnZhl, yn, label='Nugent, whole sample', color="blue", ls="-.")
             # ax.plot(xn, yn, marker='x', label='Nugent', markersize=5, color="blue", ls="")
             # ax.plot(xx, yy, color="orange", ls="--", linewidth=2.5, label='Nugent')
 
@@ -148,13 +151,14 @@ def scm_fit(v, Av=0, bname=None, z=0.003, src='hamuy'):
     """
     coef = {'hamuy': {'V': [6.504, 1.294], 'I': [5.820, 1.797]},
             'nugent': {'alf': 6.69, 'V_I_0': 0.53, 'RI': 1.36, 'MI0': -17.49},
+            'nugentZhl': {'alf': 5.81, 'V_I_0': 0.53, 'RI': 1.36, 'MI0': -17.52},
             # 'nugent': {'alf': 6.69, 'V_I_0': 0.53, 'RI': 0., 'MI0': -17.49}
             }
     if src == 'hamuy':
         a = coef[src][bname]
         mag = hamuy_fit(a, v, z, Av)
         return mag
-    if src == 'nugent':
+    if src in ['nugent', 'nugentZhl']:
         a = coef[src]
         mag = -1. * a['alf'] * np.log10(v / 5.) - a['RI'] * (Av - a['V_I_0']) + a['MI0']
         return mag
@@ -200,10 +204,17 @@ def run_scm(bands, distance, names, path, t50, t_beg, t_end, z, method='tt'):
                    dtype=np.dtype({'names': ['v'] + bands,
                                    'formats': [np.float] * (1 + len(bands))}))
     for im, name in enumerate(names):
+        vels = None
         if method=='tt':
-            vels = velocity.compute_vel_res_tt(name, path, z=z, t_beg=t_beg, t_end=t_end)
+            try:
+                vels = velocity.compute_vel_res_tt(name, path, z=z, t_beg=t_beg, t_end=t_end)
+            except ValueError as ex:
+                print(ex)
         elif method == 'swd':
-            vels = velocity.compute_vel_swd(name, path, z=z)
+            try:
+                vels = velocity.compute_vel_swd(name, path, z=z)
+            except ValueError as ex:
+                print(ex)
         else:
             raise ValueError('The method [{}] for velocity computation is not supported.'.format(method))
 
@@ -263,20 +274,6 @@ def get_parser():
 
     return parser
 
-#
-# def usage():
-#     print("Usage:")
-#     print("  %s [params]" % __file__)
-#     print("  -b <set_bands>: delimiter '-'. Default: V-I")
-#     print("  -i <model name>.  Example: cat_R450_M15_Ni007_E7")
-#     print("  -p <model path(directory)>, default: ./")
-#     print("  -f  force mode: rewrite zeta-files even if it exists")
-#     print("  -o  options: <fit:nofit> - fit or no fit. ")
-#     print("  -s  save plot to file, default 'False'")
-#     print("  -h  print usage")
-#     print("   --- ")
-#     # band.print_bands()
-
 
 def main(name=None):
     model_ext = '.ph'
@@ -318,66 +315,11 @@ def main(name=None):
             print('No such band: ' + bname)
             parser.print_help()
             sys.exit(2)
-    #
-    # try:
-    #     opts, args = getopt.getopt(sys.argv[1:], "fhstp:i:b:o:")
-    # except getopt.GetoptError as err:
-    #     print(str(err))  # will print something like "option -a not recognized"
-    #     usage()
-    #     sys.exit(2)
-    #
-    # if not name:
-    #     if len(opts) == 0:
-    #         usage()
-    #         sys.exit(2)
-    #     for opt, arg in opts:
-    #         if opt == '-i':
-    #             path = ROOT_DIRECTORY
-    #             name = str(arg)
-    #             break
-    #
-    # bands = ['V', 'I']
-    # # set_bands = ['B-V', 'B-V-I', 'V-I', 'J-H-K']
-    # # set_bands = ['U-B-V-I', 'U-B-V-R-I', 'U-B', 'V-R', 'B-V-I', 'B-V', 'V-I']
-    #
-    # for opt, arg in opts:
-    #     if opt == '-e':
-    #         model_ext = '.' + arg
-    #         continue
-    #     if opt == '-b':
-    #         bands = str(arg).split('-')
-    #         for b in bands:
-    #             if not band.band_is_exist(b):
-    #                 print('No such band: ' + b)
-    #                 sys.exit(2)
-    #         continue
-    #     if opt == '-s':
-    #         is_save = True
-    #         continue
-    #     if opt == '-f':
-    #         is_save = True
-    #         continue
-    #     if opt == '-p':
-    #         path = os.path.expanduser(str(arg))
-    #         if not (os.path.isdir(path) and os.path.exists(path)):
-    #             print("No such directory: " + path)
-    #             sys.exit(2)
-    #         continue
-    #     elif opt == '-h':
-    #         usage()
-    #         sys.exit(2)
-    #
-    # names = []
-    # if name != '':
-    #     names.append(name)
-    # else:  # run for all files in the path
-    #     files = [f for f in os.listdir(path) if isfile(join(path, f)) and f.endswith(model_ext)]
-    #     for f in files:
-    #         names.append(os.path.splitext(f)[0])
 
     distance = 10.  # pc for Absolute magnitude
     # distance = 10e6  # pc for Absolute magnitude
     z = phys.H0 * (distance / 1e6) / (phys.c / 1e5)  # convert D to Mpc, c to km/c
+    # z = 0.
     t50 = args.tplateau
     t_beg = max(0., t50 - 10.)
     t_end = t50 + 10.
@@ -397,6 +339,7 @@ def main(name=None):
             for bname in bnames:
                 ax_cache[bname].legend(prop={'size': 6})
 
+            plt.legend(prop={'size': 8})
             plt.show()
 
             if args.save_file:
