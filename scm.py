@@ -139,7 +139,7 @@ def plot_scm_fit(ax_cache, bands, models_data, z):
             # ax.plot(xx, yy, color="orange", ls="--", linewidth=2.5, label='Nugent')
 
 
-def scm_fit(v, Av=0, bname=None, z=0.003, src='hamuy'):
+def scm_fit(v, Av=0, bname=None, z=None, src='hamuy'):
     """
     Magnitude V from Hamuy & Pinto 2002, Nugent 2006
     :param bname:  band name
