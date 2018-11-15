@@ -93,8 +93,8 @@ class PreSN(object):
 
     @property
     def m_core(self):
-        """Total mass"""
-        p = 'm_tot'
+        """Core mass"""
+        p = 'm_core'
         if self.is_set(PreSN.sM):
             d = self.hyd(PreSN.sM)[0]
         else:
@@ -226,7 +226,7 @@ class PreSN(object):
         zones = range(1, self._nzon + 1)
         with open(fname, 'w') as f:
             f.write('{:12.3e} {:6d} {:13.5e} {:13.5e} {:13.5e}\n'
-                    .format(self.time_start, self.nzon, self.m_tot / phys.M_sun, self.r_cen, self.rho_cen))
+                    .format(self.time_start, self.nzon, self.m_core / phys.M_sun, self.r_cen, self.rho_cen))
             # a = '#No. Mr  dM  R  dR  Rho PRE T   V'.split()
             # f.write('           '.join(a)+'\n')
             # for _ in zip(zones, self.m/phys.M_sun, dum, self.r, dum, self.rho, dum, self.T, self.V):
