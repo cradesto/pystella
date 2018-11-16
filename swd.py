@@ -217,7 +217,7 @@ def main():
             make_cartoon(swd, times, vnorm=args.vnorm, rnorm=args.rnorm,
                          lumnorm=args.lumnorm, is_legend=is_legend)
         else:
-            fig = ps.light_curve_plot.plot_shock_details(swd, times=times, vnorm=args.vnorm, rnorm=args.rnorm,
+            fig = ps.lcp.plot_shock_details(swd, times=times, vnorm=args.vnorm, rnorm=args.rnorm,
                                                          lumnorm=args.lumnorm, is_legend=is_legend)
 
             plt.show(block=False)
