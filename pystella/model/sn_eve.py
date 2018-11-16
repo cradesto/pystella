@@ -525,6 +525,11 @@ class PreSN(object):
             new = old[idxs]
             newPreSN.set_chem(el, new)
 
+        # copy parameters
+        for p in ['time_start', 'm_tot', 'r_cen']:
+            v = self.par(p)
+            newPreSN.set_par(p, v)
+
         return newPreSN
 
     def set_composition(self, zones, sample=None, is_add=True, is_normalize=True):
@@ -635,6 +640,11 @@ class PreSN(object):
             old = self.el(el)
             new = interp(m, old)
             newPreSN.set_chem(el, new)
+
+        # copy parameters
+        for p in ['time_start', 'm_tot',  'm_core', 'r_cen']:
+            v = getattr(self, p)
+            newPreSN.set_par(p, v)
 
         return newPreSN
 
