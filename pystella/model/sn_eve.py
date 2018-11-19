@@ -17,7 +17,9 @@ logger.setLevel(logging.INFO)
 
 __author__ = 'bakl'
 
-eve_elements = "Ni56 H He C N O Ne Na  Mg  Al  Si  S  Ar  Ca  Fe  Ni".split()
+eve_elements = ("Ni56", "H", "He", "C", "N", "O", "Ne", "Na", "Mg", "Al"
+                , "Si", "S", "Ar", "Ca", "Fe", "Ni")
+
 eve_colors = dict(Ni56="red", H="blue", He="cyan", C="darkorange", N="coral",
                   O="violet", Ne="green", Na="sandybrown",
                   Mg="skyblue", Si="olive", Al="lime",
@@ -41,14 +43,18 @@ class PreSN(object):
     sR = 'R'
     sV = 'V'
     presn_hydro = (sM, sR, sT, sRho, sV)
-    presn_elements = "H He C N O Ne Na  Mg  Al  Si  S  Ar  Ca  Fe  Ni Ni56".split()
+    stl_elements = ("H", "He", "C", "N", "O", "Ne", "Na", "Mg", "Al"
+                    , "Si", "S", "Ar", "Ca", "Fe", "Ni", "Ni56")
+    stl_elements_iso = ("H", "He", "C", "N", "O", "Ne", "Na", "Mg", "Al"
+                        , "Si", "S", "Ar", "Ca", "Fe", "Ni", "Ni56", 'Fe52', 'Cr48')
 
-    def __init__(self, name, nzon):
+    def __init__(self, name, nzon, elements=stl_elements):
         """Creates a PreSN model instance.  Required parameters:  name, nzon"""
         self._name = name
         self._nzon = nzon
+        self._elements = elements
         self._data_hyd = np.empty(nzon, dtype=PreSN.dtype_hyd())
-        self._data_chem = np.empty(nzon, dtype=PreSN.dtype_chem())
+        self._data_chem = np.empty(nzon, dtype=self.dtype_chem())
         self._params = {}
         self._loads = []
 
@@ -57,9 +63,8 @@ class PreSN(object):
         dt = np.dtype({'names': PreSN.presn_hydro, 'formats': np.repeat('f8', len(PreSN.presn_hydro))})
         return dt
 
-    @staticmethod
-    def dtype_chem():
-        dt = np.dtype({'names': PreSN.presn_elements, 'formats': np.repeat('f8', len(PreSN.presn_elements))})
+    def dtype_chem(self):
+        dt = np.dtype({'names': self.Elements, 'formats': np.repeat('f8', self.Nelements)})
         return dt
 
     def show_info(self):
@@ -70,6 +75,14 @@ class PreSN(object):
     @property
     def Name(self):
         return self._name
+
+    @property
+    def Elements(self):
+        return self._elements
+
+    @property
+    def Nelements(self):
+        return len(self.Elements)
 
     @property
     def nzon(self):
@@ -183,6 +196,15 @@ class PreSN(object):
     def set_par(self, name, v):
         self._params[name] = v
 
+    def copy_par(self, src, keys=None):
+        if keys is None:
+            keys = src._params.keys()
+        for k in keys:
+            try:
+                self.set_par(k, getattr(src, k))
+            except AttributeError:
+                self.set_par(k, src.par(k))
+
     def lg_el(self, el):
         return np.log10(self.el(el))
 
@@ -192,17 +214,17 @@ class PreSN(object):
         :param k:
         :return: array
         """
-        res = [self.el(e)[k - 1] for e in PreSN.presn_elements]
+        res = [self.el(e)[k - 1] for e in self.Elements]
         return res
 
     def chem_norm(self, k=None, norm=None):
         if norm is None:
             norm = sum(self.abun(k))
-        for e in PreSN.presn_elements:
+        for e in self.Elements:
             self._data_chem[e][k - 1] = self.el(e)[k - 1] / norm
 
     def el(self, el):
-        if el not in PreSN.presn_elements:
+        if el not in self.Elements:
             raise ValueError("There is no  element [%s] in elements" % el)
         if el not in self._loads:
             raise ValueError("There is no information about the element [%s]. You should set it." % el)
@@ -218,7 +240,7 @@ class PreSN(object):
           do km=1,NzoneHyd;
             write(12,'(1x,i4,1p,e12.4,e18.10,3e15.7,2e12.4)')
                km, dum, rHyd(km), rhoHyd(km), TpHyd(km), uHyd(km), aMr(km), dum;
-          enddo;
+          end do;
         :return:
         """
         dum = np.zeros(self.nzon)
@@ -268,8 +290,8 @@ class PreSN(object):
             ax = fig.add_subplot(gs1[0, 0])
 
             if is_new_plot:
-                if x == 'r':
-                    ax.set_xlabel(r'R [cm]')
+                if x == 'rsun':
+                    ax.set_xlabel(r'R [$R_\odot$]')
                 elif x == 'm':
                     ax.set_xlabel(r'M [$M_\odot$]')
                 else:
@@ -279,8 +301,8 @@ class PreSN(object):
         is_x_lim = xlim is not None
         is_y_lim = ylim is not None
 
-        if x == 'r':
-            x = self.r
+        if x == 'rsun':
+            x = self.r / phys.R_sun
         elif x == 'm':
             x = self.m / phys.M_sun
         else:
@@ -347,7 +369,7 @@ class PreSN(object):
                     s = '%4s  %10s %10s %10s' % ('# zn', ' ', ' ', ' ')
                 else:
                     s = '%4s' % '# zn'
-                for ename in PreSN.presn_elements:
+                for ename in self.Elements:
                     s += ' %10s' % ename
                 f.write('%s\n' % s)
             for i in range(self.nzon):
@@ -355,7 +377,7 @@ class PreSN(object):
                     s = '%4d  %10.3e %10.3e %10.3e' % (i + 1, dum, dum, dum)
                 else:
                     s = '%4d' % (i + 1)
-                for ename in PreSN.presn_elements:
+                for ename in self.Elements:
                     s += ' %10.3e' % self.el(ename)[i]
                 f.write('%s\n' % s)
         return os.path.isfile(fname)
@@ -414,10 +436,11 @@ class PreSN(object):
                        title=None, figsize=(12, 8)):
         def set_xlim(ax, lim):
             if lim is not None:
-                ax.set_xlim(lim)
+                ax.set_xlim(lim[0]*0.5, lim[1]*2.)
 
         def set_ylim(ax, lim):
             if lim is not None:
+                # ax.set_ylim(lim[0]*0.1, lim[1]*10.)
                 ax.set_ylim(lim)
 
         def lims(ain, aout, lim):
@@ -425,10 +448,10 @@ class PreSN(object):
             return res
 
         if xlimR is not None and xlimM is None:
-            xlimM = lims(self.r, self.m/phys.M_sun, xlimR)
+            xlimM = lims(self.r, self.m / phys.M_sun, xlimR)
             print("xlimM = {} for xlimR={}".format(xlimM, xlimR))
         elif xlimM is not None and xlimR is None:
-            xlimR = lims(self.m/phys.M_sun, self.r, xlimM)
+            xlimR = lims(self.m / phys.M_sun, self.r, xlimM)
             print("xlimR = {} for xlimM={}".format(xlimR, xlimM))
 
         # Set up the axes with gridspec
@@ -443,6 +466,7 @@ class PreSN(object):
         self.plot_chem(ax=axR, x='lgR', elements=elements)
         axR.set_xlabel('R, cm')
         axR.set_ylabel(r'$X_i$')
+        axR.set_xscale('log')
         axR.legend(frameon=False, ncol=4)
         set_xlim(axR, xlimR)
         set_ylim(axR, ylimChem)
@@ -455,6 +479,7 @@ class PreSN(object):
 
         self.plot_rho(ax=axRhoR, x='lgR')
         axRhoR.set_xlabel('R, cm')
+        axRhoR.set_xscale('log')
         axRhoR.set_ylabel(r'$\rho, g/cm^3$')
         set_xlim(axRhoR, xlimR)
         set_ylim(axRhoR, ylimRho)
@@ -512,7 +537,7 @@ class PreSN(object):
 
         idxs = portion_index(x, where, start=start, end=end, isByEl=False)
 
-        newPreSN = PreSN(self.Name, len(idxs))
+        newPreSN = PreSN(self.Name, len(idxs), elements=self.Elements)
         # hyd reshape
         for v in PreSN.presn_hydro:
             old = self.hyd(v)
@@ -520,15 +545,14 @@ class PreSN(object):
             newPreSN.set_hyd(v, new)
 
         # abn reshape
-        for el in PreSN.presn_elements:
+        for el in self.Elements:
             old = self.el(el)
             new = old[idxs]
             newPreSN.set_chem(el, new)
 
         # copy parameters
-        for p in ['time_start', 'm_tot', 'r_cen']:
-            v = self.par(p)
-            newPreSN.set_par(p, v)
+        # copy parameters
+        newPreSN.copy_par(self)  # keys=['time_start', 'm_tot',  'm_core', 'r_cen'])
 
         return newPreSN
 
@@ -570,7 +594,7 @@ class PreSN(object):
         else:
             idxs = []
 
-        newPreSN = PreSN(self.Name, len(idxs))
+        newPreSN = PreSN(self.Name, len(idxs), elements=self.Elements)
         # hyd reshape
         for v in PreSN.presn_hydro:
             old = self.hyd(v)
@@ -578,7 +602,7 @@ class PreSN(object):
             newPreSN.set_hyd(v, new)
 
         # abn reshape
-        for el in PreSN.presn_elements:
+        for el in self.Elements:
             old = self.el(el)
             new = old[idxs]
             newPreSN.set_chem(el, new)
@@ -597,7 +621,7 @@ class PreSN(object):
         """
         from scipy.interpolate import interp1d
         nznew = nstart + nz
-        newPreSN = PreSN(self.Name, nznew)
+        newPreSN = PreSN(self.Name, nznew, elements=self.Elements)
         if nend is None:
             nend = self.nzon
 
@@ -636,15 +660,16 @@ class PreSN(object):
             newPreSN.set_hyd(v, new)
 
         # abn reshape
-        for el in PreSN.presn_elements:
+        for el in self.Elements:
             old = self.el(el)
             new = interp(m, old)
             newPreSN.set_chem(el, new)
 
         # copy parameters
-        for p in ['time_start', 'm_tot',  'm_core', 'r_cen']:
-            v = getattr(self, p)
-            newPreSN.set_par(p, v)
+        newPreSN.copy_par(self)  # keys=['time_start', 'm_tot',  'm_core', 'r_cen'])
+        # for p in ['time_start', 'm_tot',  'm_core', 'r_cen']:
+        #     v = getattr(self, p)
+        #     newPreSN.set_par(p, v)
 
         return newPreSN
 
@@ -675,13 +700,13 @@ def load_rho(fname, path=None):
     # CGS
     presn.set_hyd('M', presn.m * phys.M_sun)
 
-    for ename in PreSN.presn_elements:
+    for ename in presn.Elements:
         presn.set_chem(ename, data[ename], is_exp=True)
 
     return presn
 
 
-def load_hyd_abn(name, path='.', is_dum=True):
+def load_hyd_abn(name, path='.', abn_elements=PreSN.stl_elements, is_dum=True):
     """
     Code readheger.trf:
       BM1=cutmass; -- core Mass
@@ -694,6 +719,7 @@ def load_hyd_abn(name, path='.', is_dum=True):
       enddo;
     :return: PreSN
     """
+    # abn_elements = 'H He C N O Ne Na  Mg  Al  Si  S  Ar  Ca  Fe  Ni Ni56'.split()
 
     # hydro
     ext_hyd = '.hyd'
@@ -747,8 +773,6 @@ def load_hyd_abn(name, path='.', is_dum=True):
         return None
 
     logger.info(' Load abn-data from  %s' % abn_file)
-    abn_elements = 'H He C N O Ne Na  Mg  Al  Si  S  Ar  Ca  Fe  Ni Ni56'.split()
-    abn_elements_iso = 'H He C N O Ne Na  Mg  Al  Si  S  Ar  Ca  Fe  Ni Ni56 Fe52 Cr48'.split()
     if is_dum:
         col_names = ("zone dum1 dum2 dum3 " + ' '.join(abn_elements)).split()
     else:

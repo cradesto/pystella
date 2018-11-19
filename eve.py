@@ -48,7 +48,7 @@ def get_parser():
                         required=False,
                         dest="x",
                         default='m',
-                        metavar="<m OR r OR lgR>",
+                        metavar="<m OR r OR lgR OR rsun>",
                         help="Setup abscissa: Rho(r) or Rho(m)")
 
     parser.add_argument('-s', '--save',
