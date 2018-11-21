@@ -1,4 +1,4 @@
-import scipy as sp
+# import scipy
 import scipy.interpolate
 import numpy as np
 
@@ -14,7 +14,7 @@ def log_interp1d(x, y, kind='linear'):
     """
     logx = np.log10(x)
     logy = np.log10(y)
-    lin_interp = sp.interpolate.interp1d(logx, logy, kind=kind)
+    lin_interp = scipy.interpolate.interp1d(logx, logy, kind=kind)
     return lambda zz: np.power(10.0, lin_interp(np.log10(zz)))
 
 
@@ -70,7 +70,7 @@ def portion_index(a, where, start=0, end=None, isByEl=True):
                 idxs.append(i)
     else:
         idxs = where(a[start:end])
-        idxs = np.add(idxs, start) # add start index
+        idxs = np.add(idxs, start)  # add start index
 
     if len(idxs) > 0:
         res = np.concatenate((np.arange(start, dtype=int), idxs, np.arange(end, len(a), dtype=int)))

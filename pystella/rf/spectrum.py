@@ -205,11 +205,13 @@ class Spectrum(object):
 
         @type smoothPix: int
         @param smoothPix: size of uniform filter applied to SED, in pixels
-
+        @return: new Spectrum
         """
         from scipy import ndimage
         smoothed = ndimage.uniform_filter1d(self._flux, smoothPix)
-        self._flux = smoothed
+        sp = Spectrum(self.Name, self.Freq, flux=smoothed)
+        # self._flux = smoothed
+        return sp
 
     @staticmethod
     def flux_to_distance(flux, dl):
