@@ -167,14 +167,24 @@ class Star:
         a = integrate.simps(flux_spline * band.resp_wl * wl_b, wl_b) / (phys.c * phys.cm_to_angs) / phys.h
         return a
 
-    def magAB(self, b):
-        response = Band.response_nu(self.Freq, self.FluxObs, b)
+    def magAB(self, b, kind='spline'):  # kind='spline' log  line
+        response = Band.response_nu(self.Freq, self.FluxObs, b) # todo return
         if response <= 0:
             raise ValueError("Spectrum should be more 0: %f" % response)
 
         # mag = -2.5 * np.log10(conv) + phys.ZP_AB - band.zp
         mag = Flux2MagAB(response / b.Norm) - b.zp
         return mag
+
+        # todo check
+        response1 = b.response(self.Wl, self.FluxWlObs, kind=kind, is_out2zero=True, is_photons=True)  #
+        if response1 <= 0:
+            raise ValueError("The Response of Spectrum should be > 0: %f" % response1)
+
+        # norm = b.response(b.wl, np.ones(len(b.wl)), kind='spline')
+        mag1 = -2.5 * np.log10(response1 / b.NormWl) - 21.1 - b.zp
+        # mag1 = -2.5 * np.log10(response1 ) - 21.1 - b.zp
+        return mag1
 
     def magBol(self):
         """

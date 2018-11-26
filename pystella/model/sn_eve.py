@@ -24,7 +24,8 @@ eve_colors = dict(Ni56="red", H="blue", He="cyan", C="darkorange", N="coral",
                   O="violet", Ne="green", Na="sandybrown",
                   Mg="skyblue", Si="olive", Al="lime",
                   S="indigo", Ar="brown", Ca="purple",
-                  Fe='maroon', Ni='magenta')
+                  Fe='maroon', Ni='magenta',
+                  Fe52='blue', Cr48='cyan')
 eve_lntypes = dict((k, '--') for k, v in eve_colors.items())  # no y-shift
 eve_lntypes['H'] = '-'
 eve_lntypes['He'] = '-'
@@ -294,6 +295,8 @@ class PreSN(object):
                     ax.set_xlabel(r'R [$R_\odot$]')
                 elif x == 'm':
                     ax.set_xlabel(r'M [$M_\odot$]')
+                elif x == 'v':
+                    ax.set_xlabel(r'V [$km\, s^{-1}$]')
                 else:
                     ax.set_xscale('log')
                     ax.set_xlabel(r'R [cm]')
@@ -305,6 +308,8 @@ class PreSN(object):
             x = self.r / phys.R_sun
         elif x == 'm':
             x = self.m / phys.M_sun
+        elif x == 'v':
+            x = self.V / 1e5  # to km/s
         else:
             x = self.r
 

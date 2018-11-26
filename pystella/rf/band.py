@@ -2,10 +2,13 @@ from configparser import ConfigParser
 import numpy as np
 import os
 from os.path import dirname
-from scipy.integrate import simps as integralfunc
+import scipy
+import scipy.integrate  #import simps as integralfunc
+import scipy.interpolate  #import simps as integralfunc
 
 from pystella.rf.rad_func import MagAB2Flux, Flux2MagAB
 from pystella.util.phys_var import phys
+from pystella.util.math import log_interp1d
 
 __author__ = 'bakl'
 
@@ -37,6 +40,7 @@ class Band(object):
         self._resp = None  # response
         self._is_load = False
         self._norm = None
+        self._normWl = None
         if is_load:  # and os.path.isfile(self.fname):
             self.load()
 
@@ -85,6 +89,10 @@ class Band(object):
         return self.__wl
 
     @property
+    def wlrange(self):
+        return np.min(self.wl), np.max(self.wl)
+
+    @property
     def Name(self):
         return self.name
 
@@ -93,8 +101,17 @@ class Band(object):
         if self._norm is None:
             nu_b = np.array(self.freq)
             resp_b = np.array(self.resp_fr)
-            self._norm = integralfunc(resp_b / nu_b, nu_b)
+            self._norm = scipy.integrate.simps(resp_b / nu_b, nu_b)
         return self._norm
+
+    @property
+    def NormWl(self):
+        if self._normWl is None:
+            x = np.array(self.wl)
+            y = np.array(self.resp_wl) / (phys.c * phys.cm_to_angs * phys.h)
+            res = scipy.integrate.simps(y*x, x, even='avg')
+            self._normWl = self.response(self.wl, np.ones(len(self.wl)), kind='spline')
+        return self._normWl
 
     @property
     def wave_range(self):
@@ -178,9 +195,6 @@ class Band(object):
         Band.IsLoad = True
         return True
 
-    def response(self, nu, flux):
-        return Band.response_nu(nu, flux, self)
-
     @staticmethod
     def response_nu(nu, flux, b):
         from scipy import integrate
@@ -220,6 +234,100 @@ class Band(object):
 
         a = integrate.simps(flux_interp * resp_b / nu_b, nu_b)
         return a
+
+    def response_freq(self, nu, flux):
+        return Band.response_nu(nu, flux, self)
+
+    def response(self, wl, flux, z=0., kind='spline', mode_int='simps', is_out2zero=True
+                 , is_photons=True):
+        """Compute the response of this filter over the flux(wl)
+
+        kind : str or int, optional (see scipy.interpolate)
+                Specifies the kind of interpolation as a string
+                ('linear', 'nearest', 'zero', 'slinear', 'quadratic', 'cubic',
+                'previous', 'next', where 'zero', 'slinear', 'quadratic' and 'cubic'
+                refer to a spline interpolation of zeroth, first, second or third
+                order; 'previous' and 'next' simply return the previous or next value
+                of the point) or as an integer specifying the order of the spline
+                interpolator to use.
+                Default is 'linear'
+        """
+
+        if len(wl) == 0 or len(flux) == 0:
+            raise ValueError("It should be len(wl)>0 and len(flux) > 0. "
+                             "Now len(wl)={},len(flux)={}".format(len(wl), len(flux)))
+        if len(wl) != len(flux):
+            raise ValueError("It should be len(wl) == len(flux). "
+                             "Now len(wl)={},len(flux)={}".format(len(wl), len(flux)))
+
+        if z > 0:
+            wl_z = wl * (1. + z)
+        elif z < 0:
+            wl_z = wl / (1. + z)
+        else:
+            wl_z = wl
+
+        x_min, x_max = self.wlrange
+
+        if (x_min < wl_z[0] or x_max > wl_z[-1]) and not is_out2zero:
+            return None
+
+        i_min = 0
+        try:
+            i_min = np.nonzero(np.greater(wl_z - x_min, 0))[0][0]
+        except:
+            pass
+
+        i_max = len(wl_z) - 1
+        try:
+            i_max = np.nonzero(np.greater(wl_z - x_max, 0))[0][0]
+        except:
+            pass
+
+        if i_min >= 5:
+            i_min -= 5
+        else:
+            i_min = 0
+
+        if i_max <= len(wl_z) - 6:
+            i_max += 5
+        else:
+            i_max = len(wl_z) - 1
+
+        trim_flux = flux[i_min:i_max + 1]
+        trim_wl = wl_z[i_min:i_max + 1]
+
+        if kind == "spline":
+            interp = scipy.interpolate.splrep(self.wl, self.resp_wl, k=1, s=0)
+            resp_interp = scipy.interpolate.splev(trim_wl, interp)
+        elif kind == 'log':
+            interp = log_interp1d(self.wl, self.resp_wl)
+            resp_interp = interp(trim_wl)
+        elif kind == 'line':
+            resp_interp = np.interp(trim_wl, self.wl, self.resp_wl, 0, 0)  # One-dimensional linear interpolation.
+        # else:
+        #     raise ValueError('No such mode: ' + mode)
+        else:
+            interp = scipy.interpolate.interp1d(self.wl, self.resp_wl, kind=kind)
+            resp_interp = interp(trim_wl)
+
+        if is_out2zero:
+            resp_interp = np.where(np.less(trim_wl, x_min), 0, resp_interp)
+            resp_interp = np.where(np.greater(trim_wl, x_max), 0, resp_interp)
+
+        integrand = resp_interp * trim_flux
+
+        if is_photons:
+            integrand = integrand * trim_wl / (phys.c * phys.cm_to_angs * phys.h)
+
+        if mode_int == 'simps':
+            res = scipy.integrate.simps(integrand, x=trim_wl, even='avg')
+        elif mode_int == 'trapz':
+            res = scipy.integrate.trapz(integrand, x=trim_wl)
+        else:
+            res = (trim_wl[-1] - trim_wl[0]) / (len(trim_wl) - 1) * sum(integrand)
+
+        return res
 
 
 class BandUni(Band):
