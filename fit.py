@@ -193,7 +193,11 @@ def plot_curves(curves_o, res_models, res_sorted, **kwargs):
         # bbox=dict(facecolor='green', alpha=0.3))
 
         # fix axes
-        if i % ncol == 0:
+        if ncol == 1:
+            ax.yaxis.tick_left()
+            ax.yaxis.set_label_position("left")
+            ax.set_ylabel('Magnitude')
+        elif i % ncol == 0:
             ax.yaxis.tick_right()
             ax.yaxis.set_label_position("right")
             # ax.set_ylabel('')

@@ -89,6 +89,10 @@ class Band(object):
         return self.__wl
 
     @property
+    def wl2args(self):
+        return self.__wl*phys.cm_to_angs
+
+    @property
     def wlrange(self):
         return np.min(self.wl), np.max(self.wl)
 

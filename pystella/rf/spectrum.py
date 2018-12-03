@@ -47,6 +47,10 @@ class Spectrum(object):
         # return phys.c / self.Freq
 
     @property
+    def Wl2angs(self):
+        return self.Wl * phys.cm_to_angs
+
+    @property
     def T_color(self):
         """
         Fitting Spectrum by planck function and find the color temperature
