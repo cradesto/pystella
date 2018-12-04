@@ -5,19 +5,19 @@ import numpy as np
 from pystella.model import sn_swd
 from pystella.rf import band
 
-# from matplotlib import colors as mcolors
-# import seaborn as sns
-
-try:
-    import matplotlib.pyplot as plt
-    from matplotlib import gridspec
-except ImportError as ex:
-    import os, sys, traceback
-    exc_type, exc_obj, exc_tb = sys.exc_info()
-    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-    print(exc_type, fname, exc_tb.tb_lineno, ex)
-#    print(ex)
-    pass
+# try:
+import matplotlib.pyplot as plt
+from matplotlib import gridspec
+# except ImportError as ex:
+#     import os
+#     import sys
+#     # import traceback
+#
+#     exc_type, exc_obj, exc_tb = sys.exc_info()
+#     fn = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+#     print(exc_type, fn, exc_tb.tb_lineno, ex)
+#     #    print(ex)
+#     pass
 
 __author__ = 'bakl'
 
@@ -166,7 +166,6 @@ def plot_models_band(ax, models_dic, bname, **kwargs):
                         markersize=4, ls=":", linewidth=lw)
             else:
                 ax.plot(x, y, label='%s  %s' % (bname, mname), dashes=next(dashes_cycler), linewidth=lw)
-                # ax.plot(x, y, label='%s  %s' % (bname, mname), ls=line_styles[mi % (len(line_styles) - 1)], linewidth=lw)
 
         idx = np.argmin(y)
         lc_min[bname] = (x[idx], y[idx])
@@ -221,11 +220,12 @@ def plot_models_curves(ax, models_curves, band_shift=None, xlim=None, ylim=None,
         mi += 1
         bands = curves.BandNames
         if band_shift is None:
-            mshift = dict((bname, 0.) for bname in bands)  # no y-shift
+            band_shift = dict((bname, 0.) for bname in bands)  # no y-shift
         for bname in bands:
             ib += 1
+            mshift = band_shift[bname]
             x = curves.TimeCommon
-            y = curves[bname].Mag + mshift[bname]
+            y = curves[bname].Mag + mshift
             ax.plot(x, y, label='%s  %s' % (lbl(bname, mshift), mname),
                     color=colors[bname], ls=lc_types[mname], linewidth=lw)
             if is_compute_x_lim:
@@ -338,13 +338,13 @@ def plot_bands(dict_mags, bands, title='', fname='', distance=10., xlim=(-10, 20
     fig.text(0.17, 0.07, title, family='monospace')
     ax.grid()
     if fname != '':
-        plt.savefig("ubv_%s.png" % fname, format='png')
+        fig.savefig("ubv_%s.png" % fname, format='png')
     # ax.show()
     # plt.close()
     return ax
 
 
-def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname='', **kwargs):
+def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname=None, **kwargs):
     ls = kwargs.get('ls', {lc.Band.Name: '-' for lc in curves})
     if isinstance(ls, str):
         c = ls.strip()
@@ -431,13 +431,13 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname='', **k
     if title is not None:
         ax.get_figure().title(title)
         # ax.text(0.17, 0.07, title, family='monospace')
-    if fname != '':
+    if fname is not None:
         print('Save plot to {}'.format(fname))
         ax.get_figure().savefig(fname)
     return ax
 
 
-def lc_plot(lc, ax=None, xlim=None, ylim=None, title=None, fname='', **kwargs):
+def lc_plot(lc, ax=None, xlim=None, ylim=None, title=None, fname=None, **kwargs):
     ls = kwargs.get('ls', {lc.Band.Name: '-'})
     if isinstance(ls, str):
         c = ls.strip()
@@ -517,7 +517,7 @@ def lc_plot(lc, ax=None, xlim=None, ylim=None, title=None, fname='', **kwargs):
     if title is not None:
         plt.title(title)
         # ax.text(0.17, 0.07, title, family='monospace')
-    if fname != '':
+    if fname is not None:
         # plt.savefig("ubv_%s.png" % fname, format='png')
         plt.savefig(fname)
     return ax
@@ -538,16 +538,23 @@ def plot_shock_details(swd, times, **kwargs):
     ncol = 2
     fig = plt.figure(figsize=(12, nrow * 4))
     plt.matplotlib.rcParams.update({'font.size': font_size})
+    # plt.minorticks_on()
     # fig = plt.figure(num=None, figsize=(12, len(times) * 4), dpi=100, facecolor='w', edgecolor='k')
     # gs1 = gridspec.GridSpec(len(times), 2)
 
+    # plot radius column
     for i, t in enumerate(times):
         b = swd.block_nearest(t)
-        # plot radius
         ax = fig.add_subplot(nrow, ncol, ncol * i + 1)
+        # ax.tick_params(direction='in', which='both', length=4)
+        ax.tick_params(direction='in', which='minor', length=3)
+        ax.tick_params(direction='in', which='major', length=5)
+        legmask = sn_swd.LEGEND_MASK_None
+        if is_legend and i == 0:
+            legmask = sn_swd.LEGEND_MASK_Rho
         # plot swd(radius)
         sn_swd.plot_swd(ax, b, is_xlabel=(i == len(times) - 1), vnorm=vnorm, lumnorm=lumnorm,
-                        rnorm=rnorm, is_legend=is_legend, is_yrlabel=False, text_posy=0.92,
+                        rnorm=rnorm, legmask=legmask, is_yrlabel=False, text_posy=0.88,
                         is_grid=is_grid)
         x = ax.get_xlim()
         if xlim is None:
@@ -562,21 +569,36 @@ def plot_shock_details(swd, times, **kwargs):
 
     # for i, t in list(reversed(list(enumerate(times)))):
     # ylim = None
+    # Plot mass column
     for i, t in enumerate(times):
-        # plot mass
         b = swd.block_nearest(t)
         ax2 = fig.add_subplot(nrow, ncol, ncol * i + 2)
+        ax2.tick_params(direction='in', which='minor', length=3)
+        ax2.tick_params(direction='in', which='major', length=5)
+        legmask = sn_swd.LEGEND_MASK_None
+
+        if is_legend and i == 0:
+            legmask = sn_swd.LEGEND_MASK_Vars
         sn_swd.plot_swd(ax2, b, is_xlabel=(i == len(times) - 1), vnorm=vnorm, lumnorm=lumnorm,
-                        rnorm='m', is_legend=i == 0, is_yllabel=False, text_posy=0.92, is_day=False,
-                        is_grid=is_grid)
-        # Set limits
+                        rnorm='m', legmask=legmask, is_yllabel=False, text_posy=0.88,
+                        is_day=False, is_grid=is_grid)
+
+    # Set limits
+    for i, t in enumerate(times):
         ax = fig.add_subplot(nrow, ncol, ncol * i + 1)
         ax.set_xlim(xlim)
         ax.set_ylim(ylim)
+
+        ax2 = fig.add_subplot(nrow, ncol, ncol * i + 2)
         ax2.set_ylim(ylim)
+        # remove labels between subplots
+        if not i == len(times)-1:
+            plt.setp(ax.get_xticklabels(), visible=False)
+            plt.setp(ax2.get_xticklabels(), visible=False)
 
     if is_adjust:
-        fig.subplots_adjust(wspace=0, hspace=0)
+        fig.subplots_adjust(wspace=0., hspace=0.)
+
     return fig
 
 
@@ -615,7 +637,7 @@ def setAxLinesBW(ax, color='black', markersize=3):
     suitable for black and white viewing.
     """
     # https://matplotlib.org/gallery/lines_bars_and_markers/linestyles.html
-    dashList = [(5, 2), (2, 5), (4, 10), (3, 3, 2, 2), (5, 2, 20, 2)]
+    # dashList = [(5, 2), (2, 5), (4, 10), (3, 3, 2, 2), (5, 2, 20, 2)]
 
     COLORMAP = {
         'blue': {'marker': 's', 'dash': (5, 2, 5, 2, 5, 10)},

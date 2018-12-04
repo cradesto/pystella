@@ -10,6 +10,11 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
+LEGEND_MASK_None = 0x00
+LEGEND_MASK_Rho  = 0x01
+LEGEND_MASK_Vars = 0x10
+
+
 class StellaShockWaveDetail:
     """
     Reader for swd-files
@@ -126,7 +131,9 @@ class StellaShockWaveDetail:
             #     taus[i, k] = tau
         return taus
 
-    def params_ph(self, tau_ph=2./3., cols=['R', 'M', 'T', 'V', 'Rho']):
+    def params_ph(self, tau_ph=2./3., cols=None):
+        if cols is None:
+            cols = ['R', 'M', 'T', 'V', 'Rho']
         res = {k: np.zeros(self.Ntimes) for k in ['time', 'zone']+cols}
         taus = self.taus()
         for i, time in enumerate(self.Times):
@@ -234,7 +241,8 @@ def isfloat(value):
 def plot_swd(ax, b, **kwargs):
     xlim = kwargs.get('xlim', None)
     ylim = kwargs.get('ylim', None)
-    is_legend = kwargs.get('is_legend', True)
+    legmask = kwargs.get('legmask', 0x11)  # mask 0x11 - both, 0x01-rho, 0x10 - pars
+    is_frameon = kwargs.get('is_frameon', False)
     islim = kwargs.get('islim', True)
     is_xlabel = kwargs.get('is_xlabel', True)
     is_yllabel = kwargs.get('is_yllabel', True)
@@ -268,7 +276,7 @@ def plot_swd(ax, b, **kwargs):
         ax.plot(x, y, label='Rho', color='black', ls="-", linewidth=lw)
 
     if is_day:
-        ax.text(.05, text_posy, '%5.2f days' % b.Time, horizontalalignment='left',
+        ax.text(.02, text_posy, r'$%5.2f^d$' % b.Time, horizontalalignment='left',
                 transform=ax.transAxes)
     # ax.text(.5, 1.01, '%5.2f days' % b.Time, horizontalalignment='center', transform=ax.transAxes)
 
@@ -294,6 +302,7 @@ def plot_swd(ax, b, **kwargs):
         ax.set_ylabel(r'$\log_{10}(\rho)$')
     else:
         ax.set_yticklabels([])
+
     if is_yrlabel:
         ax2.set_ylabel('T, Vel, Lum, Tau')
     else:
@@ -314,9 +323,10 @@ def plot_swd(ax, b, **kwargs):
     y2 = b.V / vnorm
     ax2.plot(x, y2, 'b-', label='V{0:d}'.format(int(np.log10(vnorm))))
 
-    if is_legend:
-        ax.legend(loc=2, prop={'size': 8})
-        ax2.legend(loc=1, prop={'size': 8}, ncol=2)
+    if legmask & LEGEND_MASK_Rho:
+        ax.legend(loc=1, prop={'size': 8}, frameon=is_frameon)
+    if legmask & LEGEND_MASK_Vars:
+        ax2.legend(loc=1, prop={'size': 8}, ncol=3, frameon=is_frameon)
 
     if is_grid:
         ax2.grid(linestyle=':')
