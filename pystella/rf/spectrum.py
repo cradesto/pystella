@@ -290,7 +290,7 @@ class SeriesSpectrum(object):
         self._data = []  # array where index -> Spectrum at the times[index]
 
     def get_spec(self, idx):
-        return self._data[idx]
+        return self.Data[idx]
 
     @property
     def Name(self):
@@ -363,7 +363,7 @@ class SeriesSpectrum(object):
     #         yield ts
 
     def __len__(self):
-        return len(self._data)
+        return len(self.Data)
     # def set_times(self, times):
     #     if times is None or len(times) == 0:
     #         raise ValueError("times must be array with len > 0.")
