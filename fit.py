@@ -165,7 +165,7 @@ def plot_curves(curves_o, res_models, res_sorted, **kwargs):
     ncol = int(np.sqrt(num))  # 2 if num > 1 else 1
     nrow = math.ceil(num / ncol)
     # fig = plt.figure(figsize=(12, nrow * 4))
-    fig = plt.figure(figsize=(min(ncol, 2)*4, min(nrow, 2) * 4))
+    fig = plt.figure(figsize=(min(ncol, 2) * 4, min(nrow, 2) * 4))
     plt.matplotlib.rcParams.update({'font.size': font_size})
 
     tshift0 = ps.first(curves_o).tshift
@@ -187,7 +187,7 @@ def plot_curves(curves_o, res_models, res_sorted, **kwargs):
 
         ax.text(0.99, 0.94, k, horizontalalignment='right', transform=ax.transAxes)
         ax.text(0.98, 0.85, "dt={:.2f}".format(tshift_best), horizontalalignment='right', transform=ax.transAxes)
-        ax.text(0.01, 0.05, "$\chi^2: {:.2f}$".format(v.measure), horizontalalignment='left', transform=ax.transAxes,
+        ax.text(0.01, 0.05, r"$\chi^2: {:.2f}$".format(v.measure), horizontalalignment='left', transform=ax.transAxes,
                 bbox=dict(facecolor='green', alpha=0.3))
         # ax.text(0.9, 0.9, "{:.2f}".format(v.measure), horizontalalignment='right', transform=ax.transAxes,
         # bbox=dict(facecolor='green', alpha=0.3))
@@ -833,7 +833,7 @@ def main():
         if z > 0:
             print("  Cosmology D(z)={0:E} Mpc".format(ps.cosmology_D_by_z(z)))
     else:
-        distance = 10 # pc
+        distance = 10  # pc
         if z > 0:
             distance = ps.cosmology_D_by_z(z) * 1e6
             print("Fit magnitudes on z={0:F} with cosmology D(z)={1:E} pc".format(z, distance))

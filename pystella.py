@@ -106,6 +106,18 @@ class MyPrompt(HistConsole):
         script = os.path.join(ROOT_DIRECTORY, 'fit.py')
         MyPrompt.call_cmd(script, args)
 
+    # @staticmethod
+    # def do_run(args):
+    #     """Run Stella. For detailed help type 'fit -h'.
+    #     """
+    #     if len(args) == 0:
+    #         name = 'Please provide a model-file AND/OR some options'
+    #     else:
+    #         name = args
+    #     print("run %s" % name)
+    #     script = os.path.join(ROOT_DIRECTORY, 'run_stella.py')
+    #     MyPrompt.call_cmd(script, args)
+
     @staticmethod
     def do_obs(args):
         """Plot Observed Light Curves. For detailed help type 'obs -h'.

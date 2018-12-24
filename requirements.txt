@@ -9,11 +9,13 @@
 # sudo apt-get build-dep python3-scipy
 # sudo apt install libpng-dev libfreetype6-dev
 
+# general
+configparser
+
 # seaborn
 numpy
 scipy
 matplotlib
-h5py
 
 Cython
 emcee
