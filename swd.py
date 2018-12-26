@@ -1,20 +1,13 @@
 #!/usr/bin/env python3
 # #!/usr/bin/python3
 
-import argparse
-import csv
 import logging
 import os
-import subprocess
-import sys
-from os.path import dirname
 
 # matplotlib.rcParams['backend'] = "TkAgg"
 # matplotlib.rcParams['backend'] = "Qt4Agg"
-import matplotlib.pyplot as plt
 
 import numpy as np
-
 import pystella as ps
 
 # from pystella.model.stella import Stella
@@ -22,7 +15,7 @@ import pystella as ps
 
 __author__ = 'bakl'
 
-ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
+# ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
 logging.basicConfig()
 
 logger = logging.getLogger(__name__)
@@ -36,6 +29,8 @@ def uph_save(dictionary, fname, sep='\t'):
     :type fname: the name of the file
     :param sep: string separator
     """
+    import csv
+
     col = ('time', 'zone', 'R', 'V')
     with open(fname, 'w', newline='') as f:
         writer = csv.writer(f, delimiter=sep, quotechar='|', quoting=csv.QUOTE_MINIMAL)
@@ -45,6 +40,8 @@ def uph_save(dictionary, fname, sep='\t'):
 
 
 def plot_uph(uph, vnorm=1.e8, label='', lw=2, fontsize=18):
+    import matplotlib.pyplot as plt
+
     # setup plot
     plt.matplotlib.rcParams.update({'font.size': fontsize})
     fig = plt.figure(figsize=(8, 8))
@@ -62,11 +59,14 @@ def plot_uph(uph, vnorm=1.e8, label='', lw=2, fontsize=18):
 
 
 def make_cartoon(swd, times, vnorm, rnorm, lumnorm, is_legend, fout=None):
+    import subprocess
+    import matplotlib.pyplot as plt
+
     time = np.ma.masked_outside(swd.Times, times[0], times[-1])
     # time = np.exp(np.linspace(np.log(times[0]), np.log(times[-1]), 50))
     for i, t in enumerate(time.compressed()):
-        fig = ps.light_curve_plot.plot_shock_details(swd, times=[t], vnorm=vnorm, rnorm=rnorm,
-                                                     lumnorm=lumnorm, is_legend=is_legend)
+        fig = ps.lcp.plot_shock_details(swd, times=[t], vnorm=vnorm, rnorm=rnorm,
+                                        lumnorm=lumnorm, is_legend=is_legend)
         fsave = os.path.expanduser("img{0}{1:04d}.png".format(swd.Name, i))
         print("Save plot to {0} at t={1}".format(fsave, t))
         fig.savefig(fsave, bbox_inches='tight')
@@ -81,6 +81,8 @@ def make_cartoon(swd, times, vnorm, rnorm, lumnorm, is_legend, fout=None):
 
 
 def get_parser():
+    import argparse
+
     parser = argparse.ArgumentParser(description='Process Stella Shock Wave Details.')
 
     parser.add_argument('-i', '--input', action='append', nargs=1,
@@ -146,6 +148,12 @@ def get_parser():
 
 
 def main():
+    import sys
+    try:
+        import matplotlib.pyplot as plt
+    except ImportError:
+        plt = None
+
     is_legend = True
     parser = get_parser()
     args, unknownargs = parser.parse_known_args()
@@ -226,7 +234,7 @@ def main():
                 print("Save plot to {0}".format(fsave))
                 fig.savefig(fsave, bbox_inches='tight')
 
-    plt.show()
+    # plt.show()
 
 
 if __name__ == '__main__':

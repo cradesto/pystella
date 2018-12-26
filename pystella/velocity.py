@@ -4,7 +4,6 @@
 import numpy as np
 import os
 from os.path import dirname
-from scipy import interpolate
 
 from pystella.model.stella import Stella
 from pystella.rf.ts import TimeSeries, SetTimeSeries
@@ -189,6 +188,8 @@ def compute_vel_swd(name, path, z=0.):
 
 
 def compute_vel_res_tt(name, path, z=0., t_beg=1., t_end=None, t_diff=1.05):
+    from scipy import interpolate
+
     model = Stella(name, path=path)
     # check data
     if not model.is_res:

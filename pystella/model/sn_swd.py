@@ -9,9 +9,8 @@ __author__ = 'bakl'
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-
 LEGEND_MASK_None = 0x00
-LEGEND_MASK_Rho  = 0x01
+LEGEND_MASK_Rho = 0x01
 LEGEND_MASK_Vars = 0x10
 
 
@@ -95,7 +94,7 @@ class StellaShockWaveDetail:
         return BlockSwd(self._data['tday'][idx], block)
 
     def __getitem__(self, idx):
-        b = idx*self._nzon
+        b = idx * self._nzon
         e = b + self._nzon
         block = self._data[:][b:e]
         return BlockSwd(self._data['tday'][idx], block)
@@ -131,15 +130,15 @@ class StellaShockWaveDetail:
             #     taus[i, k] = tau
         return taus
 
-    def params_ph(self, tau_ph=2./3., cols=None):
+    def params_ph(self, tau_ph=2. / 3., cols=None):
         if cols is None:
             cols = ['R', 'M', 'T', 'V', 'Rho']
-        res = {k: np.zeros(self.Ntimes) for k in ['time', 'zone']+cols}
+        res = {k: np.zeros(self.Ntimes) for k in ['time', 'zone'] + cols}
         taus = self.taus()
         for i, time in enumerate(self.Times):
             s = self[i]
             kph = 1  # todo check the default value
-            for k in range(self.Nzon-1, 1, -1):
+            for k in range(self.Nzon - 1, 1, -1):
                 if taus[i][k] >= tau_ph:
                     kph = k
                     break
@@ -223,9 +222,9 @@ class BlockSwd:
     @property
     def Tau(self):
         tau = np.zeros(self.Nzon)
-        for i in range(self.Nzon-2, 0, -1):
+        for i in range(self.Nzon - 2, 0, -1):
             tau[i] = tau[i + 1] + self.Cappa[i] * self.Rho[i] * (self.R[i + 1] - self.R[i])
-        tau[self.Nzon-1] = tau[self.Nzon-2] / 2.
+        tau[self.Nzon - 1] = tau[self.Nzon - 2] / 2.
         return tau
 
 
@@ -263,7 +262,7 @@ def plot_swd(ax, b, **kwargs):
     elif rnorm == 'lgr':
         x, xlabel = b.R, r'Ejecta Radius, [cm]'
     elif rnorm == 'm':
-        x, xlabel = b.M,  r'Ejecta Mass [$\mathtt{M}_\odot$]'
+        x, xlabel = b.M, r'Ejecta Mass [$\mathtt{M}_\odot$]'
     elif isfloat(rnorm):
         x, xlabel = b.R / float(rnorm), r'Ejecta Radius, [$\times 10^{%d}$ cm]' % int(np.log10(float(rnorm)))
     else:

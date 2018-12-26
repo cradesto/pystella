@@ -1,6 +1,4 @@
 import numpy as np
-from scipy import integrate
-from scipy import interpolate
 
 from pystella.rf import Band
 from pystella.rf.rad_func import Flux2MagAB
@@ -150,6 +148,8 @@ class Star:
         :param is_b_spline:  the method of interpolation
         :return: :raise ValueError:
         """
+        from scipy import integrate
+        from scipy import interpolate
         wl = self.Wl
         if min(wl) > band.wl[0] or max(wl) < band.wl[-1]:
             raise ValueError("Spectrum must be wider then band: " + str(band))
@@ -168,7 +168,7 @@ class Star:
         return a
 
     def magAB(self, b, kind='spline'):  # kind='spline' log  line
-        response = Band.response_nu(self.Freq, self.FluxObs, b) # todo return
+        response = Band.response_nu(self.Freq, self.FluxObs, b)
         if response <= 0:
             raise ValueError("Spectrum should be more 0: %f" % response)
 
@@ -191,7 +191,9 @@ class Star:
         Bolometric magnitude via Luminosity of Sun
         :return:
         """
-        lum = integrate.simps(self.Flux[::-1], self.Freq[::-1])
+        from scipy.integrate import simps
+
+        lum = simps(self.Flux[::-1], self.Freq[::-1])
         # lum = np.trapz(self.Flux[::-1], self.Freq[::-1])
         M = phys.Mag_sun + 5. * np.log10(self.distance/phys.pc) - 5
         bol = M - 2.5 * np.log10(np.abs(lum) / phys.L_sun)

@@ -1,10 +1,6 @@
 #!/usr/bin/env python3
-# #!/usr/bin/python3
 
-import getopt
-import os
-import sys
-from os.path import dirname
+from os.path import dirname, abspath
 
 # matplotlib.use("Agg")
 # matplotlib.rcParams['backend'] = "TkAgg"
@@ -17,7 +13,7 @@ import pystella as ps
 
 __author__ = 'bakl'
 
-ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
+ROOT_DIRECTORY = dirname(dirname(abspath(__file__)))
 
 
 def plot_grid(models_dic, bnames, call=None, **kwargs):
@@ -164,6 +160,10 @@ def usage():
 
 
 def main(name='', model_ext='.ph'):
+    import sys
+    import os
+    import getopt
+
     is_quiet = False
     is_save_mags = False
     is_save_plot = False

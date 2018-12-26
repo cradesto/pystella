@@ -1,13 +1,24 @@
 #!/usr/bin/env python3
 # #!/usr/bin/python3
 
-import getopt
-
-import sys
 
 from pystella.util.phys_var import phys
-import matplotlib.pyplot as plt
 import pystella.rf.band as band
+
+try:
+    import matplotlib.pyplot as plt
+except ImportError as ex:
+    import os
+    import sys
+    # import traceback
+
+    exc_type, exc_obj, exc_tb = sys.exc_info()
+    fn = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+    print(exc_type, fn, exc_tb.tb_lineno, ex)
+    print('  Probably, you should install module: {}'.format('matplotlib'))
+    #    print(ex)
+    plt = None
+    pass
 
 __author__ = 'bakl'
 
@@ -145,6 +156,9 @@ def usage():
 
 
 def main():
+    import getopt
+    import sys
+
     band.Band.load_settings()
 
     try:

@@ -5,19 +5,22 @@ import numpy as np
 from pystella.model import sn_swd
 from pystella.rf import band
 
-# try:
-import matplotlib.pyplot as plt
-from matplotlib import gridspec
-# except ImportError as ex:
-#     import os
-#     import sys
-#     # import traceback
-#
-#     exc_type, exc_obj, exc_tb = sys.exc_info()
-#     fn = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-#     print(exc_type, fn, exc_tb.tb_lineno, ex)
-#     #    print(ex)
-#     pass
+try:
+    import matplotlib.pyplot as plt
+    from matplotlib import gridspec
+except ImportError as ex:
+    import os
+    import sys
+    # import traceback
+
+    exc_type, exc_obj, exc_tb = sys.exc_info()
+    fn = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+    print(exc_type, fn, exc_tb.tb_lineno, ex)
+    print('  Probably, you should install module: {}'.format('matplotlib'))
+    #    print(ex)
+    plt = None
+    gridspec = None
+    pass
 
 __author__ = 'bakl'
 

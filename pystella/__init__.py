@@ -6,10 +6,8 @@ from .rf import band
 from .rf import light_curve_func as lcf
 from .rf import light_curve_plot as lcp
 from .rf import extinction
-from .fit import mpfit
 
 from . import velocity as vel
-from . import fit
 
 from .util import callback as cb
 from .util.phys_var import phys
@@ -36,10 +34,10 @@ from .rf.reddening import ReddeningLaw, LawFitz, LawPei
 from .rf.star import Star, Flux2MagAB
 from .rf.ts import SetTimeSeries, TimeSeries
 
-from .fit.fit_lc import FitLc, FitLcResult
-from .fit.fit_mpfit import FitMPFit
-from .fit.fit_mcmc import FitMCMC
-from .fit import mpfit
+try:
+    from .fit import FitLc, FitMPFit, mpfit, FitMCMC
+except ImportError:
+    pass
 
 # functions
 from .model.stella import stella_ls as ls

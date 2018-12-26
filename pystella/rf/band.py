@@ -1,14 +1,9 @@
-from configparser import ConfigParser
 import numpy as np
 import os
 from os.path import dirname
-import scipy
-import scipy.integrate  #import simps as integralfunc
-import scipy.interpolate  #import simps as integralfunc
 
 from pystella.rf.rad_func import MagAB2Flux, Flux2MagAB
 from pystella.util.phys_var import phys
-from pystella.util.math import log_interp1d
 
 __author__ = 'bakl'
 
@@ -90,7 +85,7 @@ class Band(object):
 
     @property
     def wl2args(self):
-        return self.__wl*phys.cm_to_angs
+        return self.__wl * phys.cm_to_angs
 
     @property
     def wlrange(self):
@@ -103,17 +98,19 @@ class Band(object):
     @property
     def Norm(self):
         if self._norm is None:
+            from scipy.integrate import simps
             nu_b = np.array(self.freq)
             resp_b = np.array(self.resp_fr)
-            self._norm = scipy.integrate.simps(resp_b / nu_b, nu_b)
+            self._norm = simps(resp_b / nu_b, nu_b)
         return self._norm
 
     @property
     def NormWl(self):
         if self._normWl is None:
-            x = np.array(self.wl)
-            y = np.array(self.resp_wl) / (phys.c * phys.cm_to_angs * phys.h)
-            res = scipy.integrate.simps(y*x, x, even='avg')
+            # from scipy.integrate import simps
+            # x = np.array(self.wl)
+            # y = np.array(self.resp_wl) / (phys.c * phys.cm_to_angs * phys.h)
+            # res = simps(y*x, x, even='avg')
             self._normWl = self.response(self.wl, np.ones(len(self.wl)), kind='spline')
         return self._normWl
 
@@ -190,6 +187,8 @@ class Band(object):
     def load_settings(cls, is_force=False):
         if Band.IsLoad and not is_force:
             return True
+
+        from configparser import ConfigParser
         parser = ConfigParser()
         parser.optionxform = str
         fini = os.path.join(Band.DirRoot, Band.FileSettings)
@@ -242,8 +241,7 @@ class Band(object):
     def response_freq(self, nu, flux):
         return Band.response_nu(nu, flux, self)
 
-    def response(self, wl, flux, z=0., kind='spline', mode_int='simps', is_out2zero=True
-                 , is_photons=True):
+    def response(self, wl, flux, z=0., kind='spline', mode_int='simps', is_out2zero=True, is_photons=True):
         """Compute the response of this filter over the flux(wl)
 
         kind : str or int, optional (see scipy.interpolate)
@@ -256,6 +254,9 @@ class Band(object):
                 interpolator to use.
                 Default is 'linear'
         """
+        import scipy.integrate  # import simps as integralfunc
+        import scipy.interpolate  # import simps as integralfunc
+        from pystella.util.math import log_interp1d
 
         if len(wl) == 0 or len(flux) == 0:
             raise ValueError("It should be len(wl)>0 and len(flux) > 0. "
@@ -356,7 +357,7 @@ class BandUni(Band):
             x = np.array(self.wl)
             y = np.array(self.resp_wl)
         # resp_b = np.ones(len(nu_b))
-        d = integralfunc(y/x, x)
+        d = integralfunc(y / x, x)
         return d
 
         # return 1.
@@ -506,6 +507,7 @@ def bands_colors(bname=None):
 
 def band_load_names(path=Band.DirRoot):
     """Find directories with filter.dat """
+    from configparser import ConfigParser
 
     def ini_to_bands(fini):
         parser = ConfigParser()

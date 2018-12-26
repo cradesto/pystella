@@ -1,5 +1,3 @@
-import csv
-
 __author__ = 'bakl'
 
 
@@ -21,6 +19,8 @@ def dict_save(dictionary, fname):
     :param dictionary:
     :type fname: the name of the file
     """
+    import csv
+
     with open(fname, 'wb') as f:
         writer = csv.writer(f, delimiter='\t')
         writer.writerow(dictionary.keys())

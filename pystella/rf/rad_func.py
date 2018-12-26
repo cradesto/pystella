@@ -106,9 +106,9 @@ def compute_x_bb():
     H nu / k T = x_bb --- const
     :return: const
     """
-    from scipy import integrate
-    a, err1 = integrate.quad(lambda x: x**4 * np.exp(-x) / (1.-np.exp(-x)), 0, np.inf)
-    b, err2 = integrate.quad(lambda x: x**3 * np.exp(-x) / (1.-np.exp(-x)), 0, np.inf)
+    from scipy.integrate import quad
+    a, err1 = quad(lambda x: x**4 * np.exp(-x) / (1.-np.exp(-x)), 0, np.inf)
+    b, err2 = quad(lambda x: x**3 * np.exp(-x) / (1.-np.exp(-x)), 0, np.inf)
     return a / b
 
 

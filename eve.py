@@ -1,18 +1,26 @@
 #!/usr/bin/env python3
 # #!/usr/bin/python3
 
-import argparse
 import logging
-import os
-import sys
-from itertools import cycle
-from os.path import dirname
-
-import matplotlib.lines as mlines
-import matplotlib.pyplot as plt
 
 import pystella.model.sn_eve as sneve
 import pystella.rf.light_curve_plot as lcp
+
+try:
+    import matplotlib.pyplot as plt
+    import matplotlib.lines as mlines
+except ImportError as ex:
+    import os
+    import sys
+
+    exc_type, exc_obj, exc_tb = sys.exc_info()
+    fn = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+    logging.info(exc_type, fn, exc_tb.tb_lineno, ex)
+    logging.info('  Probably, you should install module: {}'.format('matplotlib'))
+    print()
+    #    print(ex)
+    plt = None
+    mlines = None
 
 # matplotlib.use("Agg")
 # import matplotlib
@@ -22,7 +30,6 @@ import pystella.rf.light_curve_plot as lcp
 
 __author__ = 'bakl'
 
-ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
 logging.basicConfig()
 
 logger = logging.getLogger(__name__)
@@ -35,6 +42,8 @@ lines_style = lcp.linestyles
 
 
 def get_parser():
+    import argparse
+
     parser = argparse.ArgumentParser(description='Process PreSN configuration.')
 
     parser.add_argument('-r', '--rho', nargs="?",
@@ -95,6 +104,8 @@ def get_parser():
 
 
 def main():
+    from itertools import cycle
+
     parser = get_parser()
     args, unknownargs = parser.parse_known_args()
     markersize = 4
@@ -147,20 +158,23 @@ def main():
         rho_file = os.path.join(path, name + '.rho')
         eve = sneve.load_rho(rho_file)
 
-        marker = next(markers_cycler)
-        ls = next(lines_cycler)
-
         if args.is_write:
             fname = os.path.join(path, name)
             f = fname+'.eve.abn'
-            if eve.write_abn(f):
-                print(" abn have been saved to {}".format(f))
+            if eve.write_abn(f, is_header=True):
+                print(" abn has been saved to {}".format(f))
             else:
                 print("Error with abn saving to {}".format(f))
+            f = fname+'.eve.hyd'
             if eve.write_hyd(f):
-                print(" hyd have been saved to {}".format(f))
+                print(" hyd has been saved to {}".format(f))
             else:
                 print("Error with hyd saving to {}".format(f))
+
+            continue
+
+        marker = next(markers_cycler)
+        ls = next(lines_cycler)
 
         if args.is_structure:
             fig = eve.plot_structure(elements=elements, title=name)
@@ -188,17 +202,19 @@ def main():
                 if ax2 is None:
                     ax2 = ax.twinx()
                 ax2.legend(handles=handles_nm, loc=4, fancybox=False, frameon=False)
-    plt.show()
 
-    if args.is_save_plot:
-        if args.rho:
-            fsave = os.path.join(os.path.expanduser('~/'), 'rho_%s.pdf' % names[0])
-        else:
-            fsave = os.path.join(os.path.expanduser('~/'), 'chem_%s.pdf' % names[0])
-        logger.info(" Save plot to %s " % fsave)
-        if fig is None:
-            fig = ax.get_figure()
-        fig.savefig(fsave, bbox_inches='tight')
+    if not args.is_write:
+        plt.show()
+
+        if args.is_save_plot:
+            if args.rho:
+                fsave = os.path.join(os.path.expanduser('~/'), 'rho_%s.pdf' % names[0])
+            else:
+                fsave = os.path.join(os.path.expanduser('~/'), 'chem_%s.pdf' % names[0])
+            logger.info(" Save plot to %s " % fsave)
+            if fig is None:
+                fig = ax.get_figure()
+            fig.savefig(fsave, bbox_inches='tight')
 
 
 if __name__ == '__main__':

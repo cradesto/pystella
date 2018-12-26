@@ -1,10 +1,9 @@
 import numpy as np
 
-from pystella.util.arr_dict import first
-
 
 class TimeSeries(object):
     """Data of f(t)"""
+
     def __init__(self, name, time, values, errs=None, tshift=0.):
         self._name = name
         self._t = np.array(time, copy=True)
@@ -129,6 +128,7 @@ class TimeSeries(object):
 
 class SetTimeSeries(object):
     """Set of the TimeSeries"""
+
     def __init__(self, name='SetTimeSeries'):
         from collections import OrderedDict
         """Creates a Set of TimeSeries."""
@@ -184,7 +184,7 @@ class SetTimeSeries(object):
     def TimeCommon(self):
         if len(self.Set) == 0:
             raise ValueError('There are no bands in SetLightCurve.')
-        lc = first(self.Set.values())
+        lc = next(iter(self.Set.values()))
         return lc.Time
 
     @property

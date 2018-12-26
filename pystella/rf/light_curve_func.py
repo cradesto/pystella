@@ -324,8 +324,10 @@ def series_spec_reddening(series, ebv, Rv=None, law=LawFitz, mode=ReddeningLaw.M
 # todo Implement direct reddening from spectra
 # http://webast.ast.obs-mip.fr/hyperz/hyperz_manual1/node10.html
 def curves_reddening(curves, ebv, z=None, law=extinction.law_default, is_info=True):
-    if ebv < 0.:
-        raise ValueError("ebv should be > 0")
+    # is_unred = ebv < 0.
+    # if ebv < 0.:
+    #     ebv = abs(ebv)
+    #     # raise ValueError("ebv should be > 0")
     if ebv == 0.:
         return curves
 
@@ -346,6 +348,9 @@ def curves_reddening(curves, ebv, z=None, law=extinction.law_default, is_info=Tr
     res = SetLightCurve(curves.Name)
     for lc in curves:
         lc_red = lc.copy()
+        # if is_unred:
+        #     lc_red.M -= ext[lc.Band.Name]
+        # else:
         lc_red.M += ext[lc.Band.Name]
         res.add(lc_red)
     # for n in bands:
