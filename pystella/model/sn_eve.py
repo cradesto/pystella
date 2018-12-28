@@ -279,6 +279,10 @@ class PreSN(object):
         #     if lntypes is None:
         #         lntypes = eve_lntypes
 
+        if not isinstance(lntypes, dict):
+            tmp = lntypes
+            lntypes = {e: tmp for e in elements}
+
         is_new_plot = ax is None
         # setup figure
         if is_new_plot:

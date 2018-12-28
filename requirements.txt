@@ -10,7 +10,6 @@
 # sudo apt install libpng-dev libfreetype6-dev
 
 # general
-configparser
 
 # seaborn
 numpy

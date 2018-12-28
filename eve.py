@@ -104,6 +104,7 @@ def get_parser():
 
 
 def main():
+    import os
     from itertools import cycle
 
     parser = get_parser()

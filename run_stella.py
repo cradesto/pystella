@@ -1,18 +1,65 @@
 #!/usr/bin/env python3
 
-import io
+
 import os
-# from os.path import dirname
 import argparse
 import logging
-import ConfigParser
+import numpy as np
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-# import numpy as np
 
-# ROOT_DIRECTORY = dirname(os.path.abspath(__file__))
+
+class Runner(object):
+    def __init__(self, config):
+        self._config = config
+
+    @property
+    def Model(self):
+        return self._config.Model
+
+    def add_line(self, fname, nline=2, pattern=None):
+        """
+        Add a control line to the file named fname.
+
+        :param fname:  file with type *.1
+        :param nline:  position new line. Default: 2
+        :param pattern: string to set the place to rename, as "111001", if it's None [default] rename all substrings.
+        :return:
+        """
+        if nline < 1:
+            raise ValueError('nline should be more 0: {}'.format(nline))
+
+        nline -= 1  # shift to zero as array indexes
+
+        # read the file
+        with open(fname, "r") as f:
+            lines = f.readlines()
+
+        # take pattern as nline
+        subs = lines[nline].split()
+        if pattern is None:
+            pattern = np.ones(len(subs))
+        else:
+            pattern = pattern.replace(' ', '')
+            pattern = [int(p) for p in pattern]
+
+        for i, p in enumerate(pattern):
+            if bool(p):
+                filename = subs[i]
+                (prefix, sep1, suffix) = filename.rpartition('.')
+                (predir, sep2, nm) = prefix.rpartition('/')
+                subs[i] = '{}{}{}{}{}'.format(predir, sep2, self.Model, sep1, suffix)
+        newline = ' '.join(subs)
+
+        # add new line at nline position
+        lines.insert(nline, newline + "\n")
+        # write to the file
+        with open(fname, "w") as fout:
+            for l in lines:
+                fout.write(l)
+            # fout.writelines(lines)
 
 
 class Config(object):
@@ -23,19 +70,35 @@ class Config(object):
             self.load()
 
     def load(self):
-            with open(self.ConfigFile) as f:
-                sample_config = f.read()
-            self._config = ConfigParser.RawConfigParser(allow_no_value=True)
-            self._config.readfp(io.BytesIO(sample_config))
-
+        from configparser import ConfigParser
+        # parser = ConfigParser()
+        # parser.optionxform = str
+        # parser.read(self.ConfigFile)
+        # with open(self.ConfigFile) as f:
+        #     sample_config = f.read()
+        # self._config = ConfigParser(allow_no_value=True)
+        # print('Load {}'.format(self.ConfigFile))
+        # self._config.read_file(self.ConfigFile)
+        parser = ConfigParser()
+        parser.optionxform = str
+        parser.read(self.ConfigFile)
+        self._config = parser
 
     @property
     def ConfigFile(self):
         return self._fconfig
 
     @property
+    def Config(self):
+        return self._config
+
+    @property
     def Root(self):
-        return self._path_root
+        return self.Config.get('DEFAULT', 'root')
+
+    @property
+    def Model(self):
+        return self.Config.get('DEFAULT', 'mname')
 
     @property
     def Eve(self):
@@ -61,6 +124,13 @@ class Config(object):
     def Ronfict1(self):
         return os.path.join(self.Vladsf, 'ronfict.1')
 
+    @property
+    def as_dict(self):
+        return {section: dict(self._config[section]) for section in self._config.sections()}
+
+    def print(self):
+        print(self.as_dict)
+
 
 def get_parser():
     parser = argparse.ArgumentParser(description='Run STELLA modelling.')
@@ -81,6 +151,8 @@ def get_parser():
 
 
 def main():
+    import sys
+
     parser = get_parser()
     args, unknownargs = parser.parse_known_args()
 
@@ -92,13 +164,25 @@ def main():
         fconfig = unknownargs[0]
     else:
         if args.input:
-            fconfig = os.path.expanduser(args.input)
+            fconfig = args.input
 
     if fconfig is None:
         logger.error('  No any config data.')
         parser.print_help()
-    else:
-        logger.info(' Read config: {}'.format(fconfig))
+        sys.exit(2)
+
+    fconfig = os.path.expanduser(fconfig)
+    logger.info(' Read config: {}'.format(fconfig))
+    cfg = Config(fconfig)
+    # cfg.print()
+
+    runner = Runner(cfg)
+    logger.info(' Start runner for the model: {} in {} '.format(runner.Model, cfg.Root))
+    # runner.add_line(cfg.Eve, pattern=None)
+    #  EVE Section
+    pattern = '10101001'
+    runner.add_line(cfg.Eve1, pattern=pattern)
+    logger.info(' Added new line to {} with pattern= {}'.format(cfg.Eve1, pattern))
 
 
 if __name__ == '__main__':
