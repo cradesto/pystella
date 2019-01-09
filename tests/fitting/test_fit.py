@@ -301,11 +301,11 @@ class TestFit(unittest.TestCase):
         fitter = FitMCMC()
         fitter.is_debug = True
         fitter.is_info = True
-        res = fitter.best_curves(curves_mdl, curves_obs, dt0=0 )
+        res, fig = fitter.best_curves(curves_mdl, curves_obs, dt0=0, is_plot=True)
 
         # print
-        txt = '{0:10} {1:.4e} \n'.format('tshift:', res['dt']) + \
-              '{0:10} {1:.4e} \n'.format('tsigma:', res['dtsig'])
+        txt = '{:10s} {:.4e} \n'.format('tshift:', res['dt']) + \
+              '{:10s} {:.4e} \n'.format('tsigma:', res['dtsig'])
         print(txt)
         # plot model
         curves_obs.set_tshift(res['dt'])

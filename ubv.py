@@ -11,6 +11,10 @@ from matplotlib import gridspec
 
 import pystella as ps
 
+import logging
+mpl_logger = logging.getLogger('matplotlib')
+mpl_logger.setLevel(logging.WARNING)
+
 __author__ = 'bakl'
 
 ROOT_DIRECTORY = dirname(dirname(abspath(__file__)))
@@ -71,6 +75,7 @@ def plot_all(models_vels, models_dic, bnames, d=10, call=None, **kwargs):
 
     # setup figure
     plt.matplotlib.rcParams.update({'font.size': fontsize})
+    plt.matplotlib.rcParams['font.family'] = 'sans-serif'
     fig = plt.figure(figsize=(12, 12))
     #    fig = plt.figure(num=None, figsize=(12, 12), dpi=100, facecolor='w', edgecolor='k')
 
@@ -131,7 +136,7 @@ def usage():
     print("  ubv.py [params]")
     print("  -b <bands:shift>: string, default: U-B-V-R-I, for example U-B-V-R-I-u-g-i-r-z-UVW1-UVW2.\n"
           "     shift: to move lc along y-axe (minus is '_', for example -b R:2-V-I:_4-B:5 ")
-    print("  -i <model name>.  Example: cat_R450_M15_Ni007_E7")
+    print("  -i <model-name OR pattern, like '*R450*'>.  Example: cat_R450_M15_Ni007_E7")
     print("  -p <model directory>, default: ./")
     print("  -e <extinction, E(B-V)> is used to define A_nu, default: 0 ")
     print("  -c <callback> [lcobs:fname:marker:dt:dm, velobs:fname:marker:dt:vnorm(1e8), "
@@ -159,10 +164,11 @@ def usage():
     ps.band.print_bands()
 
 
-def main(name='', model_ext='.ph'):
+def main(name=None, model_ext='.ph'):
     import sys
     import os
     import getopt
+    import fnmatch
 
     is_quiet = False
     is_save_mags = False
@@ -308,12 +314,20 @@ def main(name='', model_ext='.ph'):
 
     # Set model names
     names = []
-    if not name:
+    if name is None:
         for opt, arg in opts:
             if opt == '-i':
-                name = os.path.splitext(os.path.basename(str(arg)))[0]
-                names.append(name)
+                nm = os.path.splitext(os.path.basename(str(arg)))[0]
+                if os.path.exists(os.path.join(path, nm+model_ext)):
+                    names.append(nm)
+                else:
+                    files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f)) and fnmatch.fnmatch(f, arg)]
+                    for f in files:
+                        nm = os.path.splitext(os.path.basename(f))[0]
+                        names.append(nm)
+                        print('input: {}'.format(nm))
     else:
+        print(name)
         names.append(name)
 
     if len(names) == 0:  # run for all files in the path
@@ -335,10 +349,7 @@ def main(name='', model_ext='.ph'):
     if len(names) > 0:
         models_mags = {}  # dict((k, None) for k in names)
         models_vels = {}  # dict((k, None) for k in names)
-        i = 0
-
-        for name in names:
-            i += 1
+        for i, name in enumerate(names):
             mdl = ps.Stella(name, path=path)
 
             if is_curve_tt:  # tt
@@ -367,10 +378,10 @@ def main(name='', model_ext='.ph'):
                 if vels is None:
                     sys.exit("Error: no data for: %s in %s" % (name, path))
                 models_vels[name] = vels
-                print("[%d/%d] Done velocity for %s" % (i, len(names), name))
+                print("[%d/%d] Done mags & velocity for %s" % (i+1, len(names), name))
             else:
                 models_vels = None
-                print("[%d/%d] Done mags for %s" % (i, len(names), name))
+                print("[%d/%d] Done mags for %s" % (i+1, len(names), name))
 
         if label is None:
             if callback is not None:
@@ -427,6 +438,7 @@ def main(name='', model_ext='.ph'):
 
                 print("Save plot to %s " % fsave)
                 fig.savefig(fsave, bbox_inches='tight', format='pdf')
+                plt.close()
             else:
                 plt.show()
 

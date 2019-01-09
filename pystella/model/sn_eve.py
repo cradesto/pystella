@@ -191,6 +191,10 @@ class PreSN(object):
         """Full hydro data"""
         return self._data_chem
 
+    @property
+    def params_keys(self):
+        return self._params.keys()
+
     def par(self, name, d=None):
         return self._params.get(name, d)
 
@@ -199,7 +203,7 @@ class PreSN(object):
 
     def copy_par(self, src, keys=None):
         if keys is None:
-            keys = src._params.keys()
+            keys = src.params_keys
         for k in keys:
             try:
                 self.set_par(k, getattr(src, k))
