@@ -276,6 +276,7 @@ class PreSN(object):
         lw = kwargs.get('lw', 2)
         marker = kwargs.get('marker', None)
         markersize = kwargs.get('markersize', 4)
+        alpha = kwargs.get('alpha', 1)
         # def plot_chem(self, x='m', ax=None, elements=None, xlim=None, ylim=None,
         #               leg_loc=3, leg_ncol=4, lw=2, lntypes=None, is_save=False):
         #     if elements is None:
@@ -331,7 +332,7 @@ class PreSN(object):
                 # y = y[np.nonzero(y)]
                 # y[y<=0] == 1e-15
                 ax.plot(x, y, label='{0}'.format(el), color=colors[el], ls=lntypes[el], linewidth=lw
-                        , marker=marker, markersize=markersize)
+                        , marker=marker, markersize=markersize, alpha=alpha)
                 # ax.semilogy(x, y, label='{0}'.format(el), color=colors[el], ls=lntypes[el], linewidth=lw
                 #             , marker=marker, markersize=markersize)
 

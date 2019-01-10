@@ -48,10 +48,13 @@ class Runner(object):
         for i, p in enumerate(pattern):
             if bool(p):
                 filename = subs[i]
-                (prefix, sep1, suffix) = filename.rpartition('.')
+                if '.' in filename:
+                    (prefix, sep1, suffix) = filename.rpartition('.')
+                else:
+                    (prefix, sep1, suffix) = filename, '', ''
                 (predir, sep2, nm) = prefix.rpartition('/')
                 subs[i] = '{}{}{}{}{}'.format(predir, sep2, self.Model, sep1, suffix)
-        newline = ' '.join(subs)
+        newline = '  '.join(subs)
 
         # add new line at nline position
         lines.insert(nline, newline + "\n")
@@ -106,7 +109,12 @@ class Config(object):
 
     @property
     def Eve1(self):
-        return os.path.join(self.Eve, 'eve.1')
+        fname = self.Config.get('EVE', 'file')
+        return os.path.join(self.Eve, fname)
+
+    @property
+    def EvePattern(self):
+        return self.Config.get('EVE', 'pattern')
 
     @property
     def Strad(self):
@@ -114,15 +122,25 @@ class Config(object):
 
     @property
     def Strad1(self):
-        return os.path.join(self.Strad, 'strad.1')
+        fname = self.Config.get('STRAD', 'file')
+        return os.path.join(self.Strad, fname)
+
+    @property
+    def StradPattern(self):
+        return self.Config.get('STRAD', 'pattern')
 
     @property
     def Vladsf(self):
         return os.path.join(self.Root, 'vladsf')
 
     @property
-    def Ronfict1(self):
-        return os.path.join(self.Vladsf, 'ronfict.1')
+    def Vladsf1(self):
+        fname = self.Config.get('VLADSF', 'file')
+        return os.path.join(self.Vladsf, fname)
+
+    @property
+    def VladsfPattern(self):
+        return self.Config.get('VLADSF', 'pattern')
 
     @property
     def as_dict(self):
@@ -180,9 +198,19 @@ def main():
     logger.info(' Start runner for the model: {} in {} '.format(runner.Model, cfg.Root))
     # runner.add_line(cfg.Eve, pattern=None)
     #  EVE Section
-    pattern = '10101001'
-    runner.add_line(cfg.Eve1, pattern=pattern)
-    logger.info(' Added new line to {} with pattern= {}'.format(cfg.Eve1, pattern))
+    # pattern = '10101001'
+    runner.add_line(cfg.Eve1, pattern=cfg.EvePattern)
+    logger.info(' Added new line to {} with pattern= {}'.format(cfg.Eve1, cfg.EvePattern))
+
+    # VLADSF Section
+    # pattern = '1101'
+    runner.add_line(cfg.Vladsf1, pattern=cfg.VladsfPattern)
+    logger.info(' Added new line to {} with pattern= {}'.format(cfg.Vladsf1, cfg.VladsfPattern))
+
+    # STRAD Section
+    # pattern = '11111'
+    runner.add_line(cfg.Strad1, pattern=cfg.StradPattern)
+    logger.info(' Added new line to {} with pattern= {}'.format(cfg.Strad1, cfg.StradPattern))
 
 
 if __name__ == '__main__':
