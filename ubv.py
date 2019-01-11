@@ -314,6 +314,7 @@ def main(name=None, model_ext='.ph'):
 
     # Set model names
     names = []
+    is_set_model = False
     if name is None:
         for opt, arg in opts:
             if opt == '-i':
@@ -326,11 +327,13 @@ def main(name=None, model_ext='.ph'):
                         nm = os.path.splitext(os.path.basename(f))[0]
                         names.append(nm)
                         print('input: {}'.format(nm))
+                is_set_model = True
     else:
         print(name)
         names.append(name)
+        is_set_model = True
 
-    if len(names) == 0:  # run for all files in the path
+    if len(names) == 0 and not is_set_model:  # run for all files in the path
         names = ps.path.get_model_names(path, model_ext)
 
     # Set distance and redshift
@@ -443,7 +446,7 @@ def main(name=None, model_ext='.ph'):
                 plt.show()
 
     else:
-        print("There are no models in the directory: %s with extension: %s " % (path, model_ext))
+        print("There are no such models in the directory: %s with extension: %s " % (path, model_ext))
 
 
 if __name__ == '__main__':

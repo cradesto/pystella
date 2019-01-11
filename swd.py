@@ -10,9 +10,6 @@ import os
 import numpy as np
 import pystella as ps
 
-# from pystella.model.stella import Stella
-# from pystella.rf import light_curve_plot as lcp
-
 __author__ = 'bakl'
 
 # ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
@@ -20,6 +17,9 @@ logging.basicConfig()
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+mpl_logger = logging.getLogger('matplotlib')
+mpl_logger.setLevel(logging.WARNING)
 
 
 def uph_save(dictionary, fname, sep='\t'):
@@ -228,7 +228,7 @@ def main():
             fig = ps.lcp.plot_shock_details(swd, times=times, vnorm=args.vnorm, rnorm=args.rnorm,
                                                          lumnorm=args.lumnorm, is_legend=is_legend)
 
-            plt.show(block=False)
+            plt.show()
             if args.is_save:
                 fsave = os.path.expanduser("~/swd_{0}_t{1}.pdf".format(name, str.replace(args.times, ':', '-')))
                 print("Save plot to {0}".format(fsave))

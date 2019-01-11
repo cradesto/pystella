@@ -271,7 +271,7 @@ class PreSN(object):
         # elements = kwargs.get('elements', eve_elements)
         lntypes = kwargs.get('lntypes', eve_lntypes)
         colors = kwargs.get('colors', eve_colors)
-        loc = kwargs.get('leg_loc', 3)
+        loc = kwargs.get('leg_loc', 'best')
         leg_ncol = kwargs.get('leg_ncol', 4)
         lw = kwargs.get('lw', 2)
         marker = kwargs.get('marker', None)
@@ -403,6 +403,7 @@ class PreSN(object):
         ls = kwargs.get('ls', '-')
         label = kwargs.get('label', '')
         color = kwargs.get('color', 'black')
+        xnorm = kwargs.get('xnorm', 1)
         marker = kwargs.get('marker', None)
         markersize = kwargs.get('markersize', 4)
 
@@ -421,6 +422,8 @@ class PreSN(object):
                 ax.set_xlabel(r'R [cm]')
             elif x == 'm':
                 ax.set_xlabel(r'M [$M_\odot$]')
+            elif x == 'v':
+                ax.set_xlabel(r'V [$km\, s^{-1}$]')
             else:
                 ax.set_xscale('log')
                 ax.set_xlabel(r'R [cm]')
@@ -429,9 +432,11 @@ class PreSN(object):
         is_y_lim = ylim is not None
 
         if x == 'm':
-            xi = self.m / phys.M_sun
+            xi = self.m / phys.M_sun * xnorm
+        elif x == 'v':
+            xi = self.V * xnorm
         else:
-            xi = self.r
+            xi = self.r * xnorm
 
         y = self.rho
         ax.semilogy(xi, y, color=color, ls=ls, linewidth=lw, marker=marker, markersize=markersize, label=label)
@@ -450,7 +455,7 @@ class PreSN(object):
                        title=None, figsize=(12, 8)):
         def set_xlim(ax, lim):
             if lim is not None:
-                ax.set_xlim(lim[0]*0.5, lim[1]*2.)
+                ax.set_xlim(lim[0] * 0.5, lim[1] * 2.)
 
         def set_ylim(ax, lim):
             if lim is not None:

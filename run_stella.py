@@ -19,6 +19,10 @@ class Runner(object):
     def Model(self):
         return self._config.Model
 
+    @property
+    def Cfg(self):
+        return self._config
+
     def add_line(self, fname, nline=2, pattern=None):
         """
         Add a control line to the file named fname.
@@ -64,6 +68,36 @@ class Runner(object):
                 fout.write(l)
             # fout.writelines(lines)
 
+    def run(self):
+
+        # create first line in stella files
+        for sec in self.Cfg.Sections:
+            opts = self.Cfg.Options(sec)
+            pattern = None
+            if 'pattern' in opts:
+                pattern = self.Cfg.get(sec, 'pattern')
+
+            if 'file_add_line' in opts:
+                fname = os.path.join(self.Cfg.Root, self.Cfg.get(sec, 'file_add_line'))
+
+                self.add_line(fname, pattern=pattern)
+                logger.info(' {}: Added new line to {} with pattern= {}'.format(sec, fname, pattern))
+
+        # # runner.add_line(cfg.Eve, pattern=None)
+        # #  EVE Section
+        # # pattern = '10101001'
+        # logger.info(' Added new line to {} with pattern= {}'.format(self.Cfg.Eve1, self.Cfg.EvePattern))
+        #
+        # # VLADSF Section
+        # # pattern = '1101'
+        # self.add_line(self.Cfg.Vladsf1, pattern=self.Cfg.VladsfPattern)
+        # logger.info(' Added new line to {} with pattern= {}'.format(self.Cfg.Vladsf1, self.Cfg.VladsfPattern))
+        #
+        # # STRAD Section
+        # # pattern = '11111'
+        # self.add_line(self.Cfg.Strad1, pattern=self.Cfg.StradPattern)
+        # logger.info(' Added new line to {} with pattern= {}'.format(self.Cfg.Strad1, self.Cfg.StradPattern))
+
 
 class Config(object):
     def __init__(self, fname, isload=True):
@@ -94,6 +128,18 @@ class Config(object):
     @property
     def Config(self):
         return self._config
+
+    @property
+    def Sections(self):
+        return self._config.sections()
+
+    def Options(self, sec):
+        # a = self.Config.items(sec)
+        # if len(a)
+        return self.Config.options(sec)
+
+    def get(self, sec, name):
+        return self.Config.get(sec, name)
 
     @property
     def Root(self):
@@ -196,21 +242,8 @@ def main():
 
     runner = Runner(cfg)
     logger.info(' Start runner for the model: {} in {} '.format(runner.Model, cfg.Root))
-    # runner.add_line(cfg.Eve, pattern=None)
-    #  EVE Section
-    # pattern = '10101001'
-    runner.add_line(cfg.Eve1, pattern=cfg.EvePattern)
-    logger.info(' Added new line to {} with pattern= {}'.format(cfg.Eve1, cfg.EvePattern))
 
-    # VLADSF Section
-    # pattern = '1101'
-    runner.add_line(cfg.Vladsf1, pattern=cfg.VladsfPattern)
-    logger.info(' Added new line to {} with pattern= {}'.format(cfg.Vladsf1, cfg.VladsfPattern))
-
-    # STRAD Section
-    # pattern = '11111'
-    runner.add_line(cfg.Strad1, pattern=cfg.StradPattern)
-    logger.info(' Added new line to {} with pattern= {}'.format(cfg.Strad1, cfg.StradPattern))
+    runner.run()
 
 
 if __name__ == '__main__':
