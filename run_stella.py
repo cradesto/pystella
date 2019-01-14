@@ -16,18 +16,15 @@ class Runner(object):
         self._config = config
 
     @property
-    def Model(self):
-        return self._config.Model
-
-    @property
     def Cfg(self):
         return self._config
 
-    def add_line(self, fname, nline=2, pattern=None):
+    def add_line(self, fname, mname, nline=2, pattern=None):
         """
         Add a control line to the file named fname.
 
         :param fname:  file with type *.1
+        :param mname:  model name
         :param nline:  position new line. Default: 2
         :param pattern: string to set the place to rename, as "111001", if it's None [default] rename all substrings.
         :return:
@@ -57,7 +54,7 @@ class Runner(object):
                 else:
                     (prefix, sep1, suffix) = filename, '', ''
                 (predir, sep2, nm) = prefix.rpartition('/')
-                subs[i] = '{}{}{}{}{}'.format(predir, sep2, self.Model, sep1, suffix)
+                subs[i] = '{}{}{}{}{}'.format(predir, sep2, mname, sep1, suffix)
         newline = '  '.join(subs)
 
         # add new line at nline position
@@ -68,7 +65,7 @@ class Runner(object):
                 fout.write(l)
             # fout.writelines(lines)
 
-    def run(self):
+    def run(self, mname):
 
         # create first line in stella files
         for sec in self.Cfg.Sections:
@@ -80,7 +77,7 @@ class Runner(object):
             if 'file_add_line' in opts:
                 fname = os.path.join(self.Cfg.Root, self.Cfg.get(sec, 'file_add_line'))
 
-                self.add_line(fname, pattern=pattern)
+                self.add_line(fname, mname, pattern=pattern)
                 logger.info(' {}: Added new line to {} with pattern= {}'.format(sec, fname, pattern))
 
         # # runner.add_line(cfg.Eve, pattern=None)
@@ -102,7 +99,7 @@ class Runner(object):
 class Config(object):
     def __init__(self, fname, isload=True):
         self._fconfig = fname
-        self._config = None
+        self._parser = None
         if isload:
             self.load()
 
@@ -118,36 +115,45 @@ class Config(object):
         # self._config.read_file(self.ConfigFile)
         parser = ConfigParser()
         parser.optionxform = str
-        parser.read(self.ConfigFile)
-        self._config = parser
+        l = parser.read(self.ConfigFile)
+        if len(l) > 0:
+            self._parser = parser
+            return True
+        else:
+            raise ValueError('Problem with reading the config file {}'.format(self.ConfigFile))
 
     @property
     def ConfigFile(self):
         return self._fconfig
 
     @property
-    def Config(self):
-        return self._config
+    def Parser(self):
+        return self._parser
 
     @property
     def Sections(self):
-        return self._config.sections()
+        return self._parser.sections()
 
     def Options(self, sec):
         # a = self.Config.items(sec)
         # if len(a)
-        return self.Config.options(sec)
+        return self.Parser.options(sec)
 
     def get(self, sec, name):
-        return self.Config.get(sec, name)
+        return self.Parser.get(sec, name)
 
     @property
     def Root(self):
-        return self.Config.get('DEFAULT', 'root')
+        d = os.path.dirname(self._fconfig)
+        if len(d) == 0:
+            d = './'
+        return d
+        # return self.Config.get('DEFAULT', 'root')
+        # return self.Config.get('DEFAULT', 'root')
 
     @property
     def Model(self):
-        return self.Config.get('DEFAULT', 'mname')
+        return self.Parser.get('DEFAULT', 'mname')
 
     @property
     def Eve(self):
@@ -155,12 +161,12 @@ class Config(object):
 
     @property
     def Eve1(self):
-        fname = self.Config.get('EVE', 'file')
+        fname = self.Parser.get('EVE', 'file')
         return os.path.join(self.Eve, fname)
 
     @property
     def EvePattern(self):
-        return self.Config.get('EVE', 'pattern')
+        return self.Parser.get('EVE', 'pattern')
 
     @property
     def Strad(self):
@@ -168,12 +174,12 @@ class Config(object):
 
     @property
     def Strad1(self):
-        fname = self.Config.get('STRAD', 'file')
+        fname = self.Parser.get('STRAD', 'file')
         return os.path.join(self.Strad, fname)
 
     @property
     def StradPattern(self):
-        return self.Config.get('STRAD', 'pattern')
+        return self.Parser.get('STRAD', 'pattern')
 
     @property
     def Vladsf(self):
@@ -181,16 +187,16 @@ class Config(object):
 
     @property
     def Vladsf1(self):
-        fname = self.Config.get('VLADSF', 'file')
+        fname = self.Parser.get('VLADSF', 'file')
         return os.path.join(self.Vladsf, fname)
 
     @property
     def VladsfPattern(self):
-        return self.Config.get('VLADSF', 'pattern')
+        return self.Parser.get('VLADSF', 'pattern')
 
     @property
     def as_dict(self):
-        return {section: dict(self._config[section]) for section in self._config.sections()}
+        return {section: dict(self._parser[section]) for section in self._parser.sections()}
 
     def print(self):
         print(self.as_dict)
@@ -201,10 +207,14 @@ def get_parser():
     # print(" Observational data could be loaded with plugin, ex: -c lcobs:filedata:tshift:mshift")
 
     parser.add_argument('-i', '--input',
-                        # nargs='+',
-                        required=False,
+                        nargs='+',
+                        required=True,
                         dest="input",
-                        help="config file, example: cat_R450_M15_Ni007.config")
+                        help="Model name, example: cat_R450_M15_Ni007 OR set of names: model1  model2")
+    parser.add_argument('-r', '--run_config',
+                        required=True,
+                        dest="run_config",
+                        help="config file, example: run.config")
     parser.add_argument('-so', '--show-only',
                         action='store_const',
                         default=False,
@@ -223,27 +233,28 @@ def main():
     if args.is_show_only:
         print(">>>>>   JUST SHOW!   <<<<<<")
 
-    fconfig = None
     if len(unknownargs) > 0:
-        fconfig = unknownargs[0]
-    else:
-        if args.input:
-            fconfig = args.input
-
-    if fconfig is None:
-        logger.error('  No any config data.')
+        logger.error('  Undefined strings in the command line')
         parser.print_help()
         sys.exit(2)
+    else:
+        if args.run_config:
+            fconfig = os.path.expanduser(args.run_config)
+        else:
+            logger.error('  No any config data.')
+            parser.print_help()
+            sys.exit(2)
 
-    fconfig = os.path.expanduser(fconfig)
-    logger.info(' Read config: {}'.format(fconfig))
+    models = args.input
+    logger.info(' Run {} for  config: {}'.format(models, fconfig))
     cfg = Config(fconfig)
     # cfg.print()
 
     runner = Runner(cfg)
-    logger.info(' Start runner for the model: {} in {} '.format(runner.Model, cfg.Root))
 
-    runner.run()
+    for mname in models:
+        logger.info(' Start runner for the model: {} in {} '.format(mname, cfg.Root))
+        runner.run(mname)
 
 
 if __name__ == '__main__':

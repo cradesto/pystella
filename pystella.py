@@ -179,6 +179,13 @@ class MyPrompt(HistConsole):
         MyPrompt.call_cmd(script, args)
 
     @staticmethod
+    def do_run(args):
+        """Run  the Stella simulations. For detailed help type 'run -h'.
+        """
+        script = os.path.join(ROOT_DIRECTORY, 'run_stella.py')
+        MyPrompt.call_cmd(script, args)
+
+    @staticmethod
     def do_zeta(args):
         """Plot Tcolor-Zeta diagrams. For detailed help type 'zeta -h'.
         """
