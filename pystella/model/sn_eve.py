@@ -628,12 +628,13 @@ class PreSN(object):
 
         return newPreSN
 
-    def reshape(self, nz=300, nstart=0, nend=None, xmode='rlog', kind='np'):
+    def reshape(self, nz=300, nstart=0, nend=None, axis=sM, xmode='rlog', kind='np'):
         """
         Reshape parameters of envelope from nstart to nend to nz-zones
         :param nz: new zones
         :param nstart: zone number to start reshaping. Default: 0 (first zone)
         :param nend: zone number to end reshaping. Default: None,  (equal last zone)
+        :param axis: [M OR R OR V] - reshape along mass or radius or velocity coordinate
         :param xmode: [lin OR rlog] - linear OR reversed log10
         :param kind: [np OR interp1d(..kind)], kind is  ('linear', 'nearest', 'zero', 'slinear', 'quadratic, 'cubic')
         :return: new preSN with reshaping zones
@@ -672,16 +673,24 @@ class PreSN(object):
             return res
 
         # hyd reshape
-        m = self.m
+        if axis == PreSN.sM:
+            x = self.m
+        elif axis == PreSN.sR:
+            x = self.r
+        elif axis == PreSN.sV:
+            x = self.V
+        else:
+            raise ValueError('Such axis "{}" is not supported.'.format(axis))
+
         for v in PreSN.presn_hydro:
             old = self.hyd(v)
-            new = interp(m, old)
+            new = interp(x, old)
             newPreSN.set_hyd(v, new)
 
         # abn reshape
         for el in self.Elements:
             old = self.el(el)
-            new = interp(m, old)
+            new = interp(x, old)
             newPreSN.set_chem(el, new)
 
         # copy parameters
@@ -725,7 +734,7 @@ def load_rho(fname, path=None):
     return presn
 
 
-def load_hyd_abn(name, path='.', abn_elements=PreSN.stl_elements, is_dum=True):
+def load_hyd_abn(name, path='.', abn_elements=PreSN.stl_elements, is_dum=False):
     """
     Code readheger.trf:
       BM1=cutmass; -- core Mass
@@ -750,12 +759,11 @@ def load_hyd_abn(name, path='.', abn_elements=PreSN.stl_elements, is_dum=True):
     logger.info(' Load hyd-data from  %s' % hyd_file)
 
     # read table data
+    col_names = "zone dm R Rho T V M".split()
     if is_dum:
         col_names = "zone dm R Rho T V M dum2".split()
-    else:
-        col_names = "zone dm R Rho T V M".split()
     dt = np.dtype({'names': col_names,
-                   'formats': ['i4'] + np.repeat('f8', len(col_names) - 1).tolist()})
+                   'formats': ['i4'] + list(np.repeat('f8', len(col_names) - 1))})
 
     data_hyd = np.loadtxt(hyd_file, comments='#', skiprows=1, dtype=dt)
     nz = len(data_hyd['R'])
@@ -792,12 +800,15 @@ def load_hyd_abn(name, path='.', abn_elements=PreSN.stl_elements, is_dum=True):
         return None
 
     logger.info(' Load abn-data from  %s' % abn_file)
+    col_names = ("zone " + ' '.join(abn_elements)).split()
     if is_dum:
         col_names = ("zone dum1 dum2 dum3 " + ' '.join(abn_elements)).split()
-    else:
-        col_names = ("zone " + ' '.join(abn_elements)).split()
-    dt = np.dtype({'names': col_names, 'formats': np.repeat('f8', len(col_names))})
-    data_chem = np.loadtxt(abn_file, comments='#', dtype=dt)
+
+    # dt = np.dtype({'names': col_names, 'formats': np.repeat('f8', len(col_names))})
+    dt = np.dtype({'names': col_names,
+                   'formats': ['i4'] + list(np.repeat('f8', len(col_names) - 1))})
+    # logger.info(dt)
+    data_chem = np.loadtxt(abn_file, comments='#', skiprows=1, dtype=dt)
 
     for ename in abn_elements:
         presn.set_chem(ename, data_chem[ename])
