@@ -78,7 +78,11 @@ class Runner(object):
 
             logger.warning('The target file: {}  was rewritten.'.format(fout))
         logger.info(' Copy  {} to {}'.format(fin, fout))
-        shutil.copy2(fin, fout)
+
+        try:
+            shutil.copy2(fin, fout)
+        except shutil.SameFileError:
+            pass
 
     def run(self, mname):
         mode_sample = 1
