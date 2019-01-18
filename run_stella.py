@@ -82,6 +82,7 @@ class Runner(object):
         try:
             shutil.copy2(fin, fout)
         except shutil.SameFileError:
+            logger.info(' Copy  {} and {} are the same file'.format(fin, fout))
             pass
 
     def run(self, mname):
