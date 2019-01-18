@@ -68,10 +68,19 @@ class Runner(object):
             # fout.writelines(lines)
 
     @staticmethod
-    def cp_sample(fin, fout):
+    def cp_sample(fin, fout, mode=1):
+        if os.path.exists(fout):
+            if mode == 2:
+                raise ValueError('The target file: {}  is exist.'.format(fout))
+            if mode == 1:
+                logger.warning('The target file: {} was exist and left unchanged.'.format(fout))
+                return
+
+            logger.warning('The target file: {}  was rewritten.'.format(fout))
         shutil.copy2(fin, fout)
 
     def run(self, mname):
+        mode_sample = 1
         # create first line in stella files
         for sec in self.Cfg.Sections:
             opts = self.Cfg.Options(sec)
@@ -85,13 +94,14 @@ class Runner(object):
                 self.add_line(fname, mname, pattern=pattern)
                 logger.info(' {}: Added new line to {} with pattern= {}'.format(sec, fname, pattern))
 
-        # todo Make copy command
             if 'sample' in opts:
                 fname = os.path.join(self.Cfg.Root, self.Cfg.get(sec, 'sample'))
                 extension = os.path.splitext(fname)[1]
-                fout = os.path.join(os.path.dirname(fname), '{}.{}'.format(mname, extension))
+                fout = os.path.join(os.path.dirname(fname), '{}{}'.format(mname, extension))
                 logger.info(' {}: Copy  {} to {}'.format(sec, fname, fout))
-                self.cp_sample(fname, fout)
+                if 'mode_sample' in opts:
+                    mode_sample = int(self.Cfg.get(sec, 'mode_sample'))
+                self.cp_sample(fname, fout, mode=mode_sample)
 
         # todo Make run command
 
