@@ -5,6 +5,7 @@ import os
 import argparse
 import logging
 import numpy as np
+import shutil
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -19,7 +20,8 @@ class Runner(object):
     def Cfg(self):
         return self._config
 
-    def add_line(self, fname, mname, nline=2, pattern=None):
+    @staticmethod
+    def add_line(fname, mname, nline=2, pattern=None):
         """
         Add a control line to the file named fname.
 
@@ -65,8 +67,11 @@ class Runner(object):
                 fout.write(l)
             # fout.writelines(lines)
 
-    def run(self, mname):
+    @staticmethod
+    def cp_sample(fin, fout):
+        shutil.copy2(fin, fout)
 
+    def run(self, mname):
         # create first line in stella files
         for sec in self.Cfg.Sections:
             opts = self.Cfg.Options(sec)
@@ -80,20 +85,15 @@ class Runner(object):
                 self.add_line(fname, mname, pattern=pattern)
                 logger.info(' {}: Added new line to {} with pattern= {}'.format(sec, fname, pattern))
 
-        # # runner.add_line(cfg.Eve, pattern=None)
-        # #  EVE Section
-        # # pattern = '10101001'
-        # logger.info(' Added new line to {} with pattern= {}'.format(self.Cfg.Eve1, self.Cfg.EvePattern))
-        #
-        # # VLADSF Section
-        # # pattern = '1101'
-        # self.add_line(self.Cfg.Vladsf1, pattern=self.Cfg.VladsfPattern)
-        # logger.info(' Added new line to {} with pattern= {}'.format(self.Cfg.Vladsf1, self.Cfg.VladsfPattern))
-        #
-        # # STRAD Section
-        # # pattern = '11111'
-        # self.add_line(self.Cfg.Strad1, pattern=self.Cfg.StradPattern)
-        # logger.info(' Added new line to {} with pattern= {}'.format(self.Cfg.Strad1, self.Cfg.StradPattern))
+        # todo Make copy command
+            if 'sample' in opts:
+                fname = os.path.join(self.Cfg.Root, self.Cfg.get(sec, 'sample'))
+                extension = os.path.splitext(fname)[1]
+                fout = os.path.join(os.path.dirname(fname), '{}.{}'.format(mname, extension))
+                logger.info(' {}: Copy  {} to {}'.format(sec, fname, fout))
+                self.cp_sample(fname, fout)
+
+        # todo Make run command
 
 
 class Config(object):
@@ -151,9 +151,9 @@ class Config(object):
         # return self.Config.get('DEFAULT', 'root')
         # return self.Config.get('DEFAULT', 'root')
 
-    @property
-    def Model(self):
-        return self.Parser.get('DEFAULT', 'mname')
+    # @property
+    # def Model(self):
+    #     return self.Parser.get('DEFAULT', 'mname')
 
     @property
     def Eve(self):

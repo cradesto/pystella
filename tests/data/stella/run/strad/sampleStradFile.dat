@@ -1,0 +1,95 @@
+   EPS   (STIFF ACCURACY)   HMIN (MIN.STEP(SEC)) HMAX (MAX.STEP(SEC))
+   0.003                    1.D-11               5.D+4
+   METH  ADAMS(1)-GEAR(2)   JSTART  (0-START_ELSE_ORDER) MAXORD KNadap
+    3                        0                            4        -4
+   abs(NSTA)>abs(NSTB)=>reads last   TcurA     TcurB
+   -4500     -1                      0.         400.
+   NSTMAX  NDebug  NOUT    IOUT (0 -full <0 print zones)   MBATCH
+   360000   1000000  100     -1                             900
+   AMNI (CONTAM. MASS)     XMNI (56NI MASS)
+  0.12D0 	 	 0.060000   
+   AMHT(Solar)  EBurst(1e50) tBurst(s)  tstart -- Heated Core, Energy & time
+    1.d-02 	  7.000000        1.d-01     0.d0  
+   EKO (kin.energy,1e50) mass fract.tri. u profile  us (out +1)
+   0.d-5                      0.d0  9.d-1  1.d0          +1.
+   THRMAT   CRAP     CONV     EDTM     CHNCND  Givdtl
+   1.D-30   1.D0     F        T        T       F
+   FLOOR(R) FLOOR(V) FLOOR(T) FLOOR(RADIAT)    FLOOR(UCONV)
+   1.D-08   1.D-03   3.D-02   1.D-01           1.D-04
+   Wacc(R)  Wacc(V)  Wacc(T)  Wacc(RADIAT)
+   1.d-04    1.d-2   1.D-01   1.D-03
+   FitTau   TAUTOL   Rvis   AQ    BQ       DRT     NRT     SCAT
+   3.D02    1.3D0    1.D0   2.D0  1.D+00   0.1      1       T
+    NTO then    DATA TO
+    99
+    1.d-01
+    2.0000d-01 
+    5.0000d-01 
+    7.0000d-01 
+    1.0000d+00
+    1.5d+00 
+    2.d0 
+    3.d+00 
+    4.d0 
+    5.d+00
+    6.d0 
+    7.d0
+    8.d0
+    9.d0 
+    10.d0 
+    12.d0 
+    15.d0
+    17.d0
+    20.d0
+    22.d0
+    25.d0    
+    27.d0    
+    30.d0
+    35.d0
+    40.d0
+    45.d0
+    50.d0
+    55.d0
+    60.d0
+    65.d0
+    70.d0
+    75.d0
+    80.d0  
+    85.d0  
+    90.d0 
+    95.d0 
+   100.d0
+   105.d0
+   110.d0
+   115.d0
+   120.d0
+   125.d0
+   130.d0
+   135.d0
+   140.d0 
+   150.d0 
+   160.d0 
+   170.d0 
+   180.d0 
+   190.d0 
+   200.d0 
+   210.d0 
+   220.d0 
+   230.d0 
+   240.d0 
+   250.d0 
+   260.d0 
+   270.d0 
+   280.d0 
+   290.d0 
+   300.d0 
+   310.d0 
+   320.d0 
+   330.d0 
+   340.d0 
+   350.d0 
+   360.d0 
+   370.d0 
+   380.d0 
+   390.d0 
+

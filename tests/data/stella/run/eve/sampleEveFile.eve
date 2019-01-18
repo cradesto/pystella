@@ -1,0 +1,56 @@
+ ANTROP             DENSCE          DENSCE-old  -- for rbeg=3000
+   1.00               1.              1.
+ Rbeg            CRHO    RWIND   Tpwind  pWind -- R(Solar) RHO/TP --CGS
+ 4000.000000       1.d14   -3.D3    2.5D3  2.d0
+ Rce  -- Core Radius (Solar units)
+  0.01
+ TPROC -- CENTRAL TEMPERATURE                                                   
+ 1.5990D0                                                                       
+ VSTRE -- FITTING POINT
+ 0.55                                                                           
+ ALPHA -- TP=ANTROP*PL**ALPHA                                                   
+ 0.33333333
+ --BMKOLD    BM1      AMeveNi    --    MASS IN SOLAR UNITS
+ 200.000000    1.41    0.060000 
+ BMFe  BMFe/Si,   BMSi,   BMSi/O    BMO   BMO/He   BMHe   BMHe/H    BMK-BMHe
+ 0.07   0.25      3.27    5.33      10.   75.      80     80      1.0
+ NiInCentr        NiOnBorder
+  .05d0              1d-6
+ STEP: IF STEP<0 {ONE MODEL } else data are taken from FN PARM                  
+ -0.98                                                                          
+ Kadapt   1-FPRho   2-Polytropes  3-Isothermal core 4-foreign 5-homo, 6 - for. 87a <0 -read 2nd foreign model
+ 1
+ US          OUT/INWARD  +1/-1                                                  
+ +1.                                                                            
+ TC  ISOTP. CENTRE   TS   SURFACE TEMPERATURE                                   
+ 0.3                 0.3                                                        
+ AMISO  -- MASS OF ISOCORE  GAMT -- GAMMA FOR SURFACE T                         
+ 1.D0                       1.6666666667                                        
+ AS       ZS --  MEAN (A,Z) FOR WHITE DW.                                       
+ 12.      6.                                                                    
+ XH       XHE    Depl -- H, He & H deplition factor
+ 0.7      0.296  0.004d0 
+ AVERG -- AV. MET.WEIGHT   IWOO - the number of sample zone in woosley model
+ 28.                        633        2                                                    
+ AMZinn   AMZout -- masscut for heavy    AMHein   AMHeout  BXY -- remaining H, He                 
+ 0.00368  0.061579                        0.1   0.657895   0.000
+ IPRINT  0  No PRINTING, 1 Short, 2 Full PRINTING REGIME                        
+ 2                                                                              
+ ITER1   ITER2       MAX.ITER IN BOUNDS  / DEFDIA                               
+ 100     100                                                                    
+ EPS1    EPSA    EPSD   --   LG ACCURACY BOUNDS/ANTROP /DENSCE
+ -11.0    -13.0   -10.0
+ ULGCAP  ULGEPS  --  LG Cappa/En.Loss  UNITS                                    
+ 0.0     12.0                                                                   
+ H -- STIFF  STEP(SEC)                                                          
+ 0.00001                                                                        
+ DM1         DM2         PLATO        CENTR   DMID    MIDDLE
+ 1.D-02      1.D-07      0.4D0        0.4D0     1.D-2    4.550
+ 1.D-02      1.D-02      0.4D0        0.4D0     1.D-2    4.550
+ 1.D-01      1.D-08      0.4D0        .4D0   1.D-1   10.5935d0
+ 1.D-01      1.D-07      0.4D0        .4D0   1.D-1   11.6d0
+ 1.D-05      1.D-05      0.4D0        .4D0   1.D-1   13.35d0
+ AMZinn   AMZout -- masscut for heavy    BXY -- remaining H, He
+ 0.5      0.75                           0.1
+ 0.15     0.3                            0.1
+ 0.1      0.15                            0.2      0.3     0.0001
