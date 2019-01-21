@@ -443,7 +443,11 @@ def main(name=None, model_ext='.ph'):
                 fig.savefig(fsave, bbox_inches='tight', format='pdf')
                 plt.close()
             else:
+                plt.ion()
                 plt.show()
+                plt.pause(0.0001)
+                print('')
+                input("===> Hit <return> to quit")
 
     else:
         print("There are no such models in the directory: %s with extension: %s " % (path, model_ext))

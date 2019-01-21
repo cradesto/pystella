@@ -226,13 +226,17 @@ def main():
                          lumnorm=args.lumnorm, is_legend=is_legend)
         else:
             fig = ps.lcp.plot_shock_details(swd, times=times, vnorm=args.vnorm, rnorm=args.rnorm,
-                                                         lumnorm=args.lumnorm, is_legend=is_legend)
-
-            plt.show()
+                                            lumnorm=args.lumnorm, is_legend=is_legend)
             if args.is_save:
                 fsave = os.path.expanduser("~/swd_{0}_t{1}.pdf".format(name, str.replace(args.times, ':', '-')))
                 print("Save plot to {0}".format(fsave))
                 fig.savefig(fsave, bbox_inches='tight')
+            else:
+                plt.ion()
+                plt.show()
+                plt.pause(0.0001)
+                print('')
+                input("===> Hit <return> to quit")
 
     # plt.show()
 

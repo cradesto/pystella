@@ -976,7 +976,11 @@ def main():
     else:
         from matplotlib import pyplot as plt
         # plt.subplots_adjust(left=0.07, right=0.96, top=0.97, bottom=0.06)
+        plt.ion()
         plt.show()
+        plt.pause(0.0001)
+        print('')
+        input("===> Hit <return> to quit")
 
 
 if __name__ == '__main__':

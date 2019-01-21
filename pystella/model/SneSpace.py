@@ -71,6 +71,16 @@ class SneSpace:
             return dd / len(dist)
         return None
 
+    @property
+    def ebv(self):
+        props = self.property('ebv')
+        if props is not None:
+            ee = 0.
+            for node in props:
+                ee += float(node['value'])
+            return ee / len(props)
+        return None
+
     def property(self, name):
         if self.data is None:
             return None
