@@ -6,8 +6,7 @@ This program finds the time offset that minimizes chi-square.
 """
 import argparse
 import logging
-import os
-import sys
+
 from itertools import cycle
 from collections import OrderedDict
 from concurrent import futures
@@ -20,6 +19,9 @@ import pystella as ps
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+mpl_logger = logging.getLogger('matplotlib')
+mpl_logger.setLevel(logging.WARNING)
 
 markers = {u'x': u'x', u'd': u'thin_diamond',
            u'+': u'plus', u'*': u'star', u'o': u'circle', u'v': u'triangle_down', u'<': u'triangle_left'}
@@ -43,6 +45,10 @@ def get_parser():
     parser = argparse.ArgumentParser(description='Process light curve fitting.')
     print(" Observational data could be loaded with plugin, ex: -c lcobs:filedata:tshift:mshift")
 
+    parser.add_argument('-A', '--tweight',
+                        required=False,
+                        dest="cccccccccccc",
+                        help="-A <time weight>, default: 0, set importance of first observational points")
     parser.add_argument('-b', '--band',
                         required=False,
                         dest="bnames",
@@ -125,7 +131,8 @@ def get_parser():
                         type=str,
                         default=None,
                         dest="tlim",
-                        help="The range of fitting in model LC. Default: None (all points). Format: {0}".format('2:50'))
+                        help="The range of fitting in model LC. Default: None (all points). "
+                             "For negative value use as '-t '\-100:200'. Format: {0}".format('2:50'))
     parser.add_argument('-z',
                         required=False,
                         type=float,
@@ -678,7 +685,7 @@ def plot_squared_3d(ax, res_sorted, path='./', p=('R', 'M', 'E'), is_rbf=True, *
         plt.show()
 
 
-def fit_mfl(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, tlim, Vnorm=1e8):
+def fit_mfl(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, tlim, Vnorm=1e8, A=0.):
     distance = args.distance  # pc
     z = args.redshift
     # Set distance and redshift
@@ -691,24 +698,17 @@ def fit_mfl(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, tlim, Vn
 
     # light curves
     if curves_o is not None:
-        if False:
-            curves_m = ps.light_curve_func.curves_compute(name, path, bnames, z=z, distance=distance,
-                                                          t_beg=tlim[0], t_end=tlim[1], t_diff=t_diff)
-            if args.color_excess:
-                curves_m = ps.light_curve_func.curves_reddening(curves_m, ebv=args.color_excess, z=z,
-                                                                is_info=args.is_not_quiet)
+        mdl = ps.Stella(name, path=path)
+        if args.is_curve_tt:  # tt
+            print("The curves [UBVRI+bol] was taken from tt-file {}. ".format(name) +
+                  "IMPORTANT: distance: 10 pc, z=0, E(B-V) = 0")
+            curves_m = mdl.get_tt().read_curves()
+            excluded = [bn for bn in curves_m.BandNames if bn not in bnames]
+            for bn in excluded:
+                curves_m.pop(bn)
         else:
-            mdl = ps.Stella(name, path=path)
-            if args.is_curve_tt:  # tt
-                print("The curves [UBVRI+bol] was taken from tt-file {}. ".format(name) +
-                      "IMPORTANT: distance: 10 pc, z=0, E(B-V) = 0")
-                curves_m = mdl.get_tt().read_curves()
-                excluded = [bn for bn in curves_m.BandNames if bn not in bnames]
-                for bn in excluded:
-                    curves_m.pop(bn)
-            else:
-                curves_m = mdl.curves(bnames, z=z, distance=distance, ebv=args.color_excess,
-                                      t_beg=tlim[0], t_end=tlim[1], t_diff=t_diff)
+            curves_m = mdl.curves(bnames, z=z, distance=distance, ebv=args.color_excess,
+                                  t_beg=tlim[0], t_end=tlim[1], t_diff=t_diff)
 
         for lc in curves_m:
             tss_m.add(lc)
@@ -752,7 +752,7 @@ def fit_mfl(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, tlim, Vn
             # tss_o['Vel'] = vels_o
 
     # fit
-    res = fitter.fit_tss(tss_m, tss_o)
+    res = fitter.fit_tss(tss_m, tss_o, A=A)
 
     return curves_m, vel_m, res
 
@@ -769,32 +769,49 @@ def merge_obs(inp, type_el):
     return result
 
 
+def arg2names(arg, path, ext):
+    import os
+    import fnmatch
+
+    names = []
+    nm = os.path.splitext(os.path.basename(arg))[0]
+    if os.path.exists(os.path.join(path, nm + ext)):
+        names.append(nm)
+    else:
+        files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f)) and fnmatch.fnmatch(f, arg)]
+        for f in files:
+            nm = os.path.splitext(os.path.basename(f))[0]
+            if os.path.exists(os.path.join(path, nm + ext)):
+                names.append(nm)
+                print('input: {}'.format(nm))
+    return names
+
+
 def main():
+    import os
+    import sys
+
     model_ext = '.ph'
     n_best = 15
     ps.Band.load_settings()
-
+    is_set_model = False
     parser = get_parser()
     args, unknownargs = parser.parse_known_args()
 
+    path = os.getcwd()
+    if args.path:
+        path = os.path.expanduser(path)
+
     # Set model names
     names = []
+    if args.input:
+        for arg in args.input:
+            names.extend(arg2names(arg=arg, path=path, ext=model_ext))
+            is_set_model = True
+        names = list(set(names))  # with unique values
 
-    if len(unknownargs) > 0:
-        path, name = os.path.split(unknownargs[0])
-        path = os.path.expanduser(path)
-        name = name.replace(model_ext, '')
-        names.append(name)
-    else:
-        if args.path:
-            path = os.path.expanduser(args.path)
-        else:
-            path = os.getcwd()
-        if args.input is not None:
-            names = [os.path.splitext(os.path.basename(nm))[0] for nm in args.input]  # remove extension
-
-    if len(names) == 0:
-        names = ps.get_model_names(path, model_ext)  # run for all files in the path
+    if len(names) == 0 and not is_set_model:  # run for all files in the path
+        names = ps.path.get_model_names(path, model_ext)
 
     if len(names) == 0:
         parser.print_help()
@@ -843,7 +860,7 @@ def main():
     tlim = (0, float('inf'))
 
     if args.tlim:
-        tlim = list(map(float, args.tlim.split(':')))
+        tlim = list(map(float, args.tlim.replace('\\', '').split(':')))
     print('Time limits for models: {}'.format(':'.join(map(str, tlim))))
 
     # The fit engine
@@ -867,13 +884,14 @@ def main():
             if tlim is not None:
                 print("Fitting for model %s %s for %s moments" % (path, name, tlim))
             else:
-                print("Fitting for model %s %s " % (path, name))
+                print("Fitting for model %s %s, tweight= %f" % (path, name, args.tweight))
         # curves_m = lcf.curves_compute(name, path, bnames, z=args.redshift, distance=args.distance,
         #                               t_beg=tlim[0], t_end=tlim[1], t_diff=t_diff)
         # res = fitter.fit_curves(curves_o, curves_m)
-        curves_m, vel_m, res = fit_mfl(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, tlim)
+        curves_m, vel_m, res = fit_mfl(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, tlim, A=args.tweight)
 
-        print("{}: time shift  = {:.2f}+/-{:.4f} Measure: {:.4f}".format(name, res.tshift, res.tsigma, res.measure))
+        print("{}: time shift  = {:.2f}+/-{:.4f} Measure: {:.4f} {}".
+              format(name, res.tshift, res.tsigma, res.measure, res.comm))
         # best_tshift = res.tshift
         res_models[name] = curves_m
         vels_m[name] = vel_m

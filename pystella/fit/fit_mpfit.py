@@ -81,15 +81,17 @@ class FitMPFit(FitLc):
         #        fit_result.comm = 'The value of the summed squared residuals for the returned parameter values.'
         return fit_result
 
-    def fit_tss(self, tss_m, tss_o):
+    def fit_tss(self, tss_m, tss_o, A=0.):
 
-        result = self.best_time_series(tss_m, tss_o, is_debug=self.is_debug, is_info=self.is_info)
+        result = self.best_time_series(tss_m, tss_o, A=A, is_debug=self.is_debug, is_info=self.is_info)
 
         tshift = result.params[0]
         pcerror = result.perror
         # scaled uncertainties
         # pcerror = result.perror * np.sqrt(result.fnorm / result.dof)
         tsigma = pcerror[0]
+
+        err, errsig = result.params[1], pcerror[0]
 
         if self.is_info:
             print("The final params are: tshift=%f tsigma=%f" % (tshift, tsigma))
@@ -98,8 +100,8 @@ class FitMPFit(FitLc):
         fit_result.tshift = tshift
         fit_result.tsigma = tsigma
         fit_result.measure = result.fnorm / result.dof
-        fit_result.comm = 'mpfit: status={:2d} niter={:3d} fnorm={:.2f}'.format(result.status, result.niter,
-                                                                                result.fnorm)
+        fit_result.comm = 'mpfit: status={:2d} niter={:3d} fnorm={:.2f} err= {:.3f}+-{:.4f}'.\
+            format(result.status, result.niter, result.fnorm, err, errsig)
         #        fit_result.comm = 'The value of the summed squared residuals for the returned parameter values.'
         return fit_result
 
@@ -174,14 +176,14 @@ class FitMPFit(FitLc):
         return res
 
     @staticmethod
-    def best_time_series(tss_m, tss_o, is_debug=False, is_info=True, xtol=1e-10, ftol=1e-10, gtol=1e-10):
+    def best_time_series(tss_m, tss_o, A=0., is_debug=False, is_info=True, xtol=1e-10, ftol=1e-10, gtol=1e-10):
         def least_sq(p, fjac):
-            A = 0.5
-            E = 0.002
+            E = 0.01
             total = []
             for ts_m in tss_m:
                 ts_o = tss_o[ts_m.Name]
                 ts_o.tshift = p[0]
+                sigma = p[1]
                 # model interpolation
                 # check = np.where((ts_o.Time > min(ts_m.Time)) & (ts_o.Time < max(ts_m.Time)))
                 # check = range(1, len(ts_o.Time))
@@ -191,19 +193,24 @@ class FitMPFit(FitLc):
                 V_o = ts_o.V
 
                 m = np.interp(time_o, ts_m.Time, ts_m.V)  # One-dimensional linear interpolation.
+                err_m = abs(min(m)-m) * E
+                # sigma = sigma
                 # w = np.ones(len(m)) w = np.exp(-2*len(check)/len(ts_o.Time)) *7 np.abs(1. - A * (time_o - min(
                 # time_o)) / (max(time_o) - min(time_o)))  # weight
                 w = np.abs(1. - A * (time_o - min(time_o)) / (max(time_o) - min(time_o)))  # weight
                 if ts_o.IsErr:
                     # err_o = ts_o.Err[check]
                     # res = np.abs((V_o - m) / (abs(m)*E + err_o)) * w
-                    res = np.abs((V_o - m) / (abs(m) * E + ts_o.Err)) * w
+                    res = np.abs((V_o - m) / (err_m + ts_o.Err+sigma)) * w
+                    # res = np.abs(V_o - m) * w
                 else:
                     res = np.abs(V_o - m) * w
                 total = np.append(total, res)
             return 0, total
 
-        parinfo = [{'value': 0., 'limited': [1, 1], 'limits': [-250., 250.]}]
+        # parinfo = [{'value': 0., 'limited': [1, 1], 'limits': [-250., 250.]}]
+        parinfo = [{'value': 0., 'limited': [1, 1], 'limits': [-250., 250.]},
+                   {'value': 0.001, 'limited': [1, 1], 'limits': [0.001, 3.]}]
         result = mpfit.mpfit(least_sq, parinfo=parinfo, quiet=not is_debug, maxiter=200,
                              ftol=ftol, gtol=gtol, xtol=xtol)
         if is_info:
@@ -220,7 +227,7 @@ class FitMPFit(FitLc):
         return result
 
     def best_curves(self, curves_m, curves_o, dt0=None, dm0=None, is_spline=True,
-                    At=0., err_mdl=0.):
+                    At=0., err_mdl=0.01):
         dt_init = {lc.Band.Name: lc.tshift for lc in curves_o}
         dm_init = {lc.Band.Name: lc.mshift for lc in curves_o}
 
@@ -233,9 +240,10 @@ class FitMPFit(FitLc):
         def least_sq(p, fjac):
             total = []
             for lc_m in curves_m:
+                sigma = p[0]
                 lc_o = curves_o.get(lc_m.Band.Name)
-                lc_o.tshift = dt_init[lc_m.Band.Name] + p[0]
-                lc_o.mshift = dm_init[lc_m.Band.Name] + p[1]
+                lc_o.tshift = dt_init[lc_m.Band.Name] + p[1]
+                lc_o.mshift = dm_init[lc_m.Band.Name] + p[2]
                 # model interpolation
                 if is_spline:
                     s = curves_m_spline[lc_m.Band.Name]
@@ -243,17 +251,18 @@ class FitMPFit(FitLc):
                 else:
                     m = np.interp(lc_o.Time, lc_m.Time, lc_m.Mag)  # One-dimensional linear interpolation.
                 #                w = np.ones(len(m))
+                err_m = abs(min(m)-m) * err_mdl
                 w = np.abs(1. - At * (lc_o.Time - lc_o.TimeMin) / (lc_o.TimeMax - lc_o.TimeMin))  # weight
                 diff = lc_o.Mag - m
                 if lc_o.IsErr:
-                    chi = diff * w / (err_mdl + lc_o.MagErr)
+                    chi = diff * w / (err_m + lc_o.MagErr + sigma* err_mdl)
                 else:
                     chi = diff * w
                 #                    res = diff**2 * w
                 total = np.append(total, chi)
             return 0, total
 
-        parinfo = []
+        parinfo = [{'value': 0.001, 'limited': [1, 1], 'limits': [0.001, 3.]}]  # todo changeable parameters
         if dt0 is not None:
             parinfo.append({'value': dt0, 'limited': [1, 1], 'limits': [-250., 250.]})
         else:
@@ -297,8 +306,10 @@ class FitMPFit(FitLc):
                 print("Fitted pars: ", result.params)
                 print("Uncertainties: ", result.perror)
 
+        # Sigma
+        err = result.params[0]
         # time and magnitude shifts
-        tshift = result.params[0]
+        tshift = result.params[1]
         dof = np.sum([lc.Length for lc in curves_o])
         if dt0 is not None:
             dof -= 1
@@ -307,15 +318,17 @@ class FitMPFit(FitLc):
 
         # scaled uncertainties
         pcerror = result.perror * np.sqrt(result.fnorm / dof)
-        tsigma = pcerror[0]  # todo tsigma check
+        errsig = pcerror[0]  # todo tsigma check
+        tsigma = pcerror[1]  # todo tsigma check
 
-        dmshift = result.params[1]
-        dmsigma = pcerror[1]
+        dmshift = result.params[2]
+        dmsigma = pcerror[2]
 
         if self.is_info:
             print("The final params are: tshift=%f+-%f mshift=%f+-%f  chi2: %e" % (
                 tshift, tsigma, dmshift, dmsigma, result.fnorm))
-        res = {'dt': tshift, 'dtsig': tsigma, 'dm': dmshift, 'dmsig': dmsigma, 'chi2': result.fnorm, 'dof': result.dof}
+        res = {'dt': tshift, 'dtsig': tsigma, 'dm': dmshift, 'dmsig': dmsigma, 'err': err, 'errsig': errsig,
+               'chi2': result.fnorm, 'dof': result.dof}
         return res
 
     #        return result
