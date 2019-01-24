@@ -198,10 +198,12 @@ class FitMPFit(FitLc):
                 # w = np.ones(len(m)) w = np.exp(-2*len(check)/len(ts_o.Time)) *7 np.abs(1. - A * (time_o - min(
                 # time_o)) / (max(time_o) - min(time_o)))  # weight
                 w = np.abs(1. - A * (time_o - min(time_o)) / (max(time_o) - min(time_o)))  # weight
+                err_m = np.sqrt(np.sum((V_o - m)**2) / len(m))
                 if ts_o.IsErr:
                     # err_o = ts_o.Err[check]
                     # res = np.abs((V_o - m) / (abs(m)*E + err_o)) * w
-                    res = np.abs((V_o - m) / (err_m + ts_o.Err+sigma)) * w
+                    res = np.abs((V_o - m) / (err_m + ts_o.Err)) * w
+                    # res = np.abs((V_o - m) / (err_m + ts_o.Err+sigma)) * w
                     # res = np.abs(V_o - m) * w
                 else:
                     res = np.abs(V_o - m) * w
@@ -254,8 +256,9 @@ class FitMPFit(FitLc):
                 err_m = abs(min(m)-m) * err_mdl
                 w = np.abs(1. - At * (lc_o.Time - lc_o.TimeMin) / (lc_o.TimeMax - lc_o.TimeMin))  # weight
                 diff = lc_o.Mag - m
+                err_m = np.sqrt(np.sum(diff ** 2) / len(m))
                 if lc_o.IsErr:
-                    chi = diff * w / (err_m + lc_o.MagErr + sigma* err_mdl)
+                    chi = diff * w / (err_m + lc_o.MagErr)
                 else:
                     chi = diff * w
                 #                    res = diff**2 * w
