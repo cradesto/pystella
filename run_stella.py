@@ -21,10 +21,11 @@ class Runner(object):
         return self._config
 
     @staticmethod
-    def add_line(fname, mname, nline=2, pattern=None):
+    def add_line(fname, mname, nline=2, pattern=None, is_demo=False):
         """
         Add a control line to the file named fname.
 
+        :param is_demo:
         :param fname:  file with type *.1
         :param mname:  model name
         :param nline:  position new line. Default: 2
@@ -62,13 +63,15 @@ class Runner(object):
         # add new line at nline position
         lines.insert(nline, newline + "\n")
         # write to the file
-        with open(fname, "w") as fout:
-            for l in lines:
-                fout.write(l)
-            # fout.writelines(lines)
+        if not is_demo:
+            with open(fname, "w") as fout:
+                for l in lines:
+                    fout.write(l)
+        else:
+            logger.info('Demo: to {} add line \n {} '.format(fname, newline))
 
     @staticmethod
-    def cp_sample(fin, fout, mode=1):
+    def cp_sample(fin, fout, mode=1, is_demo=False):
         if os.path.exists(fout):
             if mode == 2:
                 raise ValueError('The target file: {}  is exist.'.format(fout))
@@ -80,12 +83,39 @@ class Runner(object):
         logger.info(' Copy  {} to {}'.format(fin, fout))
 
         try:
-            shutil.copy2(fin, fout)
+            if not is_demo:
+                shutil.copy2(fin, fout)
+            else:
+                logger.info('Demo:  copy {}  to {}'.format(fin, fout))
         except shutil.SameFileError:
             logger.info('    {} and {} are the same file'.format(fin, fout))
             pass
 
-    def run(self, mname):
+    @staticmethod
+    def eval_cmd(cmd, path, is_demo=False, **kwargs):
+        import subprocess
+        # # subprocess.check_output(['ls','-l']) #all that is technically needed...
+        # print        subprocess.check_output(['ls', '-l'])
+        logger.info(' Run cmd: {}   in {}'.format(cmd, path))
+        stdin = kwargs.get('stdin', None)
+        stdin_flag = None
+        if not is_demo:
+            if not stdin is None:
+                stdin_flag = subprocess.PIPE
+
+            proc = subprocess.Popen(
+                cmd, cwd=path, shell=True,
+                stdin=stdin_flag,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE)
+            stdout, stderr = proc.communicate(stdin)
+            return proc.returncode, stdout, stderr
+        else:
+            returncode, stdout, stderr = 0, '', ''
+            logger.info('Demo: system cmd: {} : '.format(cmd))
+            return returncode, stdout, stderr
+
+    def run(self, mname, is_sys=False, is_demo=False):
         mode_sample = 1
         # create first line in stella files
         for sec in self.Cfg.Sections:
@@ -97,7 +127,7 @@ class Runner(object):
             if 'file_add_line' in opts:
                 fname = os.path.join(self.Cfg.Root, self.Cfg.get(sec, 'file_add_line'))
 
-                self.add_line(fname, mname, pattern=pattern)
+                self.add_line(fname, mname, pattern=pattern, is_demo=is_demo)
                 logger.info(' {}: Added new line to {} with pattern= {}'.format(sec, fname, pattern))
 
             if 'sample' in opts:
@@ -106,9 +136,26 @@ class Runner(object):
                 fout = os.path.join(os.path.dirname(fname), '{}{}'.format(mname, extension))
                 if 'mode_sample' in opts:
                     mode_sample = int(self.Cfg.get(sec, 'mode_sample'))
-                self.cp_sample(fname, fout, mode=mode_sample)
+                self.cp_sample(fname, fout, mode=mode_sample, is_demo=is_demo)
 
-        # todo Make run command
+            if is_sys and 'cmd' in opts:
+                if 'dir' in opts:
+                    path = os.path.join(self.Cfg.Root, self.Cfg.get(sec, 'dir'))
+                else:
+                    path = self.Cfg.Root
+                path = os.path.realpath(path)
+
+                cmd = self.Cfg.get(sec, 'cmd')
+                return_code, stdout, stderr = self.eval_cmd(cmd, path, is_demo=is_demo)
+
+                if stdout:
+                    for line in stdout.decode('utf8').strip().split("\n"):
+                        logger.info('stdout: {}'.format(line))
+
+                if stderr:
+                    for line in stderr.strip().split("\n"):
+                        logger.error('stderr: '.format(line))
+                        # logger.error(line)
 
 
 class Config(object):
@@ -236,6 +283,13 @@ def get_parser():
                         const=True,
                         dest="is_show_only",
                         help="Just show config, nothing will be done.")
+    parser.add_argument('--run',
+                        action='store_const',
+                        default=False,
+                        const=True,
+                        dest="is_sys",
+                        help="Run with system commands.")
+
     return parser
 
 
@@ -269,7 +323,7 @@ def main():
 
     for mname in models:
         logger.info(' Start runner for the model: {} in {} '.format(mname, cfg.Root))
-        runner.run(mname)
+        runner.run(mname, is_sys=args.is_sys, is_demo=args.is_show_only)
 
 
 if __name__ == '__main__':
