@@ -47,8 +47,10 @@ def get_parser():
 
     parser.add_argument('-A', '--tweight',
                         required=False,
-                        dest="cccccccccccc",
-                        help="-A <time weight>, default: 0, set importance of first observational points")
+                        type=float,
+                        default=0.,
+                        dest="tweight",
+                        help="-A <fit weight time>, default: 0, set importance of first observational points")
     parser.add_argument('-b', '--band',
                         required=False,
                         dest="bnames",
