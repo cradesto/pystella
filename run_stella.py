@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-
-
 import os
 import argparse
 import logging
-import numpy as np
 import shutil
+from datetime import datetime
 
-logging.basicConfig()
+import numpy as np
+
+logging.basicConfig(filename=datetime.now().strftime('run_%Y%m%d_%H_%M.log'), level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -154,7 +154,7 @@ class Runner(object):
 
                 if stderr:
                     for line in stderr.decode('utf8').strip().split("\n"):
-                        logger.error('stderr: '.format(line))
+                        logger.error('stderr: {}'.format(line))
                         # logger.error(line)
 
 
