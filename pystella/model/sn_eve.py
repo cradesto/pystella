@@ -734,7 +734,7 @@ def load_rho(fname, path=None):
     return presn
 
 
-def load_hyd_abn(name, path='.', abn_elements=PreSN.stl_elements, is_dum=False):
+def load_hyd_abn(name, path='.', abn_elements=PreSN.stl_elements, skiprows=1, is_dum=False):
     """
     Code readheger.trf:
       BM1=cutmass; -- core Mass
@@ -769,7 +769,7 @@ def load_hyd_abn(name, path='.', abn_elements=PreSN.stl_elements, is_dum=False):
     nz = len(data_hyd['R'])
     data_hyd[PreSN.sM] = data_hyd[PreSN.sM] * phys.M_sun
     col_map = {PreSN.sR, PreSN.sM, PreSN.sT, PreSN.sRho, PreSN.sV}
-    presn = PreSN(name, nz)
+    presn = PreSN(name, nz, elements=abn_elements)
     for v in col_map:
         presn.set_hyd(v, data_hyd[v], is_exp=v.startswith('lg'))
 
@@ -808,7 +808,7 @@ def load_hyd_abn(name, path='.', abn_elements=PreSN.stl_elements, is_dum=False):
     dt = np.dtype({'names': col_names,
                    'formats': ['i4'] + list(np.repeat('f8', len(col_names) - 1))})
     # logger.info(dt)
-    data_chem = np.loadtxt(abn_file, comments='#', skiprows=1, dtype=dt)
+    data_chem = np.loadtxt(abn_file, comments='#', skiprows=skiprows, dtype=dt)
 
     for ename in abn_elements:
         presn.set_chem(ename, data_chem[ename])

@@ -40,6 +40,11 @@ class phys:
         return parsec * phys.pc
 
 
+def dist2MD(d):
+    import math
+    return 5*math.log10(d) - 5.
+
+
 def cosmology_D_by_z(z, H0=67.7, Omega_m=0.31, Omega_e=0.69):
     """Compute the photometric distance for Lambda-CDM model of cosmology"""
     from scipy.integrate import quad

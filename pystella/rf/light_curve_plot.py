@@ -361,6 +361,8 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname=None, *
     if not isinstance(marker, (list, dict, tuple)):
         marker = {lc.Band.Name: marker for lc in curves}
     colors = kwargs.get('colors', lc_colors)
+    if not isinstance(colors, (list, dict, tuple)):
+        colors = {lc.Band.Name: colors for lc in curves}
     linewidth = kwargs.get('linewidth', 2.0)
     markersize = kwargs.get('markersize', 5)
     # rect = kwargs.get('rect', (0.1, 0.2, 0.8, 0.65))
