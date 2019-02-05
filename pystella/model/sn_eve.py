@@ -263,6 +263,7 @@ class PreSN(object):
             f.write('  ' + '             '.join(a) + '\n')
             for _ in zip(zones, self.m / phys.M_sun, self.r, self.rho, self.T, self.V, self.m / phys.M_sun, dum):
                 f.write(' %4d %15.7e %15.7e %15.7e %15.7e %15.7e  %15.7e  %8.1e\n' % _)
+                # f.write(' %4d %15.5e %15.5e %15.5e %15.5e %15.5e  %15.5e  %8.1e\n' % _)
         return os.path.isfile(fname)
 
     def plot_chem(self, x='m', elements=eve_elements, ax=None, xlim=None, ylim=None, **kwargs):
@@ -628,20 +629,24 @@ class PreSN(object):
 
         return newPreSN
 
-    def reshape(self, nz=300, nstart=0, nend=None, axis=sM, xmode='rlog', kind='np'):
+    def reshape(self, nz, name=None, nstart=0, nend=None, axis=sM, xmode='rlog', kind='np'):
         """
         Reshape parameters of envelope from nstart to nend to nz-zones
         :param nz: new zones
+        :param name: the name of new PreSN. Take from parent, if it's None.
         :param nstart: zone number to start reshaping. Default: 0 (first zone)
         :param nend: zone number to end reshaping. Default: None,  (equal last zone)
         :param axis: [M OR R OR V] - reshape along mass or radius or velocity coordinate
-        :param xmode: [lin OR rlog] - linear OR reversed log10
+        :param xmode: [lin OR rlog OR resize] - linear OR reversed log10 OR add/remove points
         :param kind: [np OR interp1d(..kind)], kind is  ('linear', 'nearest', 'zero', 'slinear', 'quadratic, 'cubic')
         :return: new preSN with reshaping zones
         """
         from scipy.interpolate import interp1d
         nznew = nstart + nz
-        newPreSN = PreSN(self.Name, nznew, elements=self.Elements)
+        if name is None:
+            name = self.Name
+
+        newPreSN = PreSN(name, nznew, elements=self.Elements)
         if nend is None:
             nend = self.nzon
 
@@ -650,7 +655,42 @@ class PreSN(object):
             r = (e - r + s)
             return r[::-1]
 
-        def interp(x, v, start=nstart, end=nend):
+        def add_point(x, mode='lin'):  # 'lin' 'log'
+            # find max delta
+            dif = np.diff(x)
+            idx = np.argmax(dif)
+            if mode == 'lin':
+                p = (x[idx] + x[idx + 1]) / 2.
+            elif mode == 'geom':
+                p = np.sqrt(x[idx] * x[idx + 1])
+            else:
+                raise ValueError('Mode should be "lin" lor "geom"')
+            xn = np.insert(x, idx + 1, p)
+            return xn
+
+        def remove_point(x):  # 'lin' 'log'
+            # find max delta
+            dif = np.diff(x)
+            idx = np.argmin(dif)
+            xn = np.delete(x, idx + 1)
+            return xn
+
+        def resize_points(x, n):
+            nold = len(x)
+            if n == nold:  # nothing to do
+                return x
+
+            xn = np.copy(x)
+            if n > nold:
+                f = lambda xx: add_point(xx, mode='lin')
+            else:
+                f = lambda xx: remove_point(xx)
+
+            for i in range(abs(n - nold)):
+                xn = f(xn)
+            return xn
+
+        def interp(x, v, start, end):
             res = []
             if start > 0:
                 res = v[:start]  # save points before start
@@ -660,6 +700,8 @@ class PreSN(object):
                 xx = np.linspace(xi[0], xi[-1], nz)  # new x-points
             elif xmode == 'rlog':
                 xx = rlogspace(xi[0], xi[-1], nz)  # new x-points
+            elif xmode == 'resize':
+                xx = resize_points(xi, nz)  # new x-points
             else:
                 xx = np.linspace(xi[0], xi[-1], nz)  # new x-points
 
@@ -684,13 +726,13 @@ class PreSN(object):
 
         for v in PreSN.presn_hydro:
             old = self.hyd(v)
-            new = interp(x, old)
+            new = interp(x, old, start=nstart, end=nend)
             newPreSN.set_hyd(v, new)
 
         # abn reshape
         for el in self.Elements:
             old = self.el(el)
-            new = interp(x, old)
+            new = interp(x, old, start=nstart, end=nend)
             newPreSN.set_chem(el, new)
 
         # copy parameters
