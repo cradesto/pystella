@@ -1,15 +1,91 @@
 #!/usr/bin/env python3
 import os
+import sys
 import argparse
 import logging
+
+from io import IOBase
+from sys import stdout
+from select import select
+from threading import Thread
+from time import sleep
+
+from io import StringIO
+
 import shutil
 from datetime import datetime
 
 import numpy as np
 
 logging.basicConfig(filename=datetime.now().strftime('run_%Y%m%d_%H_%M.log'), level=logging.DEBUG)
+
+# handler = logging.root.handlers.pop()
+# assert logging.root.handlers == [], "root logging handlers aren't empty"
+# handler.stream.close()
+# handler.stream = stdout
+# logging.root.addHandler(handler)
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+# Log to screen
+console_logger = logging.StreamHandler(sys.stdout)
+logger.addHandler(console_logger)
+
+
+# -------------------------------
+class StreamLogger(IOBase, logging.Handler):
+    _run = None
+
+    def __init__(self, logger_obj, level):
+        super(StreamLogger, self).__init__()
+        self.logger_obj = logger_obj
+        self.level = level
+        self.pipe = os.pipe()
+        self.thread = Thread(target=self._flusher)
+        self.thread.start()
+
+    def __call__(self):
+        return self
+
+    def _flusher(self):
+        self._run = True
+        buf = b''
+        while self._run:
+            for fh in select([self.pipe[0]], [], [], 1)[0]:
+                buf += os.read(fh, 1024)
+                while b'\n' in buf:
+                    data, buf = buf.split(b'\n', 1)
+                    self.write(data.decode())
+        self._run = None
+
+    def write(self, data):
+        return self.logger_obj.log(self.level, data)
+
+    emit = write
+
+    def fileno(self):
+        return self.pipe[1]
+
+    def close(self):
+        if self._run:
+            self._run = False
+            while self._run is not None:
+                sleep(1)
+            for pipe in self.pipe:
+                os.close(pipe)
+            self.thread.join(1)
+
+
+class LevelRangeFilter(logging.Filter):
+    def __init__(self, min_level, max_level, name=''):
+        super(LevelRangeFilter, self).__init__(name)
+        self._min_level = min_level
+        self._max_level = max_level
+
+    def filter(self, record):
+        return super(LevelRangeFilter, self).filter(record) and (
+            self._min_level is None or self._min_level <= record.levelno) and (
+                   self._max_level is None or record.levelno < self._max_level)
 
 
 class Runner(object):
@@ -92,6 +168,71 @@ class Runner(object):
             pass
 
     @staticmethod
+    def eval_cmd_log2(cmd, path, is_demo=False, **kwargs):
+        import subprocess
+        # # subprocess.check_output(['ls','-l']) #all that is technically needed...
+        # print        subprocess.check_output(['ls', '-l'])
+        logger.info(' Run cmd: {}   in {}'.format(cmd, path))
+        stdin = kwargs.get('stdin', None)
+        stdin_flag = None
+        if not is_demo:
+            if not stdin is None:
+                stdin_flag = subprocess.PIPE
+
+            try:
+                stderr_stream = logging.StreamHandler(StringIO())
+                stderr_stream.addFilter(LevelRangeFilter(logging.ERROR, None))
+                logger.addHandler(stderr_stream)
+                logger.setLevel(logging.ERROR)
+
+                stdout_stream = logging.StreamHandler(StringIO())
+                logger.addFilter(LevelRangeFilter(logging.INFO, logging.ERROR))
+                logger.addHandler(stdout_stream)
+                logger.setLevel(logging.INFO)
+
+                with StreamLogger(logger, logging.INFO) as out, StreamLogger(logger, logging.ERROR) as err:
+                    proc = subprocess.Popen(cmd, cwd=path, shell=True, stdout=out, stderr=err)
+
+                # print
+                # 'stderr_tee =', stderr_tee.stream.getvalue()
+                # print
+                # 'stdout_tee =', stdout_tee.stream.getvalue()
+            finally:
+                for handler in logger.handlers:
+                    logger.removeHandler(handler)
+                    handler.stream.close()
+                    handler.close()
+                # stderr_tee.stream.close()
+                # stdout_tee.stream.close()
+
+            return proc.returncode, False, False  #, stdout, stderr
+        else:
+            returncode, stdout, stderr = 0, False, False
+            logger.info('Demo: system cmd: {} : '.format(cmd))
+            return returncode, stdout, stderr
+
+    @staticmethod
+    def eval_cmd_log(cmd, path, is_demo=False, **kwargs):
+        import subprocess
+        # # subprocess.check_output(['ls','-l']) #all that is technically needed...
+        # print        subprocess.check_output(['ls', '-l'])
+        # logger.info(' Run cmd: {}   in {}'.format(cmd, path))
+        stdin = kwargs.get('stdin', None)
+        stdin_flag = None
+        if not is_demo:
+            logger.info(' Run cmd: {}   in {}'.format(cmd, path))
+
+            # External script output
+            logger.info(
+                subprocess.check_output(cmd, cwd=path, shell=True)
+            )
+            return 0, False, False
+        else:
+            returncode, stdout, stderr = 0, '', ''
+            logger.info('Demo: system cmd: {} : '.format(cmd))
+            return returncode, stdout, stderr
+
+    @staticmethod
     def eval_cmd(cmd, path, is_demo=False, **kwargs):
         import subprocess
         # # subprocess.check_output(['ls','-l']) #all that is technically needed...
@@ -146,7 +287,8 @@ class Runner(object):
                 path = os.path.realpath(path)
 
                 cmd = self.Cfg.get(sec, 'cmd')
-                return_code, stdout, stderr = self.eval_cmd(cmd, path, is_demo=is_demo)
+                # return_code, stdout, stderr = self.eval_cmd(cmd, path, is_demo=is_demo)
+                return_code, stdout, stderr = self.eval_cmd_log(cmd, path, is_demo=is_demo)
 
                 if stdout:
                     for line in stdout.decode('utf8').strip().split("\n"):
