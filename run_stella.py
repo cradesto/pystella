@@ -287,8 +287,8 @@ class Runner(object):
                 path = os.path.realpath(path)
 
                 cmd = self.Cfg.get(sec, 'cmd')
-                # return_code, stdout, stderr = self.eval_cmd(cmd, path, is_demo=is_demo)
-                return_code, stdout, stderr = self.eval_cmd_log(cmd, path, is_demo=is_demo)
+                return_code, stdout, stderr = self.eval_cmd(cmd, path, is_demo=is_demo)
+                # return_code, stdout, stderr = self.eval_cmd_log(cmd, path, is_demo=is_demo)
 
                 if stdout:
                     for line in stdout.decode('utf8').strip().split("\n"):

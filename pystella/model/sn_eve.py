@@ -776,7 +776,7 @@ def load_rho(fname, path=None):
     return presn
 
 
-def load_hyd_abn(name, path='.', abn_elements=PreSN.stl_elements, skiprows=1, is_dum=False):
+def load_hyd_abn(name, path='.', abn_elements=PreSN.stl_elements, skiprows=1, is_rho=False, is_dum=False):
     """
     Code readheger.trf:
       BM1=cutmass; -- core Mass
@@ -802,19 +802,20 @@ def load_hyd_abn(name, path='.', abn_elements=PreSN.stl_elements, skiprows=1, is
 
     # read table data
     col_names = "zone dm R Rho T V M".split()
-    if is_dum:
-        col_names = "zone dm R Rho T V M dum2".split()
+
     dt = np.dtype({'names': col_names,
                    'formats': ['i4'] + list(np.repeat('f8', len(col_names) - 1))})
 
-    data_hyd = np.loadtxt(hyd_file, comments='#', skiprows=1, dtype=dt)
+    data_hyd = np.loadtxt(hyd_file, comments='#', skiprows=1, dtype=dt, usecols=np.arange(len(col_names)))
+
     nz = len(data_hyd['R'])
-    data_hyd[PreSN.sM] = data_hyd[PreSN.sM] * phys.M_sun
-    col_map = {PreSN.sR, PreSN.sM, PreSN.sT, PreSN.sRho, PreSN.sV}
+
     presn = PreSN(name, nz, elements=abn_elements)
+    col_map = {PreSN.sR, PreSN.sT, PreSN.sRho, PreSN.sV}
     for v in col_map:
         presn.set_hyd(v, data_hyd[v], is_exp=v.startswith('lg'))
 
+    # Set header data
     with open(hyd_file, 'r') as f:
         line = f.readline()
     if len(line) > 0:
@@ -834,7 +835,22 @@ def load_hyd_abn(name, path='.', abn_elements=PreSN.stl_elements, skiprows=1, is
             time_start, nzon = a
             presn.set_par('time_start', time_start)
 
-    # chemical composition
+    # Set Mass
+    if is_rho:
+        r = presn.r
+        rho = presn.rho
+        r = np.insert(r, 0, presn.r_cen)
+        rho = np.insert(rho, 0, presn.rho_cen)
+        dm = np.zeros(nz)
+        for i in range(nz):
+            dm[i] = (r[i+1]**3 - r[i]**3) * rho[i+1] * 4.*np.pi/3.
+        m = np.cumsum(dm)
+    else:
+        m = data_hyd[PreSN.sM] * phys.M_sun
+
+    presn.set_hyd(PreSN.sM, m)
+
+    # Set chemical composition
     ext_abn = '.abn'
     abn_file = os.path.join(path, name + ext_abn)
     if not os.path.isfile(abn_file):
