@@ -228,6 +228,10 @@ class Problem:
         return ax
 
 
+class ParserXg:
+    pass
+
+
 def to_presn(p):
     if not p.is_profile_load:
         raise ValueError("There are no data in SNEC problem. "

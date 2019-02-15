@@ -128,6 +128,12 @@ def Lum2MagBol(l):
     return mag
 
 
+def MagBol2Lum(mag):
+    """Convert abs. bol. magnitude to bolometric luminosity"""
+    lum = 10. ** (0.4 * (phys.Mag_sun - mag)) * phys.L_sun
+    return lum
+
+
 def Flux2MagAB(f):
     """Convert monochromatic flux [ erg sec^-1 cm^-2 Hz^-1] to AB magnitudes"""
     # ab = 3631e-23  # erg
