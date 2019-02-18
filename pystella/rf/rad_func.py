@@ -107,8 +107,8 @@ def compute_x_bb():
     :return: const
     """
     from scipy.integrate import quad
-    a, err1 = quad(lambda x: x**4 * np.exp(-x) / (1.-np.exp(-x)), 0, np.inf)
-    b, err2 = quad(lambda x: x**3 * np.exp(-x) / (1.-np.exp(-x)), 0, np.inf)
+    a, err1 = quad(lambda x: x ** 4 * np.exp(-x) / (1. - np.exp(-x)), 0, np.inf)
+    b, err2 = quad(lambda x: x ** 3 * np.exp(-x) / (1. - np.exp(-x)), 0, np.inf)
     return a / b
 
 
@@ -143,12 +143,12 @@ def Flux2MagAB(f):
 
 def Fnu2Fwl(nu, flux):
     """Convert monochromatic flux [ erg sec^-1 cm^-2 Hz^-1] to [ erg sec^-1 cm^-2 A^-1]"""
-    return flux * nu**2 / phys.c
+    return flux * nu ** 2 / phys.c
 
 
 def Fwl2Fnu(nu, flux_wl):
     """Convert monochromatic flux [ erg sec^-1 cm^-2 A^-1] to [ erg sec^-1 cm^-2 Hz^-1]"""
-    return flux_wl * phys.c / nu**2
+    return flux_wl * phys.c / nu ** 2
 
 
 def MagAB2Flux(ab):
@@ -156,5 +156,5 @@ def MagAB2Flux(ab):
     see http://www.jstor.org/stable/10.1086/429382
     """
     zp_def = 3631  # in Jy
-    f = zp_def * phys.jy_to_erg*10**(-0.4*ab)
+    f = zp_def * phys.jy_to_erg * 10 ** (-0.4 * ab)
     return f
