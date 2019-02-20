@@ -69,7 +69,7 @@ class TestLightCurve(unittest.TestCase):
         from scipy.integrate import simps
 
         m1 = ps.Stella('cat_R500_M15_Ni006_E12', path='data/stella')
-        tt1 = m1.get_tt().read()
+        tt1 = m1.get_tt().load()
         curves = m1.curves(bands=['bol'], t_diff=1.0000001)
         # ax = ps.light_curve_plot.curves_plot(curves, xlim=(0.7, 1), ylim=(-14, -24), is_line=False)
         ax = ps.lcp.curves_plot(curves, xlim=(-10, 155), ylim=(-14, -24), is_line=False)

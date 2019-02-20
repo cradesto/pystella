@@ -217,6 +217,25 @@ class Spectrum(object):
         # self._flux = smoothed
         return sp
 
+    def to_mag(self, b, z=0., d=phys.pc2cm(10.), magnification=1.):
+        if b is None:
+            raise ValueError("Band must be defined.")
+
+        from pystella.rf.star import Star
+        from pystella.rf import band
+
+        mag = None
+        star = Star('', self, is_flux_eq_luminosity=True)
+        star.set_distance(d)
+        star.set_redshift(z)
+        star.set_magnification(magnification)
+        # mag = star.flux_to_mag(b)
+        if b.Name == band.Band.NameBol:
+            mag = star.magBol()
+        else:
+            mag = star.magAB(b)
+        return mag
+
     @staticmethod
     def flux_to_distance(flux, dl):
         """
@@ -508,6 +527,23 @@ class SeriesSpectrum(object):
         return mags
 
     def to_mags(self, b, z=0., d=None, magnification=1.):
+        if not self.is_time:
+            return ValueError("No spectral time points.")
+
+        # mags = np.zeros(len(self.Time))
+        times = []
+        mags = []
+        for t, sp in self:
+            try:
+                mag = sp.to_mag(b, z, d, magnification)
+                times.append(t)
+                mags.append(mag)
+            except ValueError as ex:
+                logger.error("Could not compute mag {} for band {} at {} due to {}.".
+                             format(self.Name, b.Name, t, ex))
+        return times, mags
+
+    def to_mags_old(self, b, z=0., d=None, magnification=1.):
         from pystella.rf.star import Star
         from pystella.rf import band
         # from pystella.rf.lc import LightCurve, SetLightCurve
@@ -521,12 +557,12 @@ class SeriesSpectrum(object):
         times = []
         mags = []
         for k, t in enumerate(self.Time):
-            star = Star(k, self.get_spec(k), is_flux_eq_luminosity=True)
-            star.set_distance(d)
-            star.set_redshift(z)
-            star.set_magnification(magnification)
-            # mag = star.flux_to_mag(b)
             try:
+                star = Star(k, self.get_spec(k), is_flux_eq_luminosity=True)
+                star.set_distance(d)
+                star.set_redshift(z)
+                star.set_magnification(magnification)
+                # mag = star.flux_to_mag(b)
                 if b.Name == band.Band.NameBol:
                     mag = star.magBol()
                 else:
@@ -546,15 +582,6 @@ class SeriesSpectrum(object):
             return ValueError("No spectral time points.")
 
         times, mags = self.to_mags(b, z, d, magnification)
-        # mags = self.flux_to_mags(b, z, d, magnification)
-        # for k in range(len(self.Time)):
-        #     star = Star(k, self.get_spec(k))
-        #     star.set_distance(d)
-        #     star.set_redshift(z)
-        #     star.set_magnification(magnification)
-        #     # mag = star.flux_to_mag(b)
-        #     mag = star.flux_to_magAB(b)
-        #     mags[k] = mag
 
         times = (1. + z) * np.array(times)
         lc = LightCurve(b, times, mags)
@@ -590,9 +617,9 @@ class SeriesSpectrum(object):
         from pystella.rf import band
 
         mags = dict((k, None) for k in bands)
-        for n in bands:
-            b = band.band_by_name(n)
-            mags[n] = self.flux_to_mags(b, z=z, d=d, magnification=magnification)
+        for bn in bands:
+            b = band.band_by_name(bn)
+            mags[bn] = self.to_mags(b, z=z, d=d, magnification=magnification)
 
         mags['time'] = self.Time * (1. + z)
         return mags

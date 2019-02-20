@@ -278,12 +278,6 @@ class PreSN(object):
         marker = kwargs.get('marker', None)
         markersize = kwargs.get('markersize', 4)
         alpha = kwargs.get('alpha', 1)
-        # def plot_chem(self, x='m', ax=None, elements=None, xlim=None, ylim=None,
-        #               leg_loc=3, leg_ncol=4, lw=2, lntypes=None, is_save=False):
-        #     if elements is None:
-        #         elements = eve_elements
-        #     if lntypes is None:
-        #         lntypes = eve_lntypes
 
         if not isinstance(lntypes, dict):
             tmp = lntypes
@@ -776,7 +770,8 @@ def load_rho(fname, path=None):
     return presn
 
 
-def load_hyd_abn(name, path='.', abn_elements=PreSN.stl_elements, skiprows=1, is_rho=False, is_dum=False):
+def load_hyd_abn(name, path='.', abn_elements=PreSN.stl_elements, skiprows=1,
+                 is_rho=False, is_dm=True, is_dum=False):
     """
     Code readheger.trf:
       BM1=cutmass; -- core Mass
@@ -801,7 +796,10 @@ def load_hyd_abn(name, path='.', abn_elements=PreSN.stl_elements, skiprows=1, is
     logger.info(' Load hyd-data from  %s' % hyd_file)
 
     # read table data
-    col_names = "zone dm R Rho T V M".split()
+    if is_dm:
+        col_names = "zone dm R Rho T V M".split()
+    else:
+        col_names = "zone M R Rho T V M2".split()
 
     dt = np.dtype({'names': col_names,
                    'formats': ['i4'] + list(np.repeat('f8', len(col_names) - 1))})
@@ -821,15 +819,15 @@ def load_hyd_abn(name, path='.', abn_elements=PreSN.stl_elements, skiprows=1, is
     if len(line) > 0:
         a = [float(x) for x in line.split()]
         if len(a) == 5:
-            time_start, nzon, m_tot, r_cen, rho_cen = a
+            time_start, nzon, m_core, r_cen, rho_cen = a
             presn.set_par('time_start', time_start)
-            presn.set_par('m_tot', m_tot * phys.M_sun)
+            presn.set_par('m_core', m_core * phys.M_sun)
             presn.set_par('r_cen', r_cen)
             presn.set_par('rho_cen', rho_cen)
         elif len(a) == 4:
-            time_start, nzon, m_tot, r_cen = a
+            time_start, nzon, m_core, r_cen = a
             presn.set_par('time_start', time_start)
-            presn.set_par('m_tot', m_tot * phys.M_sun)
+            presn.set_par('m_core', m_core * phys.M_sun)
             presn.set_par('r_cen', r_cen)
         elif len(a) == 2:
             time_start, nzon = a
@@ -845,6 +843,7 @@ def load_hyd_abn(name, path='.', abn_elements=PreSN.stl_elements, skiprows=1, is
         for i in range(nz):
             dm[i] = (r[i+1]**3 - r[i]**3) * rho[i+1] * 4.*np.pi/3.
         m = np.cumsum(dm)
+        m += presn.m_core
     else:
         m = data_hyd[PreSN.sM] * phys.M_sun
 

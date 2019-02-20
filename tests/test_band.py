@@ -54,7 +54,7 @@ class BandTests(unittest.TestCase):
     def test_zero_point(self):
         zp = 0.748  # See filters.ini
         b = band.band_by_name('U')
-        self.assertAlmostEqual(b.zp, zp, msg="Zero points of band %s equals %f. Should be %f" % (b.name, b.zp, zp))
+        self.assertAlmostEqual(b.zp, zp, msg="Zero points of band %s equals %f. Should be %f" % (b.Name, b.zp, zp))
 
     def test_band_uniform(self):
         b = band.BandUni()
@@ -69,7 +69,7 @@ class BandTests(unittest.TestCase):
                 m_ab = Flux2MagAB(b.Jy * phys.jy_to_erg)
                 self.assertAlmostEqual(m_ab, b.zp, msg="Band [%s] zp and Jy should be coincide each other. "
                                                        "zp=%f,  m_zp(Jy) = %f, Jy = %f"
-                                                       % (b.name, b.zp, m_ab, b.Jy),
+                                                       % (b.Name, b.zp, m_ab, b.Jy),
                                        delta=0.01)
 
     def test_zp_AB(self):

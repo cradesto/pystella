@@ -46,7 +46,7 @@ class TestStellaLightCurves(unittest.TestCase):
         mdl = ps.Stella(name, path=path)
         curves = mdl.curves(bands)
 
-        tt = mdl.get_tt().read()
+        tt = mdl.get_tt().load()
 
         ax = ps.lcp.curves_plot(curves)
         for bname in bands:

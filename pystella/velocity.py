@@ -201,7 +201,7 @@ def compute_vel_res_tt(name, path, z=0., t_beg=1., t_end=None, t_diff=1.05):
         t_end = float('inf')
 
     res = model.get_res()
-    tt = model.get_tt().read()
+    tt = model.get_tt().load()
     tt = tt[tt['time'] >= t_beg]  # time cut  days
     Rph_spline = interpolate.splrep(tt['time'], tt['Rph'], s=0)
 

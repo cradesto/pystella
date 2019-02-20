@@ -209,7 +209,7 @@ class SnEveTests(unittest.TestCase):
         prb_snec.load_profile(os.path.join(path, 's15s7b2.short'))
 
         presn = snec.to_presn(prb_snec)
-        self.assertTrue(presn.nzon > 0, "Fail to convert snec to presn in %s" % prb_snec.name)
+        self.assertTrue(presn.nzon > 0, "Fail to convert snec to presn in %s" % prb_snec.Name)
 
     def test_snec_to_presn_plot(self):
         path = join(dirname(abspath(__file__)), 'data', 'snec')
@@ -217,7 +217,7 @@ class SnEveTests(unittest.TestCase):
         prb_snec.load_profile(os.path.join(path, 's15s7b2.short'))
 
         presn = snec.to_presn(prb_snec)
-        self.assertTrue(presn.nzon > 0, "Fail to convert snec to presn in %s" % prb_snec.name)
+        self.assertTrue(presn.nzon > 0, "Fail to convert snec to presn in %s" % prb_snec.Name)
 
         presn.plot_chem(ylim=(1e-10, 1.))
         plt.show()

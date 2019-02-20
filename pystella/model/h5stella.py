@@ -121,7 +121,7 @@ class H5TimeElement(object):
         return self._t
 
     @property
-    def V(self):
+    def Val(self):
         """Value"""
         return self._v
 
@@ -158,14 +158,14 @@ class H5TimeElement(object):
     def IdxValueByTime(self, time):
         idx = self.IdxByTime(time)
         if idx >= 0:
-            return idx, self.V[idx]
+            return idx, self.Val[idx]
         return None, None
 
     def ValueByTime(self, nt):
-        return self.V[nt, :, :]
+        return self.Val[nt, :, :]
 
     def ValueByZone(self, nz):
-        return self.V[:, :, nz]
+        return self.Val[:, :, nz]
 
     def Info(self):
         print("Ntime={} self.Nzon={}".format(self.Ntime, self.Nzon))
@@ -210,10 +210,35 @@ class H5Hyd(H5TimeElement):
 
     @property
     def Columns(self):
-        return self.Attrs['columns']
+        return self.Attrs['columns'].decode()
 
     def Var(self, ncol):
-        return self.V[:, :, ncol]
+        return self.Val[:, :, ncol]
+
+    def __getattr__(self, name):
+        """
+        Extract variable as property with name from the "column" attribute.
+        :param name: name of  variable
+        :return: array of variable
+        """
+        if self.Attrs is None:
+            raise ValueError('There are no any Attributes.')
+        s = 'columns'
+        if s not in self.Attrs:
+            raise ValueError('There is no "{}" in  Attrs.'.format(s))
+        columns = self.Attrs['columns'].decode()
+        # return columns
+        #
+        # columns = columns
+        if name not in columns:
+            raise ValueError('There is no key: "{}" in  columns: {}.'.format(name, s))
+
+        cols = columns.split()
+        for k, c in enumerate(cols):
+            if c == name:
+                return self.Val[:, :, k]
+        return None
+
 
 def main():
     import matplotlib.pyplot as plt
@@ -239,8 +264,8 @@ def main():
     for i, var in enumerate(columns):
         for num in nums:
             plt.subplot(2, 2, i + 1)
-            x = hyd.V[num, :, 0]
-            y = hyd.V[num, :, i]
+            x = hyd.Val[num, :, 0]
+            y = hyd.Val[num, :, i]
             plt.plot(x, y, '-', label='{} t={:.3f}'.format(str(var, 'utf-8'), hyd.T[num]))
             plt.xscale('log')
             plt.yscale('log')

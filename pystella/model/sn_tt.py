@@ -31,7 +31,7 @@ class StellaTt:
         return StellaTtInfo(self.name, self.path)
         # return "%s" % self.name
 
-    def read(self, ext='tt', line_header=80):
+    def load(self, ext='tt', line_header=80):
         """
         Read tt-data
         Columns: time Tbb rbb Teff Rlast_sc Rph Mbol MU MB MV MI MR   Mbolavg  gdepos
@@ -64,7 +64,7 @@ class StellaTt:
             return None
 
     def read_curves(self):
-        block = self.read()
+        block = self.load()
         header = 'Mbol MU MB MV MI MR'.split()
         curves = SetLightCurve(self.name)
         time = block['time']
@@ -76,7 +76,7 @@ class StellaTt:
         return curves
 
     def read_curves_gri(self):
-        block = self.read(ext='gri', line_header=1)
+        block = self.load(ext='gri', line_header=1)
         # header = 'L_bol    Mu        MB    Mg         Mr         Mi'.split()
         # header = 'MB    MV'.split()
         header = 'L_bol    Mu        MB   MV    Mg    Mr Mi  J  H  K '.split()

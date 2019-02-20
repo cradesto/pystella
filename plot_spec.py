@@ -257,7 +257,7 @@ def plot_spec_poly(series, moments=None, fcut=1.e-20, is_info=False):
 
 def plot_fit_bands(model, series, set_bands, times):
     name = model.Name
-    tt = model.get_tt().read()
+    tt = model.get_tt().load()
     tt = tt[tt['time'] > min(times) - 1.]  # time cut  days
     Rph_spline = interpolate.splrep(tt['time'], tt['Rph'], s=0)
     distance = ps.phys.pc2cm(10.)  # pc for Absolute magnitude
@@ -288,7 +288,7 @@ def plot_fit_bands(model, series, set_bands, times):
 
 
 def plot_fit_wl(model, series, wl_ab, times=None, fsave=None):
-    tt = model.get_tt().read()
+    tt = model.get_tt().load()
     series_cut = series.copy(wl_ab=wl_ab)
 
     time = series.Time

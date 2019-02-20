@@ -64,7 +64,7 @@ def main():
 
     presn = snec.to_presn(prb_snec)
 
-    fname = presn.name + '.hyd'
+    fname = presn.Name + '.hyd'
     # fname = os.path.join(os.path.dirname(file_profile), presn.name + '.hyd')
     res = presn.write_hyd(fname)
     if res:
@@ -72,7 +72,7 @@ def main():
     else:
         print("Error while saving in %s" % fname)
 
-    fname = presn.name + '.abn'
+    fname = presn.Name + '.abn'
     # fname = os.path.join(os.path.dirname(file_profile), presn.name + '.abn')
     res = presn.write_abn(fname)
     if res:

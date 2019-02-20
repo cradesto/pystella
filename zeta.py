@@ -618,7 +618,7 @@ def compute_tcolor(name, path, bands, d=ps.phys.pc2cm(10.), z=0., t_cut=(1., np.
 
     # curves = model.curves(bands, z=z, distance=d)
     # read R_ph
-    tt = model.get_tt().read()
+    tt = model.get_tt().load()
     tt = tbl_rm_equal_el(tt, 'time')
     tt = tt[np.logical_and(t_cut[0] <= tt['time'], tt['time'] <= t_cut[1])]  # time cut  days
 

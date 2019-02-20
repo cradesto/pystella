@@ -87,9 +87,9 @@ class _flx_record_reader(object):
     def _read_record(self):
         """Parse one Stella flx file record"""
 
-        self.Nrec = struct.unpack("i", self.fstream.read(4))[0]
+        self.Nrec = struct.unpack("i", self.fstream.load(4))[0]
 
-        self.Lsave = struct.unpack("i", self.fstream.read(4))[0]
+        self.Lsave = struct.unpack("i", self.fstream.load(4))[0]
 
         self.Mfreq = (self.Nrec - 4 - 8 * self.Lsave) // (self.Lsave * 8)
 
@@ -100,13 +100,13 @@ class _flx_record_reader(object):
         self.Flsave = np.zeros((self.Mfreq, self.Lsave))
 
         for i in range(self.Lsave):
-            self.Tcurv[i] = struct.unpack("f", self.fstream.read(4))[0]
-            self.Nfrus[i] = struct.unpack("i", self.fstream.read(4))[0]
+            self.Tcurv[i] = struct.unpack("f", self.fstream.load(4))[0]
+            self.Nfrus[i] = struct.unpack("i", self.fstream.load(4))[0]
             self.Flsave[:, i] = np.array(
                 struct.unpack("{:d}d".format(self.Mfreq),
-                              self.fstream.read(8 * self.Mfreq)))
+                              self.fstream.load(8 * self.Mfreq)))
         try:
-            assert (self.Nrec == struct.unpack("i", self.fstream.read(4))[0])
+            assert (self.Nrec == struct.unpack("i", self.fstream.load(4))[0])
         except AssertionError:
             logger.exception(
                 "Mismatch in record length at start and end stamps")

@@ -14,9 +14,16 @@ logger.setLevel(logging.INFO)
 
 # 681     15
 # 1.0d0 1.0d0 4.0d0 12.0d0 16.0d0 20.0d0 24.0d0 28.0d0 32.0d0 36.0d0 40.0d0 44.0d0 48.0d0 52.0d0 56.0d0
-# 0.0d0 1.0d0 2.0d0 6.0d0 8.0d0 10.0d0 12.0d0 14.0d0 16.0d0 18.0d0 20.0d0 22.0d0 24.0d0 26.0d0 28.0d0
+# 0.0d0 1.0d0 2.0d0  6.0d0  8.0d0 10.0d0 12.0d0 14.0d0 16.0d0 18.0d0 20.0d0 22.0d0 24.0d0 26.0d0 28.0d0
 
 snec_elements = "NN H He C O Ne Mg Si S Ar Ca Ti Cr Fe Ni".split()
+
+snec_elements_Z_str = "0.0 1.0 2.0  6.0  8.0 10.0 12.0 14.0 16.0 18.0 20.0 22.0 24.0 26.0 28.0"
+snec_elements_Z = [float(s) for s in snec_elements_Z_str.split()]
+
+snec_elements_A_str = "1.0 1.0 4.0 12.0 16.0 20.0 24.0 28.0 32.0 36.0 40.0 44.0 48.0 52.0 56.0"
+snec_elements_A = [float(s) for s in snec_elements_A_str.split()]
+
 snec_el_colors = dict(NN="yellow", H="blue", He="cyan", C="darkorange",
                       O="violet", Ne="green", Mg="skyblue", Si="olive",
                       S="indigo", Ar="brown", Ca="purple", Ti="hotpink",
@@ -42,7 +49,7 @@ class Problem:
         self._profile = None
 
     @property
-    def name(self):
+    def Name(self):
         return self._name
 
     @property
@@ -73,26 +80,6 @@ class Problem:
     def chem(self):
         """Full data"""
         return self._chem
-
-    def el(self, el):
-        if el not in snec_elements:
-            raise ValueError("There is no such element [%s]." % el)
-        if not self.is_chem_load:
-            raise Exception("SNEC chem-data has not been loaded. Check and load from %s" % self._chem_file)
-        return self._chem[el]
-
-    def load_chem(self, fname):
-        if not os.path.isfile(fname):
-            logger.error(' No snec chem-data for %s' % fname)
-            return None
-        self._chem_file = fname
-        logger.info('Load chemical data from  %s' % self.chem_file)
-
-        names = ['M', 'R'] + snec_elements
-        print("Names: %s" % ' '.join(names))
-        dtype = np.dtype({'names': names, 'formats': [np.float64] * len(names)})
-        self._chem = np.loadtxt(fname, skiprows=3, dtype=dtype, comments='#')
-        return self
 
     # Profile structure
     @property
@@ -134,6 +121,16 @@ class Problem:
         """Velocity"""
         return self.hyd('V')
 
+    @property
+    def Elements(self):
+        """Elements"""
+        els = []
+        keys = self.chem.dtype.names
+        for el in snec_elements:
+            if el in keys:
+                els.append(el)
+        return els
+
     def hyd(self, v):
         """Hydro data"""
         if v not in snec_profile_cols:
@@ -142,7 +139,7 @@ class Problem:
 
     def load_profile(self, fname):
         if not os.path.isfile(fname):
-            logger.error(' No snec chem-data for %s' % fname)
+            logger.error(' No snec profile-data for %s' % fname)
             return None
         self._profile_file = fname
         logger.info('Load profile data from  %s' % self.profile_file)
@@ -151,6 +148,63 @@ class Problem:
         dtype = np.dtype({'names': snec_profile_cols, 'formats': [np.float64] * len(snec_profile_cols)})
         self._profile = np.loadtxt(self.profile_file, skiprows=1, dtype=dtype, usecols=use_cols)
         return self
+
+    def write_profile(self, fname):
+        """
+        Write profile to file
+            Format:
+            # ibuffer, pmass(i), pradius(i), ptemp(i), prho(i), pvel(i)
+            # 1	1.04019E+31	7.94499E+06	1.00140E+10	4.91485E+09	-1.21857E+07	4.57036E-01	0.00000E+00
+        :return: True if fname exists
+        """
+        # dum = np.zeros(self.nzon)
+        logger.info(' Write profile-data to %s' % fname)
+        zones = range(1, self.nzon + 1)
+        with open(fname, 'w') as f:
+            f.write('{:6d}\n'.format(self.nzon))
+            for _ in zip(zones, self.pmass, self.pradius, self.ptemp, self.prho, self.pvel):
+                f.write('%4d  %12.5e %12.5e %12.5e %12.5e %12.5e\n' % _)
+        return os.path.isfile(fname)
+
+    def el(self, el):
+        if el not in snec_elements:
+            raise ValueError("There is no such element [%s]." % el)
+        if not self.is_chem_load:
+            raise Exception("SNEC chem-data has not been loaded. Check and load from %s" % self._chem_file)
+        return self._chem[el]
+
+    def load_chem(self, fname):
+        if not os.path.isfile(fname):
+            logger.error(' No snec chem-data for %s' % fname)
+            return None
+        self._chem_file = fname
+        logger.info('Load chemical data from  %s' % self.chem_file)
+
+        names = ['M', 'R'] + snec_elements
+        print("Names: %s" % ' '.join(names))
+        dtype = np.dtype({'names': names, 'formats': [np.float64] * len(names)})
+        self._chem = np.loadtxt(fname, skiprows=3, dtype=dtype, comments='#')
+        return self
+
+    def write_chem(self, fname, is_header=True):
+        """
+        Write data to file in iso.dat format
+        :return:
+        """
+        logger.info(' Write chem-data to %s' % fname)
+        with open(fname, 'w') as f:
+            # write nzon nElements
+            if is_header:
+                f.write('{:d} {:d}\n'.format(self.nzon, len(snec_elements)))
+                f.write('{}\n'.format(snec_elements_A_str))
+                f.write('{}\n'.format(snec_elements_Z_str))
+
+            for i in range(self.nzon):
+                s = '{:.5e} {:.5e}'.format(self.pmass[i], self.pradius[i])
+                for el in snec_elements:
+                    s += ' {:.5e}'.format(self.el(el)[i])
+                f.write('{}\n'.format(s))
+        return os.path.isfile(fname)
 
     # Plotting
     def plot_chem(self, x='m', ax=None, xlim=None, ylim=None, **kwargs):
@@ -162,6 +216,7 @@ class Problem:
         leg_ncol = kwargs.get('leg_ncol', 4)
         lw = kwargs.get('lw', 2)
         is_save = kwargs.get('is_save', False)
+        alpha = kwargs.get('alpha', 1.)
 
         is_new_plot = ax is None
         # setup figure
@@ -196,7 +251,7 @@ class Problem:
         for el in elements:
             y = self.el(el)
             # y = np.log10(self.el(el))
-            ax.semilogy(x, y, label='%s' % el, color=colors[el], ls=lntypes[el], linewidth=lw)
+            ax.semilogy(x, y, label='%s' % el, color=colors[el], ls=lntypes[el], linewidth=lw, alpha=alpha)
             # ax.plot(x, y, label='%s' % el, color=colors[el], marker='o', ls=':', markersize=3)
 
             if not is_y_lim:
@@ -227,6 +282,38 @@ class Problem:
 
         return ax
 
+    @staticmethod
+    def presn2snec(presn):
+        snec = Problem(presn.Name)
+
+        # Create profile
+        dtype = [('i', '<f8'), ('M', '<f8'), ('R', '<f8'), ('T', '<f8'), ('Rho', '<f8'), ('V', '<f8')]
+        aprofile = np.zeros((presn.nzon,), dtype=dtype)
+
+        # Fill profile
+        aprofile['M'] = presn.m
+        aprofile['R'] = presn.r
+        aprofile['T'] = presn.T
+        aprofile['Rho'] = presn.rho
+        aprofile['V'] = presn.V
+
+        snec._profile = aprofile
+
+        # Create chemical composition
+        dtype = [('M', '<f8'), ('R', '<f8'), ('NN', '<f8'), ('H', '<f8'), ('He', '<f8'),
+                 ('C', '<f8'), ('O', '<f8'), ('Ne', '<f8'), ('Mg', '<f8'), ('Si', '<f8'),
+                 ('S', '<f8'), ('Ar', '<f8'), ('Ca', '<f8'), ('Ti', '<f8'), ('Cr', '<f8'),
+                 ('Fe', '<f8'), ('Ni', '<f8')]
+        achem = np.zeros((presn.nzon,), dtype=dtype)
+        # Fill
+        for e in presn.Elements:
+            if e in snec_elements:
+                achem[e] = presn.el(e)
+
+        snec._chem = achem
+
+        return snec
+
 
 class ParserXg:
     pass
@@ -236,12 +323,12 @@ def to_presn(p):
     if not p.is_profile_load:
         raise ValueError("There are no data in SNEC problem. "
                          "Probably, You should run: load_profile and load_chem.")
-    presn = PreSN(p.name, p.nzon)
+    presn = PreSN(p.Name, p.nzon)
     col_map = {'R', 'M', 'T', 'Rho', 'V'}
     for v in col_map:
         presn.set_hyd(v, p.hyd(v))
 
-    for e in presn.presn_elements:
+    for e in presn.Elements:
         if e in snec_elements:
             presn.set_chem(e, p.el(e))
         else:
@@ -251,3 +338,5 @@ def to_presn(p):
     presn.set_chem('Ni56', presn.el('Ni'))
 
     return presn
+
+
