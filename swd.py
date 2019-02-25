@@ -216,11 +216,17 @@ def main():
                 uph_save(duph, fsave)
             else:
                 fig = plot_uph(duph, vnorm=args.vnorm, label=name)
-                plt.show(block=False)
                 if args.is_save:
                     fsave = os.path.expanduser("~/uph_{0}.pdf".format(name))
                     print("Save plot to {0}".format(fsave))
                     fig.savefig(fsave, bbox_inches='tight')
+                else:
+                    plt.ion()
+                    plt.show()
+                    plt.pause(0.0001)
+                    print('')
+                    input("===> Hit <return> to quit")
+                    # plt.show(block=False)
         elif args.is_mult:
             make_cartoon(swd, times, vnorm=args.vnorm, rnorm=args.rnorm,
                          lumnorm=args.lumnorm, is_legend=is_legend)
