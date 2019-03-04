@@ -24,6 +24,8 @@ logging.basicConfig(filename=datetime.now().strftime('run_%Y%m%d_%H_%M.log'), le
 # handler.stream.close()
 # handler.stream = stdout
 # logging.root.addHandler(handler)
+mpl_logger = logging.getLogger('matplotlib')
+mpl_logger.setLevel(logging.WARNING)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
