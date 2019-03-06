@@ -5,7 +5,7 @@ from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels \
     import Matern, RBF, WhiteKernel,ConstantKernel, ExpSineSquared, RationalQuadratic
 
-from pystella.rf.lc import LightCurve
+from pystella.rf.lc import LightCurve, SetLightCurve
 
 
 class FitGP:
@@ -14,23 +14,54 @@ class FitGP:
     """
 
     @staticmethod
-    def fit_lc(lc, Ntime=None, is_RBF=False):
+    def fit_curves(curves, times=None, Ntime=None, is_RBF=False):
+        """
+        Compute gaussian process for the Set of Light Curves and return new  Set of LCs with approximated magnitudes
+        :param curves: Initial light curves
+        :param times: new time points  [optional, None]
+        :param Ntime: number point for linspace(min(t), max(t), Ntime) [optional, None]
+        :param is_RBF: use RationalQuadratic in the kernel
+        :return:
+        """
+
+        res = SetLightCurve(curves.Name+'_gp')
+        for lc in curves:
+            lc_new, gp = FitGP.fit_lc(lc, times=times, Ntime=Ntime, is_RBF=is_RBF)
+            res.add(lc_new)
+        return res
+
+    @staticmethod
+    def fit_lc(lc, times=None, Ntime=None, is_RBF=False):
+        """
+        Compute gaussian process for the light curve and return new  LC with approximated magnitudes
+        :param lc: Initial light curve
+        :param times: new time points  [optional, None]
+        :param Ntime: number point for linspace(min(t), max(t), Ntime) [optional, None]
+        :param is_RBF: use RationalQuadratic in the kernel
+        :return:
+        """
         t = lc.Time
         if is_RBF:
             gp = FitGP.lc2gpRBF(lc)
         else:
             gp = FitGP.lc2gp(lc)
 
-        if Ntime is not None:  # new time points
-            t_new = np.linspace(min(t), max(t), Ntime)
-            X_samples = t_new.reshape(-1, 1)  # np.array(t_new, ndmin = 2).T
+        if times is None:
+            times = t
+            if Ntime is not None:  # new time points
+                times = np.linspace(min(t), max(t), Ntime)
+
+        if type(times) is not np.ndarray:
+            times = np.array(times)
+
+        if times.ndim == 2:
+            X_samples = times
         else:
-            t_new = t
-            X_samples = t.reshape(-1, 1)
+            X_samples = times.reshape(-1, 1)  # 2D array
 
         # Make the prediction on the meshed x-axis (ask for MSE as well)
         y_pred, sigma = gp.predict(X_samples, return_std=True)
-        return LightCurve(lc.Band, t_new, y_pred, sigma), gp
+        return LightCurve(lc.Band, times, y_pred, sigma), gp
 
     # def fit_lc(lc, Ntime=None):
     #     t = lc.Time
