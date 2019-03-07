@@ -446,11 +446,11 @@ class SeriesSpectrum(object):
             res.add(tz, ss)
         return res
 
-    def redshift2rest(self, z: float, nm=None):
+    def redshift2rest(self, z: float, name=None):
         """Redshift from the rest source to the obs source
           z - redshift
         """
-        name = self.Name if nm is None else nm
+        name = self.Name if name is None else name
 
         res = SeriesSpectrum(name)
         for t, sp in self:
@@ -460,10 +460,6 @@ class SeriesSpectrum(object):
             tz = t / (1. + z)
             res.add(tz, ss)
         return res
-
-    def zzz(self, sds, sd):
-
-        pass
 
     def map(self, func, t_ab=None):
         """Map func under each Spectrum in the array.

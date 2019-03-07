@@ -175,16 +175,16 @@ class Star:
         # mag = -2.5 * np.log10(conv) + phys.ZP_AB - band.zp
         mag = Flux2MagAB(response / b.Norm) - b.zp
         return mag
-
-        # todo check
-        response1 = b.response(self.Wl, self.FluxWlObs, kind=kind, is_out2zero=True, is_photons=True)  #
-        if response1 <= 0:
-            raise ValueError("The Response of Spectrum should be > 0: %f" % response1)
-
-        # norm = b.response(b.wl, np.ones(len(b.wl)), kind='spline')
-        mag1 = -2.5 * np.log10(response1 / b.NormWl) - 21.1 - b.zp
-        # mag1 = -2.5 * np.log10(response1 ) - 21.1 - b.zp
-        return mag1
+        #
+        # # todo check
+        # response1 = b.response(self.Wl, self.FluxWlObs, kind=kind, is_out2zero=True, is_photons=True)  #
+        # if response1 <= 0:
+        #     raise ValueError("The Response of Spectrum should be > 0: %f" % response1)
+        #
+        # # norm = b.response(b.wl, np.ones(len(b.wl)), kind='spline')
+        # mag1 = -2.5 * np.log10(response1 / b.NormWl) - 21.1 - b.zp
+        # # mag1 = -2.5 * np.log10(response1 ) - 21.1 - b.zp
+        # return mag1
 
     def magBol(self):
         """

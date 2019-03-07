@@ -370,6 +370,7 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname=None, *
     figsize = kwargs.get('figsize', (20, 10))
     legncol = kwargs.get('legncol', 1)
     legloc = kwargs.get('legloc', 1)
+    alpha = kwargs.get('alpha', 1.)
 
     is_new_fig = ax is None
     if is_new_fig:
@@ -399,21 +400,23 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname=None, *
         y = lc.Mag
         bname = lc.Band.Name
         label = '{0} {1}'.format(bname, curves.Name.replace("_", ""))
+        color = colors[bname]
         if is_line:
-            ax.plot(x, y, label=label, color=colors[bname], ls=ls[bname], linewidth=linewidth)
+            ax.plot(x, y, label=label, color=color, ls=ls[bname], linewidth=linewidth)
         else:
             if lc.IsErr:
-                yyerr = abs(lc.Err)
+                yyerr = abs(lc.MagErr)
                 ax.errorbar(x, y, label=label, yerr=yyerr, fmt=marker[bname],
-                            color=colors[bname], ls='', markersize=markersize)
+                            color=color, ls='', markersize=markersize)
             else:
                 # ax.plot(x, y, label='{0} {1}'.format(bname, fname), color=bcolors[bname], ls='',
                 #         marker=marker, markersize=markersize)
-                ax.plot(x, y, label=label, color=colors[bname], ls='', marker=marker[bname], markersize=markersize)
-        if is_fill:
-            yyerr = abs(lc.Err)
-            ax.fill(np.concatenate([x, x[::-1]]), np.concatenate([y - yyerr, (y + yyerr)[::-1]]),
-                    alpha=.3, fc=colors[bname], ec='None', label=label)  # '95% confidence interval')
+                ax.plot(x, y, label=label, color=color, ls='', marker=marker[bname], markersize=markersize)
+        if is_fill and lc.IsErr:
+            yyerr = abs(lc.MagErr)
+            # ax.fill(np.concatenate([x, x[::-1]]), np.concatenate([y - yyerr, (y + yyerr)[::-1]]),
+            #         alpha=.3, fc=color, ec='None', label=label)  # '95% confidence interval')
+            ax.fill_between(x, y - yyerr, y + yyerr, facecolor=color, alpha=alpha, label=label)
 
         if is_xlim:
             xlim[0] = min(xlim[0], np.min(x))

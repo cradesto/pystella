@@ -104,14 +104,13 @@ class TestSeriesSpectrum(unittest.TestCase):
         freq = x - np.min(x)
         flux = y + np.min(y)
         times = [10]
-        ss = ps.SeriesSpectrum("test_SeriesSpectrum")
+        series = ps.SeriesSpectrum("test_SeriesSpectrum")
 
         for k, t in enumerate(times):
             s = ps.Spectrum(freq=freq, flux=flux, name='test_spectrum')
-            ss.add(t, s)
+            series.add(t, s)
 
         z = 1.
-        series = ss
         series_z = series.redshift2rest(z)
 
         # plot
