@@ -72,8 +72,11 @@ def read_obs_table_header(fname, header=None, skip=0, colt=('time', 'JD', 'MJD')
                 if i <= skip:
                     continue
                 if line.strip().startswith(comments):
-                    lskip += 1
-                    continue
+                    if not line.strip().startswith('###'):
+                        lskip += 1
+                        continue
+                    else:
+                        line = line.replace('###', '')
                 header = line
                 break
             else:

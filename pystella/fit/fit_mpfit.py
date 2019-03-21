@@ -83,7 +83,7 @@ class FitMPFit(FitLc):
 
     def fit_tss(self, tss_m, tss_o, A=0.):
 
-        result = self.best_time_series(tss_m, tss_o, A=A, is_debug=self.is_debug, is_info=self.is_info)
+        result = self.best_time_series(tss_m, tss_o, At=A, is_debug=self.is_debug, is_info=self.is_info)
 
         tshift = result.params[0]
         pcerror = result.perror
@@ -176,7 +176,7 @@ class FitMPFit(FitLc):
         return res
 
     @staticmethod
-    def best_time_series(tss_m, tss_o, A=0., is_debug=False, is_info=True, xtol=1e-10, ftol=1e-10, gtol=1e-10):
+    def best_time_series(tss_m, tss_o, At=0., is_debug=False, is_info=True, xtol=1e-10, ftol=1e-10, gtol=1e-10):
         def least_sq(p, fjac):
             E = 0.01
             total = []
@@ -193,12 +193,10 @@ class FitMPFit(FitLc):
                 V_o = ts_o.V
 
                 m = np.interp(time_o, ts_m.Time, ts_m.V)  # One-dimensional linear interpolation.
-                err_m = abs(min(m)-m) * E
                 # sigma = sigma
-                # w = np.ones(len(m)) w = np.exp(-2*len(check)/len(ts_o.Time)) *7 np.abs(1. - A * (time_o - min(
-                # time_o)) / (max(time_o) - min(time_o)))  # weight
-                w = np.abs(1. - A * (time_o - min(time_o)) / (max(time_o) - min(time_o)))  # weight
-                err_m = np.sqrt(np.sum((V_o - m)**2) / len(m))
+                w = np.abs(1. - At * (time_o - min(time_o)) / (max(time_o) - min(time_o)))  # weight
+                # err_m = np.sqrt(np.sum((V_o - m)**2) / len(m))
+                err_m = abs(V_o - m)
                 if ts_o.IsErr:
                     # err_o = ts_o.Err[check]
                     # res = np.abs((V_o - m) / (abs(m)*E + err_o)) * w
