@@ -42,16 +42,38 @@ markers = {u'D': u'diamond', 6: u'caretup', u's': u'square', u'x': u'x',
 markers = list(markers.keys())
 
 
-def lbl(b, band_shift):
+# def lbl(b, band_shift):
+#     shift = band_shift[b]
+#     s = b
+#     if shift == int(shift):
+#         shift = int(shift)
+#     if shift > 0:
+#         s += '+' + str(shift)
+#     elif shift < 0:
+#         s += '-' + str(abs(shift))
+#     return s
+def lbl(b, band_shift, length=0):
     shift = band_shift[b]
-    s = b
     if shift == int(shift):
         shift = int(shift)
+    # if shift == 0:
+    #     return b
+
+    s = b
     if shift > 0:
-        s += '+' + str(shift)
+        s += '+'
+        s += str(abs(shift))
     elif shift < 0:
-        s += '-' + str(abs(shift))
+        s += '-'
+        s += str(abs(shift))
+
+    if length > 0:
+        s = ("{0:<" + str(length) + "s}").format(s)
     return s
+
+
+def lbl_length(bshifts):
+    return max((len(lbl(b, bshifts)) for b in bshifts.keys()))
 
 
 def plot_ubv_models(ax, models_dic, bands, **kwargs):
@@ -79,6 +101,8 @@ def plot_ubv_models(ax, models_dic, bands, **kwargs):
         for k, v in bshift.items():
             band_shift[k] = v
 
+    lbl_len = lbl_length(band_shift)
+
     mi = 0
     x_max = []
     y_mid = []
@@ -97,16 +121,18 @@ def plot_ubv_models(ax, models_dic, bands, **kwargs):
             dash = dashes[ib]
             if len(models_dic) == 1:
                 if is_dashes:
-                    ax.plot(x, y, label='%s  %s' % (lbl(bname, band_shift), mname), color=bcolor, ls=ls1, linewidth=lw,
-                            dashes=dash)
+                    ax.plot(x, y, label='%s  %s' % (lbl(bname, band_shift, lbl_len), mname), color=bcolor, ls=ls1,
+                            linewidth=lw, dashes=dash)
                 else:
-                    ax.plot(x, y, label='%s  %s' % (lbl(bname, band_shift), mname), color=bcolor, ls=ls, linewidth=lw)
+                    ax.plot(x, y, label='%s  %s' % (lbl(bname, band_shift, lbl_len), mname), color=bcolor, ls=ls,
+                            linewidth=lw)
             # ax.plot(x, y, label='%s  %s' % (lbl(bname, band_shift), mname), color=bcolor, ls=ls1, linewidth=lw)
             elif len(models_dic) <= len(line_styles):
-                ax.plot(x, y, label='%s  %s' % (lbl(bname, band_shift), mname), color=bcolor, ls=ls,
+                ax.plot(x, y, label='%s  %s' % (lbl(bname, band_shift, lbl_len), mname), color=bcolor, ls=ls,
                         linewidth=lw)
             else:
-                ax.plot(x, y, marker=markers[mi % (len(markers) - 1)], label='%s  %s' % (lbl(bname, band_shift), mname),
+                ax.plot(x, y, marker=markers[mi % (len(markers) - 1)],
+                        label='%s  %s' % (lbl(bname, band_shift, lbl_len), mname),
                         markersize=markersize, color=bcolor, ls=ls_multi, linewidth=lw)
 
             if is_time_points:

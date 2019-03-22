@@ -9,6 +9,30 @@ from pystella.rf.lc import SetLightCurve, LightCurve
 from pystella.util.reader_table import table2curves, read_obs_table_header
 
 
+def lbl(b, band_shift, length=0):
+    shift = band_shift[b]
+    if shift == int(shift):
+        shift = int(shift)
+    # if shift == 0:
+    #     return b
+
+    s = b
+    if shift > 0:
+        s += '+'
+        s += str(abs(shift))
+    elif shift < 0:
+        s += '-'
+        s += str(abs(shift))
+
+    if length > 0:
+        s = ("{0:<" + str(length) + "s}").format(s)
+    return s
+
+
+def lbl_length(bshifts):
+    return max((len(lbl(b, bshifts)) for b in bshifts.keys()))
+
+
 def plot(ax, dic=None, mag_lim=30.):
     """
     Plot points from dat-files. Format fname:marker:jd_shift:mshift
@@ -32,6 +56,16 @@ def plot(ax, dic=None, mag_lim=30.):
     bnames = dic.get('bnames', None)
     bcolors = dic.get('bcolors', band.bands_colors())
     comments = dic.get('comments', '#')
+
+    bshift = dic.get('bshift', None)
+    if bshift is None:
+        bshift = {b: 0. for b in bnames}
+    else:
+        bshiftzero = {b: 0. for b in bnames if b not in bshift}
+        bshift.update(bshiftzero)
+
+    lbl_len = lbl_length(bshift)
+    # print(bshift, lbl_len)
 
     arg = dic.get('args', [])
     if len(arg) > 0:
@@ -63,13 +97,13 @@ def plot(ax, dic=None, mag_lim=30.):
         bname = lc.Band.Name
         is_good = lc.Mag < (mag_lim - mshift)
         x = lc.Time[is_good] + jd_shift
-        y = lc.Mag[is_good] + mshift
+        y = lc.Mag[is_good] + mshift + bshift[bname]
         if lc.IsErr:
             yyerr = abs(lc.Err[is_good])
-            ax.errorbar(x, y, label='{0} {1}'.format(bname, fname), yerr=yyerr, fmt=marker,
+            ax.errorbar(x, y, label='{0} {1}'.format(lbl(bname, bshift, lbl_len), fname), yerr=yyerr, fmt=marker,
                         color=bcolors[bname], ls='')
         else:
-            ax.plot(x, y, label='{0} {1}'.format(bname, fname), color=bcolors[bname], ls='',
+            ax.plot(x, y, label='{0} {1}'.format(lbl(bname, bshift, lbl_len), fname), color=bcolors[bname], ls='',
                     marker=marker, markersize=markersize)
 
 

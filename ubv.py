@@ -68,6 +68,7 @@ def plot_all(models_vels, models_dic, bnames, d=10, call=None, **kwargs):
     is_grid = kwargs.get('is_grid', True)
     legloc = kwargs.get('legloc', 4)
     fontsize = kwargs.get('fontsize', 12)
+    bshift = kwargs.get('bshift', None)
     # band_shift['UVW1'] = 3
     # band_shift['UVW2'] = 5
     # band_shift['i'] = -1
@@ -97,9 +98,9 @@ def plot_all(models_vels, models_dic, bnames, d=10, call=None, **kwargs):
     # plot callback
     if call is not None:
         if is_vel:
-            call.plot((axUbv, axVel), dic={'bnames': bnames})
+            call.plot((axUbv, axVel), dic={'bnames': bnames, 'bshift': bshift})
         else:
-            call.plot(axUbv, dic={'bnames': bnames})
+            call.plot(axUbv, dic={'bnames': bnames, 'bshift': bshift})
     # finish plot
     axUbv.set_ylabel('Magnitude')  # Magnitude  Mag
     axUbv.set_xlabel('Time since explosion [days]')

@@ -195,8 +195,8 @@ class FitMPFit(FitLc):
                 m = np.interp(time_o, ts_m.Time, ts_m.V)  # One-dimensional linear interpolation.
                 # sigma = sigma
                 w = np.abs(1. - At * (time_o - min(time_o)) / (max(time_o) - min(time_o)))  # weight
-                # err_m = np.sqrt(np.sum((V_o - m)**2) / len(m))
-                err_m = abs(V_o - m)
+                err_m = np.sqrt(np.sum((V_o - m)**2) / len(m))
+                # err_m = abs(V_o - m)
                 if ts_o.IsErr:
                     # err_o = ts_o.Err[check]
                     # res = np.abs((V_o - m) / (abs(m)*E + err_o)) * w
