@@ -114,6 +114,7 @@
       <w>nrows</w>
       <w>nstart</w>
       <w>nsteps</w>
+      <w>ntime</w>
       <w>ntimes</w>
       <w>nugent</w>
       <w>nwalkers</w>

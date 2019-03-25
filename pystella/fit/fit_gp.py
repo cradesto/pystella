@@ -40,16 +40,15 @@ class FitGP:
         :param is_RBF: use RationalQuadratic in the kernel
         :return:
         """
-        t = lc.Time
         if is_RBF:
             gp = FitGP.lc2gpRBF(lc)
         else:
             gp = FitGP.lc2gp(lc)
 
-        if times is None:
-            times = t
-            if Ntime is not None:  # new time points
-                times = np.linspace(min(t), max(t), Ntime)
+        if times is None and Ntime is not None:  # new time points
+                times = np.linspace(min(lc.Time), max(lc.Time), Ntime)
+        else:
+            times = lc.Time
 
         if type(times) is not np.ndarray:
             times = np.array(times)

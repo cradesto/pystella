@@ -107,14 +107,16 @@ class StellaShockWaveDetail:
         if var not in vars(BlockSwd):
             raise ValueError('var should be property of BlockSwd, like Zon, M, R, Vel, T, Trad, Rho, Lum, Cappa, M')
 
-        x = []
-        y = []
+        # x = []
+        # y = []
         for idx, time in enumerate(self.Times):
             b = self.block_nearest(time)
             v = getattr(b, var)[nz]
-            x.append(time)
-            y.append(v)
-        return x, y
+            yield time, v
+        # return False
+        #     x.append(time)
+        #     y.append(v)
+        # return x, y
 
     def taus(self):
         """Compute tau for each moment of time
@@ -130,7 +132,7 @@ class StellaShockWaveDetail:
             #     taus[i, k] = tau
         return taus
 
-    def params_ph(self, tau_ph=2. / 3., cols=None):
+    def params_ph(self, tau_ph=2./3., cols=None):
         if cols is None:
             cols = ['R', 'M', 'T', 'V', 'Rho']
         res = {k: np.zeros(self.Ntimes) for k in ['time', 'zone'] + cols}
@@ -138,7 +140,7 @@ class StellaShockWaveDetail:
         for i, time in enumerate(self.Times):
             s = self[i]
             kph = 1  # todo check the default value
-            for k in range(self.Nzon - 1, 1, -1):
+            for k in range(self.Nzon-1, 1, -1):
                 if taus[i][k] >= tau_ph:
                     kph = k
                     break
@@ -149,9 +151,14 @@ class StellaShockWaveDetail:
             # res['R'][i] = s.R[kph]
             # res['M'][i] = s.M[kph]
             # res['T'][i] = s.T[kph]
-            # res['V'][i] = s.Vel[kph] / 1e8  # to 1000 km/s
-
+            # res['V'][i] = s.V[kph] / 1e8  # to 1000 km/s
         return res
+
+    def vel_ph(self, tau_ph=2./3., z=0.):
+        v_dat = self.params_ph(tau_ph=tau_ph, cols=['V'])
+        t = v_dat['time'] * (1. + z)  # redshifted time
+        v = v_dat['V']
+        return t, v
 
 
 class BlockSwd:
