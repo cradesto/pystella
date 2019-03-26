@@ -139,7 +139,7 @@ class MyPrompt(HistConsole):
         else:
             name = args
         print("spec %s" % name)
-        script = os.path.join(ROOT_DIRECTORY, 'plot_spec.py')
+        script = os.path.join(ROOT_DIRECTORY, 'spec.py')
         MyPrompt.call_cmd(script, args)
 
     @staticmethod
@@ -175,7 +175,7 @@ class MyPrompt(HistConsole):
         else:
             name = args
         print("bands %s" % name)
-        script = os.path.join(ROOT_DIRECTORY, 'plot_bands.py')
+        script = os.path.join(ROOT_DIRECTORY, 'bands.py')
         MyPrompt.call_cmd(script, args)
 
     @staticmethod

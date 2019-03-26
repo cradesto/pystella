@@ -20,6 +20,10 @@ from mpl_toolkits.mplot3d import Axes3D
 
 import pystella as ps
 
+import logging
+mpl_logger = logging.getLogger('matplotlib')
+mpl_logger.setLevel(logging.WARNING)
+
 __author__ = 'bakl'
 
 ROOT_DIRECTORY = dirname(os.path.abspath(__file__))
@@ -47,7 +51,7 @@ def plot_spec(dic_stars, times, set_bands, is_planck=False, is_filter=False):
 
     # setup figure
     plt.matplotlib.rcParams.update({'font.size': 14})
-    fig = plt.figure(num=len(set_bands), figsize=(8, len(set_bands)*4), dpi=100, facecolor='w', edgecolor='k')
+    fig = plt.figure(num=len(set_bands), figsize=(8, len(set_bands) * 4), dpi=100, facecolor='w', edgecolor='k')
     gs1 = gridspec.GridSpec(len(set_bands), 1)
     gs1.update(wspace=0.3, hspace=0.3, left=0.1, right=0.9)
 
@@ -287,6 +291,33 @@ def plot_fit_bands(model, series, set_bands, times):
     return fig
 
 
+def save_fit_wl(fsave, mname, time, Tdil, Wdil, wl_ab=None):
+    # print
+    # print("{:>10s}  {:>12s}  {:>12s}  {:>12s}  ".format("Time",  "Twien", "Tcol", "zeta", "Tdil", "Wdil"))
+    if fsave.endswith('.hdf5'):
+        import h5py
+        with h5py.File(fsave, "w") as f:
+            # data = np.array([time, Tdil, Wdil])
+            data = np.zeros(len(time), dtype={'names': ['time', 'Tcolor', 'W'], 'formats': [np.float] * 3})
+            data['time'] = time
+            data['Tcolor'] = Tdil
+            data['W'] = Wdil
+            ds = f.create_dataset('bbfit', data=data)
+            ds.attrs['model'] = mname
+            if wl_ab is not None:
+                ds.attrs['wl_ab'] = '-'.join(map(str, wl_ab))
+    else:
+        with open(fsave, "w+") as f:
+            print("{:>8s}".format("Time") +
+                  ' '.join("{:>12s}".format(s) for s in ("T_dil", "W_dil")), file=f)
+            # ' '.join("{:>12s}".format(s) for s in ("T_wien", "Tcol", "W", "T_dil", "W_dil")), file=f)
+            # print("{:>10s}  {:>12s}  {:>12s}  {:>12s}  ".format("Time",  "Twien", "Tcol","zeta"), file=f)
+            for t, *p in zip(time, Tdil, Wdil):
+                print("{:8.2f}".format(t) + ' '.join("{0:12.2f}".format(s) for s in p), file=f)
+    print("The temperature has been saved to %s " % fsave)
+    return None
+
+
 def plot_fit_wl(model, series, wl_ab, times=None, fsave=None):
     tt = model.get_tt().load()
     series_cut = series.copy(wl_ab=wl_ab)
@@ -306,7 +337,7 @@ def plot_fit_wl(model, series, wl_ab, times=None, fsave=None):
             sp_obs = ps.Spectrum('cut', star_cut.Freq, star_cut.FluxObs)
             Tc = sp_obs.T_color
             Tw = sp_obs.T_wien
-            w = np.power(Tw/Tc, 4)
+            w = np.power(Tw / Tc, 4)
             Td, W_d = sp_obs.T_color_zeta()
 
             Tcol.append(Tc)
@@ -317,42 +348,21 @@ def plot_fit_wl(model, series, wl_ab, times=None, fsave=None):
     else:
         Tcol = series_cut.get_T_color()
         Twien = series_cut.get_T_wien()
-        zeta = np.power(Twien/Tcol, 4)
+        zeta = np.power(Twien / Tcol, 4)
 
         res = series_cut.get_T_color_zeta()
         Tdil, Wdil = res[:, 0], res[:, 1]
 
-    # print
-    # print("{:>10s}  {:>12s}  {:>12s}  {:>12s}  ".format("Time",  "Twien", "Tcol", "zeta", "Tdil", "Wdil"))
+    print("{:>8}".format("Time") +
+          ' '.join("{:>12s}".format(s) for s in ("T_dil", "W_dil")))
+    for t, *p in zip(time, Tdil, Wdil):
+        print("{:8.2f}".format(t) + ' '.join("{0:12.2f}".format(s) for s in p))
+        # print("%10.2f  %12.6f  %12.6f  %12.6f  " % p)
+
+    # save
     if fsave is not None:
-        if fsave.endswith('.hdf5'):
-            import h5py
-            with h5py.File(fsave, "w") as f:
-                # data = np.array([time, Tdil, Wdil])
-                data = np.zeros(len(time), dtype={'names': ['time', 'Tcolor', 'W'], 'formats': [np.float]*3})
-                data['time'] = time
-                data['Tcolor'] = Tdil
-                data['W'] = Wdil
-                ds = f.create_dataset('bbfit', data=data)
-                ds.attrs['model'] = model.Name
-                if wl_ab is not None:
-                    ds.attrs['wl_ab'] = '-'.join(map(str, wl_ab))
-        else:
-            with open(fsave, "w+") as f:
-                print("{:>8s}".format("Time") +
-                      ' '.join("{:>12s}".format(s) for s in ("T_dil", "W_dil")), file=f)
-                      # ' '.join("{:>12s}".format(s) for s in ("T_wien", "Tcol", "W", "T_dil", "W_dil")), file=f)
-                # print("{:>10s}  {:>12s}  {:>12s}  {:>12s}  ".format("Time",  "Twien", "Tcol","zeta"), file=f)
-                for t, *p in zip(time, Tdil, Wdil):
-                    print("{:8.2f}".format(t) + ' '.join("{0:12.2f}".format(s) for s in p), file=f)
-        print("The temperature has been saved to %s " % fsave)
-        return None
-    else:
-        print("{:>8}".format("Time") +
-              ' '.join("{:>12s}".format(s) for s in ("T_dil", "W_dil")))
-        for t, *p in zip(time, Tdil, Wdil):
-            print("{:8.2f}".format(t) + ' '.join("{0:12.2f}".format(s) for s in p))
-            # print("%10.2f  %12.6f  %12.6f  %12.6f  " % p)
+        save_fit_wl(fsave, mname, time, Tdil, Wdil, wl_ab=wl_ab)
+        return
 
     # plot
     fig, ax = plt.subplots()
@@ -360,7 +370,7 @@ def plot_fit_wl(model, series, wl_ab, times=None, fsave=None):
 
     ax.semilogy(time, Tcol, 'ks-', markerfacecolor='white', markersize=3, label="Tcolor")
     ax.semilogy(time, Twien, 'r:', label="Twien")
-    ax.semilogy(time, Tdil, 'ys-',  markersize=3, label="T_dil")
+    ax.semilogy(time, Tdil, 'ys-', markersize=3, label="T_dil")
     ax.semilogy(tt['time'], tt['Tbb'], 'g:', label="tt Tbb")
     # ax.semilogy(tt['time'], tt['Teff'], 'y:', label="tt Teff")
     # ax.semilogy(results['time'], tt['T'], 'm:', label="tt Teff")
@@ -379,7 +389,7 @@ def plot_fit_wl(model, series, wl_ab, times=None, fsave=None):
 
 def plot_spec_wl(times, series, tt, wl_ab, **kwargs):
     font_size = kwargs.get('font_size', 12)
-    nrow = np.math.floor(len(times)/2)
+    nrow = np.math.floor(len(times) / 2)
     ncol = 2
     fig = plt.figure(figsize=(12, nrow * 4))
     plt.matplotlib.rcParams.update({'font.size': font_size})
@@ -399,29 +409,29 @@ def plot_spec_wl(times, series, tt, wl_ab, **kwargs):
         star_bb = ps.Star("bb", spec)
         star_bb.set_distance(R)
 
-        spec_cut = ps.series_cut.get_spec_by_time(t)
+        spec_cut = series_cut.get_spec_by_time(t)
         star_cut = ps.Star("bb_cut", spec_cut)
         star_cut.set_distance(R)
 
         # spectrum
-        ax.semilogy(star_bb.Wl*ps.phys.cm_to_angs, star_bb.FluxWlObs, label="Spec Ph")
+        ax.semilogy(star_bb.Wl * ps.phys.cm_to_angs, star_bb.FluxWlObs, label="Spec Ph")
         # Tcolor
         spec_obs = ps.Spectrum('wbb', star_cut.Freq, star_cut.FluxObs)
         Tcol = spec_obs.T_color
         T_wien = spec_obs.T_wien
-        zeta = (T_wien/Tcol)**4
+        zeta = (T_wien / Tcol) ** 4
         wbb = ps.SpectrumDilutePlanck(spec.Freq, Tcol, zeta)
-        ax.semilogy(wbb.Wl*ps.phys.cm_to_angs, wbb.FluxWl, label="Tcol={:.0f} W={:.2f}".format(Tcol, zeta),
+        ax.semilogy(wbb.Wl * ps.phys.cm_to_angs, wbb.FluxWl, label="Tcol={:.0f} W={:.2f}".format(Tcol, zeta),
                     marker='<', **marker_style)
         # diluted
         Tdil, W = spec_obs.T_color_zeta()
         dil = ps.SpectrumDilutePlanck(spec.Freq, Tdil, W)
-        ax.semilogy(dil.Wl*ps.phys.cm_to_angs, dil.FluxWl, label="Tdil={:.0f} W={:.2f}".format(Tdil, W),
+        ax.semilogy(dil.Wl * ps.phys.cm_to_angs, dil.FluxWl, label="Tdil={:.0f} W={:.2f}".format(Tdil, W),
                     marker='>', **marker_style)
         # Tbb
         Tbb = Tbbes[i]
         bb = ps.SpectrumPlanck(spec.Freq, Tbb)
-        ax.semilogy(bb.Wl*ps.phys.cm_to_angs, bb.FluxWl, label="Tbb={:.0f}".format(Tbb),
+        ax.semilogy(bb.Wl * ps.phys.cm_to_angs, bb.FluxWl, label="Tbb={:.0f}".format(Tbb),
                     marker='d', **marker_style)
 
         # wl range
@@ -582,16 +592,17 @@ def interval2float(v):
 def usage():
     bands = ps.band.band_get_names()
     print("Usage: show F(t,nu) from ph-file")
-    print("  plot_spec.py [params]")
+    print("  spec.py [params]")
     print("  -b <set_bands>: delimiter '_'. Default: B-V.\n"
           "     Available: " + '-'.join(sorted(bands)))
     print("  -f  force mode: rewrite tcolor-files even if it exists")
     print("  -i <model name>.  Example: cat_R450_M15_Ni007_E7")
+    print("  -k  k-correction: z:Srest:Sobs. Example: 0.5:V:R")
     print("  -o  options: [fit, wl] - plot spectral fit")
     print("  -p <model path(directory)>, default: ./")
     print("  -s <file-name> without extension. Save plot to pdf-file. Default: spec_<file-name>.pdf")
     print("  -t  time interval [day]. Example: 5.:75.")
-    print("  -a  wave length interval [A]. Example: 1.:25e3")
+    print("  -x  wave length interval [A]. Example: 1.:25e3")
     print("  -w  write data to file. Example: flux to magAB, Tcolor and W [.hdf5]")
     print("  -h  print usage")
 
@@ -618,16 +629,31 @@ def write_magAB(series, d=10):
         # print("{0}  {1} ".format(t, '  '.join(map(str, mAB))))
 
 
+def plot_kcorr(times, kcorr, figsize=(12, 12)):
+    fig, ax = plt.subplots(figsize=figsize)
+
+    ax.plot(times, kcorr, marker='o', ls='')
+    ax.set_xlabel('Time')
+    ax.set_ylabel('K-correction')
+
+    return fig
+
+
 def main():
     is_save_plot = False
+    is_kcorr = False
     is_fit = False
     is_fit_wl = False
     is_write = False
+
     fsave = None
     fplot = None
+    z_sn = 0.
+    bn_rest = None
+    bn_obs = None
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "a:fhsup:i:b:o:t:w:")
+        opts, args = getopt.getopt(sys.argv[1:], "b:fhsup:i:k:o:t:w:x:")
     except getopt.GetoptError as err:
         print(str(err))  # will print something like "option -a not recognized"
         usage()
@@ -674,7 +700,7 @@ def main():
             if len(arg) > 0:
                 fplot = str(arg).strip()
             continue
-        if opt == '-a':
+        if opt == '-x':
             wl_ab = interval2float(arg)
             # wl_ab = [np.float(s) for s in (str(arg).split(':'))]
             continue
@@ -687,6 +713,16 @@ def main():
             ops = str(arg).split(':')
             is_fit = "fit" in ops
             is_fit_wl = "wl" in ops
+            continue
+        if opt == '-k':
+            ops = str(arg).split(':')
+            if len(ops) == 3:
+                z_sn = float(ops[0])
+                bn_rest = ops[1].strip()
+                bn_obs = ops[2].strip()
+                is_kcorr = True
+            else:
+                raise ValueError('Args: {} should be string as "z:Srest:Sobs"'.format(arg))
             continue
         if opt == '-p':
             path = os.path.expanduser(str(arg))
@@ -724,6 +760,12 @@ def main():
         series = model.get_ph(t_diff=1.05)
         series_cut = series.copy(t_ab=t_ab, wl_ab=wl_ab)
         fig = plot_fit_bands(model, series_cut, set_bands, times)
+    elif is_kcorr:
+        times, kcorr = [], []
+        for t, k in ps.rf.rad_func.kcorrection(series, z_sn, bn_rest, bn_obs):
+            times.append(t)
+            kcorr.append(k)
+        fig = plot_kcorr(times, kcorr)
     elif is_fit_wl:
         if not model.is_tt:
             print("Error in fit-wave: no tt-data for: " + str(model))
@@ -731,7 +773,10 @@ def main():
         if is_write:
             if fsave is None or len(fsave) == 0 or fsave == '1':
                 fsave = os.path.join(os.path.expanduser('~/'), "temp_%s" % name) + '.txt'
-        fig = plot_fit_wl(model, series, wl_ab, times, fsave=fsave)
+            plot_fit_wl(model, series, wl_ab, times, fsave=fsave)  # just save data
+            sys.exit(3)
+
+        fig = plot_fit_wl(model, series, wl_ab, times)
     else:
         series = model.get_ph(t_diff=1.05)
         series_cut = series.copy(t_ab=t_ab, wl_ab=wl_ab)

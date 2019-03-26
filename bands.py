@@ -148,7 +148,7 @@ def plot_bands(bands, color_dic=None):
 
 def usage():
     print("Usage:")
-    print("  plot_bands.py [params]")
+    print("  bands.py [params]")
     print("  -b <bands>: string, default: U-B-V-R-I, for example U-B-V")
     print("  -h  print usage")
     print("   --- ")

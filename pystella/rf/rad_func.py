@@ -1,7 +1,7 @@
 # origin:  https://github.com/iancze/Pysplotter/blob/master/photometry.py
 
 import numpy as np
-from pystella.util.phys_var import phys as p, phys
+from ..util.phys_var import phys as p, phys
 
 
 def distance_modulus(distance):
@@ -107,8 +107,9 @@ def compute_x_bb():
     :return: const
     """
     from scipy.integrate import quad
-    a, err1 = quad(lambda x: x ** 4 * np.exp(-x) / (1. - np.exp(-x)), 0, np.inf)
-    b, err2 = quad(lambda x: x ** 3 * np.exp(-x) / (1. - np.exp(-x)), 0, np.inf)
+    f = lambda x: x**4 * np.exp(-x) / (1.-np.exp(-x))
+    a, err1 = quad(f, 0., np.inf)
+    b, err2 = quad(lambda x: x**3 * np.exp(-x) / (1.-np.exp(-x)), 0, np.inf)
     return a / b
 
 
@@ -158,3 +159,75 @@ def MagAB2Flux(ab):
     zp_def = 3631  # in Jy
     f = zp_def * phys.jy_to_erg * 10 ** (-0.4 * ab)
     return f
+
+
+def kcorrection(series, z, bn_rest, bn_obs, is_verbose=False):
+    """
+    Compute the K-correction for the set of spectrum.
+    See  https://ned.ipac.caltech.edu/level5/Sept02/Hogg/frames.html
+    and https://www.osti.gov/biblio/823198
+
+    :param series:  Set of Spectrum
+    :param z:  redshift
+    :param bn_rest:  rest band
+    :param bn_obs:  obs band
+    :param is_verbose: if True print info
+    :return: iterator for tuple of (t, k)
+    """
+    from ..rf.band import band_is_exist, band_by_name
+
+    if not band_is_exist(bn_rest):
+        raise ValueError('No such rest band: {}'.format(bn_rest))
+    if not band_is_exist(bn_obs):
+        raise ValueError('No such obs band: {}'.format(bn_obs))
+
+    br = band_by_name(bn_rest)
+    bo = band_by_name(bn_obs)
+
+    if is_verbose:
+        print("Run k-correction with z={} band_rest={}  band_obs={} ".format(z, bn_rest, bn_obs))
+
+    for i, (t, spec) in enumerate(series):
+        k = kcorrection_spec(spec, z, br, bo)
+        if is_verbose:
+            print(" t={}  kcorr={}".format(t, k))
+        yield t, k
+
+
+def kcorrection_spec(spec, z, br, bo):
+    """
+    Compute the K-correction for the Spectrum
+    See  https://ned.ipac.caltech.edu/level5/Sept02/Hogg/frames.html
+    and https://www.osti.gov/biblio/823198
+
+    :param spec:  the Spectrum
+    :param z:  redshift
+    :param br:  rest band
+    :param bo:  obs band
+    :return:  kcorrection
+    """
+    from scipy import integrate
+    from ..util.math import log_interp1d
+
+    # rest
+    wl0 = spec.Wl
+    fl0 = spec.FluxWl
+    br_wl = br.wl
+    # wle = wl0 / (1.+z)
+    log_interp = log_interp1d(wl0, fl0)
+    fl0 = log_interp(br_wl)
+
+    a_fl = br.response(br_wl, fl0)
+    a_br = integrate.simps(br_wl, br.resp_wl)
+
+    # obs
+    bo_wl = bo.wl / (1.+z)
+    bo_resp = bo.resp_wl
+    fle = log_interp(bo_wl)
+
+    b_fl = bo.response(bo_wl, fle)
+    a_bo = integrate.simps(bo.wl, bo_resp)
+
+    k = a_br/a_bo * a_fl/b_fl  # todo check
+    k = -2.5 * np.log10((1.+z)*k)
+    return k
