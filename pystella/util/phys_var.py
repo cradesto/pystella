@@ -39,6 +39,14 @@ class phys:
         """Takes in a measurement in parsecs and returns cm"""
         return parsec * phys.pc
 
+    @staticmethod
+    def cosmology_D_by_z(*args, **kwargs): # clone
+        return cosmology_D_by_z(*args, **kwargs)
+
+    @staticmethod
+    def dist2MD(d):  # clone
+        return dist2MD(d)
+
 
 def dist2MD(d):
     import math

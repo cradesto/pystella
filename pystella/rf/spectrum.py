@@ -218,13 +218,20 @@ class Spectrum(object):
         return sp
 
     def to_mag(self, b, z=0., d=phys.pc2cm(10.), magnification=1.):
+        """
+        Compute the magnitude for the band
+        :param b: photometric band
+        :param z: redshift,  default: 0
+        :param d: distance [cm], default: 10 pc
+        :param magnification: , default: 1
+        :return:
+        """
         if b is None:
             raise ValueError("Band must be defined.")
 
         from pystella.rf.star import Star
         from pystella.rf import band
 
-        mag = None
         star = Star('', self, is_flux_eq_luminosity=True)
         star.set_distance(d)
         star.set_redshift(z)

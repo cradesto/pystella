@@ -194,7 +194,7 @@ def kcorrection(series, z, bn_rest, bn_obs, is_verbose=False):
         yield t, k
 
 
-def kcorrection_spec(spec, z, br, bo):
+def kcorrection_spec(spec, z, br, bo, is_photons=True):
     """
     Compute the K-correction for the Spectrum
     See  https://ned.ipac.caltech.edu/level5/Sept02/Hogg/frames.html
@@ -204,30 +204,32 @@ def kcorrection_spec(spec, z, br, bo):
     :param z:  redshift
     :param br:  rest band
     :param bo:  obs band
+    :param is_photons:
     :return:  kcorrection
     """
     from scipy import integrate
     from ..util.math import log_interp1d
 
-    # rest
-    wl0 = spec.Wl
-    fl0 = spec.FluxWl
-    br_wl = br.wl
-    # wle = wl0 / (1.+z)
-    log_interp = log_interp1d(wl0, fl0)
-    fl0 = log_interp(br_wl)
-
-    a_fl = br.response(br_wl, fl0)
-    a_br = integrate.simps(br_wl, br.resp_wl)
-
     # obs
-    bo_wl = bo.wl / (1.+z)
-    bo_resp = bo.resp_wl
-    fle = log_interp(bo_wl)
+    log_interp = log_interp1d(spec.Wl, spec.FluxWl)
+    flo = log_interp(bo.wl)  # band grid of frequencies
+    bo_resp_wl = bo.resp_wl
 
-    b_fl = bo.response(bo_wl, fle)
-    a_bo = integrate.simps(bo.wl, bo_resp)
+    # rest
+    br_wl = br.wl / (1.+z)
+    flr = log_interp(br_wl)
+    br_resp_wl = br.resp_wl
 
-    k = a_br/a_bo * a_fl/b_fl  # todo check
-    k = -2.5 * np.log10((1.+z)*k)
+    if is_photons:
+        bo_resp_wl = bo_resp_wl*bo.wl
+        br_resp_wl = br_resp_wl*br.wl
+
+    a_obs = integrate.simps(flo*bo_resp_wl, bo.wl)
+    a_rest = integrate.simps(flr*br_resp_wl, br_wl)
+
+    b_obs = integrate.simps(bo_resp_wl, bo.wl)
+    b_rest = integrate.simps(br_resp_wl, br.wl)
+
+    k = b_rest/b_obs * a_rest/a_obs  # todo check
+    k = -2.5 * np.log10(k/(1.+z))
     return k
