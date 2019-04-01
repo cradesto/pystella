@@ -389,7 +389,7 @@ def plot_fit_wl(model, series, wl_ab, times=None, fsave=None):
 
 def plot_spec_wl(times, series, tt, wl_ab, **kwargs):
     font_size = kwargs.get('font_size', 12)
-    nrow = np.math.floor(len(times) / 2)
+    nrow = np.math.ceil(len(times)/2.)
     ncol = 2
     fig = plt.figure(figsize=(12, nrow * 4))
     plt.matplotlib.rcParams.update({'font.size': font_size})
@@ -705,7 +705,7 @@ def main():
             # wl_ab = [np.float(s) for s in (str(arg).split(':'))]
             continue
         if opt == '-t':
-            t_ab = interval2float(arg)
+            t_ab = list(map(float, arg.split(':')))  # interval2float(arg)
             if len(t_ab) > 1:
                 times = t_ab
             continue
