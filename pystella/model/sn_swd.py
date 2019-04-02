@@ -132,9 +132,10 @@ class StellaShockWaveDetail:
             #     taus[i, k] = tau
         return taus
 
-    def params_ph(self, tau_ph=2./3., cols=None):
-        if cols is None:
-            cols = ['R', 'M', 'T', 'V', 'Rho']
+    def params_ph(self, cols=('R', 'M', 'T', 'V', 'Rho'), tau_ph=2./3.):
+        is_str = isinstance(cols, str)
+        if is_str:
+            cols = [cols]
         res = {k: np.zeros(self.Ntimes) for k in ['time', 'zone'] + cols}
         taus = self.taus()
         for i, time in enumerate(self.Times):
@@ -158,7 +159,8 @@ class StellaShockWaveDetail:
         v_dat = self.params_ph(tau_ph=tau_ph, cols=['V'])
         t = v_dat['time'] * (1. + z)  # redshifted time
         v = v_dat['V']
-        return t, v
+        z = v_dat['zone']
+        return t, v, z
 
 
 class BlockSwd:
