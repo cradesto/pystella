@@ -251,7 +251,7 @@ class FitMPFit(FitLc):
                 else:
                     m = np.interp(lc_o.Time, lc_m.Time, lc_m.Mag)  # One-dimensional linear interpolation.
                 #                w = np.ones(len(m))
-                err_m = abs(min(m)-m) * err_mdl
+                # err_m = abs(min(m)-m) * err_mdl
                 w = np.abs(1. - At * (lc_o.Time - lc_o.TimeMin) / (lc_o.TimeMax - lc_o.TimeMin))  # weight
                 diff = lc_o.Mag - m
                 err_m = np.sqrt(np.sum(diff ** 2) / len(m))
@@ -263,7 +263,7 @@ class FitMPFit(FitLc):
                 total = np.append(total, chi)
             return 0, total
 
-        parinfo = [{'value': 0.001, 'limited': [1, 1], 'limits': [0.001, 3.]}]  # todo changeable parameters
+        parinfo = [{'value': 0.0, 'limited': [1, 1], 'limits': [0., 3.]}]  # todo changeable parameters
         if dt0 is not None:
             parinfo.append({'value': dt0, 'limited': [1, 1], 'limits': [-250., 250.]})
         else:

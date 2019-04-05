@@ -167,7 +167,7 @@ def plot_vel(ax, vel, xlim=None, ylim=None, vnorm=1e8, color='blue', label='Velo
 
     ax.set_ylabel('Velocity [{:.0e} km/s]'.format(vnorm/1e5))
     ax.set_xlabel('Time [days]')
-    ax.grid()
+    # ax.grid()
 
 
 def compute_vel_swd(name, path, z=0.):

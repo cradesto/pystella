@@ -45,10 +45,11 @@ class FitGP:
         else:
             gp = FitGP.lc2gp(lc)
 
-        if times is None and Ntime is not None:  # new time points
-                times = np.linspace(min(lc.Time), max(lc.Time), Ntime)
-        else:
+        if times is None:  # new time points
             times = lc.Time
+
+        if Ntime is not None:
+            times = np.linspace(min(times), max(times), Ntime)
 
         if type(times) is not np.ndarray:
             times = np.array(times)
