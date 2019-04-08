@@ -454,18 +454,25 @@ class SeriesSpectrum(object):
         return res
 
     def redshift2rest(self, z: float, name=None):
-        """Redshift from the rest source to the obs source
+        """Redshift Spectrum from the rest source to the obs source
           z - redshift
         """
         name = self.Name if name is None else name
 
+        # redshift for time interval
+        t_diff = self.Time - self.Time[0]
+        tz = np.ones(self.Length) * self.Time[0]
+        tz[:] += t_diff / (1. + z)
+        # tz = self.Time +
+        # redshift for spectrum
         res = SeriesSpectrum(name)
-        for t, sp in self:
+        for i, (t, sp) in enumerate(self):
             freq_z = sp.Freq * (1. + z)
             flux_z = sp.Flux / (1. + z)
             ss = Spectrum(sp.Name, freq=freq_z, flux=flux_z)
-            tz = t / (1. + z)
-            res.add(tz, ss)
+            # tz = t / (1. + z)
+            # tz = t
+            res.add(tz[i], ss)
         return res
 
     def map(self, func, t_ab=None):

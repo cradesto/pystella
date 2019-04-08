@@ -40,8 +40,6 @@ def plot_grid(models_dic, bnames, call=None, **kwargs):
 
         if icol == 0:
             ax.set_ylabel('Magnitude')
-        if irow == int(len(bnames) / 2) - 1:
-            ax.set_xlabel('Time [days]')
 
         ax.legend(prop={'size': 8}, loc=4)
         props = dict(facecolor='wheat')
@@ -51,6 +49,10 @@ def plot_grid(models_dic, bnames, call=None, **kwargs):
 
         if kwargs.get('is_grid', False):
             ax.grid(linestyle=':')
+
+    # Setup axes
+    for ax in axs[-1, :]:
+        ax.set_xlabel('Time [days]')
 
     if title:
         plt.title(title)
