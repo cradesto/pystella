@@ -9,6 +9,9 @@ import pystella.rf.light_curve_plot as lcp
 try:
     import matplotlib.pyplot as plt
     import matplotlib.lines as mlines
+
+    mpl_logger = logging.getLogger('matplotlib')
+    mpl_logger.setLevel(logging.WARNING)
 except ImportError as ex:
     import os
     import sys
@@ -21,6 +24,7 @@ except ImportError as ex:
     #    print(ex)
     plt = None
     mlines = None
+
 
 # matplotlib.use("Agg")
 # import matplotlib
@@ -57,8 +61,8 @@ def get_parser():
                         required=False,
                         dest="x",
                         default='m',
-                        metavar="<m OR r OR lgR OR rsun>",
-                        help="Setup abscissa: Rho(r) or Rho(m)")
+                        metavar="<m OR r OR lgR OR rsun OR m OR z>",
+                        help="Setup abscissa: radius or lg(R) OR mass OR zone")
 
     parser.add_argument('-s', '--save',
                         required=False,
