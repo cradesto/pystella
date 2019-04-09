@@ -423,6 +423,8 @@ class PreSN(object):
                 ax.set_xlabel(r'M [$M_\odot$]')
             elif x == 'v':
                 ax.set_xlabel(r'V [$km\, s^{-1}$]')
+            elif x == 'z':
+                ax.set_xlabel(r'Zone')
             else:
                 ax.set_xscale('log')
                 ax.set_xlabel(r'R [cm]')
@@ -434,6 +436,8 @@ class PreSN(object):
             xi = self.m / phys.M_sun * xnorm
         elif x == 'v':
             xi = self.V * xnorm
+        elif x == 'z':
+            xi = np.arange(0, self.nzon, dtype=np.int) + 1
         else:
             xi = self.r * xnorm
 
