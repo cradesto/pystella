@@ -54,6 +54,13 @@ class H5Stella(object):
         return res
 
     @property
+    def Tau(self):
+        logging.debug('Tau from {}'.format(self.Fname))
+        with h5py.File(self.Fname, "r") as h5f:
+            res = H5Tau('Tau').fill(h5f)
+        return res
+
+    @property
     def Hyd(self):
         logging.debug('Hyd from {}'.format(self.Fname))
         with h5py.File(self.Fname, "r") as h5f:
@@ -155,6 +162,9 @@ class H5TimeElement(object):
                 return idx
         return -1
 
+    def __getitem__(self, item):
+        return self.ValueByTime(item)
+
     def IdxValueByTime(self, time):
         idx = self.IdxByTime(time)
         if idx >= 0:
@@ -197,6 +207,12 @@ class H5Fj(H5FreqTimeElement):
     def __init__(self, name):
         self._name = name
         super(H5Fj, self).__init__(name, path='/timing/Fj')
+
+
+class H5Tau(H5FreqTimeElement):
+    def __init__(self, name):
+        self._name = name
+        super(H5Tau, self).__init__(name, path='/timing/Tau')
 
 
 class H5Hyd(H5TimeElement):

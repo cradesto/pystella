@@ -1,11 +1,7 @@
 #!/usr/bin/env python3
-# #!/usr/bin/python3
 
 import logging
 import os
-
-# matplotlib.rcParams['backend'] = "TkAgg"
-# matplotlib.rcParams['backend'] = "Qt4Agg"
 
 import numpy as np
 import pystella as ps

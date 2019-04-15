@@ -6,9 +6,6 @@ from os.path import dirname, abspath
 # matplotlib.rcParams['backend'] = "TkAgg"
 # matplotlib.rcParams['backend'] = "Qt4Agg"
 import math
-import matplotlib.pyplot as plt
-from matplotlib import gridspec
-
 import pystella as ps
 
 import logging
@@ -21,6 +18,8 @@ ROOT_DIRECTORY = dirname(dirname(abspath(__file__)))
 
 
 def plot_grid(models_dic, bnames, call=None, **kwargs):
+    import matplotlib.pyplot as plt
+
     title = kwargs.get('title', '')
     # setup figure
     plt.matplotlib.rcParams.update({'font.size': kwargs.get('fontsize', 12)})
@@ -63,6 +62,9 @@ def plot_grid(models_dic, bnames, call=None, **kwargs):
 
 
 def plot_all(models_vels, models_dic, bnames, d=10, call=None, **kwargs):
+    import matplotlib.pyplot as plt
+    from matplotlib import gridspec
+
     # xlim = None, ylim = None,  is_time_points = False, title = '', bshift = None
     title = kwargs.get('title', '')
     legend = kwargs.get('legend', 'box')
@@ -325,7 +327,8 @@ def main(name=None, model_ext='.ph'):
                 if os.path.exists(os.path.join(path, nm+model_ext)):
                     names.append(nm)
                 else:
-                    files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f)) and fnmatch.fnmatch(f, arg)]
+                    files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))
+                             and fnmatch.fnmatch(f, arg)]
                     for f in files:
                         nm = os.path.splitext(os.path.basename(f))[0]
                         names.append(nm)
@@ -444,8 +447,8 @@ def main(name=None, model_ext='.ph'):
 
                 print("Save plot to %s " % fsave)
                 fig.savefig(fsave, bbox_inches='tight', format='pdf')
-                plt.close()
             else:
+                import matplotlib.pyplot as plt
                 plt.ion()
                 plt.show()
                 plt.pause(0.0001)
