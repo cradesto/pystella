@@ -2,7 +2,12 @@ import numpy as np
 
 from pystella.fit.fit_lc import FitLc, FitLcResult
 
-
+import logging
+mpl_logger = logging.getLogger('matplotlib')
+mpl_logger.setLevel(logging.WARNING)
+import logging
+mpl_logger = logging.getLogger('matplotlib')
+mpl_logger.setLevel(logging.WARNING)
 class FitMCMC(FitLc):
     def __init__(self):
         super().__init__("MCMCFit")
@@ -186,8 +191,8 @@ class FitMCMC(FitLc):
 
         return sampler
 
-    def best_curves(self, curves_m, curves_o, dt0=None, dm0=None, is_spline=True,
-                    is_plot=False, threads=1):
+    def best_curves(self, curves_m, curves_o, dt0=None, dm0=None, is_spline=False,
+                    is_plot=False, threads=1, dt_lim=100., dm_lim=5.):
         from scipy.interpolate import InterpolatedUnivariateSpline
         import emcee
 
@@ -200,75 +205,95 @@ class FitMCMC(FitLc):
             for lc_m in curves_m:
                 curves_m_spline[lc_m.Band.Name] = InterpolatedUnivariateSpline(lc_m.Time, lc_m.Mag, k=1)
 
-        def log_prior(theta):
-            #         if (theta[0] < -200) or (theta[0] > 200):
-            #             return -np.inf
-            #         if (theta[1] < -3) or (theta[1] > 3):
-            #             return -np.inf
+        # def log_prior(theta):
+        #     #         if (theta[0] < -200) or (theta[0] > 200):
+        #     #             return -np.inf
+        #     #         if (theta[1] < -3) or (theta[1] > 3):
+        #     #             return -np.inf
+        #     return 0  # flat prior
+
+        def log_prior(theta, tlim=dt_lim, maglim=dm_lim):
+            dt, dm, lnf = theta
+            if (dt < -tlim) or (dt > tlim):
+                return -np.inf
+            if (dm < -maglim) or (dm > maglim):
+                return -np.inf
+            if (lnf < -10.) or (lnf > 1.):
+                return -np.inf
             return 0  # flat prior
 
         def log_likelihood_curves(theta, cs_m, cs_o):
+            dt, dm, lnf = theta
             res = 0.
             for lc_o in cs_o:
-                lcm = cs_m[lc_o.BName]
-                lc_o.tshift = dt_init[lcm.BName] + theta[0]
-                lc_o.mshift = dm_init[lcm.BName] + theta[1]
+                to, mo, eo = lc_o.Time, lc_o.Mag, lc_o.MagErr
+                to = to + dt
+                mo = mo + dm
+
+                # lc_o.tshift = dt_init[lcm.BName] + dt
+                # lc_o.mshift = dm_init[lcm.BName] + dm
 
                 # model interpolation
+                lcm = cs_m[lc_o.BName]
                 if is_spline:
                     s = curves_m_spline[lcm.BName]
-                    m = s(lc_o.Time)
+                    model = s(to)
                 else:
-                    m = np.interp(lc_o.Time, lcm.Time, lcm.Mag)  # One-dimensional linear interpolation
+                    model = np.interp(to, lcm.Time, lcm.Mag)  # One-dimensional linear interpolation
 
-                to, mo, eo = lc_o.Time, lc_o.Mag, lc_o.MagErr
+                # to, mo, eo = lc_o.Time, lc_o.Mag, lc_o.MagErr
 
-                # sigma2 = yerr ** 2 + model ** 2 * np.exp(2 * log_f)
-
-                chi = -0.5 * np.sum(np.log(2 * np.pi * (eo ** 2))
-                                    + (mo - m) ** 2 / (eo ** 2))
+                inv_sigma2 = 1.0 / (eo ** 2 + model ** 2 * np.exp(2 * lnf))
+                chi = -0.5 * (np.sum((mo - model) ** 2 * inv_sigma2 - np.log(inv_sigma2)))
                 res += chi
-
             return res
 
         def chi2(theta, cs_m, cs_o):
+            dt, dm, lnf = theta
             res = 0.
             for lc_o in cs_o:
-                lcm = cs_m[lc_o.BName]
-                lc_o.tshift = dt_init[lcm.BName] + theta[0]
-                lc_o.mshift = dm_init[lcm.BName] + theta[1]
+                to, mo, eo = lc_o.Time, lc_o.Mag, lc_o.MagErr
+                to = to + dt
+                mo = mo + dm
 
                 # model interpolation
+                lcm = cs_m[lc_o.BName]
                 if is_spline:
                     s = curves_m_spline[lcm.BName]
-                    m = s(lc_o.Time)
+                    model = s(to)
                 else:
-                    m = np.interp(lc_o.Time, lcm.Time, lcm.Mag)  # One-dimensional linear interpolation
+                    model = np.interp(to, lcm.Time, lcm.Mag)  # One-dimensional linear interpolation
 
-                to, mo, eo = lc_o.Time, lc_o.Mag, lc_o.MagErr
-
-                # sigma2 = yerr ** 2 + model ** 2 * np.exp(2 * log_f)
-
-                chi = np.sum((mo - m) ** 2 / (eo ** 2))
+                # chi = np.sum((mo - m) ** 2 / (eo ** 2))
+                inv_sigma2 = 1.0 / (eo ** 2 + model ** 2 * np.exp(2 * lnf))
+                chi = np.sum((mo - model) ** 2 * inv_sigma2)
                 res += chi
             return res
 
         def log_posterior(theta, cs_m, cs_o):
-            return log_prior(theta) + log_likelihood_curves(theta, cs_m, cs_o)
+            lp = log_prior(theta)
+            if not np.isfinite(lp):
+                return -np.inf
+            return lp + log_likelihood_curves(theta, cs_m, cs_o)
 
         if dt0 is not None or dm0 is not None:
-            ndim = 2  # number of parameters in the model
+            ndim = 3  # number of parameters in the model
             if self.is_debug:
-                nwalkers = 20  # number of MCMC walkers
-                nburn = 50  # "burn-in" period to let chains stabilize
-                nsteps = 300  # number of MCMC steps to take
-            else:  # run
                 nwalkers = 100  # number of MCMC walkers
-                nburn = 200  # "burn-in" period to let chains stabilize
-                nsteps = 2000  # number of MCMC steps to take
+                nburn = 50  # "burn-in" period to let chains stabilize
+                nsteps = 100  # number of MCMC steps to take
+            else:  # run
+                nwalkers = 500  # number of MCMC walkers
+                nburn = 100  # "burn-in" period to let chains stabilize
+                nsteps = 500  # number of MCMC steps to take
             # we'll start at random locations between 0 and 2000
-            starting_guesses = 1. - 2. * np.random.rand(nwalkers, ndim)  #
-            starting_guesses[0] *= 200  # for time delay in [0,100]
+            # starting_guesses = 1. - 2. * np.random.rand(nwalkers, ndim)  #
+            # starting_guesses[:, 0] *= dt_lim  # for time delay in [0,100]
+            starting_guesses = np.random.rand(nwalkers, ndim)  #
+            # starting_guesses = 1. - 2. * np.random.rand(nwalkers, ndim)  #
+            starting_guesses[:, 0] *= dt_lim  # for time delay in [-100,100]
+            starting_guesses[:, 1] *= dm_lim  # for  magnification
+            starting_guesses[:, 2] = 1. - 2. * np.random.rand(nwalkers)  # for lnf
 
             sampler = emcee.EnsembleSampler(nwalkers, ndim, log_posterior, args=(curves_m, curves_o),
                                             threads=threads, a=3)
@@ -277,21 +302,30 @@ class FitMCMC(FitLc):
             #     sample = sampler.chain  # shape = (nwalkers, nsteps, ndim)
             sample_dt = sampler.flatchain[nburn:, 0].ravel()  # discard burn-in points
             sample_mu = sampler.flatchain[nburn:, 1].ravel()  # discard burn-in points
+            sample_lnf = sampler.flatchain[nburn:, 2].ravel()  # discard burn-in points
 
-            # sample_dt = sampler.chain[:, nburn:, 0].ravel()  # discard burn-in points
-            # sample_mu = sampler.chain[:, nburn:, 1].ravel()  # discard burn-in points
-            # todo sampler.flatchain
-
-            dt, dtsigma = np.mean(sample_dt), np.std(sample_dt)
-            dm, dmsigma = np.mean(sample_mu), np.std(sample_mu)
+            # dt, dtsigma = np.mean(sample_dt), np.std(sample_dt)
+            # dm, dmsigma = np.mean(sample_mu), np.std(sample_mu)
+            samples = np.array([sample_dt, sample_mu, sample_lnf]).T
+            quartiles = list(
+                map(lambda v: (v[1], v[2] - v[1], v[1] - v[0]), zip(*np.percentile(samples, (16, 50, 84), axis=0))))
+            dt, dtsig1, dtsig2 = quartiles[0][0], quartiles[0][1], quartiles[0][2]
+            dm, dmsig1, dmsig2 = quartiles[1][0], quartiles[1][1], quartiles[1][2]
+            lnf, lnfsig1, lnfsig2 = quartiles[2][0], quartiles[2][1], quartiles[2][2]
 
             # res = {'dt': tshift, 'dtsig': tsigma, 'dm': dm, 'dmsig': dmsigma,
             #        'mean': np.mean(sampler.acceptance_fraction)}
-            chi2 = chi2([dt, dm], curves_m, curves_o)
+            # chi2 = chi2([dt, dm], curves_m, curves_o)
+            # dof = np.sum([lc.Length for lc in curves_o]) - 2
+            # res = {'dt': dt, 'dtsig': dtsigma, 'dm': dm, 'dmsig': dmsigma,
+            #        'chi2': chi2, 'dof': dof}
+            chi2 = chi2([dt, dm, lnf], curves_m, curves_o)
+            # chi2 = abs(log_likelihood_chi2((dt, dm), curves_m, curves_o))
             dof = np.sum([lc.Length for lc in curves_o]) - 2
-            res = {'dt': dt, 'dtsig': dtsigma, 'dm': dm, 'dmsig': dmsigma,
+            res = {'dt': dt, 'dtsig1': dtsig1, 'dtsig2': dtsig2, 'dtsig': (dtsig1+dtsig2)/2.,
+                   'dm': dm, 'dmsig1': dmsig1, 'dmsig2': dmsig2, 'dmsig': (dmsig1+dmsig2)/2.,
+                   'lnf': lnf, 'lnfsig1': lnfsig1, 'lnfsig2': lnfsig2, 'lnfsig': (lnfsig1+lnfsig2)/2.,
                    'chi2': chi2, 'dof': dof}
-
         else:
             chi2 = chi2([0., 0.], curves_m, curves_o)  # just return the weight diff
             dof = np.sum([lc.Length for lc in curves_o]) - 2
@@ -319,8 +353,8 @@ class FitMCMC(FitLc):
             from matplotlib import pyplot as plt
             import corner
             plt.hist(sample_dt, bins=50, histtype="stepfilled", alpha=0.3)
-            samples = sampler.chain[:, nburn:, :].reshape((-1, ndim))
-            fig = corner.corner(samples, labels=["$delay$", "$dm$"],
-                                truths=[dt, dm])
+            # samples = sampler.chain[:, nburn:, :].reshape((-1, ndim))
+            fig = corner.corner(samples, labels=["$delay$", "$dm$", "$lnf$"],
+                                truths=[dt, dm, lnf])
             return res, fig
         return res

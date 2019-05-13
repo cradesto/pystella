@@ -3,6 +3,7 @@ from os.path import dirname, abspath, join
 
 import matplotlib.pyplot as plt
 import numpy as np
+from altair.vega.v2 import transform
 from scipy import interpolate
 
 from plugin import sn1999em, sn87a, rednova
@@ -299,21 +300,24 @@ class TestFit(unittest.TestCase):
         # fit
         # fitter = FitLcMcmc()
         fitter = FitMCMC()
-        fitter.is_debug = True
+        fitter.is_debug = False
         fitter.is_info = True
-        res, fig = fitter.best_curves(curves_mdl, curves_obs, dt0=0, is_plot=True)
+        res, fig = fitter.best_curves(curves_mdl, curves_obs, dt0=0., dm0=0., is_plot=True)
 
         # print
-        txt = '{:10s} {:.4e} \n'.format('tshift:', res['dt']) + \
-              '{:10s} {:.4e} \n'.format('tsigma:', res['dtsig'])
+        txt = '{:10s} {:.4f} ^{:.4f}_{:.4f} \n'.format('tshift:', res['dt'], res['dtsig2'], res['dtsig1']) + \
+              '{:10s} {:.4f} ^{:.4f}_{:.4f}\n'.format('msigma:', res['dm'], res['dmsig2'], res['dmsig1']) + \
+              '{:10s} {:.4f} ^{:.4f}_{:.4f}\n'.format('lnf:', res['lnf'], res['lnfsig2'], res['lnfsig1'])
         print(txt)
         # plot model
         curves_obs.set_tshift(res['dt'])
+        curves_obs.set_mshift(dm+res['dm'])
         # curves_mdl.set_tshift(0.)
         ax = lcp.curves_plot(curves_mdl)
 
         lt = {lc.Band.Name: 'o' for lc in curves_obs}
         lcp.curves_plot(curves_obs, ax, lt=lt, xlim=(-10, 300), is_line=False)
+        ax.text(0.1,0.1, txt, transform=ax.transAxes)
         plt.show()
 
     # @unittest.skip("just for plot")
