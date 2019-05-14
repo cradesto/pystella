@@ -39,7 +39,7 @@ def plot_ubv(ax, path, jd_shift=0., mshift=0.):
 
 
 def read_curves(path=sn_path):
-    header = 'U B  V  I  R'
+    header = 'U B  V  R I'
     cols = map(str.strip, header.split())
     lc_data = np.loadtxt(os.path.join(path, '1999emubvir.dat'), skiprows=1, usecols=range(1, 12))
     time = lc_data[:, 0]

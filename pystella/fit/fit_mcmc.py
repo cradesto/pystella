@@ -1,16 +1,46 @@
 import numpy as np
+import emcee
 
 from pystella.fit.fit_lc import FitLc, FitLcResult
 
 import logging
+
 mpl_logger = logging.getLogger('matplotlib')
 mpl_logger.setLevel(logging.WARNING)
-import logging
-mpl_logger = logging.getLogger('matplotlib')
-mpl_logger.setLevel(logging.WARNING)
+
+
 class FitMCMC(FitLc):
     def __init__(self):
         super().__init__("MCMCFit")
+        self._par = {
+            "nwalkers": 500,  # number of MCMC walkers
+            "nburn": 100,     # "burn-in" period to let chains stabilize
+            "nsteps": 500     # number of MCMC steps to take
+        }
+
+    @property
+    def nwalkers(self):
+        return self.get('nwalkers', 500)
+
+    @nwalkers.setter
+    def nwalkers(self, v):
+        self._par['nwalkers'] = v
+
+    @property
+    def nburn(self):
+        return self.get('nburn', 100)
+
+    @nburn.setter
+    def nburn(self, v):
+        self._par['nburn'] = v
+
+    @property
+    def nsteps(self):
+        return self.get('nsteps', 500)
+
+    @nsteps.setter
+    def nsteps(self, v):
+        self._par['nsteps'] = v
 
     def fit_lc(self, lc_o, lc_m):
         tshift, tsigma = self.fit_lc_bayesian_1d(lc_o, lc_m, is_debug=self.is_debug)
@@ -58,7 +88,7 @@ class FitMCMC(FitLc):
         #                     truths=[tshift, dm])
 
         if self.is_info:
-            print("The final params are: tshift=%f tsigma=%f" % (tshift, tsigma))
+            print("The final params are: tshift=%f +- %f" % (tshift, tsigma))
 
         fit_result = FitLcResult()
         fit_result.tshift = tshift
@@ -68,7 +98,7 @@ class FitMCMC(FitLc):
         return fit_result
 
     @staticmethod
-    def fit_lc_bayesian_1d(lc_m, lc_o,  err_mdl=0.1, is_debug=True, is_plot=True):
+    def fit_lc_bayesian_1d(lc_m, lc_o, err_mdl=0.1, is_debug=True, is_plot=True):
         import emcee
         from sklearn.metrics import mean_squared_error
 
@@ -164,17 +194,17 @@ class FitMCMC(FitLc):
                     res += p
             return res
 
-        def log_posterior(theta, mdl, obs ):
+        def log_posterior(theta, mdl, obs):
             return log_prior(theta) + log_likelihood_curves(theta, mdl, obs)
 
         ndim = 1  # number of parameters in the model
         nwalkers = 50  # number of MCMC walkers
-        if self.is_debug:
-            nburn = 100  # "burn-in" period to let chains stabilize
-            nsteps = 200  # number of MCMC steps to take
-        else:  # run
-            nburn = 1000  # "burn-in" period to let chains stabilize
-            nsteps = 2000  # number of MCMC steps to take
+        # if self.is_debug:
+        #     nburn = 100  # "burn-in" period to let chains stabilize
+        #     nsteps = 200  # number of MCMC steps to take
+        # else:  # run
+        #     nburn = 1000  # "burn-in" period to let chains stabilize
+        #     nsteps = 2000  # number of MCMC steps to take
         # we'll start at random locations between 0 and 2000
         starting_guesses = np.random.rand(nwalkers, ndim)
         starting_guesses[0] *= 100  # for time delay in [0,100]
@@ -184,125 +214,114 @@ class FitMCMC(FitLc):
         # sampler.run_mcmc(starting_guesses, nsteps)
 
         # burnin
-        pos, prob, state = sampler.run_mcmc(starting_guesses, nburn)
+        pos, prob, state = sampler.run_mcmc(starting_guesses, self.nburn)
         sampler.reset()
         # run
-        sampler.run_mcmc(pos, nsteps)
+        sampler.run_mcmc(pos, self.nsteps)
 
         return sampler
 
-    def best_curves(self, curves_m, curves_o, dt0=None, dm0=None, is_spline=False,
-                    is_plot=False, threads=1, dt_lim=100., dm_lim=5.):
-        from scipy.interpolate import InterpolatedUnivariateSpline
-        import emcee
+    @staticmethod
+    def log_prior(theta, tlim, maglim):
+        dt, dm, lnf = theta
+        if (dt < -tlim) or (dt > tlim):
+            return -np.inf
+        if (dm < -maglim) or (dm > maglim):
+            return -np.inf
+        if (lnf < -10.) or (lnf > 1.):
+            return -np.inf
+        return 0  # flat prior
 
+    @staticmethod
+    def log_likelihood_curves(theta, cs_m, cs_o):
+        dt, dm, lnf = theta
+        res = 0.
+        for lc_o in cs_o:
+            to, mo, eo = lc_o.Time, lc_o.Mag, lc_o.MagErr
+            to = to + dt
+            mo = mo + dm
+
+            # model interpolation
+            lcm = cs_m[lc_o.BName]
+            model = np.interp(to, lcm.Time, lcm.Mag)  # One-dimensional linear interpolation
+
+            # to, mo, eo = lc_o.Time, lc_o.Mag, lc_o.MagErr
+            mag_min = np.min(model)
+            inv_sigma2 = 1.0 / (eo**2 + model**2 * 10**(2 * lnf))
+            # inv_sigma2 = 1.0 / (eo**2 + (model-mag_min)**2 * 10**(2 * lnf))
+            chi = -0.5 * (np.sum((mo - model) ** 2 * inv_sigma2 - np.log(inv_sigma2)))
+            res += chi
+        return res
+
+    @staticmethod
+    def log_posterior(theta, cs_m, cs_o, kwargs):
+        dt_lim = kwargs.get('dt_lim', 100.)
+        dm_lim = kwargs.get('dm_lim', 5.)
+        lp = FitMCMC.log_prior(theta, tlim=dt_lim, maglim=dm_lim)
+        if not np.isfinite(lp):
+            return -np.inf
+        return lp + FitMCMC.log_likelihood_curves(theta, cs_m, cs_o)
+
+    @staticmethod
+    def chi2(theta, cs_m, cs_o):
+        dt, dm, lnf = theta
+        res = 0.
+        for lc_o in cs_o:
+            to, mo, eo = lc_o.Time, lc_o.Mag, lc_o.MagErr
+            to = to + dt
+            mo = mo + dm
+
+            # model interpolation
+            lcm = cs_m[lc_o.BName]
+            model = np.interp(to, lcm.Time, lcm.Mag)  # One-dimensional linear interpolation
+
+            # mag_min = np.min(model)
+            inv_sigma2 = 1.0 / (eo**2 + model**2 * 10**(2 * lnf))
+            # inv_sigma2 = 1.0 / (eo**2 + (model-mag_min)**2 * 10**(2 * lnf))
+            chi = np.sum((mo - model)**2 * inv_sigma2)
+            res += chi
+        return res
+
+    # todo for dt0 and dm0  separately
+    def best_curves(self, curves_m, curves_o, dt0=None, dm0=None,
+                    threads=1, dt_lim=100., dm_lim=5., is_samples=False):
+        """
+        Find the values of time shift and magnitude shift minimizing the distance between the observational
+        and modal light curves
+        :param curves_m: modal LCs
+        :param curves_o: observational LCs
+        :param dt0: initial time shift
+        :param dm0: initial magnitude shift
+        :param threads: threads for MCMC
+        :param dt_lim: limits for  time shift for prior probability
+        :param dm_lim: limits for  magnitude shift for prior probability
+        :param is_samples: if True also return samples
+        :return: the dictionary with fitting results
+        """
         dt_init = {lc.Band.Name: lc.tshift for lc in curves_o}
         dm_init = {lc.Band.Name: lc.mshift for lc in curves_o}
 
-        # заменить модели их сплайном
-        curves_m_spline = {}
-        if is_spline:
-            for lc_m in curves_m:
-                curves_m_spline[lc_m.Band.Name] = InterpolatedUnivariateSpline(lc_m.Time, lc_m.Mag, k=1)
-
-        # def log_prior(theta):
-        #     #         if (theta[0] < -200) or (theta[0] > 200):
-        #     #             return -np.inf
-        #     #         if (theta[1] < -3) or (theta[1] > 3):
-        #     #             return -np.inf
-        #     return 0  # flat prior
-
-        def log_prior(theta, tlim=dt_lim, maglim=dm_lim):
-            dt, dm, lnf = theta
-            if (dt < -tlim) or (dt > tlim):
-                return -np.inf
-            if (dm < -maglim) or (dm > maglim):
-                return -np.inf
-            if (lnf < -10.) or (lnf > 1.):
-                return -np.inf
-            return 0  # flat prior
-
-        def log_likelihood_curves(theta, cs_m, cs_o):
-            dt, dm, lnf = theta
-            res = 0.
-            for lc_o in cs_o:
-                to, mo, eo = lc_o.Time, lc_o.Mag, lc_o.MagErr
-                to = to + dt
-                mo = mo + dm
-
-                # lc_o.tshift = dt_init[lcm.BName] + dt
-                # lc_o.mshift = dm_init[lcm.BName] + dm
-
-                # model interpolation
-                lcm = cs_m[lc_o.BName]
-                if is_spline:
-                    s = curves_m_spline[lcm.BName]
-                    model = s(to)
-                else:
-                    model = np.interp(to, lcm.Time, lcm.Mag)  # One-dimensional linear interpolation
-
-                # to, mo, eo = lc_o.Time, lc_o.Mag, lc_o.MagErr
-
-                inv_sigma2 = 1.0 / (eo ** 2 + model ** 2 * np.exp(2 * lnf))
-                chi = -0.5 * (np.sum((mo - model) ** 2 * inv_sigma2 - np.log(inv_sigma2)))
-                res += chi
-            return res
-
-        def chi2(theta, cs_m, cs_o):
-            dt, dm, lnf = theta
-            res = 0.
-            for lc_o in cs_o:
-                to, mo, eo = lc_o.Time, lc_o.Mag, lc_o.MagErr
-                to = to + dt
-                mo = mo + dm
-
-                # model interpolation
-                lcm = cs_m[lc_o.BName]
-                if is_spline:
-                    s = curves_m_spline[lcm.BName]
-                    model = s(to)
-                else:
-                    model = np.interp(to, lcm.Time, lcm.Mag)  # One-dimensional linear interpolation
-
-                # chi = np.sum((mo - m) ** 2 / (eo ** 2))
-                inv_sigma2 = 1.0 / (eo ** 2 + model ** 2 * np.exp(2 * lnf))
-                chi = np.sum((mo - model) ** 2 * inv_sigma2)
-                res += chi
-            return res
-
-        def log_posterior(theta, cs_m, cs_o):
-            lp = log_prior(theta)
-            if not np.isfinite(lp):
-                return -np.inf
-            return lp + log_likelihood_curves(theta, cs_m, cs_o)
-
         if dt0 is not None or dm0 is not None:
             ndim = 3  # number of parameters in the model
-            if self.is_debug:
-                nwalkers = 100  # number of MCMC walkers
-                nburn = 50  # "burn-in" period to let chains stabilize
-                nsteps = 100  # number of MCMC steps to take
-            else:  # run
-                nwalkers = 500  # number of MCMC walkers
-                nburn = 100  # "burn-in" period to let chains stabilize
-                nsteps = 500  # number of MCMC steps to take
+
             # we'll start at random locations between 0 and 2000
             # starting_guesses = 1. - 2. * np.random.rand(nwalkers, ndim)  #
             # starting_guesses[:, 0] *= dt_lim  # for time delay in [0,100]
-            starting_guesses = np.random.rand(nwalkers, ndim)  #
+            starting_guesses = np.random.rand(self.nwalkers, ndim)  #
             # starting_guesses = 1. - 2. * np.random.rand(nwalkers, ndim)  #
             starting_guesses[:, 0] *= dt_lim  # for time delay in [-100,100]
             starting_guesses[:, 1] *= dm_lim  # for  magnification
-            starting_guesses[:, 2] = 1. - 2. * np.random.rand(nwalkers)  # for lnf
+            starting_guesses[:, 2] = 1. - 2. * np.random.rand(self.nwalkers)  # for lnf
 
-            sampler = emcee.EnsembleSampler(nwalkers, ndim, log_posterior, args=(curves_m, curves_o),
+            sampler = emcee.EnsembleSampler(self.nwalkers, ndim, FitMCMC.log_posterior,
+                                            args=(curves_m, curves_o, {'dt_lim': dt_lim, 'dm_lim': dm_lim}),
                                             threads=threads, a=3)
-            sampler.run_mcmc(starting_guesses, nsteps)
+            sampler.run_mcmc(starting_guesses, self.nsteps)
 
             #     sample = sampler.chain  # shape = (nwalkers, nsteps, ndim)
-            sample_dt = sampler.flatchain[nburn:, 0].ravel()  # discard burn-in points
-            sample_mu = sampler.flatchain[nburn:, 1].ravel()  # discard burn-in points
-            sample_lnf = sampler.flatchain[nburn:, 2].ravel()  # discard burn-in points
+            sample_dt = sampler.flatchain[self.nburn:, 0].ravel()  # discard burn-in points
+            sample_mu = sampler.flatchain[self.nburn:, 1].ravel()  # discard burn-in points
+            sample_lnf = sampler.flatchain[self.nburn:, 2].ravel()  # discard burn-in points
 
             # dt, dtsigma = np.mean(sample_dt), np.std(sample_dt)
             # dm, dmsigma = np.mean(sample_mu), np.std(sample_mu)
@@ -319,15 +338,15 @@ class FitMCMC(FitLc):
             # dof = np.sum([lc.Length for lc in curves_o]) - 2
             # res = {'dt': dt, 'dtsig': dtsigma, 'dm': dm, 'dmsig': dmsigma,
             #        'chi2': chi2, 'dof': dof}
-            chi2 = chi2([dt, dm, lnf], curves_m, curves_o)
+            chi2 = FitMCMC.chi2([dt, dm, lnf], curves_m, curves_o)
             # chi2 = abs(log_likelihood_chi2((dt, dm), curves_m, curves_o))
             dof = np.sum([lc.Length for lc in curves_o]) - 2
-            res = {'dt': dt, 'dtsig1': dtsig1, 'dtsig2': dtsig2, 'dtsig': (dtsig1+dtsig2)/2.,
-                   'dm': dm, 'dmsig1': dmsig1, 'dmsig2': dmsig2, 'dmsig': (dmsig1+dmsig2)/2.,
-                   'lnf': lnf, 'lnfsig1': lnfsig1, 'lnfsig2': lnfsig2, 'lnfsig': (lnfsig1+lnfsig2)/2.,
-                   'chi2': chi2, 'dof': dof}
+            res = {'dt': dt, 'dtsig1': dtsig1, 'dtsig2': dtsig2, 'dtsig': (dtsig1 + dtsig2) / 2.,
+                   'dm': dm, 'dmsig1': dmsig1, 'dmsig2': dmsig2, 'dmsig': (dmsig1 + dmsig2) / 2.,
+                   'lnf': lnf, 'lnfsig1': lnfsig1, 'lnfsig2': lnfsig2, 'lnfsig': (lnfsig1 + lnfsig2) / 2.,
+                   'chi2': chi2, 'dof': dof, 'acceptance_fraction': np.mean(sampler.acceptance_fraction)}
         else:
-            chi2 = chi2([0., 0.], curves_m, curves_o)  # just return the weight diff
+            chi2 = FitMCMC.chi2([0., 0.], curves_m, curves_o)  # just return the weight diff
             dof = np.sum([lc.Length for lc in curves_o]) - 2
             if self.is_info:
                 print("No fit: only run least_sq:   chi2={} dof={}".format(chi2, dof))
@@ -349,12 +368,22 @@ class FitMCMC(FitLc):
             print("The final params are: dt={:6.2f}+-{:6.4f} dm={:6.2f}+-{:6.4f}  chi2:{:.0f}/{:d}".format(
                 res['dt'], res['dtsig'], res['dm'], res['dmsig'], res['chi2'], res['dof']))
 
-        if is_plot:
-            from matplotlib import pyplot as plt
-            import corner
-            plt.hist(sample_dt, bins=50, histtype="stepfilled", alpha=0.3)
-            # samples = sampler.chain[:, nburn:, :].reshape((-1, ndim))
-            fig = corner.corner(samples, labels=["$delay$", "$dm$", "$lnf$"],
-                                truths=[dt, dm, lnf])
-            return res, fig
+        if is_samples:
+            return res, samples
         return res
+
+    # @staticmethod
+    # @staticmethod
+    def plot_corner(self, samples):
+        # from matplotlib import pyplot as plt
+        import corner
+        # plt.hist(sample_dt, bins=50, histtype="stepfilled", alpha=0.3)
+        # # samples = sampler.chain[:, nburn:, :].reshape((-1, ndim))
+        # fig = corner.corner(samples, labels=["$delay$", "$dm$", "$lnf$"],
+        #                     truths=[dt, dm, lnf])
+        fig = corner.corner(samples, labels=["td", 'dm', 'lnf'], bins=30,
+                            quantiles=(0.16, 0.5, 0.84),
+                            show_titles=True, label_kwargs={'labelpad': 1, 'fontsize': 14}, fontsize=8)
+        fig.set_size_inches((16, 12))
+
+        return fig

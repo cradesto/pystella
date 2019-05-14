@@ -307,10 +307,6 @@ class FitMPFit(FitLc):
                 print("Fitted pars: ", result.params)
                 print("Uncertainties: ", result.perror)
 
-        # Sigma
-        err = result.params[0]
-        # time and magnitude shifts
-        tshift = result.params[1]
         dof = np.sum([lc.Length for lc in curves_o])
         if dt0 is not None:
             dof -= 1
@@ -318,8 +314,12 @@ class FitMPFit(FitLc):
             dof -= 1
 
         # scaled uncertainties
+        err = result.params[0]
         pcerror = result.perror * np.sqrt(result.fnorm / dof)
         errsig = pcerror[0]  # todo tsigma check
+
+        # time and magnitude shifts
+        tshift = result.params[1]
         tsigma = pcerror[1]  # todo tsigma check
 
         dmshift = result.params[2]
