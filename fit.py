@@ -971,6 +971,7 @@ def main():
     # res = first(res_sorted.values())[0]
     print("Best fit model:")
     print("{}: time shift  = {:.2f}+/-{:.4f} Measure: {:.4f}".format(best_mdl, res.tshift, res.tsigma, res.measure))
+    print("{}: ".format(best_mdl), res)
 
     # shift observational data
     # curves_o.set_tshift(best_tshift)

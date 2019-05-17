@@ -43,7 +43,10 @@ class TimeSeries(object):
 
     @property
     def Length(self):
-        return len(self._t)
+        # print("{}: {}".format(type(self.V), self.V))
+        return len(self.V)
+        # print("{}: {}".format(type(self.T), self.T))
+        # return len(self.T)
 
     @property
     def V(self):

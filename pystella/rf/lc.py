@@ -180,6 +180,12 @@ class SetLightCurve(SetTimeSeries):
                 return lc
         return default
 
+    # def __getattr__(self, attr):
+    #     lc = self.get(attr, None)
+    #     if lc is None:
+    #         raise AttributeError(attr)
+    #     return lc
+    #
     def is_band(self, bn):
         return bn in self.BandNames
 
