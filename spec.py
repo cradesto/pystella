@@ -639,6 +639,14 @@ def plot_kcorr(times, kcorr, figsize=(12, 12)):
     return fig
 
 
+def kcorr_save(fname, times, kcorr):
+    with open(fname, "w") as f:
+        print("{:>8s}  {:>8s}".format("Time", "kcorr"), file=f)
+        for t, k in zip(times, kcorr):
+            print("{:8.2f}  {:12.2f}".format(t, k), file=f)
+    print("The k-corrections has been saved to %s " % fname)
+
+
 def main():
     is_save_plot = False
     is_kcorr = False
@@ -765,7 +773,13 @@ def main():
         for t, k in ps.rf.rad_func.kcorrection(series, z_sn, bn_rest, bn_obs):
             times.append(t)
             kcorr.append(k)
-        fig = plot_kcorr(times, kcorr)
+        if is_write:
+            if fsave is None or len(fsave) == 0 or fsave == '1':
+                fsave = os.path.join(os.path.expanduser('~/'), "kcorr_%s" % name) + '.txt'
+            kcorr_save(fsave, times, kcorr)
+            sys.exit(3)
+        else:
+            fig = plot_kcorr(times, kcorr)
     elif is_fit_wl:
         if not model.is_tt:
             print("Error in fit-wave: no tt-data for: " + str(model))

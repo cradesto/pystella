@@ -194,7 +194,7 @@ def kcorrection(series, z, bn_rest, bn_obs, is_verbose=False):
         yield t, k
 
 
-def kcorrection_spec(spec, z, br, bo, is_photons=True):
+def kcorrection_spec_2band(spec, z, br, bo, is_photons=True, is_vega=False):
     """
     Compute the K-correction for the Spectrum
     See  https://ned.ipac.caltech.edu/level5/Sept02/Hogg/frames.html
@@ -205,31 +205,84 @@ def kcorrection_spec(spec, z, br, bo, is_photons=True):
     :param br:  rest band
     :param bo:  obs band
     :param is_photons:
+    :param is_vega:
     :return:  kcorrection
     """
     from scipy import integrate
     from ..util.math import log_interp1d
 
-    # obs
     log_interp = log_interp1d(spec.Wl, spec.FluxWl)
+    # obs
     flo = log_interp(bo.wl)  # band grid of frequencies
-    bo_resp_wl = bo.resp_wl
+    bo_resp_wl = bo.resp_wl*bo.wl
 
     # rest
     br_wl = br.wl / (1.+z)
     flr = log_interp(br_wl)
-    br_resp_wl = br.resp_wl
+    br_resp_wl = br.resp_wl*br.wl
 
     if is_photons:
         bo_resp_wl = bo_resp_wl*bo.wl
-        br_resp_wl = br_resp_wl*br.wl
+        br_resp_wl = br_resp_wl*br_wl
 
     a_obs = integrate.simps(flo*bo_resp_wl, bo.wl)
-    a_rest = integrate.simps(flr*br_resp_wl, br_wl)
+    a_rest = integrate.simps(flr*br_resp_wl, br.wl)
 
-    b_obs = integrate.simps(bo_resp_wl, bo.wl)
-    b_rest = integrate.simps(br_resp_wl, br.wl)
+    if is_vega:
+        from pystella import Spectrum
+        sp_vg = Spectrum.vega()
+        vg_interp = log_interp1d(sp_vg.Wl, sp_vg.FluxWl)
+        vg_flo = vg_interp(bo.wl)  # band grid of frequencies
+        vg_flr = vg_interp(br.wl)  # band grid of frequencies
 
-    k = b_rest/b_obs * a_rest/a_obs  # todo check
+        b_obs = integrate.simps(bo_resp_wl*vg_flo / bo.wl ** 2, bo.wl)
+        b_rest = integrate.simps(br_resp_wl*vg_flr / br_wl ** 2, br_wl)
+    else:
+        b_obs = integrate.simps(bo_resp_wl, bo.wl)
+        b_rest = integrate.simps(br_resp_wl, br.wl)
+
+    # k = b_rest/b_obs * a_rest/a_obs  # todo check
+    k = b_rest/b_obs * a_obs/a_rest  # todo check
+    # print(z, b_obs, b_rest)
     k = -2.5 * np.log10(k/(1.+z))
+    return k
+
+
+def kcorrection_spec(spec, z, b, is_photons=True, is_vega=False):
+    """
+    Compute the K-correction for the Spectrum
+    See  https://ned.ipac.caltech.edu/level5/Sept02/Hogg/frames.html
+    and https://www.osti.gov/biblio/823198
+
+    :param spec:  the Spectrum
+    :param z:  redshift
+    :param b:  obs and rest band
+    :param is_photons:
+    :param is_vega:
+    :return:  kcorrection
+    """
+    from scipy import integrate
+    from ..util.math import log_interp1d
+
+    log_interp = log_interp1d(spec.Wl, spec.FluxWl)
+    # obs
+    flo = log_interp(b.wl)  # band grid of frequencies
+    bo_resp_wl = b.resp_wl*b.wl
+
+    # rest
+    br_wl = b.wl / (1.+z)
+    flr = log_interp(br_wl)
+    br_resp_wl = b.resp_wl*b.wl
+
+    if is_photons:
+        bo_resp_wl = bo_resp_wl*b.wl
+        br_resp_wl = br_resp_wl*br_wl
+
+    a_obs = integrate.simps(flo*bo_resp_wl, b.wl)
+    a_rest = integrate.simps(flr*br_resp_wl, b.wl)
+
+    # k = b_rest/b_obs * a_rest/a_obs  # todo check
+    k = a_obs/a_rest  # todo check
+    # print(z, b_obs, b_rest)
+    k = 2.5 * np.log10(1.+z) + 2.5 * np.log10(k)
     return k

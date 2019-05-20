@@ -1,3 +1,5 @@
+import os
+from os.path import dirname
 import logging
 import math
 import numpy as np
@@ -12,6 +14,8 @@ logger = logging.getLogger(__name__)
 
 
 class Spectrum(object):
+    DirRoot = os.path.join(dirname(dirname(dirname(os.path.realpath(__file__)))), 'data/bands')
+
     def __init__(self, name, freq, flux, is_sort_wl=True):
         """Creates a Spectrum instance.  Required parameters:  name."""
         self._name = name
@@ -243,6 +247,18 @@ class Spectrum(object):
             mag = star.magAB(b)
         return mag
 
+    def redshift2obs(self, z):
+        freq_z = self.Freq / (1. + z)
+        flux_z = self.Flux * (1. + z)
+        ss = Spectrum(self.Name, freq=freq_z, flux=flux_z)
+        return ss
+
+    def redshift2rest(self, z):
+        freq_z = self.Freq * (1. + z)
+        flux_z = self.Flux / (1. + z)
+        ss = Spectrum(self.Name, freq=freq_z, flux=flux_z)
+        return ss
+
     @staticmethod
     def flux_to_distance(flux, dl):
         """
@@ -267,6 +283,13 @@ class Spectrum(object):
         # flux = flux_freq * freq ** 2 / phys.c
         flux_freq = np.asarray(flux)/freq**2 * phys.c
         return Spectrum(name, freq, flux_freq)
+
+    @staticmethod
+    def vega():
+        fVega = os.path.join(Spectrum.DirRoot, "vega_spectrum.ascii")
+        d_vega = np.loadtxt(fVega, unpack=True)
+        sp_vega = Spectrum.from_lambda(name='Vega', lmd=d_vega[0], flux=d_vega[1], u_lmd='A')
+        return sp_vega
 
 
 class SpectrumPlanck(Spectrum):
@@ -438,7 +461,7 @@ class SeriesSpectrum(object):
                 res.add(t, ss)
         return res
 
-    def redshift(self, z: float, nm=None):
+    def redshift2obs(self, z: float, nm=None):
         """Redshift from the rest source to the obs source
           z - redshift
         """
@@ -446,9 +469,7 @@ class SeriesSpectrum(object):
 
         res = SeriesSpectrum(name)
         for t, sp in self:
-            freq_z = sp.Freq / (1. + z)
-            flux_z = sp.Flux * (1. + z)
-            ss = Spectrum(sp.Name, freq=freq_z, flux=flux_z)
+            ss = sp.redshift2obs(z=z)
             tz = t * (1. + z)
             res.add(tz, ss)
         return res

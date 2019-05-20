@@ -66,7 +66,7 @@ class TestSeriesSpectrum(unittest.TestCase):
                                    "The temperatures shoild be the same "
                                    "but k,time= [{},{}] s.T_color = {:f} ".format(k, t, s.T_wien, aT_wien[k]))
 
-    def test_series_redshift(self):
+    def test_series_redshift2obs(self):
         import matplotlib.pyplot as plt
         x = np.linspace(-10, 10, 10)
         y = 10. - x**2
@@ -82,7 +82,7 @@ class TestSeriesSpectrum(unittest.TestCase):
 
         z = 1.
         series = ss
-        series_z = series.redshift(z)
+        series_z = series.redshift2obs(z)
 
         # plot
         for t, sp in series:
