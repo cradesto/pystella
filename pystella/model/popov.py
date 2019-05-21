@@ -1,10 +1,7 @@
 import numpy as np
 
-from pystella.rf import band
-from pystella.rf.lc import LightCurve
 from pystella.rf.rad_func import Lum2MagBol
 from pystella.util.phys_var import phys
-import matplotlib.pyplot as plt
 
 
 class Popov:
@@ -193,6 +190,9 @@ class Popov:
         return mag
 
     def LCBol(self, time):  # todo check this code
+        from pystella.rf import band
+        from pystella.rf.lc import LightCurve
+
         b = band.BandUni()
         mags = self.MagBol(time)
         lc = LightCurve(b, time, mags)
@@ -200,6 +200,8 @@ class Popov:
 
     def plot_Lbol(self, t, is_plot_Lum=False):
         """t [day]"""
+        import matplotlib.pyplot as plt
+
         # lum
         if is_plot_Lum:
             mags = self.Lbol(t)

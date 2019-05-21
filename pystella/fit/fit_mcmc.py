@@ -445,7 +445,9 @@ class FitMCMC(FitLc):
             res = {'dt': dt, 'dtsig1': dtsig1, 'dtsig2': dtsig2, 'dtsig': (dtsig1 + dtsig2) / 2.,
                    'dm': dm, 'dmsig1': dmsig1, 'dmsig2': dmsig2, 'dmsig': (dmsig1 + dmsig2) / 2.,
                    'lnf': lnf, 'lnfsig1': lnfsig1, 'lnfsig2': lnfsig2, 'lnfsig': (lnfsig1 + lnfsig2) / 2.,
-                   'chi2': chi2, 'dof': dof, 'acceptance_fraction': np.mean(sampler.acceptance_fraction)}
+                   'signames': bnames,
+                   'chi2': chi2, 'dof': dof, 'acceptance_fraction': np.mean(sampler.acceptance_fraction)
+                   }
         else:
             chi2, N = FitMCMC.chi2([0., 0.], curves_m, curves_o)  # just return the weight diff
             dof = N - ndim
