@@ -312,7 +312,7 @@ class TestFit(unittest.TestCase):
         fitter = ps.FitMPFit()
         fitter.is_info = True
         fitter.is_debug = True
-        res = fitter.best_curves_gp(curves_obs, curves_mdl, dt0=0., dm0=0.)
+        res = fitter.best_curves_gp(curves_mdl, curves_obs, dt0=0., dm0=0.)
         # print
         txt = '{0:10} {1:.4e} \n'.format('tshift:', res['dt']) + \
               '{0:10} {1:.4e} \n'.format('tsigma:', res['dtsig'])
@@ -327,7 +327,7 @@ class TestFit(unittest.TestCase):
         plt.show()
 
     # @unittest.skip("just for plot")
-    def test_fit_mcmc_curves_Stella_SN1999em(self):
+    def test_best_curves_dtdm_SN1999em(self):
         from pystella.rf import light_curve_func as lcf
         from pystella.rf import light_curve_plot as lcp
         # Get observations
@@ -356,15 +356,16 @@ class TestFit(unittest.TestCase):
         threads = 3
 
         # fitter.is_debug = False
-        res, samples = fitter.best_curves(curves_mdl, curves_obs, dt0=0., dm0=0., threads=threads, is_samples=True)
+        fit_result, res, samples = fitter.best_curves(curves_mdl, curves_obs, dt0=0., dm0=0., threads=threads,
+                                                      is_samples=True)
         fig = fitter.plot_corner(samples)
 
         # print
         txt = '{:10s} {:.4f} ^{:.4f}_{:.4f} \n'.format('tshift:', res['dt'], res['dtsig2'], res['dtsig1']) + \
               '{:10s} {:.4f} ^{:.4f}_{:.4f}\n'.format('msigma:', res['dm'], res['dmsig2'], res['dmsig1']) + \
               '{:10s} {:.4f} ^{:.4f}_{:.4f}\n'.format('lnf:', res['lnf'], res['lnfsig2'], res['lnfsig1']) + \
-              '{:10s} chi2= {:.4f} dof= {} accept= {:.3f}\n'. \
-                  format('stat:', res['chi2'], res['dof'], res['acceptance_fraction'])
+              '{:10s} chi2= {:.1f}  BIC= {:.1f} AIC= {:.1f} dof= {} accept= {:.3f}\n'. \
+                  format('stat:', res['chi2'], res['bic'], res['aic'], res['dof'], res['acceptance_fraction'])
         print(txt)
         # plot model
         curves_obs.set_tshift(res['dt'])
@@ -378,7 +379,56 @@ class TestFit(unittest.TestCase):
         plt.show()
 
     # @unittest.skip("just for plot")
-    def test_best_curves_bandssigma_SN1999em(self):
+    def test_best_curves_dt_SN1999em(self):
+        from pystella.rf import light_curve_func as lcf
+        from pystella.rf import light_curve_plot as lcp
+        # Get observations
+        D = 11.5e6  # pc
+        dm = -5. * np.log10(D) + 5
+        # dm = -30.4  # D = 12.e6 pc
+        curves_obs = sn1999em.read_curves()
+        curves_obs.set_mshift(dm)
+
+        # Get model
+        name = 'cat_R500_M15_Ni006_E12'
+        path = join(dirname(dirname(abspath(__file__))), 'data', 'stella')
+
+        curves_mdl = lcf.curves_compute(name, path, distance=10, bands=curves_obs.BandNames)
+
+        # fit
+        is_debug = True  # True
+        # fitter = FitLcMcmc()
+        fitter = ps.FitMCMC()
+        fitter.is_info = True
+        if is_debug:
+            fitter.is_debug = is_debug
+            fitter.nwalkers = 100  # number of MCMC walkers
+            fitter.nburn = 20  # "burn-in" period to let chains stabilize
+            fitter.nsteps = 200  # number of MCMC steps to take
+        threads = 1
+
+        # fitter.is_debug = False
+        fit_result, res, samples = fitter.best_curves(curves_mdl, curves_obs, dt0=0., threads=threads,
+                                                      is_samples=True)
+        fig = fitter.plot_corner(samples, labels=('dt', 'sig'))
+
+        # print
+        txt = '{:10s} {:.4f} ^{:.4f}_{:.4f} \n'.format('tshift:', res['dt'], res['dtsig2'], res['dtsig1']) + \
+              '{:10s} {:.4f} ^{:.4f}_{:.4f}\n'.format('lnf:', res['lnf'], res['lnfsig2'], res['lnfsig1']) + \
+              '{:10s} chi2= {:.1f}  BIC= {:.1f} AIC= {:.1f} dof= {} accept= {:.3f}\n'. \
+                  format('stat:', res['chi2'], res['bic'], res['aic'], res['dof'], res['acceptance_fraction'])
+        print(txt)
+        # plot model
+        curves_obs.set_tshift(res['dt'])
+        ax = lcp.curves_plot(curves_mdl)
+
+        lt = {lc.Band.Name: 'o' for lc in curves_obs}
+        lcp.curves_plot(curves_obs, ax, lt=lt, xlim=(-10, 300), is_line=False)
+        ax.text(0.1, 0.1, txt, transform=ax.transAxes)
+        plt.show()
+
+    # @unittest.skip("just for plot")
+    def test_best_curves_dt_sigmas_SN1999em(self):
         from pystella.rf import light_curve_func as lcf
         from pystella.rf import light_curve_plot as lcp
         # Get observations
@@ -408,8 +458,63 @@ class TestFit(unittest.TestCase):
 
         # fitter.is_debug = False
         bnames = curves_obs.BandNames
-        res, samples = fitter.best_curves_bandssigma(curves_mdl, curves_obs, bnames=bnames,
-                                                     dt0=0., dm0=0., threads=threads, is_samples=True)
+        res, samples = fitter.best_curves_sigmas(curves_mdl, curves_obs, bnames=bnames,
+                                                 dt0=0., threads=threads, is_samples=True)
+        fig = fitter.plot_corner(samples, bnames=bnames)
+
+        # print
+        txt = ''
+        txt += '{:10s} {:.4f} ^{:.4f}_{:.4f} \n'.format('tshift:', res['dt'], res['dtsig2'], res['dtsig1'])
+        for i, bname in enumerate(bnames):
+            txt += 'sig+{:7s}: {:.4f} ^{:.4f}_{:.4f}\n'. \
+                format(bname, res['lnf'][i], res['lnfsig2'][i], res['lnfsig1'][i])
+
+        txt += '{:10s} chi2= {:.1f}  BIC= {:.1f} AIC= {:.1f} dof= {} accept= {:.3f}\n'. \
+            format('stat:', res['chi2'], res['bic'], res['aic'], res['dof'], res['acceptance_fraction'])
+        print(txt)
+
+        # plot model
+        curves_obs.set_tshift(res['dt'])
+        ax = lcp.curves_plot(curves_mdl)
+
+        lt = {lc.Band.Name: 'o' for lc in curves_obs}
+        lcp.curves_plot(curves_obs, ax, lt=lt, xlim=(-10, 300), is_line=False)
+        ax.text(0.1, 0.02, txt, transform=ax.transAxes)
+        plt.show()
+
+    # @unittest.skip("just for plot")
+    def test_best_curves_dtdm_sigmas_SN1999em(self):
+        from pystella.rf import light_curve_func as lcf
+        from pystella.rf import light_curve_plot as lcp
+        # Get observations
+        D = 11.5e6  # pc
+        dm = -5. * np.log10(D) + 5
+        # dm = -30.4  # D = 12.e6 pc
+        curves_obs = sn1999em.read_curves()
+        curves_obs.set_mshift(dm)
+
+        # Get model
+        name = 'cat_R500_M15_Ni006_E12'
+        path = join(dirname(dirname(abspath(__file__))), 'data', 'stella')
+
+        curves_mdl = lcf.curves_compute(name, path, distance=10, bands=curves_obs.BandNames)
+
+        # fit
+        is_debug = True  # True
+        # fitter = FitLcMcmc()
+        fitter = ps.FitMCMC()
+        fitter.is_info = True
+        if is_debug:
+            fitter.is_debug = is_debug
+            fitter.nwalkers = 100  # number of MCMC walkers
+            fitter.nburn = 20  # "burn-in" period to let chains stabilize
+            fitter.nsteps = 200  # number of MCMC steps to take
+        threads = 1
+
+        # fitter.is_debug = False
+        bnames = curves_obs.BandNames
+        res, samples = fitter.best_curves_sigmas(curves_mdl, curves_obs, bnames=bnames,
+                                                 dt0=0., dm0=0., threads=threads, is_samples=True)
         fig = fitter.plot_corner(samples, bnames=bnames)
 
         # print
@@ -417,11 +522,11 @@ class TestFit(unittest.TestCase):
         txt += '{:10s} {:.4f} ^{:.4f}_{:.4f} \n'.format('tshift:', res['dt'], res['dtsig2'], res['dtsig1'])
         txt += '{:10s} {:.4f} ^{:.4f}_{:.4f}\n'.format('msigma:', res['dm'], res['dmsig2'], res['dmsig1'])
         for i, bname in enumerate(bnames):
-            txt += 'sig+{:7s}: {:.4f} ^{:.4f}_{:.4f}\n'.\
+            txt += 'sig+{:7s}: {:.4f} ^{:.4f}_{:.4f}\n'. \
                 format(bname, res['lnf'][i], res['lnfsig2'][i], res['lnfsig1'][i])
 
-        txt += '{:10s} chi2= {:.4f} dof= {} accept= {:.3f}\n'.\
-            format('stat:', res['chi2'], res['dof'], res['acceptance_fraction'])
+        txt += '{:10s} chi2= {:.1f}  BIC= {:.1f} AIC= {:.1f} dof= {} accept= {:.3f}\n'. \
+            format('stat:', res['chi2'], res['bic'], res['aic'], res['dof'], res['acceptance_fraction'])
         print(txt)
         # plot model
         curves_obs.set_tshift(res['dt'])

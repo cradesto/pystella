@@ -227,7 +227,7 @@ class FitMPFit(FitLc):
         return result
 
     def best_curves(self, curves_m, curves_o, dt0=None, dm0=None, is_spline=True,
-                    At=0., err_mdl=0.01):
+                    At=0.):
         dt_init = {lc.Band.Name: lc.tshift for lc in curves_o}
         dm_init = {lc.Band.Name: lc.mshift for lc in curves_o}
 
@@ -328,9 +328,19 @@ class FitMPFit(FitLc):
         if self.is_info:
             print("The final params are: tshift=%f+-%f mshift=%f+-%f  chi2: %e" % (
                 tshift, tsigma, dmshift, dmsigma, result.fnorm))
+
         res = {'dt': tshift, 'dtsig': tsigma, 'dm': dmshift, 'dmsig': dmsigma, 'err': err, 'errsig': errsig,
                'chi2': result.fnorm, 'dof': result.dof}
-        return res
+
+        fit_result = FitLcResult()
+        fit_result.tshift = res['dt']
+        fit_result.tsigma = res['dtsig']
+        fit_result.mshift = dmshift
+        fit_result.msigma = res['dmsig']
+        fit_result.measure = res['chi2']
+        fit_result.comm = 'result MCMC:dof: {}'.format(res['dof'])
+
+        return fit_result, res
 
     #        return result
 

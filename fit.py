@@ -153,7 +153,8 @@ def get_parser():
 def engines(nm=None):
     switcher = {
         'mpfit': ps.FitMPFit(),
-        'mcmc': ps.FitMCMC(),
+        # 'mcmc': ps.FitMCMC(nwalkers=200, nburn=100, nsteps=500),
+        'mcmc': ps.FitMCMC(nwalkers=100, nburn=50, nsteps=200),
     }
     if nm is not None:
         return switcher.get(nm)
@@ -687,7 +688,32 @@ def plot_squared_3d(ax, res_sorted, path='./', p=('R', 'M', 'E'), is_rbf=True, *
         plt.show()
 
 
-def fit_mfl(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, tlim, Vnorm=1e8, A=0.):
+def fit_mfl(args, curves_o, bnames, fitter, name, path, t_diff, tlim):
+    distance = args.distance  # pc
+    z = args.redshift
+    # Set distance and redshift
+    if not args.distance and z > 0:
+        distance = ps.cosmology_D_by_z(z) * 1e6
+
+    # light curves
+    mdl = ps.Stella(name, path=path)
+    if args.is_curve_tt:  # tt
+        print("The curves [UBVRI+bol] was taken from tt-file {}. ".format(name) +
+              "IMPORTANT: distance: 10 pc, z=0, E(B-V) = 0")
+        curves_m = mdl.get_tt().read_curves()
+        excluded = [bn for bn in curves_m.BandNames if bn not in bnames]
+        for bn in excluded:
+            curves_m.pop(bn)
+    else:
+        curves_m = mdl.curves(bnames, z=z, distance=distance, ebv=args.color_excess,
+                              t_beg=tlim[0], t_end=tlim[1], t_diff=t_diff)
+
+    fit_result, res = fitter.best_curves(curves_m, curves_o, dt0=0.)
+
+    return curves_m, fit_result, res
+
+
+def fit_mfl_vel(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, tlim, Vnorm=1e8, A=0.):
     distance = args.distance  # pc
     z = args.redshift
     # Set distance and redshift
@@ -723,45 +749,45 @@ def fit_mfl(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, tlim, Vn
             # tshifts[lc.Band.Name] = tshift
 
     vel_m = None
-    if vels_o is not None:
-        # compute model velocities
-        try:
-            tbl = ps.vel.compute_vel_swd(name, path)
-            # tbl = velocity.compute_vel_res_tt(name, path)
-            vel_m = ps.vel.VelocityCurve('Vel', tbl['time'], tbl['vel'] / Vnorm)
-        except ValueError as ext:
-            print(ext)
+    # compute model velocities
+    try:
+        tbl = ps.vel.compute_vel_swd(name, path)
+        # tbl = velocity.compute_vel_res_tt(name, path)
+        vel_m = ps.vel.VelocityCurve('Vel', tbl['time'], tbl['vel'] / Vnorm)
+        if vel_m is None:
+            raise ValueError('Problem with vel_m.')
+    except ValueError as ext:
+        print(ext)
 
     # velocity
-    if vel_m is not None:
-        if curves_m is not None:
-            # To increase the weight of Velocities with fitting
-            for i in range(curves_m.Length):
-                for vel_o in vels_o:
-                    key = 'Vel{:d}{}'.format(i, vel_o.Name)
-                    tss_m.add(vel_m.copy(name=key))
-                    tss_o.add(vel_o.copy(name=key))
-                    # tss_o[key] = vel_o
-                    # tss_m[key] = vel_m
-        else:
-            # tss_m.add(vel_m.copy(name='Vel'))
-            for i, vel_o in enumerate(vels_o):
+    if curves_m is not None:
+        # To increase the weight of Velocities with fitting
+        for i in range(curves_m.Length):
+            for vel_o in vels_o:
                 key = 'Vel{:d}{}'.format(i, vel_o.Name)
                 tss_m.add(vel_m.copy(name=key))
                 tss_o.add(vel_o.copy(name=key))
-            # tss_o.add(vels_o.copy(name='Vel'))
-            # tss_m['Vel'] = vel_m
-            # tss_o['Vel'] = vels_o
+                # tss_o[key] = vel_o
+                # tss_m[key] = vel_m
+    else:
+        # tss_m.add(vel_m.copy(name='Vel'))
+        for i, vel_o in enumerate(vels_o):
+            key = 'Vel{:d}{}'.format(i, vel_o.Name)
+            tss_m.add(vel_m.copy(name=key))
+            tss_o.add(vel_o.copy(name=key))
+        # tss_o.add(vels_o.copy(name='Vel'))
+        # tss_m['Vel'] = vel_m
+        # tss_o['Vel'] = vels_o
 
     # fit
     res = fitter.fit_tss(tss_m, tss_o, A=A)
 
-    return curves_m, vel_m, res
+    return curves_m, res, vel_m
 
 
 def merge_obs(inp, type_el):
     result = None
-    if isinstance(inp, list):
+    if isinstance(inp, (list, tuple)):
         for o in inp:
             if isinstance(o, type_el):
                 result = type_el.Merge(result, o)
@@ -890,24 +916,34 @@ def main():
         # curves_m = lcf.curves_compute(name, path, bnames, z=args.redshift, distance=args.distance,
         #                               t_beg=tlim[0], t_end=tlim[1], t_diff=t_diff)
         # res = fitter.fit_curves(curves_o, curves_m)
-        curves_m, vel_m, res = fit_mfl(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, tlim, A=args.tweight)
+        if vels_o is None:
+            curves_m, res, res_full = fit_mfl(args, curves_o, bnames, fitter, name, path, t_diff, tlim)
+        else:
+            curves_m, res, vel_m = fit_mfl_vel(args, curves_o, vels_o, bnames, fitter, name, path,
+                                               t_diff, tlim, A=args.tweight)
+            vels_m[name] = vel_m
 
         print("{}: time shift  = {:.2f}+/-{:.4f} Measure: {:.4f} {}".
               format(name, res.tshift, res.tsigma, res.measure, res.comm))
         # best_tshift = res.tshift
         res_models[name] = curves_m
-        vels_m[name] = vel_m
         res_chi[name] = res
         res_sorted = res_chi
     elif len(names) > 1:
         if args.nodes > 1:
             print("Run parallel fitting: nodes={}, models  {}".format(args.nodes, len(names)))
-
             with futures.ProcessPoolExecutor(max_workers=args.nodes) as executor:
-                future_to_name = {
-                    executor.submit(fit_mfl, args, curves_o, vels_o, bnames, fitter, n, path, t_diff, tlim):
-                        n for n in names
-                }
+                if vels_o is None:
+                    future_to_name = {
+                        executor.submit(fit_mfl, args, curves_o, bnames, fitter, n, path, t_diff, tlim):
+                            n for n in names
+                    }
+                else:
+                    future_to_name = {
+                        executor.submit(fit_mfl_vel, args, curves_o, vels_o, bnames, fitter, n, path, t_diff, tlim):
+                            n for n in names
+                    }
+
                 i = 0
                 for future in futures.as_completed(future_to_name):
                     i += 1
@@ -917,11 +953,8 @@ def main():
                     except Exception as exc:
                         print('%r generated an exception: %s' % (name, exc))
                     else:
-                        res_models[name] = data[0]
-                        vels_m[name] = data[1]
-                        v = data[2]
-                        res_chi[name] = v
-                        print("[{}/{}] {:30s} -> {}".format(i, len(names), name, v.comm))
+                        res_models[name], res, vels_m[name] = data
+                        print("[{}/{}] {:30s} -> {}".format(i, len(names), name, res.comm))
         else:
             i = 0
             for name in names:
@@ -932,9 +965,14 @@ def main():
                 else:
                     sys.stdout.write(u"\u001b[1000D" + txt)
                     sys.stdout.flush()
-                curves_m, vel_m, res = fit_mfl(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, tlim)
+
+                if vels_o is None:
+                    curves_m, res,res_full = fit_mfl(args, curves_o, bnames, fitter, name, path, t_diff, tlim)
+                else:
+                    curves_m, res, vel_m = fit_mfl_vel(args, curves_o, vels_o, bnames, fitter, name, path,
+                                                       t_diff, tlim, A=args.tweight)
+                    vels_m[name] = vel_m
                 res_models[name] = curves_m
-                vels_m[name] = vel_m
                 res_chi[name] = res
 
         # select with dtshift
@@ -954,7 +992,7 @@ def main():
     print("\n Results (tshift in range:{:.2f} -- {:.2f}".format(dtshift[0], dtshift[1]))
     print("{:40s} ||{:18s}|| {:10}".format('Model', 'dt+-t_err', 'Measure'))
     for k, v in res_sorted.items():
-        print("{:40s} || {:7.2f}+/-{:7.4f} || {:.4f}".format(k, v.tshift, v.tsigma, v.measure))
+        print("{:40s} || {:7.2f}+/-{:7.4f} || {:.4f} || {}".format(k, v.tshift, v.tsigma, v.measure, v.comm))
 
     if len(res_sorted) >= n_best:
         # plot chi squared
@@ -971,7 +1009,7 @@ def main():
     # res = first(res_sorted.values())[0]
     print("Best fit model:")
     print("{}: time shift  = {:.2f}+/-{:.4f} Measure: {:.4f}".format(best_mdl, res.tshift, res.tsigma, res.measure))
-    print("{}: ".format(best_mdl), res)
+    print("{}: ".format(best_mdl), res.comm)
 
     # shift observational data
     # curves_o.set_tshift(best_tshift)
