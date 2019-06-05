@@ -367,10 +367,12 @@ class FitMCMC(FitLc):
             l = FitMCMC.log_likelihood_curves([dt, dm, lnf], curves_m, curves_o, bnames)
             bic = ndim * np.log(N) + l
             aic = 2 * ndim + l
+            measure = lnf
+
             res = {'dt': dt, 'dtsig1': dtsig1, 'dtsig2': dtsig2, 'dtsig': (dtsig1 + dtsig2) / 2.,
                    'dm': dm, 'dmsig1': dmsig1, 'dmsig2': dmsig2, 'dmsig': (dmsig1 + dmsig2) / 2.,
                    'lnf': lnf, 'lnfsig1': lnfsig1, 'lnfsig2': lnfsig2, 'lnfsig': (lnfsig1 + lnfsig2) / 2.,
-                   'chi2': chi2, 'bic': bic, 'aic': aic, 'dof': dof,
+                   'chi2': chi2, 'bic': bic, 'aic': aic, 'dof': dof, 'measure': measure,
                    'acceptance_fraction': np.mean(sampler.acceptance_fraction)}
         else:
             chi2, N = FitMCMC.chi2([0., 0.], curves_m, curves_o)  # just return the weight diff
@@ -416,10 +418,10 @@ class FitMCMC(FitLc):
         """
         if dm0 is not None:
             res = self.best_curvesDtDm(curves_m, curves_o, dt0, dm0,
-                                        threads=threads, dt_lim=dt_lim, dm_lim=dm_lim, is_samples=is_samples)
+                                       threads=threads, dt_lim=dt_lim, dm_lim=dm_lim, is_samples=is_samples)
         else:
             res = self.best_curvesDt(curves_m, curves_o, dt0,
-                                      threads=threads, dt_lim=dt_lim, is_samples=is_samples)
+                                     threads=threads, dt_lim=dt_lim, is_samples=is_samples)
         if is_samples:
             samples = res[1]
             res = res[0]
@@ -430,7 +432,7 @@ class FitMCMC(FitLc):
         fit_result.tshift = res['dt']
         fit_result.tsigma = res['dtsig']
         fit_result.measure = res['bic']
-        fit_result.comm = 'result MCMC: CHI2|BIC|AIC: {:.0f}|{:.0f}|{:.0f} acceptance_fraction: {:.3f}'.\
+        fit_result.comm = 'result MCMC: CHI2|BIC|AIC: {:.0f}|{:.0f}|{:.0f} acceptance_fraction: {:.3f}'. \
             format(res['chi2'], res['bic'], res['aic'], res['acceptance_fraction'])
 
         if is_samples:
@@ -474,9 +476,11 @@ class FitMCMC(FitLc):
         l = FitMCMC.log_likelihood_curves([dt, dm0, lnf], curves_m, curves_o, bnames)
         bic = ndim * np.log(N) - 2. * l
         aic = 2 * ndim - 2. * l
+        measure = lnf
+
         res = {'dt': dt, 'dtsig1': dtsig1, 'dtsig2': dtsig2, 'dtsig': (dtsig1 + dtsig2) / 2.,
                'lnf': lnf, 'lnfsig1': lnfsig1, 'lnfsig2': lnfsig2, 'lnfsig': (lnfsig1 + lnfsig2) / 2.,
-               'chi2': chi2, 'bic': bic, 'aic': aic, 'dof': dof,
+               'chi2': chi2, 'bic': bic, 'aic': aic, 'dof': dof, 'measure': measure,
                'acceptance_fraction': np.mean(sampler.acceptance_fraction)}
 
         # return initial states
@@ -557,13 +561,14 @@ class FitMCMC(FitLc):
         # chi2 = abs(log_likelihood_chi2((dt, dm), curves_m, curves_o))
         dof = N - ndim
         l = FitMCMC.log_likelihood_curves(np.concatenate(([dt, 0.], lnf)), curves_m, curves_o, bnames)
-        bic = ndim * np.log(N) - 2.*l
-        aic = 2 * ndim - 2.*l
+        bic = ndim * np.log(N) - 2. * l
+        aic = 2 * ndim - 2. * l
+        measure = lnf
 
         res = {'dt': dt, 'dtsig1': dtsig1, 'dtsig2': dtsig2, 'dtsig': (dtsig1 + dtsig2) / 2.,
                'lnf': lnf, 'lnfsig1': lnfsig1, 'lnfsig2': lnfsig2, 'lnfsig': (lnfsig1 + lnfsig2) / 2.,
                'signames': bnames,
-               'chi2': chi2, 'bic': bic, 'aic': aic, 'dof': dof,
+               'chi2': chi2, 'bic': bic, 'aic': aic, 'dof': dof, 'measure': measure,
                'acceptance_fraction': np.mean(sampler.acceptance_fraction)
                }
 
@@ -580,9 +585,14 @@ class FitMCMC(FitLc):
             print("The final params are: dt={:6.2f}+-{:6.4f} chi2:{:.0f}/{:d}".format(
                 res['dt'], res['dtsig'], res['chi2'], res['dof']))
 
+        del sample_dt
+        del sample_lnf
+
         if is_samples:
             return res, samples
-        return res
+        else:
+            del samples
+            return res
 
     def best_curves_sigmasDtDm(self, curves_m, curves_o, bnames, dt0, dm0,
                                threads=1, dt_lim=100., dm_lim=5., is_samples=False):
@@ -639,12 +649,13 @@ class FitMCMC(FitLc):
         l = FitMCMC.log_likelihood_curves(np.concatenate(([dt, dm], lnf)), curves_m, curves_o, bnames)
         bic = ndim * np.log(N) + l
         aic = 2 * ndim + l
+        measure = np.sum([lnf[i] * curves_o[bname].Length for i, bname in enumerate(bnames)]) / N
 
         res = {'dt': dt, 'dtsig1': dtsig1, 'dtsig2': dtsig2, 'dtsig': (dtsig1 + dtsig2) / 2.,
                'dm': dm, 'dmsig1': dmsig1, 'dmsig2': dmsig2, 'dmsig': (dmsig1 + dmsig2) / 2.,
                'lnf': lnf, 'lnfsig1': lnfsig1, 'lnfsig2': lnfsig2, 'lnfsig': (lnfsig1 + lnfsig2) / 2.,
                'signames': bnames,
-               'chi2': chi2, 'bic': bic, 'aic': aic, 'dof': dof,
+               'chi2': chi2, 'bic': bic, 'aic': aic, 'dof': dof, 'measure': measure,
                'acceptance_fraction': np.mean(sampler.acceptance_fraction)
                }
         # else:
@@ -670,12 +681,19 @@ class FitMCMC(FitLc):
             print("The final params are: dt={:6.2f}+-{:6.4f} dm={:6.2f}+-{:6.4f}  chi2:{:.0f}/{:d}".format(
                 res['dt'], res['dtsig'], res['dm'], res['dmsig'], res['chi2'], res['dof']))
 
+        del sample_dt
+        del sample_mu
+        del sample_lnf
+
         if is_samples:
             return res, samples
-        return res
+        else:
+            del samples
+            return res
 
     # @staticmethod
-    def plot_corner(self, samples, labels=("td", 'dm'), bnames=('',), axhist=None):
+    @staticmethod
+    def plot_corner(samples, labels=("td", 'dm'), bnames=('',), axhist=None):
         # from matplotlib import pyplot as plt
         import corner
         # plt.hist(sample_dt, bins=50, histtype="stepfilled", alpha=0.3)

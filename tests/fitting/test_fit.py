@@ -364,8 +364,9 @@ class TestFit(unittest.TestCase):
         txt = '{:10s} {:.4f} ^{:.4f}_{:.4f} \n'.format('tshift:', res['dt'], res['dtsig2'], res['dtsig1']) + \
               '{:10s} {:.4f} ^{:.4f}_{:.4f}\n'.format('msigma:', res['dm'], res['dmsig2'], res['dmsig1']) + \
               '{:10s} {:.4f} ^{:.4f}_{:.4f}\n'.format('lnf:', res['lnf'], res['lnfsig2'], res['lnfsig1']) + \
-              '{:10s} chi2= {:.1f}  BIC= {:.1f} AIC= {:.1f} dof= {} accept= {:.3f}\n'. \
-                  format('stat:', res['chi2'], res['bic'], res['aic'], res['dof'], res['acceptance_fraction'])
+              '{:10s} chi2= {:.1f}  BIC= {:.1f} AIC= {:.1f} measure= {:.3f}\n'.\
+                  format('stat:', res['chi2'], res['bic'], res['aic'], res['measure']) + \
+              ' dof= {} accept= {:.3f}\n'.format(res['dof'], res['acceptance_fraction'])
         print(txt)
         # plot model
         curves_obs.set_tshift(res['dt'])
@@ -464,9 +465,9 @@ class TestFit(unittest.TestCase):
 
         # print
         txt = ''
-        txt += '{:10s} {:.4f} ^{:.4f}_{:.4f} \n'.format('tshift:', res['dt'], res['dtsig2'], res['dtsig1'])
+        txt += r'{:10s} {:.4f} ^{{{:.4f}}}_{{{:.4f}}} \n'.format('tshift:', res['dt'], res['dtsig2'], res['dtsig1'])
         for i, bname in enumerate(bnames):
-            txt += 'sig+{:7s}: {:.4f} ^{:.4f}_{:.4f}\n'. \
+            txt += r'sig+{:7s}: {:.4f}^{{{:.4f}}}_{{{:.4f}}}\n'. \
                 format(bname, res['lnf'][i], res['lnfsig2'][i], res['lnfsig1'][i])
 
         txt += '{:10s} chi2= {:.1f}  BIC= {:.1f} AIC= {:.1f} dof= {} accept= {:.3f}\n'. \
