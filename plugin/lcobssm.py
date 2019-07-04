@@ -9,8 +9,6 @@ from pystella.rf import band
 from pystella.rf.lc import SetLightCurve, LightCurve
 from pystella.util.reader_table import table2curves, read_obs_table_header
 
-import plugin.lcobs as lcobs
-
 
 def plot(ax, dic=None, mag_lim=30.):
     """
@@ -79,6 +77,7 @@ def plot(ax, dic=None, mag_lim=30.):
             ax.plot(x, y, label='{0} {1}'.format(bname, fname), color=bcolors[bname], ls='',
                     marker=marker, markersize=markersize)
 
+
 def load(dic=None):
     """
     Load points from dat-files.
@@ -138,4 +137,5 @@ def load(dic=None):
 
 
 def load_curves(fname, skiprows=1):
-    return lcobs.load_curves(fname, skiprows)
+    from pystella import curves_read_mix
+    return curves_read_mix(fname, skiprows)

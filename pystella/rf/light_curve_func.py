@@ -13,6 +13,8 @@ from .reddening import LawFitz
 
 __author__ = 'bakl'
 
+# __all__ = ['curves_read', 'curves_read_mix']
+
 
 def compute_mag(name, path, bands, ext=None, z=0., distance=10., magnification=1., t_diff=1.05, is_show_info=True,
                 is_save=False):
@@ -144,6 +146,66 @@ def curves_read(fname, is_out=False):
     band.Band.load_settings()
     tbl, cols_data = read_obs_table_header(fname, is_out=is_out)
     curves = table2curves(os.path.basename(fname), tbl)
+    return curves
+
+
+def curves_read_mix(fname, dtype=(('time', '<f4'), ('filter', 'S1'), ('mag', '<f4'), ('err', '<f4')),
+                    skiprows=1, is_full=False, is_out=False):
+    """
+    Reader data-file with mix bname data, like:
+    >>% head photometry.txt
+    jd filter mag mage
+    2457059.6228778586 V 17.493766309999998 0.0592200135089
+    2457059.6244578934 V 17.539956019999998
+    0.0542402986717 2457059.6261980557 g 17.782871193345898
+    0.0454000142503 2457059.6287036575 g 17.7782469177482 0.0395424488201
+
+    :param is_out:
+    :param fname: file with data
+    :param dtype: You should define the colums: time, mag, err and filter,
+                  example:  (('time', '<f4'), ('filter', 'S1'), ('mag', '<f4'), ('err', '<f4'))
+    :param skiprows: skip rows, default: 1 for header
+    :param is_full: return also table data, default: False
+    :param is_out: print first line of data
+    :return: curves
+    """
+    from pystella.rf import band
+    band.Band.load_settings()
+
+    # dtype = [('JD', 'f'), ('b', 'S1'), ('mag', 'f4'), ('err', '<f4')])
+
+    lc_data = np.loadtxt(fname, skiprows=skiprows, dtype=dtype, comments='#')  # jd filter mag mage
+    if is_out:
+        print(lc_data.dtype)
+        print(lc_data[0])
+        print(lc_data[1])
+
+    b_tot = lc_data['filter']
+    bnames = np.unique(b_tot)
+
+    curves = SetLightCurve()
+    for bname in bnames:
+        bname_s = bname
+        try:
+            bname_s = bname_s.decode()
+        except AttributeError:
+            pass
+        if band.band_is_exist(bname_s):
+            # filter of the current band
+            is_good = np.array(list(map(lambda x: x == bname, b_tot)), dtype=bool)
+            t = lc_data['time'][is_good]
+            m = lc_data['mag'][is_good]
+            e = lc_data['err'][is_good]
+            # add light curve
+            b = band.band_by_name(bname_s)
+            lc = LightCurve(b, t, m, e)
+            curves.add(lc)
+        else:
+            print('Could read the light curve. There is no band: {}. '
+                  'You may try to add it to dir data/bands'.format(bname))
+    if is_full:
+        return curves, lc_data
+
     return curves
 
 
