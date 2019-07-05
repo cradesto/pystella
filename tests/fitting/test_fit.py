@@ -409,18 +409,18 @@ class TestFit(unittest.TestCase):
         threads = 1
 
         # fitter.is_debug = False
-        fit_result, res, samples = fitter.best_curves(curves_mdl, curves_obs, dt0=0., threads=threads,
+        fit_result, res, (th, e1, e2), samples = fitter.best_curves(curves_mdl, curves_obs, dt0=0., threads=threads,
                                                       is_samples=True)
-        fig = fitter.plot_corner(samples, labels=('dt', 'sig'))
+        fig = fitter.plot_corner(samples, labels=('dt', ), bnames=curves_obs.BandNames)
 
         # print
-        txt = '{:10s} {:.4f} ^{:.4f}_{:.4f} \n'.format('tshift:', res['dt'], res['dtsig2'], res['dtsig1']) + \
-              '{:10s} {:.4f} ^{:.4f}_{:.4f}\n'.format('lnf:', res['lnf'], res['lnfsig2'], res['lnfsig1']) + \
+        # '{:10s} {:.4f} ^{:.4f}_{:.4f}\n'.format('lnf:', res['lnf'], res['lnfsig2'], res['lnfsig1']) + \
+        txt = '{:10s} {:.4f} ^{:.4f}_{:.4f} \n'.format('tshift:', th.dt, e1.dt, e2.dt) + \
               '{:10s} chi2= {:.1f}  BIC= {:.1f} AIC= {:.1f} dof= {} accept= {:.3f}\n'. \
                   format('stat:', res['chi2'], res['bic'], res['aic'], res['dof'], res['acceptance_fraction'])
         print(txt)
         # plot model
-        curves_obs.set_tshift(res['dt'])
+        curves_obs.set_tshift(-th.dt)
         ax = lcp.curves_plot(curves_mdl)
 
         lt = {lc.Band.Name: 'o' for lc in curves_obs}
