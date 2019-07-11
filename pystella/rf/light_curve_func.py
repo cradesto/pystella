@@ -150,7 +150,7 @@ def curves_read(fname, is_out=False):
 
 
 def curves_read_mix(fname, dtype=(('time', '<f4'), ('filter', 'S1'), ('mag', '<f4'), ('err', '<f4')),
-                    skiprows=1, is_full=False, is_out=False):
+                    skiprows=1, comments='#', is_full=False, is_out=False):
     """
     Reader data-file with mix bname data, like:
     >>% head photometry.txt
@@ -165,6 +165,7 @@ def curves_read_mix(fname, dtype=(('time', '<f4'), ('filter', 'S1'), ('mag', '<f
     :param dtype: You should define the colums: time, mag, err and filter,
                   example:  (('time', '<f4'), ('filter', 'S1'), ('mag', '<f4'), ('err', '<f4'))
     :param skiprows: skip rows, default: 1 for header
+    :param comments: skip comments, default: #
     :param is_full: return also table data, default: False
     :param is_out: print first line of data
     :return: curves
@@ -174,7 +175,7 @@ def curves_read_mix(fname, dtype=(('time', '<f4'), ('filter', 'S1'), ('mag', '<f
 
     # dtype = [('JD', 'f'), ('b', 'S1'), ('mag', 'f4'), ('err', '<f4')])
 
-    lc_data = np.loadtxt(fname, skiprows=skiprows, dtype=dtype, comments='#')  # jd filter mag mage
+    lc_data = np.loadtxt(fname, skiprows=skiprows, dtype=dtype, comments=comments)  # jd filter mag mage
     if is_out:
         print(lc_data.dtype)
         print(lc_data[0])
