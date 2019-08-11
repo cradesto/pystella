@@ -15,7 +15,8 @@ import matplotlib.pyplot as plt
 from matplotlib import gridspec
 from matplotlib.collections import PolyCollection
 from matplotlib.colors import LinearSegmentedColormap
-from matplotlib.mlab import griddata
+#from matplotlib.mlab import griddata
+from scipy.interpolate import griddata
 from mpl_toolkits.mplot3d import Axes3D
 
 import pystella as ps
@@ -361,7 +362,7 @@ def plot_fit_wl(model, series, wl_ab, times=None, fsave=None):
 
     # save
     if fsave is not None:
-        save_fit_wl(fsave, mname, time, Tdil, Wdil, wl_ab=wl_ab)
+        save_fit_wl(fsave, model.Name, time, Tdil, Wdil, wl_ab=wl_ab)
         return
 
     # plot
