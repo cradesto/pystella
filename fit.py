@@ -954,6 +954,7 @@ def main():
                         print('%r generated an exception: %s' % (name, exc))
                     else:
                         res_models[name], res, vels_m[name] = data
+                        res_chi[name] = res
                         print("[{}/{}] {:30s} -> {}".format(i, len(names), name, res.comm))
         else:
             i = 0
