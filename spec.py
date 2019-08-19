@@ -324,7 +324,7 @@ def plot_fit_wl(model, series, wl_ab, times=None, fsave=None):
     series_cut = series.copy(wl_ab=wl_ab)
 
     time = series.Time
-    radiuses = np.interp(time, tt['time'], tt['rbb'], 0, 0)
+    radius = np.interp(time, tt['time'], tt['rbb'])
 
     if True:
         Tcol, Twien, zeta = [], [], []
@@ -332,7 +332,7 @@ def plot_fit_wl(model, series, wl_ab, times=None, fsave=None):
         for i, t in enumerate(time):
             sp = series_cut.get_spec(i)
             # sp = series_cut.get_spec_by_time(t)
-            R = radiuses[i]
+            R = radius[i]
             star_cut = ps.Star("bb_cut", sp)
             star_cut.set_distance(R)
             sp_obs = ps.Spectrum('cut', star_cut.Freq, star_cut.FluxObs)
@@ -788,6 +788,7 @@ def main():
         if is_write:
             if fsave is None or len(fsave) == 0 or fsave == '1':
                 fsave = os.path.join(os.path.expanduser('~/'), "temp_%s" % name) + '.txt'
+            series = series.copy(t_ab=t_ab)
             plot_fit_wl(model, series, wl_ab, times, fsave=fsave)  # just save data
             sys.exit(3)
 
