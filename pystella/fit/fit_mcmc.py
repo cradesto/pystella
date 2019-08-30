@@ -320,13 +320,36 @@ class FitMCMC(FitLc):
         return res
 
     @staticmethod
+    def log_likelihood_curves_DtDm(theta, cs_m, cs_o, bnames):
+        texp, dm0, sigs = FitMCMC.thetaDtDm2arr(theta, len(bnames))
+        # texp, dm0, dts, dms, sigs = theta2arr(theta, len(images), len(bnames))
+
+        res = 0.
+        for i, bname in enumerate(bnames):
+            lc_o = cs_o[bname]
+            to, mo, eo = lc_o.Time, lc_o.Mag, lc_o.MagErr
+            # to = to + dt
+            # model interpolation
+            lcm = cs_m[bname]
+            tm, mm = lcm.Time, lcm.Mag
+            tm += texp
+            em = sigs[i]
+            m_fit = np.interp(to, tm, mm)  # One-dimensional linear interpolation
+            m_fit += dm0
+            inv_sigma2 = 1.0 / (eo ** 2 + em ** 2)
+            chi = np.sum((mo - m_fit) ** 2 * inv_sigma2 - np.log(inv_sigma2) + np.log(2 * np.pi))
+            res += chi
+        res = -0.5 * res
+        return res
+
+    @staticmethod
     def log_posteriorDtDm(theta, cs_m, cs_o, bnames, kwargs):
         dt_lim = kwargs.get('dt_lim', 100.)
         dm_lim = kwargs.get('dm_lim', 5.)
-        lp = FitMCMC.log_prior(theta, tlim=dt_lim, maglim=dm_lim)
+        lp = FitMCMC.log_priorDtDm(theta, tlim=dt_lim, maglim=dm_lim)
         if not np.isfinite(lp):
             return -np.inf
-        return lp + FitMCMC.log_likelihood_curves(theta, cs_m, cs_o, bnames)
+        return lp + FitMCMC.log_likelihood_curves_DtDm(theta, cs_m, cs_o, bnames)
 
     @staticmethod
     def log_posteriorDt(theta, cs_m, cs_o, bnames, kwargs):
@@ -357,6 +380,28 @@ class FitMCMC(FitLc):
             N += len(to)
         return res, N
 
+    @staticmethod
+    def chi2DtDm(theta, cs_m, cs_o, bnames):
+        # dt, dm, *lnf_bands = theta
+        texp, dm0, sigs = FitMCMC.thetaDtDm2arr(theta, len(bnames))
+        res = 0.
+        N = 0
+        for i, bname in enumerate(bnames):
+            lc_o = cs_o[bname]
+            to, mo, eo = lc_o.Time, lc_o.Mag, lc_o.MagErr
+            # model interpolation
+            lcm = cs_m[bname]
+            tm, mm = lcm.Time, lcm.Mag
+            tm += texp
+            em = sigs[i]
+            m_fit = np.interp(to, tm, mm)  # One-dimensional linear interpolation
+            m_fit += dm0
+            inv_sigma2 = 1.0 / (eo ** 2 + em ** 2)
+            chi = np.sum((mo - m_fit) ** 2 * inv_sigma2)
+            res += chi
+            N += len(to)
+        return res, N
+
     def best_curvesDtDm(self, curves_m, curves_o, dt0, dm0,
                         threads=1, dt_lim=100., dm_lim=3., is_samples=False):
         """
@@ -376,10 +421,9 @@ class FitMCMC(FitLc):
         dm_init = {lc.Band.Name: lc.mshift for lc in curves_o}
 
         bnames = curves_o.BandNames
+        ndim = len(FitMCMC.thetaDtDmNames(bnames))  # number of parameters in the model
 
         if dt0 is not None or dm0 is not None:
-            ndim = len(FitMCMC.thetaDtDmNames(bnames))  # number of parameters in the model
-
             # starting_guesses = np.random.rand(self.nwalkers, ndim)  #
             # starting_guesses[:, 0] *= dt_lim  # for time delay in [-100,100]
             # starting_guesses[:, 1] *= dm_lim  # for  magnification
@@ -395,59 +439,142 @@ class FitMCMC(FitLc):
             sampler.run_mcmc(starting_guesses, self.nsteps)
 
             #     sample = sampler.chain  # shape = (nwalkers, nsteps, ndim)
-            sample_dt = sampler.flatchain[self.nburn:, 0].ravel()  # discard burn-in points
-            sample_mu = sampler.flatchain[self.nburn:, 1].ravel()  # discard burn-in points
-            sample_lnf = sampler.flatchain[self.nburn:, 2].ravel()  # discard burn-in points
+            # sample_dt = sampler.flatchain[self.nburn:, 0].ravel()  # discard burn-in points
+            # sample_mu = sampler.flatchain[self.nburn:, 1].ravel()  # discard burn-in points
+            # sample_lnf = sampler.flatchain[self.nburn:, 2].ravel()  # discard burn-in points
 
             # dt, dtsigma = np.mean(sample_dt), np.std(sample_dt)
             # dm, dmsigma = np.mean(sample_mu), np.std(sample_mu)
-            samples = np.array([sample_dt, sample_mu, sample_lnf]).T
+            # e
+            # samples = np.array([sample_dt, sample_mu, sample_lnf]).T
+            samples = sampler.chain[:, self.nburn:, :].reshape((-1, ndim))
+
             quartiles = list(
                 map(lambda v: (v[1], v[2] - v[1], v[1] - v[0]), zip(*np.percentile(samples, (16, 50, 84), axis=0))))
-            dt, dtsig1, dtsig2 = quartiles[0][0], quartiles[0][1], quartiles[0][2]
-            dm, dmsig1, dmsig2 = quartiles[1][0], quartiles[1][1], quartiles[1][2]
-            lnf, lnfsig1, lnfsig2 = quartiles[2][0], quartiles[2][1], quartiles[2][2]
+
+            theta_fit = [x[0] for x in quartiles]
+            theta_fit_e1 = [x[1] for x in quartiles]
+            theta_fit_e2 = [x[2] for x in quartiles]
+
+            if self.is_info:
+                print("Theta and it errors: rows[val, +, -]")
+                FitMCMC.print_thetaDtDm(theta_fit, bnames)
+                FitMCMC.print_thetaDtDm(theta_fit_e1, bnames)
+                FitMCMC.print_thetaDtDm(theta_fit_e2, bnames)
+
+            # Results
+            # # # we'll start at random locations between 0 and 2000
+            # # starting_guesses = np.zeros(self.nwalkers, ndim)  #
+            # # starting_guesses[:, 0] = dt0 + np.random.rand(self.nwalkers) * dt_lim  # for time delay in [-100,100]
+            # # starting_guesses[:, 1] = np.random.rand(self.nwalkers)
+            #
+            # sampler = emcee.EnsembleSampler(self.nwalkers, ndim, FitMCMC.log_posteriorDt,
+            #                                 args=(curves_m, curves_o, bnames, {'dt_lim': dt_lim}),
+            #                                 threads=threads, a=3)
+            # sampler.run_mcmc(starting_guesses, self.nsteps)
+            #
+            # #     sample = sampler.chain  # shape = (nwalkers, nsteps, ndim)
+            # sample_dt = sampler.flatchain[self.nburn:, 0].ravel()  # discard burn-in points
+            # sample_lnf = sampler.flatchain[self.nburn:, 1].ravel()  # discard burn-in points
+            #
+            # # dt, dtsigma = np.mean(sample_dt), np.std(sample_dt)
+            # # dm, dmsigma = np.mean(sample_mu), np.std(sample_mu)
+            # samples = np.array([sample_dt, sample_lnf]).T
+            # quartiles = list(
+            #     map(lambda v: (v[1], v[2] - v[1], v[1] - v[0]), zip(*np.percentile(samples, (16, 50, 84), axis=0))))
+            # dt, dtsig1, dtsig2 = quartiles[0][0], quartiles[0][1], quartiles[0][2]
+            # lnf, lnfsig1, lnfsig2 = quartiles[1][0], quartiles[1][1], quartiles[1][2]
+
+            THETA = namedtuple('THETA', FitMCMC.thetaDtDmNames(bnames))
+            th, e1, e2 = THETA(*theta_fit), THETA(*theta_fit_e1), THETA(*theta_fit_e2)
+
+            texp, dm0, sigs = FitMCMC.thetaDtDm2arr(th, len(bnames))
 
             # Statistics
-            chi2, N = FitMCMC.chi2([dt, dm, lnf], curves_m, curves_o, bnames)
-            # chi2 = abs(log_likelihood_chi2((dt, dm), curves_m, curves_o))
+            chi2, N = FitMCMC.chi2DtDm(th, curves_m, curves_o, bnames)
             dof = N - ndim
-            l = FitMCMC.log_likelihood_curves([dt, dm, lnf], curves_m, curves_o, bnames)
-            bic = ndim * np.log(N) + l
-            aic = 2 * ndim + l
-            measure = lnf
+            l = FitMCMC.log_likelihood_curves_DtDm(theta_fit, curves_m, curves_o, bnames)
+            bic = ndim * np.log(N) - 2. * l
+            aic = 2 * ndim - 2. * l
+            measure = np.sum(np.array(sigs) ** 2)
 
-            res = {'dt': dt, 'dtsig1': dtsig1, 'dtsig2': dtsig2, 'dtsig': (dtsig1 + dtsig2) / 2.,
-                   'dm': dm, 'dmsig1': dmsig1, 'dmsig2': dmsig2, 'dmsig': (dmsig1 + dmsig2) / 2.,
-                   'lnf': lnf, 'lnfsig1': lnfsig1, 'lnfsig2': lnfsig2, 'lnfsig': (lnfsig1 + lnfsig2) / 2.,
-                   'chi2': chi2, 'bic': bic, 'aic': aic, 'dof': dof, 'measure': measure,
-                   'acceptance_fraction': np.mean(sampler.acceptance_fraction)}
-        else:
-            chi2, N = FitMCMC.chi2([0., 0.], curves_m, curves_o)  # just return the weight diff
-            dof = N - 3
+            res = th._asdict()
+            res['chi2'] = chi2
+            res['bic'] = bic
+            res['aic'] = aic
+            res['dof'] = dof
+            res['measure'] = measure
+            res['acceptance_fraction'] = np.mean(sampler.acceptance_fraction)
+
+            # res = {'dt': dt, 'dtsig1': dtsig1, 'dtsig2': dtsig2, 'dtsig': (dtsig1 + dtsig2) / 2.,
+            #        'lnf': lnf, 'lnfsig1': lnfsig1, 'lnfsig2': lnfsig2, 'lnfsig': (lnfsig1 + lnfsig2) / 2.,
+            #        'chi2': chi2, 'bic': bic, 'aic': aic, 'dof': dof, 'measure': measure,
+            #        'acceptance_fraction': np.mean(sampler.acceptance_fraction)}
+
+            # return initial states
+            for lc in curves_o:
+                lc.tshift = dt_init[lc.Band.Name]
+                lc.mshift = dm_init[lc.Band.Name]
+
+            # plot a histogram of the sample
             if self.is_info:
-                print("No fit: only run least_sq:   chi2={} dof={}".format(chi2, dof))
+                # the fraction of steps accepted for each walker.
+                print("Mean acceptance fraction: {0:.3f}".format(res['acceptance_fraction']))
 
-            res = {'dt': None, 'dtsig': None, 'dm': None, 'dmsig': None, 'chi2': chi2, 'dof': dof}
-            return res
+            if self.is_info:
+                print("The final params are: dt={:6.2f}+{:.2f}-{:0.2f}  dm={:6.2f}+{:.2f}-{:0.2f} chi2:{:.0f}/{:d}".format(
+                    th.dt, e1.dt, e2.dt, th.dm0, e1.dm0, e2.dm0, res['chi2'], res['dof']))
 
-        # return initial states
-        for lc in curves_o:
-            lc.tshift = dt_init[lc.Band.Name]
-            lc.mshift = dm_init[lc.Band.Name]
+            if is_samples:
+                return res, (th, e1, e2), samples  # sampler
 
-        # plot a histogram of the sample
-        if self.is_info:
-            # the fraction of steps accepted for each walker.
-            print("Mean acceptance fraction: {0:.3f}".format(np.mean(sampler.acceptance_fraction)))
+            return res, (th, e1, e2)
 
-        if self.is_info:
-            print("The final params are: dt={:6.2f}+-{:6.4f} dm={:6.2f}+-{:6.4f}  chi2:{:.0f}/{:d}".format(
-                res['dt'], res['dtsig'], res['dm'], res['dmsig'], res['chi2'], res['dof']))
+        #     return res, (th, e1, e2)
+        #     dt, dtsig1, dtsig2 = quartiles[0][0], quartiles[0][1], quartiles[0][2]
+        #     dm, dmsig1, dmsig2 = quartiles[1][0], quartiles[1][1], quartiles[1][2]
+        #     lnf, lnfsig1, lnfsig2 = quartiles[2:][0], quartiles[2:][1], quartiles[2:][2]
+        #
+        #     # Statistics
+        #     chi2, N = FitMCMC.chi2DtDm([dt, dm, lnf], curves_m, curves_o, bnames)
+        #     # chi2 = abs(log_likelihood_chi2((dt, dm), curves_m, curves_o))
+        #     dof = N - ndim
+        #     l = FitMCMC.log_likelihood_curves_DtDm([dt, dm, lnf], curves_m, curves_o, bnames)
+        #     bic = ndim * np.log(N) + l
+        #     aic = 2 * ndim + l
+        #     measure = lnf
+        #
+        #     res = {'dt': dt, 'dtsig1': dtsig1, 'dtsig2': dtsig2, 'dtsig': (dtsig1 + dtsig2) / 2.,
+        #            'dm': dm, 'dmsig1': dmsig1, 'dmsig2': dmsig2, 'dmsig': (dmsig1 + dmsig2) / 2.,
+        #            'lnf': lnf, 'lnfsig1': lnfsig1, 'lnfsig2': lnfsig2, 'lnfsig': (lnfsig1 + lnfsig2) / 2.,
+        #            'chi2': chi2, 'bic': bic, 'aic': aic, 'dof': dof, 'measure': measure,
+        #            'acceptance_fraction': np.mean(sampler.acceptance_fraction)}
+        # else:
+        #     chi2, N = FitMCMC.chi2DtDm([0.]*ndim, curves_m, curves_o, bnames)  # just return the weight diff
+        #     dof = N - ndim
+        #     if self.is_info:
+        #         print("No fit: only run least_sq:   chi2={} dof={}".format(chi2, dof))
+        #
+        #     res = {'dt': None, 'dtsig': None, 'dm': None, 'dmsig': None, 'chi2': chi2, 'dof': dof}
+        #     return res
 
-        if is_samples:
-            return res, samples
-        return res
+        # # restore the initial states
+        # for lc in curves_o:
+        #     lc.tshift = dt_init[lc.Band.Name]
+        #     lc.mshift = dm_init[lc.Band.Name]
+        #
+        # # plot a histogram of the sample
+        # if self.is_info:
+        #     # the fraction of steps accepted for each walker.
+        #     print("Mean acceptance fraction: {0:.3f}".format(np.mean(sampler.acceptance_fraction)))
+        #
+        # if self.is_info:
+        #     print("The final params are: dt={:6.2f}+-{:6.4f} dm={:6.2f}+-{:6.4f}  chi2:{:.0f}/{:d}".format(
+        #         res['dt'], res['dtsig'], res['dm'], res['dmsig'], res['chi2'], res['dof']))
+        #
+        # if is_samples:
+        #     return res, samples
+        # return res
 
     def best_curves(self, curves_m, curves_o, dt0, dm0=None,
                     threads=1, dt_lim=100., dm_lim=5., is_samples=False):
@@ -531,8 +658,6 @@ class FitMCMC(FitLc):
             FitMCMC.print_thetaDt(theta_fit_e2, bnames)
 
         # Results
-
-
         # # # we'll start at random locations between 0 and 2000
         # # starting_guesses = np.zeros(self.nwalkers, ndim)  #
         # # starting_guesses[:, 0] = dt0 + np.random.rand(self.nwalkers) * dt_lim  # for time delay in [-100,100]

@@ -708,7 +708,8 @@ def fit_mfl(args, curves_o, bnames, fitter, name, path, t_diff, tlim):
         curves_m = mdl.curves(bnames, z=z, distance=distance, ebv=args.color_excess,
                               t_beg=tlim[0], t_end=tlim[1], t_diff=t_diff)
 
-    fit_result, res = fitter.best_curves(curves_m, curves_o, dt0=0.)
+    # fit_result, res, (th, e1, e2) = fitter.best_curves(curves_m, curves_o, dt0=0.)
+    fit_result, res, (th, e1, e2) = fitter.best_curves(curves_m, curves_o, dt0=0., dm0=0.)  # todo dbg remove
 
     return curves_m, fit_result, res
 
@@ -968,7 +969,7 @@ def main():
                     sys.stdout.flush()
 
                 if vels_o is None:
-                    curves_m, res,res_full = fit_mfl(args, curves_o, bnames, fitter, name, path, t_diff, tlim)
+                    curves_m, res, res_full = fit_mfl(args, curves_o, bnames, fitter, name, path, t_diff, tlim)
                 else:
                     curves_m, res, vel_m = fit_mfl_vel(args, curves_o, vels_o, bnames, fitter, name, path,
                                                        t_diff, tlim, A=args.tweight)
