@@ -274,7 +274,7 @@ class FitMCMC(FitLc):
     @staticmethod
     def log_priorDt(theta, nb, tlim):
         dt, sigs = FitMCMC.thetaDt2arr(theta, nb)
-        if (dt < -tlim) or (dt > tlim):
+        if (dt < tlim[0]) or (dt > tlim[1]):
             return -np.inf
         for x in sigs:
             if x < -0.:
@@ -284,7 +284,7 @@ class FitMCMC(FitLc):
     @staticmethod
     def log_priorDtDm(theta, tlim, maglim):
         dt, dm, *lnf = theta
-        if (dt < -tlim) or (dt > tlim):
+        if (dt < tlim[0]) or (dt > tlim[1]):
             return -np.inf
         if (dm < -maglim) or (dm > maglim):
             return -np.inf
@@ -344,7 +344,7 @@ class FitMCMC(FitLc):
 
     @staticmethod
     def log_posteriorDtDm(theta, cs_m, cs_o, bnames, kwargs):
-        dt_lim = kwargs.get('dt_lim', 100.)
+        dt_lim = kwargs.get('dt_lim', (-100, 100.))
         dm_lim = kwargs.get('dm_lim', 5.)
         lp = FitMCMC.log_priorDtDm(theta, tlim=dt_lim, maglim=dm_lim)
         if not np.isfinite(lp):
@@ -353,7 +353,7 @@ class FitMCMC(FitLc):
 
     @staticmethod
     def log_posteriorDt(theta, cs_m, cs_o, bnames, kwargs):
-        dt_lim = kwargs.get('dt_lim', 100.)
+        dt_lim = kwargs.get('dt_lim', (-100, 100.))
         lp = FitMCMC.log_priorDt(theta, nb=len(bnames), tlim=dt_lim)
         if not np.isfinite(lp):
             return -np.inf
@@ -403,7 +403,7 @@ class FitMCMC(FitLc):
         return res, N
 
     def best_curvesDtDm(self, curves_m, curves_o, dt0, dm0,
-                        threads=1, dt_lim=100., dm_lim=3., is_samples=False):
+                        threads=1, dt_lim=(-100.,100.), dm_lim=3., is_samples=False):
         """
         Find the values of time shift and magnitude shift minimizing the distance between the observational
         and modal light curves
@@ -428,9 +428,10 @@ class FitMCMC(FitLc):
             # starting_guesses[:, 0] *= dt_lim  # for time delay in [-100,100]
             # starting_guesses[:, 1] *= dm_lim  # for  magnification
 
-            starting_guesses = 1. - 2. * np.random.rand(self.nwalkers, ndim)  #
-            starting_guesses[:, 0] *= dt_lim  # delta t_exp
-            starting_guesses[:, 1] *= -dm_lim  # dm
+            # starting_guesses = 1. - 2. * np.random.rand(self.nwalkers, ndim)  #
+            starting_guesses = np.random.rand(self.nwalkers, ndim)  #
+            starting_guesses[:, 0] = dt_lim[0] + starting_guesses[:, 0] * (dt_lim[1] - dt_lim[0])  # delta t_exp
+            starting_guesses[:, 1] = -dm_lim * (1. - 2.*starting_guesses[:, 1])  # dm
             starting_guesses[:, 2:] = np.random.rand(self.nwalkers, len(bnames))  # sig_lambda, model uncertainties for the each band
 
             sampler = emcee.EnsembleSampler(self.nwalkers, ndim, FitMCMC.log_posteriorDtDm,
@@ -526,7 +527,7 @@ class FitMCMC(FitLc):
                     th.dt, e1.dt, e2.dt, th.dm0, e1.dm0, e2.dm0, res['chi2'], res['dof']))
 
             if is_samples:
-                return res, (th, e1, e2), samples  # sampler
+                return res, (th, e1, e2), sampler  # sampler
 
             return res, (th, e1, e2)
 
@@ -577,7 +578,7 @@ class FitMCMC(FitLc):
         # return res
 
     def best_curves(self, curves_m, curves_o, dt0, dm0=None,
-                    threads=1, dt_lim=100., dm_lim=5., is_samples=False):
+                    threads=1, dt_lim=(-100.,100.), dm_lim=5., is_samples=False):
         """
         Find the values of time shift and magnitude shift minimizing the distance between the observational
         and modal light curves
@@ -617,7 +618,7 @@ class FitMCMC(FitLc):
             return fit_result, res, (th, e1, e2)
 
     def best_curvesDt(self, curves_m, curves_o, dt0,
-                      threads=1, dt_lim=100., is_samples=False):
+                      threads=1, dt_lim=(-100.,100.), is_samples=False):
         dt_init = {lc.Band.Name: lc.tshift for lc in curves_o}
         bnames = curves_o.BandNames
 
@@ -627,10 +628,14 @@ class FitMCMC(FitLc):
         # starting_guesses[:, 0] *= dt_lim  # for time delay in [-100,100]
         # starting_guesses[:, 1] *= dm_lim  # for  magnification
 
-        starting_guesses = 1. - 2. * np.random.rand(self.nwalkers, ndim)  #
-        starting_guesses[:, 0] = starting_guesses[:, 0]*dt_lim + dt0
+        starting_guesses = np.random.rand(self.nwalkers, ndim)
+        starting_guesses[:, 0] = dt_lim[0] + starting_guesses[:, 0] * (dt_lim[1] - dt_lim[0])  # delta t_exp
+        # starting_guesses[:, 0] = starting_guesses[:, 0]*dt_lim + dt0
         # sig_lambda, model uncertainties for the each band
         starting_guesses[:, 1:] = np.random.rand(self.nwalkers, len(bnames))
+
+        # add dt0
+        starting_guesses[:, 0] = starting_guesses[:, 0] + dt0
 
         # initial data
         curves_m.set_tshift(0.)
@@ -720,7 +725,7 @@ class FitMCMC(FitLc):
                 th.dt, e1.dt, e2.dt, res['chi2'], res['dof']))
 
         if is_samples:
-            return res, (th, e1, e2), samples  # sampler
+            return res, (th, e1, e2), sampler  # sampler
 
         return res, (th, e1, e2)
 
