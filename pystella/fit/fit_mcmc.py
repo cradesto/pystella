@@ -272,27 +272,24 @@ class FitMCMC(FitLc):
         print(txt)
 
     @staticmethod
-    def log_priorDt(theta, nb, tlim):
+    def log_priorDt(theta, nb, tlim, siglim):
         dt, sigs = FitMCMC.thetaDt2arr(theta, nb)
         if (dt < tlim[0]) or (dt > tlim[1]):
             return -np.inf
         for x in sigs:
-            if x < -0.:
+            if (x < -0.) or (x > siglim):
                 return -np.inf
         return 0  # flat prior
 
     @staticmethod
-    def log_priorDtDm(theta, tlim, maglim):
-        dt, dm, *lnf = theta
+    def log_priorDtDm(theta, tlim, maglim, siglim):
+        dt, dm, *sigs = theta
         if (dt < tlim[0]) or (dt > tlim[1]):
             return -np.inf
-        if (dm < -maglim) or (dm > maglim):
+        if (dm < maglim[0]) or (dm > maglim[1]):
             return -np.inf
-        # for x in lnf:
-        #     if (x < -10.) or (x > 1.):
-        #         return -np.inf
-        for x in lnf:
-            if x < -0.:
+        for x in sigs:
+            if (x < -0.) or (x > siglim):
                 return -np.inf
         return 0  # flat prior
 
@@ -345,8 +342,9 @@ class FitMCMC(FitLc):
     @staticmethod
     def log_posteriorDtDm(theta, cs_m, cs_o, bnames, kwargs):
         dt_lim = kwargs.get('dt_lim', (-100, 100.))
-        dm_lim = kwargs.get('dm_lim', 5.)
-        lp = FitMCMC.log_priorDtDm(theta, tlim=dt_lim, maglim=dm_lim)
+        dm_lim = kwargs.get('dm_lim', (-3, 3.))
+        siglim = kwargs.get('siglim', 3.)
+        lp = FitMCMC.log_priorDtDm(theta, tlim=dt_lim, maglim=dm_lim, siglim=siglim)
         if not np.isfinite(lp):
             return -np.inf
         return lp + FitMCMC.log_likelihood_curves_DtDm(theta, cs_m, cs_o, bnames)
@@ -354,7 +352,8 @@ class FitMCMC(FitLc):
     @staticmethod
     def log_posteriorDt(theta, cs_m, cs_o, bnames, kwargs):
         dt_lim = kwargs.get('dt_lim', (-100, 100.))
-        lp = FitMCMC.log_priorDt(theta, nb=len(bnames), tlim=dt_lim)
+        siglim = kwargs.get('siglim', 3.)
+        lp = FitMCMC.log_priorDt(theta, nb=len(bnames), tlim=dt_lim, siglim=siglim)
         if not np.isfinite(lp):
             return -np.inf
         return lp + FitMCMC.log_likelihood_curves_Dt(theta, cs_m, cs_o, bnames)
@@ -403,7 +402,7 @@ class FitMCMC(FitLc):
         return res, N
 
     def best_curvesDtDm(self, curves_m, curves_o, dt0, dm0,
-                        threads=1, dt_lim=(-100.,100.), dm_lim=3., is_samples=False):
+                        threads=1, dt_lim=(-100.,100.), dm_lim=(-3.,3.), is_samples=False):
         """
         Find the values of time shift and magnitude shift minimizing the distance between the observational
         and modal light curves
@@ -431,8 +430,10 @@ class FitMCMC(FitLc):
             # starting_guesses = 1. - 2. * np.random.rand(self.nwalkers, ndim)  #
             starting_guesses = np.random.rand(self.nwalkers, ndim)  #
             starting_guesses[:, 0] = dt_lim[0] + starting_guesses[:, 0] * (dt_lim[1] - dt_lim[0])  # delta t_exp
-            starting_guesses[:, 1] = -dm_lim * (1. - 2.*starting_guesses[:, 1])  # dm
-            starting_guesses[:, 2:] = np.random.rand(self.nwalkers, len(bnames))  # sig_lambda, model uncertainties for the each band
+            starting_guesses[:, 1] = dm_lim[0] + starting_guesses[:, 1] * (dm_lim[1] - dm_lim[0])  # delta t_exp
+            # starting_guesses[:, 1] = -dm_lim * (1. - 2.*starting_guesses[:, 1])  # dm
+            # sig_lambda, model uncertainties for the each band
+            # starting_guesses[:, 2:] = np.random.rand(self.nwalkers, len(bnames))
 
             sampler = emcee.EnsembleSampler(self.nwalkers, ndim, FitMCMC.log_posteriorDtDm,
                                             args=(curves_m, curves_o, bnames, {'dt_lim': dt_lim, 'dm_lim': dm_lim}),
