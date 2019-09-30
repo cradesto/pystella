@@ -579,7 +579,7 @@ class FitMCMC(FitLc):
         # return res
 
     def best_curves(self, curves_m, curves_o, dt0, dm0=None,
-                    threads=1, dt_lim=(-100.,100.), dm_lim=5., is_samples=False):
+                    threads=1, dt_lim=(-100.,100.), dm_lim=(-5.,5.), is_samples=False):
         """
         Find the values of time shift and magnitude shift minimizing the distance between the observational
         and modal light curves
