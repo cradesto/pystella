@@ -392,7 +392,7 @@ def bands_colors(bname=None):
         g="olive", r="red", i="plum", u="darkslateblue", z="chocolate",
         Sdssg="olive", Sdssr="pink", Sdssi="magenta", Sdssu="blue", Sdssz="chocolate",
         PS1g="olive", PS1r="red", PS1i="magenta", PS1u="blue", PS1z="chocolate", PS1y="cyan", PS1w="orange",
-        y='y', Y='y', w='tomato',
+        y='y', Y='y', w='tomato', AtlasC="cyan", AtlasO="orange",
         UBVRI='chocolate'
     )
     colors[Band.NameBol] = 'black'

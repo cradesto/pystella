@@ -85,6 +85,16 @@ class TimeSeries(object):
         idx = np.argmin(self.V)
         return self.Time[idx]
 
+    def TimeVmaxInterp(self, window_length=7, polyorder=2):
+        from scipy.signal import savgol_filter
+        #  smooth spectra
+        flux_smooth = savgol_filter(self.V, window_length=window_length, polyorder=polyorder)
+        # interpolation
+        xx = np.linspace(self.TimeMin, self.TimeMax, 1000)
+        yy = np.interp(xx, self.Time, flux_smooth)
+        idx = np.argmin(yy)
+        return xx[idx], yy[idx]
+
     @classmethod
     def Merge(cls, ts1, ts2):
         if ts1.Name != ts2.Name:

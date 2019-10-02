@@ -33,7 +33,7 @@ def plot_griuz():
     plt.legend()
     plt.ylabel('Amplitude Response')
     plt.xlabel('Wave [A]')
-    plt.grid()
+    plt.grid(linestyle=':')
     plt.show()
 
 
@@ -46,7 +46,7 @@ def plot_UBVRI():
     plt.legend()
     plt.ylabel('Amplitude Response')
     plt.xlabel('Wave [A]')
-    plt.grid()
+    plt.grid(linestyle=':')
     plt.show()
 
 
@@ -59,7 +59,7 @@ def plot_JHK():
     plt.legend()
     plt.ylabel('Amplitude Response')
     plt.xlabel('Wave [A]')
-    plt.grid()
+    plt.grid(linestyle=':')
     plt.show()
 
 
@@ -72,7 +72,7 @@ def plot_SWIFT():
     plt.legend()
     plt.ylabel('Amplitude Response')
     plt.xlabel('Wave [A]')
-    plt.grid()
+    plt.grid(linestyle=':')
     plt.show()
 
 
@@ -86,7 +86,7 @@ def plot_PS1():
     plt.legend()
     plt.ylabel('Amplitude Response')
     plt.xlabel('Wave [A]')
-    plt.grid()
+    plt.grid(linestyle=':')
     plt.show()
 
 
@@ -100,7 +100,7 @@ def plot_HSC():
     plt.legend(loc=4)
     plt.ylabel('Amplitude Response')
     plt.xlabel('Wave [A]')
-    plt.grid()
+    plt.grid(linestyle=':')
     plt.show()
 
 
@@ -114,7 +114,20 @@ def plot_HST():
     plt.legend(loc=4)
     plt.ylabel('Amplitude Response')
     plt.xlabel('Wave [A]')
-    plt.grid()
+    plt.grid(linestyle=':')
+    plt.show()
+
+
+def plot_Misc():
+    plt.title('The filter responses of the different sources')
+    bands = dict(AtlasC="cyan", AtlasO="orange")
+    for k, v in bands.items():
+        b = band.band_by_name(k)
+        plt.plot(b.wl * phys.cm_to_angs, b.resp_wl, v, label=k, linewidth=2)
+    plt.legend(loc=4)
+    plt.ylabel('Amplitude Response')
+    plt.xlabel('Wave [A]')
+    plt.grid(linestyle=':')
     plt.show()
 
 
@@ -128,7 +141,7 @@ def plot_Kepler():
     plt.legend(loc=4)
     plt.ylabel('Amplitude Response')
     plt.xlabel('Wave [A]')
-    plt.grid()
+    plt.grid(linestyle=':')
     plt.show()
 
 
@@ -142,7 +155,7 @@ def plot_bands(bands, color_dic=None):
     plt.legend(loc=4)
     plt.ylabel('Amplitude Response')
     plt.xlabel('Wave [A]')
-    plt.grid()
+    plt.grid(linestyle=':')
     plt.show()
 
 
@@ -188,6 +201,7 @@ def main():
         plot_HSC()
         plot_HST()
         plot_Kepler()
+        plot_Misc()
 
 
 if __name__ == '__main__':
