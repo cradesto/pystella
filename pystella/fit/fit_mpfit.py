@@ -340,7 +340,7 @@ class FitMPFit(FitLc):
         fit_result.measure = res['chi2']
         fit_result.comm = 'result MCMC:dof: {}'.format(res['dof'])
 
-        return fit_result, res
+        return fit_result, res, None  # as Fit_MCMC
 
     #        return result
 

@@ -708,7 +708,7 @@ def fit_mfl(args, curves_o, bnames, fitter, name, path, t_diff, tlim):
         curves_m = mdl.curves(bnames, z=z, distance=distance, ebv=args.color_excess,
                               t_beg=tlim[0], t_end=tlim[1], t_diff=t_diff)
 
-    fit_result, res, (th, e1, e2) = fitter.best_curves(curves_m, curves_o, dt0=0.)
+    fit_result, res, dum = fitter.best_curves(curves_m, curves_o, dt0=0.)
 
     return curves_m, fit_result, res
 
