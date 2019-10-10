@@ -245,17 +245,18 @@ def plot_models_curves(ax, models_curves, band_shift=None, xlim=None, ylim=None,
     mi, ib = 0, 0
     x_max = []
     y_mid = []
+    bshifts = band_shift
     for mname, curves in models_curves.items():
         mi += 1
         bands = curves.BandNames
         if band_shift is None:
-            band_shift = dict((bname, 0.) for bname in bands)  # no y-shift
+            bshifts = {bname: 0. for bname in bands}  # no y-shift
         for bname in bands:
             ib += 1
-            mshift = band_shift[bname]
+            mshift = bshifts[bname]
             x = curves.TimeCommon
             y = curves[bname].Mag + mshift
-            ax.plot(x, y, label='%s  %s' % (lbl(bname, mshift), mname),
+            ax.plot(x, y, label='%s  %s' % (lbl(bname, bshifts), mname),
                     color=colors[bname], ls=lc_types[mname], linewidth=lw)
             if is_compute_x_lim:
                 x_max.append(np.max(x))
@@ -268,7 +269,7 @@ def plot_models_curves(ax, models_curves, band_shift=None, xlim=None, ylim=None,
         ylim = [np.min(y_mid) + 7., np.min(y_mid) - 2.]
 
     ax.set_xlim(xlim)
-    ax.invert_yaxis()
+    # ax.invert_yaxis()
     ax.set_ylim(ylim)
 
 

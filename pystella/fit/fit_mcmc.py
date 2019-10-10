@@ -1,12 +1,20 @@
+import sys
 import numpy as np
-import emcee
 from collections import namedtuple
 from multiprocessing import Pool
-
+import logging
 
 from pystella.fit.fit_lc import FitLc, FitLcResult
 
-import logging
+logger = logging.getLogger(__name__)
+# logger.setLevel(logging.INFO)
+# logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
+
+try:
+    import emcee
+except ImportError:
+    logging.debug('emcee failed to import', exc_info=True)
+    pass
 
 mpl_logger = logging.getLogger('matplotlib')
 mpl_logger.setLevel(logging.WARNING)
@@ -402,7 +410,7 @@ class FitMCMC(FitLc):
         return res, N
 
     def best_curvesDtDm(self, curves_m, curves_o, dt0, dm0,
-                        threads=1, dt_lim=(-100.,100.), dm_lim=(-3.,3.), is_samples=False):
+                        threads=1, dt_lim=(-100., 100.), dm_lim=(-3., 3.), is_samples=False):
         """
         Find the values of time shift and magnitude shift minimizing the distance between the observational
         and modal light curves
@@ -524,8 +532,9 @@ class FitMCMC(FitLc):
                 print("Mean acceptance fraction: {0:.3f}".format(res['acceptance_fraction']))
 
             if self.is_info:
-                print("The final params are: dt={:6.2f}+{:.2f}-{:0.2f}  dm={:6.2f}+{:.2f}-{:0.2f} chi2:{:.0f}/{:d}".format(
-                    th.dt, e1.dt, e2.dt, th.dm0, e1.dm0, e2.dm0, res['chi2'], res['dof']))
+                print(
+                    "The final params are: dt={:6.2f}+{:.2f}-{:0.2f}  dm={:6.2f}+{:.2f}-{:0.2f} chi2:{:.0f}/{:d}".format(
+                        th.dt, e1.dt, e2.dt, th.dm0, e1.dm0, e2.dm0, res['chi2'], res['dof']))
 
             if is_samples:
                 return res, (th, e1, e2), sampler  # sampler
@@ -579,7 +588,7 @@ class FitMCMC(FitLc):
         # return res
 
     def best_curves(self, curves_m, curves_o, dt0, dm0=None,
-                    threads=1, dt_lim=(-100.,100.), dm_lim=(-5.,5.), is_samples=False):
+                    threads=1, dt_lim=(-100., 100.), dm_lim=(-5., 5.), is_samples=False):
         """
         Find the values of time shift and magnitude shift minimizing the distance between the observational
         and modal light curves
@@ -608,7 +617,7 @@ class FitMCMC(FitLc):
 
         fit_result = FitLcResult()
         fit_result.tshift = res['dt']
-        fit_result.tsigma = (e1.dt+e2.dt)/2.  # res['dtsig']
+        fit_result.tsigma = (e1.dt + e2.dt) / 2.  # res['dtsig']
         fit_result.measure = res['bic']
         fit_result.comm = 'result MCMC: CHI2|BIC|AIC: {:.0f}|{:.0f}|{:.0f} acceptance_fraction: {:.3f}'. \
             format(res['chi2'], res['bic'], res['aic'], res['acceptance_fraction'])
@@ -619,7 +628,7 @@ class FitMCMC(FitLc):
             return fit_result, res, (th, e1, e2)
 
     def best_curvesDt(self, curves_m, curves_o, dt0,
-                      threads=1, dt_lim=(-100.,100.), is_samples=False):
+                      threads=1, dt_lim=(-100., 100.), is_samples=False):
         dt_init = {lc.Band.Name: lc.tshift for lc in curves_o}
         bnames = curves_o.BandNames
 
@@ -697,7 +706,7 @@ class FitMCMC(FitLc):
         l = FitMCMC.log_likelihood_curves_Dt(theta_fit, curves_m, curves_o, bnames)
         bic = ndim * np.log(N) - 2. * l
         aic = 2 * ndim - 2. * l
-        measure = np.sum(np.array(sigs)**2)
+        measure = np.sum(np.array(sigs) ** 2)
 
         res = th._asdict()
         res['chi2'] = chi2

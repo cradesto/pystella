@@ -67,7 +67,7 @@ class TestStellaTt(unittest.TestCase):
         tmp = 15.
         self.assertEquals(info.M, tmp, "Mass [%f] should be %f" % (info.M, tmp))
 
-        tmp = 12.
+        tmp = 1.2
         self.assertEquals(info.E, tmp, "Ebstht [%f] should be %f" % (info.E, tmp))
 
     def test_tt_vs_ph(self):
@@ -124,7 +124,7 @@ class TestStellaTt(unittest.TestCase):
         plt.matplotlib.rcParams.update({'font.size': 14})
         fig, ax = plt.subplots(1, 1)
 
-        ps.lcp.plot_models_curves(ax, models_dic, lc_types=lc_types, ylim=(-19, -10), lw=3)
+        ps.lcp.plot_models_curves(ax, models_dic, lc_types=lc_types, ylim=(-10, -19), lw=2)
         # lcf.plot_models_curves_fixed_bands(ax, models_dic, bands=('B', 'V'), lc_types=lc_types, ylim=(-13, -23), lw=3)
         plt.legend()
         plt.show()

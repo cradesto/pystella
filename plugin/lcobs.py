@@ -57,16 +57,6 @@ def plot(ax, dic=None, mag_lim=30.):
     bcolors = dic.get('bcolors', band.bands_colors())
     comments = dic.get('comments', '#')
 
-    bshift = dic.get('bshift', None)
-    if bshift is None:
-        bshift = {b: 0. for b in bnames}
-    else:
-        bshiftzero = {b: 0. for b in bnames if b not in bshift}
-        bshift.update(bshiftzero)
-
-    lbl_len = lbl_length(bshift)
-    # print(bshift, lbl_len)
-
     arg = dic.get('args', [])
     if len(arg) > 0:
         fname = arg.pop(0)
@@ -87,11 +77,24 @@ def plot(ax, dic=None, mag_lim=30.):
     curves = table2curves(os.path.basename(fname), tbl)
 
     # filter bands
-    if bnames is not None:
+    if bnames is None:
+        bnames = curves.BandNames
+    else:
         bands = curves.BandNames
         for b in bands:
             if b not in bnames:
                 curves.pop(b)
+    # band shifts
+    bshift = dic.get('bshift', None)
+    if bshift is None:
+        bshift = {b: 0. for b in bnames}
+    else:
+        bshiftzero = {b: 0. for b in bnames if b not in bshift}
+        bshift.update(bshiftzero)
+
+    lbl_len = lbl_length(bshift)
+    # print(bshift, lbl_len)
+
     # plot data
     for lc in curves:
         bname = lc.Band.Name

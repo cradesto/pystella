@@ -16,15 +16,8 @@ from .model import sn_eve as eve
 
 # classes
 from .model.stella import Stella
-try:
-    from .model.h5stella import H5Stella, H5Fh
-except ImportError:
-    pass
-
-try:
-    from .model.SneSpace import SneSpace
-except ImportError:
-    pass
+from .model.SneSpace import SneSpace
+from .model.h5stella import H5Stella, H5Fh
 
 from .rf.band import Band, BandUni
 from .rf.spectrum import SeriesSpectrum, Spectrum, SpectrumDilutePlanck, SpectrumPlanck
@@ -34,10 +27,7 @@ from .rf.reddening import ReddeningLaw, LawFitz, LawPei
 from .rf.star import Star, Flux2MagAB
 from .rf.ts import SetTimeSeries, TimeSeries
 
-try:
-    from .fit import FitLc, FitMPFit, mpfit, FitMCMC
-except ImportError:
-    pass
+from .fit import FitLc, FitMPFit, mpfit, FitMCMC
 
 # functions
 from .model.stella import stella_ls as ls

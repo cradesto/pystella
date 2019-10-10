@@ -6,17 +6,25 @@
 import os
 import logging
 
-import h5py
 import numpy as np
 import sys
+
+logging.basicConfig()
+logger = logging.getLogger(__name__)
+# logger.setLevel(logging.INFO)
+# logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
+
+try:
+    import h5py
+except ImportError:
+    logging.debug('h5py failed to import', exc_info=True)
+    pass
 
 __author__ = 'bakl'
 
 """
 Tools for reading HDF5 Stella's output 
 """
-
-logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 
 
 class H5Stella(object):

@@ -1,20 +1,24 @@
 import json
 import logging
 
-import pandas
-
 from pystella.rf import band
 from pystella.rf.lc import SetLightCurve, LightCurve
 from pystella.rf.spectrum import SeriesSpectrum, Spectrum
+
 
 # from pandas.io import json
 
 __author__ = 'bakl'
 
 logging.basicConfig()
-
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+# logger.setLevel(logging.INFO)
+
+try:
+    import pandas
+except ImportError as ex:
+    logging.debug('pandas failed to import', exc_info=True)
+    pass
 
 
 class SneSpace:
