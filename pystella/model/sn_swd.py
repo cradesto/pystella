@@ -136,7 +136,7 @@ class StellaShockWaveDetail:
         is_str = isinstance(cols, str)
         if is_str:
             cols = [cols]
-        res = {k: np.zeros(self.Ntimes) for k in ['time', 'zone'] + cols}
+        res = {k: np.zeros(self.Ntimes) for k in ['time', 'zone'] + list(cols)}
         taus = self.taus()
         for i, time in enumerate(self.Times):
             s = self[i]
