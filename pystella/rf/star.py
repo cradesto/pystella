@@ -174,6 +174,7 @@ class Star:
 
         # mag = -2.5 * np.log10(conv) + phys.ZP_AB - band.zp
         mag = Flux2MagAB(response / b.Norm) - b.zp
+        # print('mag= ', mag)
         return mag
         #
         # # todo check
@@ -197,6 +198,7 @@ class Star:
         # lum = np.trapz(self.Flux[::-1], self.Freq[::-1])
         M = phys.Mag_sun + 5. * np.log10(self.distance/phys.pc) - 5
         bol = M - 2.5 * np.log10(np.abs(lum) / phys.L_sun)
+        # print('bol= ', bol)
         return bol
 
     def k_cor(self, band_r, band_o, z=0.):

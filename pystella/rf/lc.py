@@ -149,6 +149,7 @@ def LC_interp(orig, time, is_spline=True):
 
 class SetLightCurve(SetTimeSeries):
     """Set of the Light Curves"""
+
     def __init__(self, name=''):
         """Creates a Set of Light Curves."""
         super().__init__(name)
@@ -198,6 +199,32 @@ class SetLightCurve(SetTimeSeries):
         for lc in self:
             clone = lc.clone()
             res.add(clone)
+        return res
+
+    def copy(self, name=None, f=None):
+        if name is None:
+            name = self.Name
+        res = SetLightCurve(name)
+        for lc in self:
+            cp = lc.copy(f=f)
+            res.add(cp)
+        return res
+
+    def copy_tmlim(self, tlim=None, mlim=None):
+        """
+        Copy SetLightCurve to other SetLightCurve
+        :param mlim: time limits, default None
+        :param tlim: magnitude limits, default None
+        :return:
+        """
+        if tlim is not None:
+            res = self.copy(f=lambda x: (tlim[0] <= x.Time) & (x.Time <= tlim[1]))
+        else:
+            res = self.copy()
+
+        if mlim is not None:
+            res = res.copy(f=lambda x: (mlim[0] >= x.Mag) & (x.Mag >= mlim[1]))
+
         return res
 
     def merge(self, curves2):

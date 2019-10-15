@@ -6,8 +6,8 @@ import pystella as ps
 __author__ = 'bakl'
 
 
-def lc_create(bname, m=-19, dt=0., n=10, tend=200., is_err=False):
-    time = np.linspace(0. + dt, tend + dt, n)
+def lc_create(bname, m=-19, tbeg=0., tend=200., n=10, is_err=False):
+    time = np.linspace(0. + tbeg, tend + tbeg, n)
     mags = m * np.linspace(0.1, 1., n)
     band = ps.Band(bname)
     if is_err:
@@ -26,7 +26,7 @@ class TestLightCurve(unittest.TestCase):
                          Now band is %s but  lc.Band.Name is  %s." % (band, lc.Band.Name))
 
     def test_LC_interp(self):
-        lc = lc_create('U', dt=0.)
+        lc = lc_create('U', tbeg=0.)
 
         time = np.linspace(10, 50, 5)
         lc_interp = ps.rf.lc.LC_interp(lc, time)
@@ -44,20 +44,38 @@ class TestLightCurve(unittest.TestCase):
 
     def test_lc_leastsq(self):
         dt_init = 10.
-        lc1 = lc_create('U', dt=0.)
-        lc2 = lc_create('U', dt=0.)
+        lc1 = lc_create('U', tbeg=0.)
+        lc2 = lc_create('U', tbeg=0.)
 
     def test_lc_copy(self):
         ps.band.Band.load_settings()
-        lc1 = lc_create('U', dt=0.)
+        lc1 = lc_create('U', tbeg=0.)
         lc2 = lc1.copy()
         self.assertEqual(lc1.Length, lc2.Length, msg='The length of copy  should be equal the original length')
-        self.assertEqual(lc1.Band.Name, lc2.Band.Name, msg='The band of copy  should be equal the original band')
+        self.assertEqual(lc1.Band.Name, lc2.Band.Name, msg='The lc of copy  should be equal the original lc')
         np.testing.assert_array_equal(lc1.Time, lc2.Time)
         np.testing.assert_array_equal(lc1.Mag, lc2.Mag)
 
+    def test_lc_copy_filter(self):
+        tlim = (10., 99.)
+        ps.band.Band.load_settings()
+        # Time
+        lc1 = lc_create('V', m=-19, tbeg=1., tend=200., n=10,  is_err=False)
+        lc2 = lc1.copy(f=lambda x: (tlim[0] <= x.Time) & (x.Time <= tlim[1]))
+        self.assertGreater(lc1.Length, lc2.Length, msg='The length of copy  should be equal the original length')
+        self.assertEqual(lc1.Band.Name, lc2.Band.Name, msg='The lc of copy  should be equal the original lc')
+        self.assertTrue(np.any(lc2.Time >= tlim[0]), msg='The lc.Time should be greater the lower limit')
+        self.assertTrue(np.any(lc2.Time <= tlim[1]), msg='The lc.Time should be smaller the lower limit')
+        # Magnitude
+        maglim = (-18., -10.)
+        lc3 = lc1.copy(f=lambda x: (maglim[0] <= x.Mag) & (x.Mag <= maglim[1]))
+        self.assertGreater(lc1.Length, lc3.Length, msg='The length of copy  should be equal the original length')
+        self.assertEqual(lc1.Band.Name, lc3.Band.Name, msg='The lc of copy  should be equal the original lc')
+        self.assertTrue(np.any(lc3.Mag >= maglim[0]), msg='The lc.Mag should be greater the lower limit')
+        self.assertTrue(np.any(lc3.Mag <= maglim[1]), msg='The lc.Mag should be smaller the lower limit')
+
     def test_lc_clone(self):
-        lc1 = lc_create('U', dt=0.)
+        lc1 = lc_create('U', tbeg=0.)
         lc2, tshift, mshift = lc1.clone()
         self.assertEqual(lc1.Length, lc2.Length, msg='The length of clone  should be equal the original length')
         self.assertEqual(lc1.Band.Name, lc2.Band.Name, msg='The band of clone  should be equal the original band')
@@ -86,6 +104,32 @@ class TestLightCurve(unittest.TestCase):
                 m_bol.append(bol)
             ax.plot(ph.Time, m_bol, label='ph-bolometric LC ', color='green', lw=2, ls='-.')
         ax.legend()
+        plt.show()
+        import warnings
+        warnings.warn("Should be check for shorck breakout")
+
+    def test_bol_Uni(self):
+        import matplotlib.pyplot as plt
+        m1 = ps.Stella('cat_R500_M15_Ni006_E12', path='data/stella')
+        fig, ax = plt.subplots()
+
+        # Bol
+        curves1 = m1.curves(bands=['bol'], wlrange=(1e0, 42.), is_nfrus=False)
+        for lc in curves1:
+            color = 'blue'
+            ax.plot(lc.Time, lc.Mag, label=lc.Band.Name, color=color, linewidth=2, ls='--')
+
+        band03kEv = ps.BandUni(name='bol', wlrange=(1e0, 42.), length=300)
+        wl_ab = np.min(band03kEv.wl2args), np.max(band03kEv.wl2args)
+        curves2 = m1.curves(bands=[band03kEv], is_nfrus=False, wl_ab=wl_ab)
+        for lc in curves2:
+            color = 'red'
+            ax.plot(lc.Time, lc.Mag, label=lc.Band.Name, color=color, linewidth=2, ls=':')
+
+        ax.invert_yaxis()
+        #
+        ax.legend()
+        # ax.set_ylim(-14, -24)
         plt.show()
         import warnings
         warnings.warn("Should be check for shorck breakout")
@@ -142,10 +186,24 @@ class TestSetLightCurve(unittest.TestCase):
         curves = ps.SetLightCurve()
         for b in bands:
             curves.add(lc_create(b))
-        curves.add(lc_create('TimeDif', dt=1.))
+        curves.add(lc_create('TimeDif', tbeg=1.))
 
         res = ps.curves_save(curves, 'tmp_curves_2')
         self.assertTrue(res, msg="Error:  curves_save should return True")
+
+    def test_SetLightCurve_copy_tmlim(self):
+        ps.band.Band.load_settings()
+        bands = ['U', 'B', 'V']
+        curves = ps.SetLightCurve()
+        for b in bands:
+            curves.add(lc_create(b, m=-19, tbeg=0., tend=200., n=10, is_err=False))
+        curves.add(lc_create('R', tbeg=1.))
+
+        tlim = (10, 99)
+        mlim = (10, -18)
+        curves_cut = curves.copy_tmlim(tlim=tlim, mlim=mlim)
+        self.assertTrue(curves_cut.TimeMin >= tlim[0])
+        self.assertTrue(curves_cut.TimeMax <= tlim[1])
 
 
 def main():

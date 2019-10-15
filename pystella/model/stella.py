@@ -112,6 +112,7 @@ class Stella:
         :param Rv:  R_V
         :param law: the law of extinction curve
         :param mode: type of extinction curves (MW, LMC, SMC)
+        :param kwargs: dic, wl_ab: wave length interval for spectra [A]
         :return: light curves for the photometric bands
         """
         from pystella.rf.light_curve_func import series_spec_reddening
@@ -120,6 +121,8 @@ class Stella:
         t_beg = kwargs.get("t_beg", float('-inf'))
         t_end = kwargs.get("t_end", float('inf'))
         t_diff = kwargs.get("t_diff", 1.01)
+        wl_ab = kwargs.get("wl_ab", None)
+        is_nfrus = kwargs.get("is_nfrus", True)
         magnification = kwargs.get("magnification", 1.)
 
         if len(bands) == 0:
@@ -129,7 +132,9 @@ class Stella:
             raise ValueError("Error: No spectral data for: " + str(self))
 
         # Get SED(time)
-        serial_spec = self.get_ph(t_diff=t_diff, t_beg=t_beg, t_end=t_end)
+        serial_spec = self.get_ph(t_diff=t_diff, t_beg=t_beg, t_end=t_end, is_nfrus=is_nfrus)
+        if wl_ab is not None:
+            serial_spec = serial_spec.copy(wl_ab=wl_ab)
         # reddening
         if ebv > 0:
             ss = serial_spec.copy(wl_ab=law.LAMBDA_LIM)

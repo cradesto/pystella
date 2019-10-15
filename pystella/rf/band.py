@@ -342,23 +342,26 @@ class BandUni(Band):
         :param wlrange:  the wavelength range, default (1e1, 5e4) [A]
         :param length: numbers of bins default 100
         """
-        super(BandUni, self).__init__(name)
+        super().__init__(name)
         wl = np.exp(np.linspace(np.log(wlrange[0] * phys.angs_to_cm),
                                 np.log(wlrange[1] * phys.angs_to_cm), length))
         self.wl = wl  # wavelength of response [cm]
         self.resp_wl = np.ones(len(wl))  # response
 
     @property
-    def Norm(self):
-        if False:
-            x = np.array(self.freq)
-            y = np.array(self.resp_fr)
-        else:
-            x = np.array(self.wl)
-            y = np.array(self.resp_wl)
+    def Norm(self, mode_int='simps'):
+        import scipy.integrate  # import simps as integralfunc
+        x = np.array(self.wl)
+        y = np.array(self.resp_wl)
         # resp_b = np.ones(len(nu_b))
-        d = integralfunc(y / x, x)
-        return d
+        if mode_int == 'simps':
+            res = scipy.integrate.simps(y, x=x, even='avg')
+        elif mode_int == 'trapz':
+            res = scipy.integrate.trapz(y, x=x)
+        else:
+            raise ValueError('Unknown type for integration: mode_int= '+mode_int)
+
+        return res
 
         # return 1.
 
