@@ -205,7 +205,7 @@ class SnEveTests(unittest.TestCase):
 
     def test_snec_to_presn(self):
         path = join(dirname(abspath(__file__)), 'data', 'snec')
-        prb_snec = snec.Problem('s15s7b2').load_chem(os.path.join(path, 's15s7b2_15isotope.dat'))
+        prb_snec = snec.Snec('s15s7b2').load_chem(os.path.join(path, 's15s7b2_15isotope.dat'))
         prb_snec.load_profile(os.path.join(path, 's15s7b2.short'))
 
         presn = snec.to_presn(prb_snec)
@@ -213,7 +213,7 @@ class SnEveTests(unittest.TestCase):
 
     def test_snec_to_presn_plot(self):
         path = join(dirname(abspath(__file__)), 'data', 'snec')
-        prb_snec = snec.Problem('s15s7b2').load_chem(os.path.join(path, 's15s7b2_15isotope.dat'))
+        prb_snec = snec.Snec('s15s7b2').load_chem(os.path.join(path, 's15s7b2_15isotope.dat'))
         prb_snec.load_profile(os.path.join(path, 's15s7b2.short'))
 
         presn = snec.to_presn(prb_snec)
@@ -224,7 +224,7 @@ class SnEveTests(unittest.TestCase):
 
     def test_snec_write_hyd_abn(self):
         path = join(dirname(abspath(__file__)), 'data', 'snec')
-        prb_snec = snec.Problem('s15s7b2').load_chem(os.path.join(path, 's15s7b2_15isotope.dat'))
+        prb_snec = snec.Snec('s15s7b2').load_chem(os.path.join(path, 's15s7b2_15isotope.dat'))
         prb_snec.load_profile(os.path.join(path, 's15s7b2.short'))
 
         presn = snec.to_presn(prb_snec)

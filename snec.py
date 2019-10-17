@@ -59,7 +59,7 @@ def main():
 
     name = os.path.splitext(os.path.basename(file_profile))[0]
 
-    prb_snec = snec.Problem(name).load_chem(file_chem)
+    prb_snec = snec.Snec(name).load_chem(file_chem)
     prb_snec.load_profile(file_profile)
 
     presn = snec.to_presn(prb_snec)

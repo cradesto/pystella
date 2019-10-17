@@ -278,6 +278,7 @@ class PreSN(object):
         marker = kwargs.get('marker', None)
         markersize = kwargs.get('markersize', 4)
         alpha = kwargs.get('alpha', 1)
+        figsize = kwargs.get('figsize', (8, 8))
 
         if not isinstance(lntypes, dict):
             tmp = lntypes
@@ -287,7 +288,7 @@ class PreSN(object):
         # setup figure
         if is_new_plot:
             plt.matplotlib.rcParams.update({'font.size': 14})
-            fig = plt.figure(num=None, figsize=(8, 8), dpi=100, facecolor='w', edgecolor='k')
+            fig = plt.figure(num=None, figsize=figsize, dpi=100, facecolor='w', edgecolor='k')
 
             gs1 = gridspec.GridSpec(1, 1)
             # gs1.update(wspace=0.1, hspace=0.1, top=0.97, left=0.12, right=0.98)

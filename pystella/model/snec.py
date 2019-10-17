@@ -1,11 +1,25 @@
 import os
 import numpy as np
 import logging
-import matplotlib.pyplot as plt
-from matplotlib import gridspec
+
 
 from pystella.model.sn_eve import PreSN
 from pystella.util.phys_var import phys
+
+logger = logging.getLogger(__name__)
+
+try:
+    import matplotlib.pyplot as plt
+    from matplotlib import gridspec
+
+    is_matplotlib = True
+except ImportError:
+    logging.debug('matplotlib failed to import', exc_info=True)
+    is_matplotlib = False
+    pass
+# logger.setLevel(logging.INFO)
+# logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
+
 
 __author__ = 'bakl'
 
@@ -39,7 +53,7 @@ snec_el_lntypes['Ni56'] = '-'
 snec_profile_cols = "i M R T Rho V".split()
 
 
-class Problem:
+class Snec:
     def __init__(self, name):
         """Creates a Problem instance.  It's initial conditions for SNEC. Required parameters:  name."""
         self._name = name
@@ -59,7 +73,7 @@ class Problem:
     @property
     def r(self):
         """radius"""
-        return self._chem['R']
+        return self._chem[PreSN.sR]
 
     @property
     def nzon(self):
@@ -69,7 +83,7 @@ class Problem:
     @property
     def m(self):
         """Mass"""
-        return self._chem['M']
+        return self._chem[PreSN.sM]
 
     @property
     def is_chem_load(self):
@@ -99,27 +113,27 @@ class Problem:
     @property
     def pmass(self):
         """Mass"""
-        return self.hyd('M')
+        return self.hyd(PreSN.sM)
 
     @property
     def pradius(self):
         """Radius"""
-        return self.hyd('R')
+        return self.hyd(PreSN.sR)
 
     @property
     def ptemp(self):
         """Temperature"""
-        return self.hyd('T')
+        return self.hyd(PreSN.sT)
 
     @property
     def prho(self):
         """Density"""
-        return self.hyd('Rho')
+        return self.hyd(PreSN.sRho)
 
     @property
     def pvel(self):
         """Velocity"""
-        return self.hyd('V')
+        return self.hyd(PreSN.sV)
 
     @property
     def Elements(self):
@@ -173,6 +187,15 @@ class Problem:
             raise Exception("SNEC chem-data has not been loaded. Check and load from %s" % self._chem_file)
         return self._chem[el]
 
+    def set_el(self, el, data):
+        if el not in snec_elements:
+            raise ValueError("There is no such element [%s]." % el)
+        if not self.is_chem_load:
+            raise Exception("SNEC chem-data has not been created.")
+        if self.nzon != len(data):
+            raise ValueError("The data(len={}) should be have the same nzon={} as SNEC. ".format(len(data), self.nzon))
+        self._chem[el] = data
+
     def load_chem(self, fname):
         if not os.path.isfile(fname):
             logger.error(' No snec chem-data for %s' % fname)
@@ -180,7 +203,7 @@ class Problem:
         self._chem_file = fname
         logger.info('Load chemical data from  %s' % self.chem_file)
 
-        names = ['M', 'R'] + snec_elements
+        names = [PreSN.sM, PreSN.sR] + snec_elements
         print("Names: %s" % ' '.join(names))
         dtype = np.dtype({'names': names, 'formats': [np.float64] * len(names)})
         self._chem = np.loadtxt(fname, skiprows=3, dtype=dtype, comments='#')
@@ -284,28 +307,31 @@ class Problem:
 
     @staticmethod
     def presn2snec(presn):
-        snec = Problem(presn.Name)
+        snec = Snec(presn.Name)
 
         # Create profile
-        dtype = [('i', '<f8'), ('M', '<f8'), ('R', '<f8'), ('T', '<f8'), ('Rho', '<f8'), ('V', '<f8')]
+        dtype = [('i', '<f8'), (PreSN.sM, '<f8'), (PreSN.sR, '<f8'), (PreSN.sT, '<f8'),
+                 (PreSN.sRho, '<f8'), (PreSN.sV, '<f8')]
         aprofile = np.zeros((presn.nzon,), dtype=dtype)
 
         # Fill profile
-        aprofile['M'] = presn.m
-        aprofile['R'] = presn.r
-        aprofile['T'] = presn.T
-        aprofile['Rho'] = presn.rho
-        aprofile['V'] = presn.V
+        aprofile[PreSN.sM] = presn.m
+        aprofile[PreSN.sR] = presn.r
+        aprofile[PreSN.sT] = presn.T
+        aprofile[PreSN.sRho] = presn.rho
+        aprofile[PreSN.sV] = presn.V
 
         snec._profile = aprofile
 
         # Create chemical composition
-        dtype = [('M', '<f8'), ('R', '<f8'), ('NN', '<f8'), ('H', '<f8'), ('He', '<f8'),
+        dtype = [(PreSN.sM, '<f8'), (PreSN.sR, '<f8'), ('NN', '<f8'), ('H', '<f8'), ('He', '<f8'),
                  ('C', '<f8'), ('O', '<f8'), ('Ne', '<f8'), ('Mg', '<f8'), ('Si', '<f8'),
                  ('S', '<f8'), ('Ar', '<f8'), ('Ca', '<f8'), ('Ti', '<f8'), ('Cr', '<f8'),
                  ('Fe', '<f8'), ('Ni', '<f8')]
         achem = np.zeros((presn.nzon,), dtype=dtype)
         # Fill
+        achem[PreSN.sM] = presn.m
+        achem[PreSN.sR] = presn.r
         for e in presn.Elements:
             if e in snec_elements:
                 achem[e] = presn.el(e)
@@ -338,5 +364,3 @@ def to_presn(p):
     presn.set_chem('Ni56', presn.el('Ni'))
 
     return presn
-
-
