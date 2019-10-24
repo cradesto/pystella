@@ -182,7 +182,7 @@ def main():
         ls = next(lines_cycler)
 
         if args.is_structure:
-            fig = eve.plot_structure(elements=elements, title=name)
+            fig = eve.plot_structure(elements=elements, title=name, ylimChem=(1e-8, 1.))
         else:
             if args.is_chem:
                 # print "Plot eve-model %s" % name
