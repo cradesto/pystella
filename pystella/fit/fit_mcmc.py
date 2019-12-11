@@ -506,7 +506,7 @@ class FitMCMC(FitLc):
             l = FitMCMC.log_likelihood_curves_DtDm(theta_fit, curves_m, curves_o, bnames)
             bic = ndim * np.log(N) - 2. * l
             aic = 2 * ndim - 2. * l
-            measure = np.sum(np.array(sigs) ** 2)
+            measure = np.sqrt(np.sum(np.array(sigs) ** 2))
 
             res = th._asdict()
             res['chi2'] = chi2
