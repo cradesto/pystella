@@ -54,7 +54,13 @@ def dist2MD(d):
 
 
 def cosmology_D_by_z(z, H0=67.7, Omega_m=0.31, Omega_e=0.69):
-    """Compute the photometric distance for Lambda-CDM model of cosmology"""
+    """Compute the photometric distance for Lambda-CDM model of cosmology
+
+    Returns
+    -------
+    D : float
+        Distance [Mpc]
+    """
     from scipy.integrate import quad
     import numpy as np
 

@@ -98,10 +98,23 @@ class LightCurve(TimeSeries):
 
     def clone(self):
         errs = None
+
         if self.IsErr:
             errs = self.Err
 
         return LightCurve(self.Band, self.Time, self.Mag, errs), self.tshift, self.mshift
+
+    def sorted_time(self, order=None):
+        ind = np.argsort(self.Time, order=order)
+        time = self.T[ind]
+        mags = self.V[ind]
+        errs = None
+        if self.IsErr:
+            errs = self.Err[ind]
+        lc = LightCurve(self.Band, time, mags, errs)
+        lc.tshift = self.tshift
+        lc.mshift = self.mshift
+        return lc
 
     @classmethod
     def Merge(cls, lc1, lc2):
@@ -198,6 +211,13 @@ class SetLightCurve(SetTimeSeries):
         res = SetLightCurve(self.Name)
         for lc in self:
             clone = lc.clone()
+            res.add(clone)
+        return res
+
+    def sorted_time(self, order=None):
+        res = SetLightCurve(self.Name)
+        for lc in self:
+            clone = lc.sorted_time(order=order)
             res.add(clone)
         return res
 

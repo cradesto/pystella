@@ -122,7 +122,7 @@ def curves_save(curves, fname, sep='\t', is_mix=False):
         arr = curves2nparraymix(curves)
         fmt_header = "%8s " * len(arr.dtype.names)
         header = fmt_header % arr.dtype.names
-        fmt = "%10.5f %s %10.5f"
+        fmt = "%10.5f %10s %10.5f"
         if len(arr.dtype.names) > 3:
             fmt += ' %10.5f'
 
@@ -149,7 +149,7 @@ def curves_read(fname, is_out=False):
     return curves
 
 
-def curves_read_mix(fname, dtype=(('time', '<f4'), ('filter', 'S1'), ('mag', '<f4'), ('err', '<f4')),
+def curves_read_mix(fname, dtype=None,
                     skiprows=1, comments='#', is_full=False, is_out=False):
     """
     Reader data-file with mix bname data, like:
@@ -173,7 +173,8 @@ def curves_read_mix(fname, dtype=(('time', '<f4'), ('filter', 'S1'), ('mag', '<f
     from pystella.rf import band
     band.Band.load_settings()
 
-    # dtype = [('JD', 'f'), ('b', 'S1'), ('mag', 'f4'), ('err', '<f4')])
+    if dtype is None:
+        dtype = [('time', np.float), ('filter', 'S8'), ('mag', np.float), ('err', np.float)]
 
     lc_data = np.loadtxt(fname, skiprows=skiprows, dtype=dtype, comments=comments)  # jd filter mag mage
     if is_out:
