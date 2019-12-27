@@ -32,8 +32,6 @@ from .rf.ts import SetTimeSeries, TimeSeries
 from .fit import FitLc, FitMPFit, mpfit, FitMCMC
 
 # functions
-from .model.stella import stella_ls as ls
-
 from .rf.light_curve_plot import curves_plot
 from .rf.extinction import reddening, reddening_z
 from .rf.light_curve_func import curves_save, curves_read, curves_read_mix
@@ -44,3 +42,4 @@ from .util.path_misc import get_model_names
 from .util.arr_dict import first
 from .util.reader_table import read_obs_table_header
 from .util.reader_table import curves2table, table2curves
+from .util import ls

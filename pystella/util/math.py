@@ -1,4 +1,3 @@
-# import scipy
 import scipy.interpolate
 import numpy as np
 

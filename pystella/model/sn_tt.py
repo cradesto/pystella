@@ -163,12 +163,16 @@ class StellaTtInfo:
     def Rce(self):
         return self._dict['Rce']
 
-    def show(self, comment=''):
+    def show(self, o=None, comment=''):
         # print "INFO %s" % self.name
         # print " %40s: R = %7.2f M = %6.2f E = %6.2f " % (self.name, self.R, self.M, self.E)
-        print("| %40s |  %7.2f |  %6.2f | %6.2f |  %s" % (self._name, self.R, self.M, self.E, comment))
+        s = "| %40s |  %7.2f |  %6.2f | %6.2f |  %s" % (self._name, self.R, self.M, self.E, comment)
+        if o is not None and o:
+            return s
+        else:
+            print(o)
 
-    def print_tex(self, o=None, lend=''):
+    def tex(self, o=None, lend=''):
         # print "INFO %s" % self.name
         # print " %40s: R = %7.2f M = %6.2f E = %6.2f " % (self.name, self.R, self.M, self.E)
         s = " \\mbox{%s} &  %7.2f &  %6.2f & %6.2f \\\ %s " % (self._name, self.R, self.M, self.E, lend)
