@@ -375,6 +375,36 @@ def plot_bands(dict_mags, bands, title='', fname='', distance=10., xlim=(-10, 20
 
 
 def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname=None, **kwargs):
+    """
+    Plot curves.
+    If err = -1, it's upper limit, if err = -2 it's lower limit
+    :param curves:
+    :param ax: Axis. If ax is None, it would be created.
+    :param xlim:
+    :param ylim:
+    :param title:
+    :param fname:
+    :param kwargs:
+        linewidth = kwargs.get('linewidth', 2.0)
+        markersize = kwargs.get('markersize', 5)
+        fontsize = kwargs.get('fontsize', 18)
+        figsize = kwargs.get('figsize', (20, 10))
+        legncol = kwargs.get('legncol', 1)
+        legloc = kwargs.get('legloc', 1)
+        alpha = kwargs.get('alpha', 1.)
+        is_legend = kwargs.get('is_legend', True)
+        is_line = kwargs.get('is_line', True)
+        is_fill = kwargs.get('is_fill', False)
+        if 'marker' in kwargs:
+            is_line = False
+        marker = kwargs.get('marker', 'o')
+        if not isinstance(marker, (list, dict, tuple)):
+            marker = {lc.Band.Name: marker for lc in curves}
+        colors = kwargs.get('colors', lc_colors)
+        if not isinstance(colors, (list, dict, tuple)):
+            colors = {lc.Band.Name: colors for lc in curves}
+    :return: ax
+    """
     ls = kwargs.get('ls', {lc.Band.Name: '-' for lc in curves})
     if isinstance(ls, str):
         c = ls.strip()
@@ -398,6 +428,7 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname=None, *
     legncol = kwargs.get('legncol', 1)
     legloc = kwargs.get('legloc', 1)
     alpha = kwargs.get('alpha', 1.)
+    length_lo_up_lims = kwargs.get('length_lo_up_lims', 0.5)
 
     is_new_fig = ax is None
     if is_new_fig:
@@ -432,18 +463,24 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname=None, *
             ax.plot(x, y, label=label, color=color, ls=ls[bname], linewidth=linewidth)
         else:
             if lc.IsErr:
-                yyerr = abs(lc.MagErr)
-                ax.errorbar(x, y, label=label, yerr=yyerr, fmt=marker[bname],
-                            color=color, ls='', markersize=markersize)
+                y_el = np.copy(lc.MagErr)
+                y_eu = np.copy(lc.MagErr)
+                lolims = np.array(y_el == -2, dtype=bool)
+                uplims = np.array(y_eu == -1, dtype=bool)
+                y_el[lolims] = length_lo_up_lims
+                y_eu[uplims] = length_lo_up_lims
+                ax.errorbar(x, y, label=label, yerr=[y_el, y_eu], fmt=marker[bname],
+                            lolims=lolims, uplims=uplims,  xlolims=lolims, xuplims=uplims,
+                            color=color, ls='', markersize=markersize, )
             else:
                 # ax.plot(x, y, label='{0} {1}'.format(bname, fname), color=bcolors[bname], ls='',
                 #         marker=marker, markersize=markersize)
                 ax.plot(x, y, label=label, color=color, ls='', marker=marker[bname], markersize=markersize)
         if is_fill and lc.IsErr:
-            yyerr = abs(lc.MagErr)
+            yy_err = abs(lc.MagErr)
             # ax.fill(np.concatenate([x, x[::-1]]), np.concatenate([y - yyerr, (y + yyerr)[::-1]]),
             #         alpha=.3, fc=color, ec='None', label=label)  # '95% confidence interval')
-            ax.fill_between(x, y - yyerr, y + yyerr, facecolor=color, alpha=alpha, label=label)
+            ax.fill_between(x, y - yy_err, y + yy_err, facecolor=color, alpha=alpha, label=label)
 
         if is_xlim:
             xlim[0] = min(xlim[0], np.min(x))
