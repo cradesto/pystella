@@ -213,6 +213,23 @@ class PreSN(object):
     def lg_el(self, el):
         return np.log10(self.el(el))
 
+    def mass_tot_el(self, el=None):
+        def m_el(el):
+            return  np.trapz(self.el(el), self.m)
+        
+        elements = self.Elements
+        if el is not None:
+            if isinstance(el, str):
+                return m_el(el)
+            else:
+                elements = el
+
+        mass = {}
+        for el in elements:
+            mass[el] =  m_el(el)  
+                    
+        return mass
+
     def abun(self, k):
         """
         Abundences in k-zone.  k in [1, Nzon]
@@ -222,7 +239,7 @@ class PreSN(object):
         res = [self.el(e)[k - 1] for e in self.Elements]
         return res
 
-    def chem_norm(self, k=None, norm=None):
+    def chem_norm(self, k, norm=None):
         if norm is None:
             norm = sum(self.abun(k))
         for e in self.Elements:

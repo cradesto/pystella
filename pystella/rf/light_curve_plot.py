@@ -480,7 +480,7 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname=None, *
             yy_err = abs(lc.MagErr)
             # ax.fill(np.concatenate([x, x[::-1]]), np.concatenate([y - yyerr, (y + yyerr)[::-1]]),
             #         alpha=.3, fc=color, ec='None', label=label)  # '95% confidence interval')
-            ax.fill_between(x, y - yy_err, y + yy_err, facecolor=color, alpha=alpha, label=label)
+            ax.fill_between(x, y - yy_err, y + yy_err, facecolor=color, alpha=alpha)
 
         if is_xlim:
             xlim[0] = min(xlim[0], np.min(x))

@@ -96,13 +96,27 @@ class LightCurve(TimeSeries):
         lc.mshift = self.mshift
         return lc
 
-    def clone(self):
+    def clone(self, t=None, m=None, err=None):
         errs = None
 
+        tt = self.Time
+        mm = self.Mag
         if self.IsErr:
             errs = self.Err
+        if t is not None:
+            if len(t) != self.Length:
+                raise ValueError('Len(t)[{}] should be the same as origin [{}]'.format(len(t), self.Length))
+            tt = t
+        if m is not None:
+            if len(m) != self.Length:
+                raise ValueError('Len(m)[{}] should be the same as origin [{}]'.format(len(m), self.Length))
+            mm = m
+        if err is not None:
+            if len(err) != self.Length:
+                raise ValueError('Len(err)[{}] should be the same as origin [{}]'.format(len(err), self.Length))
+            errs = err
 
-        return LightCurve(self.Band, self.Time, self.Mag, errs), self.tshift, self.mshift
+        return LightCurve(self.Band, tt, mm, errs), self.tshift, self.mshift
 
     def sorted_time(self, order=None):
         ind = np.argsort(self.Time, order=order)
@@ -160,6 +174,7 @@ def LC_interp(orig, time, is_spline=True):
     return lc
 
 
+
 class SetLightCurve(SetTimeSeries):
     """Set of the Light Curves"""
 
@@ -207,10 +222,20 @@ class SetLightCurve(SetTimeSeries):
         for n, lc in self.Set.items():
             lc.mshift = mshift
 
-    def clone(self):
+    def clone(self, t=None, m=None, err=None):
+        def key_set(bn, nm, v):
+            if isinstance(v, dict):
+                return v[bn]
+            else:
+                return v
+
         res = SetLightCurve(self.Name)
         for lc in self:
-            clone = lc.clone()
+            kwargs = {'t': key_set(lc.Band.Name, 'm', t),
+                      'm': key_set(lc.Band.Name, 'm', m),
+                      'err': key_set(lc.Band.Name, 'err', err),
+                     }
+            clone, tshift, mshift = lc.clone(**kwargs)
             res.add(clone)
         return res
 

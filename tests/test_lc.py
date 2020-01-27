@@ -82,6 +82,14 @@ class TestLightCurve(unittest.TestCase):
         np.testing.assert_array_equal(lc1.Time, lc2.Time)
         np.testing.assert_array_equal(lc1.Mag, lc2.Mag)
 
+    def test_lc_clone_add_err(self):
+        lc1 = lc_create('U', tbeg=0.)
+        err = [1] * lc1.Length
+        lc2, tshift, mshift = lc1.clone(err=err)
+        self.assertEqual(lc1.Length, lc2.Length, msg='The length of clone  should be equal the original length')
+        np.testing.assert_array_equal(err, lc2.MagErr)
+        np.testing.assert_array_equal(lc1.Mag, lc2.Mag)
+
     def test_lc_bol(self):
         import matplotlib.pyplot as plt
         from scipy.integrate import simps
@@ -204,6 +212,37 @@ class TestSetLightCurve(unittest.TestCase):
         curves_cut = curves.copy_tmlim(tlim=tlim, mlim=mlim)
         self.assertTrue(curves_cut.TimeMin >= tlim[0])
         self.assertTrue(curves_cut.TimeMax <= tlim[1])
+
+    def test_SetLightCurve_clone_add_err(self):
+        bands = ['U', 'B', 'V']
+        bname = bands[1]
+        curves = ps.SetLightCurve()
+        for b in bands:
+            curves.add(lc_create(b))
+        curves.add(lc_create('TimeDif', tbeg=1.))
+        lc = curves[bname]
+        # Time
+        t = np.ones(lc.Length)
+        curves_clone = curves.clone(t=t)
+        self.assertEqual(curves_clone.Length, curves.Length,
+                         msg=f'The length of clone{curves_clone.Length}  should be equal the original length {curves.Length}')
+        lc_clone = curves_clone[bname]
+        np.testing.assert_array_equal(t, lc_clone.Time)
+
+        # Mag
+        mag = np.ones(lc.Length)
+        curves_clone = curves.clone(m=mag)
+        self.assertEqual(curves_clone.Length, curves.Length,
+                         msg=f'The length of clone{curves_clone.Length}  should be equal the original length {curves.Length}')
+        lc_clone = curves_clone[bname]
+        np.testing.assert_array_equal(mag, lc_clone.Mag)
+        # Err
+        err = np.ones(lc.Length)
+        curves_clone = curves.clone(err=err)
+        self.assertEqual(curves_clone.Length, curves.Length,
+                         msg=f'The length of clone{curves_clone.Length}  should be equal the original length {curves.Length}')
+        lc_clone = curves_clone[bname]
+        np.testing.assert_array_equal(err, lc_clone.MagErr)
 
 
 def main():
