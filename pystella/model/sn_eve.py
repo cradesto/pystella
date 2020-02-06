@@ -284,6 +284,20 @@ class PreSN(object):
         return os.path.isfile(fname)
 
     def plot_chem(self, x='m', elements=eve_elements, ax=None, xlim=None, ylim=None, **kwargs):
+        '''
+        Plot the chemical composition.
+        
+        lntypes = kwargs.get('lntypes', eve_lntypes)
+        colors = kwargs.get('colors', eve_colors)
+        loc = kwargs.get('leg_loc', 'best')
+        leg_ncol = kwargs.get('leg_ncol', 4)
+        lw = kwargs.get('lw', 2)
+        marker = kwargs.get('marker', None)
+        markersize = kwargs.get('markersize', 4)
+        alpha = kwargs.get('alpha', 1)
+        figsize = kwargs.get('figsize', (8, 8))
+        is_legend = kwargs.get('is_legend', True)
+        '''
         if not is_matplotlib:
             return
         # elements = kwargs.get('elements', eve_elements)
@@ -296,6 +310,7 @@ class PreSN(object):
         markersize = kwargs.get('markersize', 4)
         alpha = kwargs.get('alpha', 1)
         figsize = kwargs.get('figsize', (8, 8))
+        is_legend = kwargs.get('is_legend', True)
 
         if not isinstance(lntypes, dict):
             tmp = lntypes
@@ -371,6 +386,8 @@ class PreSN(object):
         ax.set_yscale('log')
         if is_new_plot:
             ax.set_ylabel(r'$X_i$')
+            
+        if is_legend:
             ax.legend(prop={'size': 9}, loc=loc, ncol=leg_ncol, fancybox=False, frameon=False, markerscale=0)
             # ax.legend(prop={'size': 9}, loc=3, ncol=4, fancybox=True, shadow=True)
             # plt.grid()

@@ -102,7 +102,7 @@ class Spectrum(object):
         xtol = 1e-10
         ftol = 1e-10
         gtol = 1e-10
-        parinfo = [{'value': Tinit, 'limited': [1, 1], 'limits': [10., 1e6]},
+        parinfo = [{'value': Tinit, 'limited': [1, 1], 'limits': [10., 1e7]},
                    {'value': 1., 'limited': [1, 1], 'limits': [0., 1e9]}]
         result = mpfit.mpfit(least_sq, parinfo=parinfo, quiet=is_quiet, maxiter=200,
                              ftol=ftol, gtol=gtol, xtol=xtol)
