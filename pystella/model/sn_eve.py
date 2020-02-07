@@ -816,6 +816,14 @@ def load_rho(fname, path=None):
 def load_hyd_abn(name, path='.', abn_elements=PreSN.stl_elements, skiprows=1,
                  is_rho=False, is_dm=True, is_dum=False):
     """
+    Load progenitor from hyd- + abn- files.
+
+    is_dm: if True, the column 2 is used as dM. Default: False, he column 2 is used as M.
+    if is_dum:
+        col_names = ("zone dum1 dum2 dum3 " + ' '.join(abn_elements)).split()
+    else:
+        col_names = ("zone " + ' '.join(abn_elements)).split()
+
     Code readheger.trf:
       BM1=cutmass; -- core Mass
       r(0)=Rcen;
