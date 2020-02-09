@@ -160,8 +160,16 @@ def main():
         name = name.replace('.rho', '')  # remove extension
         # print("Run eve-model %s in %s" % (name, path))
 
-        rho_file = os.path.join(path, name + '.rho')
-        eve = sneve.load_rho(rho_file)
+        try:
+            rho_file = os.path.join(path, name + '.rho')
+            eve = sneve.load_rho(rho_file)
+        except ValueError:
+            try:
+                # With header
+                eve = sneve.load_hyd_abn(name=name, path=path, is_dm=False)
+            except ValueError:
+                # No header
+                eve = sneve.load_hyd_abn(name=name, path=path, is_dm=False, skiprows=0)
 
         if args.is_write:
             fname = os.path.join(path, name)
@@ -209,8 +217,6 @@ def main():
                 ax2.legend(handles=handles_nm, loc=4, fancybox=False, frameon=False)
 
     if not args.is_write:
-        plt.show()
-
         if args.is_save_plot:
             if args.rho:
                 fsave = os.path.join(os.path.expanduser('~/'), 'rho_%s.pdf' % names[0])
@@ -220,6 +226,8 @@ def main():
             if fig is None:
                 fig = ax.get_figure()
             fig.savefig(fsave, bbox_inches='tight')
+
+        plt.show()
 
 
 if __name__ == '__main__':
