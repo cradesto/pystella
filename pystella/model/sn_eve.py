@@ -214,9 +214,9 @@ class PreSN(object):
         return np.log10(self.el(el))
 
     def mass_tot_el(self, el=None):
-        def m_el(el):
-            return  np.trapz(self.el(el), self.m)
-        
+        def m_el(e):
+            return np.trapz(self.el(e), self.m)
+
         elements = self.Elements
         if el is not None:
             if isinstance(el, str):
@@ -226,20 +226,31 @@ class PreSN(object):
 
         mass = {}
         for el in elements:
-            mass[el] =  m_el(el)  
-                    
+            mass[el] = m_el(el)
+
         return mass
 
-    def abun(self, k):
+    def abun(self, k=None):
         """
-        Abundences in k-zone.  k in [1, Nzon]
-        :param k:
+        Abundances in k-zone.  k in [1, Nzon]
+        :param k: zone. If None, return 2d array for all zones
         :return: array
         """
-        res = [self.el(e)[k - 1] for e in self.Elements]
-        return res
+        if k is None:
+            abun = np.zeros((self.nzon, len(self.Elements)))
+            for i, ename in enumerate(self.Elements):
+                abun[:, i] = self.el(ename)
+            return abun
+        else:
+            abun = [self.el(e)[k - 1] for e in self.Elements]
+            return abun
 
-    def chem_norm(self, k, norm=None):
+    def chem_norm(self, k=None, norm=None):
+        if k is None:
+            for j in range(self.nzon):
+                self.chem_norm(k=j+1, norm=norm)
+            return
+
         if norm is None:
             norm = sum(self.abun(k))
         for e in self.Elements:
@@ -284,9 +295,9 @@ class PreSN(object):
         return os.path.isfile(fname)
 
     def plot_chem(self, x='m', elements=eve_elements, ax=None, xlim=None, ylim=None, **kwargs):
-        '''
+        """
         Plot the chemical composition.
-        
+
         lntypes = kwargs.get('lntypes', eve_lntypes)
         colors = kwargs.get('colors', eve_colors)
         loc = kwargs.get('leg_loc', 'best')
@@ -297,11 +308,12 @@ class PreSN(object):
         alpha = kwargs.get('alpha', 1)
         figsize = kwargs.get('figsize', (8, 8))
         is_legend = kwargs.get('is_legend', True)
-        '''
+        """
         if not is_matplotlib:
             return
         # elements = kwargs.get('elements', eve_elements)
         lntypes = kwargs.get('lntypes', eve_lntypes)
+        lntypes = kwargs.get('ls', eve_lntypes)
         colors = kwargs.get('colors', eve_colors)
         loc = kwargs.get('leg_loc', 'best')
         leg_ncol = kwargs.get('leg_ncol', 4)
@@ -312,7 +324,7 @@ class PreSN(object):
         figsize = kwargs.get('figsize', (8, 8))
         is_legend = kwargs.get('is_legend', True)
 
-        if not isinstance(lntypes, dict):
+        if isinstance(lntypes, str):
             tmp = lntypes
             lntypes = {e: tmp for e in elements}
 
@@ -386,7 +398,7 @@ class PreSN(object):
         ax.set_yscale('log')
         if is_new_plot:
             ax.set_ylabel(r'$X_i$')
-            
+
         if is_legend:
             ax.legend(prop={'size': 9}, loc=loc, ncol=leg_ncol, fancybox=False, frameon=False, markerscale=0)
             # ax.legend(prop={'size': 9}, loc=3, ncol=4, fancybox=True, shadow=True)
@@ -780,6 +792,22 @@ class PreSN(object):
 
         return newPreSN
 
+    def clone(self):
+        presn = PreSN(self.Name, self.nzon, elements=self.Elements)
+        presn.copy_par(self)
+
+        # hydro
+        for k in self.presn_hydro:
+            presn.set_hyd(k, self.hyd(k))
+
+        # chem
+        for ename in self.Elements:
+            #         b = boxcar(b, weight=m, wbox=1.5)
+
+            presn.set_chem(ename, self.el(ename))
+
+        return presn
+
 
 # ==============================================
 def load_rho(fname, path=None):
@@ -892,7 +920,7 @@ def load_hyd_abn(name, path='.', abn_elements=PreSN.stl_elements, skiprows=1,
         rho = np.insert(rho, 0, presn.rho_cen)
         dm = np.zeros(nz)
         for i in range(nz):
-            dm[i] = (r[i+1]**3 - r[i]**3) * rho[i+1] * 4.*np.pi/3.
+            dm[i] = (r[i + 1] ** 3 - r[i] ** 3) * rho[i + 1] * 4. * np.pi / 3.
         m = np.cumsum(dm)
         m += presn.m_core
     else:
