@@ -33,6 +33,15 @@ eve_lntypes['O'] = '-'
 eve_lntypes['C'] = '-'
 eve_lntypes['Ni56'] = '-'
 
+eve_el_m = {'H': 1.008, 'He': 4.003, 'C': 12.011, 'N': 14.007, 'O': 15.999,
+            'F': 18.998, 'Ne': 20.180, 'Na': 22.990, 'Mg': 24.305,
+            'Al': 26.982, 'Si': 28.086, 'P': 30.974, 'S': 32.066,
+            'Cl': 35.453, 'Ar': 39.948, 'K': 39.098, 'Ca': 40.078,
+            'Sc': 44.956, 'Ti': 47.867, 'V': 50.942, 'Cr': 51.996,
+            'Mn': 54.938, 'Fe': 55.845, 'Co': 58.933, 'Ni': 58.693
+            }
+eve_el_m['Ni56'] = eve_el_m['Ni']
+
 
 class PreSN(object):
     """
@@ -248,7 +257,7 @@ class PreSN(object):
     def chem_norm(self, k=None, norm=None):
         if k is None:
             for j in range(self.nzon):
-                self.chem_norm(k=j+1, norm=norm)
+                self.chem_norm(k=j + 1, norm=norm)
             return
 
         if norm is None:
@@ -807,6 +816,47 @@ class PreSN(object):
             presn.set_chem(ename, self.el(ename))
 
         return presn
+
+    def boxcar(self, box_dm=0.5, n=4, is_info=False):
+        """
+        The function runs a boxcar average to emulate the mixing of chemical composition.
+        @type box_dm: float. The boxcar width. Default value is 0.5 Msun.
+        @type n: int. The number of repeats. Default value is 4
+        @type is_info: bool. Prints some debug information. Default value is False
+        """
+        clone = self.clone()
+        abun = clone.abun()
+        #     abun = np.zeros((clone.nzon, len(clone.Elements)))
+
+        m = clone.m / phys.M_sun
+        dmass = np.diff(m)
+        dmass = np.insert(dmass, -1, dmass[-1])
+
+        for l in range(n):  # the iteration number
+            if is_info:
+                print(f'Attempt # {l}')
+            for k in range(clone.nzon):
+                kk = k + 1
+                dm = dmass[k]
+                while dm < box_dm and kk <= clone.nzon:
+                    kk += 1
+                    dm = np.sum(dmass[k:kk])
+
+                if is_info:
+                    print(f'{k}: kk= {kk} dm= {dm:.4f} m= {m[k]:.4f}')
+                if dm > 1e-6:
+                    for i, ename in enumerate(clone.Elements):
+                        dm_e = np.dot(abun[k:kk, i], dmass[k:kk])
+                        abun[k, i] = dm_e / dm
+            #             abun[k,i] = x[k]
+        #
+        for i, ename in enumerate(clone.Elements):
+            #         print(ename, ': ', abun[:,i])
+            clone.set_chem(ename, abun[:, i])
+            if is_info:
+                print(clone.el(ename))
+
+        return clone
 
 
 # ==============================================

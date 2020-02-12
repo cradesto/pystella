@@ -5,6 +5,7 @@ import logging
 
 import pystella.model.sn_eve as sneve
 import pystella.rf.light_curve_plot as lcp
+from pystella import phys
 
 try:
     import matplotlib.pyplot as plt
@@ -24,7 +25,6 @@ except ImportError as ex:
     #    print(ex)
     plt = None
     mlines = None
-
 
 # matplotlib.use("Agg")
 # import matplotlib
@@ -49,6 +49,14 @@ def get_parser():
     import argparse
 
     parser = argparse.ArgumentParser(description='Process PreSN configuration.')
+
+    parser.add_argument('-b', '--box',
+                        required=False,
+                        type=str,
+                        default=None,
+                        dest='box',
+                        help='Make boxcar average, for example: '
+                             'Delta_mass:Number], -b 0.5:4 ')
 
     parser.add_argument('-r', '--rho', nargs="?",
                         required=False,
@@ -103,7 +111,7 @@ def get_parser():
                         action='store_const',
                         const=True,
                         dest="is_write",
-                        help="To write the data to txt-file.")
+                        help="To write the data to hyd-, abn-files")
     return parser
 
 
@@ -171,14 +179,37 @@ def main():
                 # No header
                 eve = sneve.load_hyd_abn(name=name, path=path, is_dm=False, skiprows=0)
 
+        # Boxcar
+        if args.box is not None:
+            is_info = False
+            s = args.box.split(':')
+            dm, n = float(s[0]), int(s[1])
+            if len(s) == 3:
+                is_info = bool(s[2])
+            print(f'Running boxcar average: dm= {dm} Msun  Repeats= {n}')
+            print("The element masses: Before")
+
+            def print_masses(presn):
+                m_tot = 0.
+                for ii, el in enumerate(presn.Elements):
+                    m = presn.mass_tot_el(el) / phys.M_sun
+                    m_tot += m
+                    print(f'  {el:3}:  {m:.3e}')
+                print(f'  M_total =  {m_tot:.3f}')
+
+            print_masses(eve)
+            eve = eve.boxcar(box_dm=dm, n=n, is_info=is_info)
+            print("The element masses: After")
+            print_masses(eve)
+
         if args.is_write:
             fname = os.path.join(path, name)
-            f = fname+'.eve.abn'
+            f = fname + '.eve.abn'
             if eve.write_abn(f, is_header=True):
                 print(" abn has been saved to {}".format(f))
             else:
                 print("Error with abn saving to {}".format(f))
-            f = fname+'.eve.hyd'
+            f = fname + '.eve.hyd'
             if eve.write_hyd(f):
                 print(" hyd has been saved to {}".format(f))
             else:
