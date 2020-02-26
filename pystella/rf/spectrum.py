@@ -42,7 +42,19 @@ class Spectrum(object):
 
     @property
     def FluxWl(self):  # wavelength of flux [cm]
-        return self.Flux * self.Freq ** 2 / phys.c  # flux [erg/cm^2/cm) ]
+        """
+         F_lambda (ergs/s/cm)
+        @return: flux
+        """
+        return self.Flux * self.Freq ** 2 / phys.c  # flux [ergs/s/cm) ]
+
+    @property
+    def FluxWl2angs(self):  # wavelength of flux [Angstrom]
+        """
+         F_lambda (ergs/s/Angstrom)
+        @return: flux
+        """
+        return self.FluxWl / 1e8  # flux [ergs/s/Angstrom) ]
 
     @property
     def Wl(self):
@@ -281,7 +293,9 @@ class Spectrum(object):
     def from_lambda(name, lmd, flux, u_lmd="A"):
         freq = rf.val_to_hz(np.asarray(lmd), inp=u_lmd)  # Spectrum.wl2freq(lmd)
         # flux = flux_freq * freq ** 2 / phys.c
-        flux_freq = np.asarray(flux)/freq**2 * phys.c
+        flux_freq = np.asarray(flux)/freq**2 * phys.c  # Flux_lambda (ergs/s/cm)
+        if u_lmd == "A":
+            flux_freq *= 1e8  # Flux_lambda (ergs/s/Angstrom)
         return Spectrum(name, freq, flux_freq)
 
     @staticmethod

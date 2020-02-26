@@ -33,6 +33,15 @@ eve_lntypes['O'] = '-'
 eve_lntypes['C'] = '-'
 eve_lntypes['Ni56'] = '-'
 
+eve_el_m = {'H': 1.008, 'He': 4.003, 'C': 12.011, 'N': 14.007, 'O': 15.999,
+            'F': 18.998, 'Ne': 20.180, 'Na': 22.990, 'Mg': 24.305,
+            'Al': 26.982, 'Si': 28.086, 'P': 30.974, 'S': 32.066,
+            'Cl': 35.453, 'Ar': 39.948, 'K': 39.098, 'Ca': 40.078,
+            'Sc': 44.956, 'Ti': 47.867, 'V': 50.942, 'Cr': 51.996,
+            'Mn': 54.938, 'Fe': 55.845, 'Co': 58.933, 'Ni': 58.693
+            }
+eve_el_m['Ni56'] = eve_el_m['Ni']
+
 
 class PreSN(object):
     """
@@ -214,9 +223,9 @@ class PreSN(object):
         return np.log10(self.el(el))
 
     def mass_tot_el(self, el=None):
-        def m_el(el):
-            return  np.trapz(self.el(el), self.m)
-        
+        def m_el(e):
+            return np.trapz(self.el(e), self.m)
+
         elements = self.Elements
         if el is not None:
             if isinstance(el, str):
@@ -226,20 +235,31 @@ class PreSN(object):
 
         mass = {}
         for el in elements:
-            mass[el] =  m_el(el)  
-                    
+            mass[el] = m_el(el)
+
         return mass
 
-    def abun(self, k):
+    def abun(self, k=None):
         """
-        Abundences in k-zone.  k in [1, Nzon]
-        :param k:
+        Abundances in k-zone.  k in [1, Nzon]
+        :param k: zone. If None, return 2d array for all zones
         :return: array
         """
-        res = [self.el(e)[k - 1] for e in self.Elements]
-        return res
+        if k is None:
+            abun = np.zeros((self.nzon, len(self.Elements)))
+            for i, ename in enumerate(self.Elements):
+                abun[:, i] = self.el(ename)
+            return abun
+        else:
+            abun = [self.el(e)[k - 1] for e in self.Elements]
+            return abun
 
-    def chem_norm(self, k, norm=None):
+    def chem_norm(self, k=None, norm=None):
+        if k is None:
+            for j in range(self.nzon):
+                self.chem_norm(k=j + 1, norm=norm)
+            return
+
         if norm is None:
             norm = sum(self.abun(k))
         for e in self.Elements:
@@ -284,9 +304,9 @@ class PreSN(object):
         return os.path.isfile(fname)
 
     def plot_chem(self, x='m', elements=eve_elements, ax=None, xlim=None, ylim=None, **kwargs):
-        '''
+        """
         Plot the chemical composition.
-        
+
         lntypes = kwargs.get('lntypes', eve_lntypes)
         colors = kwargs.get('colors', eve_colors)
         loc = kwargs.get('leg_loc', 'best')
@@ -297,11 +317,12 @@ class PreSN(object):
         alpha = kwargs.get('alpha', 1)
         figsize = kwargs.get('figsize', (8, 8))
         is_legend = kwargs.get('is_legend', True)
-        '''
+        """
         if not is_matplotlib:
             return
         # elements = kwargs.get('elements', eve_elements)
         lntypes = kwargs.get('lntypes', eve_lntypes)
+        lntypes = kwargs.get('ls', eve_lntypes)
         colors = kwargs.get('colors', eve_colors)
         loc = kwargs.get('leg_loc', 'best')
         leg_ncol = kwargs.get('leg_ncol', 4)
@@ -312,7 +333,7 @@ class PreSN(object):
         figsize = kwargs.get('figsize', (8, 8))
         is_legend = kwargs.get('is_legend', True)
 
-        if not isinstance(lntypes, dict):
+        if isinstance(lntypes, str):
             tmp = lntypes
             lntypes = {e: tmp for e in elements}
 
@@ -386,7 +407,7 @@ class PreSN(object):
         ax.set_yscale('log')
         if is_new_plot:
             ax.set_ylabel(r'$X_i$')
-            
+
         if is_legend:
             ax.legend(prop={'size': 9}, loc=loc, ncol=leg_ncol, fancybox=False, frameon=False, markerscale=0)
             # ax.legend(prop={'size': 9}, loc=3, ncol=4, fancybox=True, shadow=True)
@@ -780,6 +801,63 @@ class PreSN(object):
 
         return newPreSN
 
+    def clone(self):
+        presn = PreSN(self.Name, self.nzon, elements=self.Elements)
+        presn.copy_par(self)
+
+        # hydro
+        for k in self.presn_hydro:
+            presn.set_hyd(k, self.hyd(k))
+
+        # chem
+        for ename in self.Elements:
+            #         b = boxcar(b, weight=m, wbox=1.5)
+
+            presn.set_chem(ename, self.el(ename))
+
+        return presn
+
+    def boxcar(self, box_dm=0.5, n=4, is_info=False):
+        """
+        The function runs a boxcar average to emulate the mixing of chemical composition.
+        @type box_dm: float. The boxcar width. Default value is 0.5 Msun.
+        @type n: int. The number of repeats. Default value is 4
+        @type is_info: bool. Prints some debug information. Default value is False
+        """
+        clone = self.clone()
+        abun = clone.abun()
+        #     abun = np.zeros((clone.nzon, len(clone.Elements)))
+
+        m = clone.m / phys.M_sun
+        dmass = np.diff(m)
+        dmass = np.insert(dmass, -1, dmass[-1])
+
+        for l in range(n):  # the iteration number
+            if is_info:
+                print(f'Attempt # {l}')
+            for k in range(clone.nzon):
+                kk = k + 1
+                dm = dmass[k]
+                while dm < box_dm and kk <= clone.nzon:
+                    kk += 1
+                    dm = np.sum(dmass[k:kk])
+
+                if is_info:
+                    print(f'{k}: kk= {kk} dm= {dm:.4f} m= {m[k]:.4f}')
+                if dm > 1e-6:
+                    for i, ename in enumerate(clone.Elements):
+                        dm_e = np.dot(abun[k:kk, i], dmass[k:kk])
+                        abun[k, i] = dm_e / dm
+            #             abun[k,i] = x[k]
+        #
+        for i, ename in enumerate(clone.Elements):
+            #         print(ename, ': ', abun[:,i])
+            clone.set_chem(ename, abun[:, i])
+            if is_info:
+                print(clone.el(ename))
+
+        return clone
+
 
 # ==============================================
 def load_rho(fname, path=None):
@@ -892,7 +970,7 @@ def load_hyd_abn(name, path='.', abn_elements=PreSN.stl_elements, skiprows=1,
         rho = np.insert(rho, 0, presn.rho_cen)
         dm = np.zeros(nz)
         for i in range(nz):
-            dm[i] = (r[i+1]**3 - r[i]**3) * rho[i+1] * 4.*np.pi/3.
+            dm[i] = (r[i + 1] ** 3 - r[i] ** 3) * rho[i + 1] * 4. * np.pi / 3.
         m = np.cumsum(dm)
         m += presn.m_core
     else:

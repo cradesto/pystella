@@ -605,10 +605,10 @@ class FitMCMC(FitLc):
         samples = None
         if dm0 is not None:
             result = self.best_curvesDtDm(curves_m, curves_o, dt0, dm0,
-                                          threads=threads, dt_lim=dt_lim, dm_lim=dm_lim, is_samples=is_samples)
+                                          dt_lim=dt_lim, dm_lim=dm_lim, threads=threads, is_samples=is_samples)
         else:
             result = self.best_curvesDt(curves_m, curves_o, dt0,
-                                        threads=threads, dt_lim=dt_lim, is_samples=is_samples)
+                                        dt_lim=dt_lim, threads=threads, is_samples=is_samples)
 
         res = result[0]
         th, e1, e2 = result[1]
@@ -937,12 +937,28 @@ class FitMCMC(FitLc):
     # @staticmethod
     @staticmethod
     def plot_corner(samples, labels=("td", 'dm'), bnames=('',), axhist=None):
+        """
+        To plot  a data set in a multi-dimensional space.
+
+        Parameters
+        ----------
+        :param samples: The samples. This should be a 1- or 2-dimensional array. For a 1-D
+        array this results in a simple histogram. For a 2-D array, the zeroth
+        axis is the list of samples and the next axis are the dimensions of
+        the space (see corner.corner).
+        :param labels: the labels  Default: ("td", 'dm')
+        :param bnames: the band names. Used for error labels
+        :param axhist: axes to plot hist2d
+        :return: fig
+        """
         # from matplotlib import pyplot as plt
         import corner
         # plt.hist(sample_dt, bins=50, histtype="stepfilled", alpha=0.3)
         # # samples = sampler.chain[:, nburn:, :].reshape((-1, ndim))
         # fig = corner.corner(samples, labels=["$delay$", "$dm$", "$lnf$"],
         #                     truths=[dt, dm, lnf])
+        if isinstance(labels, str):
+            labels = [labels]
         labels += tuple('sig+{}'.format(bn) for bn in bnames)
         fig = corner.corner(samples, labels=labels, bins=30,
                             quantiles=(0.16, 0.5, 0.84),
