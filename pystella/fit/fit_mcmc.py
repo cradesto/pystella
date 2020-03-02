@@ -318,8 +318,8 @@ class FitMCMC(FitLc):
             em = sigs[i]
             m_fit = np.interp(to, tm, mm)  # One-dimensional linear interpolation
 
-            inv_sigma2 = 1.0 / (eo ** 2 + em ** 2)
-            chi = np.sum((mo - m_fit) ** 2 * inv_sigma2 - np.log(inv_sigma2) + np.log(2 * np.pi))
+            inv_sigma2 = 0.5 / (eo ** 2 + em ** 2)
+            chi = np.sum((mo - m_fit) ** 2 * inv_sigma2 - np.log(inv_sigma2) + np.log(np.pi))
             res += chi
         res = -0.5 * res
         return res
@@ -327,22 +327,23 @@ class FitMCMC(FitLc):
     @staticmethod
     def log_likelihood_curves_DtDm(theta, cs_m, cs_o, bnames):
         texp, dm0, sigs = FitMCMC.thetaDtDm2arr(theta, len(bnames))
+        logpi = np.log(np.pi)
         # texp, dm0, dts, dms, sigs = theta2arr(theta, len(images), len(bnames))
 
         res = 0.
         for i, bname in enumerate(bnames):
             lc_o = cs_o[bname]
             to, mo, eo = lc_o.Time, lc_o.Mag, lc_o.MagErr
-            # to = to + dt
             # model interpolation
             lcm = cs_m[bname]
             tm, mm = lcm.Time, lcm.Mag
+            mm += dm0
             tm += texp
             em = sigs[i]
             m_fit = np.interp(to, tm, mm)  # One-dimensional linear interpolation
-            m_fit += dm0
-            inv_sigma2 = 1.0 / (eo ** 2 + em ** 2)
-            chi = np.sum((mo - m_fit) ** 2 * inv_sigma2 - np.log(inv_sigma2) + np.log(2 * np.pi))
+
+            inv_sigma2 = 0.5 / (eo ** 2 + em ** 2)
+            chi = np.sum((mo - m_fit) ** 2 * inv_sigma2 - np.log(inv_sigma2) + logpi)
             res += chi
         res = -0.5 * res
         return res
@@ -381,7 +382,7 @@ class FitMCMC(FitLc):
             tm += texp
             em = sigs[i]
             m_fit = np.interp(to, tm, mm)  # One-dimensional linear interpolation
-            inv_sigma2 = 1.0 / (eo ** 2 + em ** 2)
+            inv_sigma2 = 0.5 / (eo ** 2 + em ** 2)
             chi = np.sum((mo - m_fit) ** 2 * inv_sigma2)
             res += chi
             N += len(to)
@@ -399,11 +400,11 @@ class FitMCMC(FitLc):
             # model interpolation
             lcm = cs_m[bname]
             tm, mm = lcm.Time, lcm.Mag
+            mm += dm0
             tm += texp
             em = sigs[i]
             m_fit = np.interp(to, tm, mm)  # One-dimensional linear interpolation
-            m_fit += dm0
-            inv_sigma2 = 1.0 / (eo ** 2 + em ** 2)
+            inv_sigma2 = 0.5 / (eo ** 2 + em ** 2)
             chi = np.sum((mo - m_fit) ** 2 * inv_sigma2)
             res += chi
             N += len(to)
@@ -936,7 +937,7 @@ class FitMCMC(FitLc):
 
     # @staticmethod
     @staticmethod
-    def plot_corner(samples, labels=("td", 'dm'), bnames=('',), axhist=None):
+    def plot_corner(samples, labels=("td", 'dm'), bnames=('',), axhist=None, **kwargs):
         """
         To plot  a data set in a multi-dimensional space.
 
@@ -948,6 +949,7 @@ class FitMCMC(FitLc):
         the space (see corner.corner).
         :param labels: the labels  Default: ("td", 'dm')
         :param bnames: the band names. Used for error labels
+        :param bins
         :param axhist: axes to plot hist2d
         :return: fig
         """
@@ -957,12 +959,19 @@ class FitMCMC(FitLc):
         # # samples = sampler.chain[:, nburn:, :].reshape((-1, ndim))
         # fig = corner.corner(samples, labels=["$delay$", "$dm$", "$lnf$"],
         #                     truths=[dt, dm, lnf])
+        lw = kwargs.get('lw', 2)
+        bins = kwargs.get('bins', 30)
+        alpha = kwargs.get('alpha', 1.)
+        title_fmt = kwargs.get('title_fmt','.2f')
+        quantiles = kwargs.get('quantiles', [0.16,0.5,0.84])
         if isinstance(labels, str):
             labels = [labels]
         labels += tuple('sig+{}'.format(bn) for bn in bnames)
-        fig = corner.corner(samples, labels=labels, bins=30,
-                            quantiles=(0.16, 0.5, 0.84),
-                            show_titles=True, label_kwargs={'labelpad': 1, 'fontsize': 14}, fontsize=8)
+        hist_kwargs = dict(lw=lw, alpha=0.5)
+        fig = corner.corner(samples, labels=labels, bins=bins, hist_kwargs=hist_kwargs,
+                            quantiles=quantiles,
+                            show_titles=True, title_fmt=title_fmt,
+                            label_kwargs={'labelpad': 1, 'fontsize': 14}, fontsize=8)
         fig.set_size_inches((16, 12))
 
         if axhist is not None:
