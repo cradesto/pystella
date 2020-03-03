@@ -832,6 +832,7 @@ class PreSN(object):
         dmass = np.diff(m)
         dmass = np.insert(dmass, -1, dmass[-1])
 
+        # todo Check left boundary condition fo Fe, Si
         for l in range(n):  # the iteration number
             if is_info:
                 print(f'Attempt # {l}')
