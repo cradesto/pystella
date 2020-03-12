@@ -187,10 +187,12 @@ class FitMCMC(FitLc):
 
         def lnprob(theta, ts_m, ts_o):
             # mean, amplitude, stddev = param
-            ts_o.tshift = theta[0]
-            yp = np.interp(ts_o.Time, ts_m.Time, ts_m.V)
-            y = ts_o.V
-            diff = (y - yp)
+            # ts_o.tshift = theta[0]
+            to, vo = ts_o.Time, ts_o.V
+            to += theta[0]
+
+            yp = np.interp(to, ts_m.Time, ts_m.V)
+            diff = (vo - yp)
             if ts_o.IsErr:
                 eo = ts_o.Err
                 diff /= eo
@@ -318,8 +320,8 @@ class FitMCMC(FitLc):
             em = sigs[i]
             m_fit = np.interp(to, tm, mm)  # One-dimensional linear interpolation
 
-            inv_sigma2 = 0.5 / (eo ** 2 + em ** 2)
-            chi = np.sum((mo - m_fit) ** 2 * inv_sigma2 - np.log(inv_sigma2) + np.log(np.pi))
+            inv_sigma2 = 1. / (eo ** 2 + em ** 2)
+            chi = np.sum((mo - m_fit) ** 2 * inv_sigma2 - np.log(inv_sigma2) + np.log(2*np.pi))
             res += chi
         res = -0.5 * res
         return res
@@ -327,8 +329,6 @@ class FitMCMC(FitLc):
     @staticmethod
     def log_likelihood_curves_DtDm(theta, cs_m, cs_o, bnames):
         texp, dm0, sigs = FitMCMC.thetaDtDm2arr(theta, len(bnames))
-        logpi = np.log(np.pi)
-        # texp, dm0, dts, dms, sigs = theta2arr(theta, len(images), len(bnames))
 
         res = 0.
         for i, bname in enumerate(bnames):
@@ -342,8 +342,8 @@ class FitMCMC(FitLc):
             em = sigs[i]
             m_fit = np.interp(to, tm, mm)  # One-dimensional linear interpolation
 
-            inv_sigma2 = 0.5 / (eo ** 2 + em ** 2)
-            chi = np.sum((mo - m_fit) ** 2 * inv_sigma2 - np.log(inv_sigma2) + logpi)
+            inv_sigma2 = 1. / (eo ** 2 + em ** 2)
+            chi = np.sum((mo - m_fit) ** 2 * inv_sigma2 - np.log(inv_sigma2) + np.log(2*np.pi))
             res += chi
         res = -0.5 * res
         return res
@@ -382,7 +382,7 @@ class FitMCMC(FitLc):
             tm += texp
             em = sigs[i]
             m_fit = np.interp(to, tm, mm)  # One-dimensional linear interpolation
-            inv_sigma2 = 0.5 / (eo ** 2 + em ** 2)
+            inv_sigma2 = 1. / (eo ** 2 + em ** 2)
             chi = np.sum((mo - m_fit) ** 2 * inv_sigma2)
             res += chi
             N += len(to)
@@ -404,7 +404,7 @@ class FitMCMC(FitLc):
             tm += texp
             em = sigs[i]
             m_fit = np.interp(to, tm, mm)  # One-dimensional linear interpolation
-            inv_sigma2 = 0.5 / (eo ** 2 + em ** 2)
+            inv_sigma2 = 1. / (eo ** 2 + em ** 2)
             chi = np.sum((mo - m_fit) ** 2 * inv_sigma2)
             res += chi
             N += len(to)
