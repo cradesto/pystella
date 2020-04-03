@@ -226,10 +226,16 @@ class PreSN(object):
         def m_el(e):
             return np.trapz(self.el(e), self.m)
 
+        def m_el_diff(e):
+            dmass = np.diff(self.m)
+            dmass = np.insert(dmass, -1, dmass[-1])
+            return np.sum(self.el(e)*dmass)
+
         elements = self.Elements
         if el is not None:
             if isinstance(el, str):
-                return m_el(el)
+                # return m_el(el)
+                return m_el_diff(el)
             else:
                 elements = el
 
@@ -733,14 +739,21 @@ class PreSN(object):
             xn = np.delete(x, idx + 1)
             return xn
 
-        def resize_points(x, n):
+        def resize_points(x, n, mode='lin'):
+            """
+            Add or remove points in the array x
+            :param x:  the array is not changed
+            :param n: number points to add or remove
+            :param mode:  should be "lin" lor "geom". Default: lin
+            :return: the resized array
+            """
             nold = len(x)
             if n == nold:  # nothing to do
                 return x
 
             xn = np.copy(x)
             if n > nold:
-                f = lambda xx: add_point(xx, mode='lin')
+                f = lambda xx: add_point(xx, mode=mode)
             else:
                 f = lambda xx: remove_point(xx)
 
