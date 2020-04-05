@@ -57,7 +57,7 @@ def plot_grid(models_dic, bnames, call=None, **kwargs):
         plt.title(title)
 
     # fig.tight_layout()
-    plt.show()
+    # plt.show()
     return fig
 
 

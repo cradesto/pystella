@@ -222,7 +222,13 @@ class PreSN(object):
     def lg_el(self, el):
         return np.log10(self.el(el))
 
-    def mass_tot_el(self, el=None):
+    def mass_tot_el(self, el=None, is_diff=False):
+        """
+        Compute the total mass of element el. Return dict of elements with total mass ff el = None
+        :param el: the name of element. Default: None
+        :param is_diff: if True use  np.sum(self.el(e)*np.diff(self.m))
+        :return: the total mass of the element el
+        """
         def m_el(e):
             return np.trapz(self.el(e), self.m)
 
@@ -231,21 +237,25 @@ class PreSN(object):
             dmass = np.insert(dmass, -1, dmass[-1])
             return np.sum(self.el(e)*dmass)
 
+        fm = m_el
+        if is_diff:
+            fm = m_el_diff
+
         elements = self.Elements
         if el is not None:
             if isinstance(el, str):
-                # return m_el(el)
-                return m_el_diff(el)
+                return fm(el)
+                # return m_el_diff(el)
             else:
                 elements = el
 
         mass = {}
         for el in elements:
-            mass[el] = m_el(el)
+            mass[el] = fm(el)
 
         return mass
 
-    def abun(self, k=None):
+    def abund(self, k=None):
         """
         Abundances in k-zone.  k in [1, Nzon]
         :param k: zone. If None, return 2d array for all zones
@@ -267,7 +277,7 @@ class PreSN(object):
             return
 
         if norm is None:
-            norm = sum(self.abun(k))
+            norm = sum(self.abund(k))
         for e in self.Elements:
             self._data_chem[e][k - 1] = self.el(e)[k - 1] / norm
 
@@ -838,7 +848,7 @@ class PreSN(object):
         @type is_info: bool. Prints some debug information. Default value is False
         """
         clone = self.clone()
-        abun = clone.abun()
+        abund = clone.abund()
         #     abun = np.zeros((clone.nzon, len(clone.Elements)))
 
         m = clone.m / phys.M_sun
@@ -860,13 +870,13 @@ class PreSN(object):
                     print(f'{k}: kk= {kk} dm= {dm:.4f} m= {m[k]:.4f}')
                 if dm > 1e-6:
                     for i, ename in enumerate(clone.Elements):
-                        dm_e = np.dot(abun[k:kk, i], dmass[k:kk])
-                        abun[k, i] = dm_e / dm
+                        dm_e = np.dot(abund[k:kk, i], dmass[k:kk])
+                        abund[k, i] = dm_e / dm
             #             abun[k,i] = x[k]
         #
         for i, ename in enumerate(clone.Elements):
             #         print(ename, ': ', abun[:,i])
-            clone.set_chem(ename, abun[:, i])
+            clone.set_chem(ename, abund[:, i])
             if is_info:
                 print(clone.el(ename))
 

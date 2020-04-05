@@ -131,13 +131,13 @@ class SnEveTests(unittest.TestCase):
             presn.set_chem(ename, data)
 
         for k in np.arange(1, presn.nzon):
-            self.assertTrue(sum(presn.abun(k)) > 1., msg=" Norm should be large 1 ")
+            self.assertTrue(sum(presn.abund(k)) > 1., msg=" Norm should be large 1 ")
         # normalize
         for k in np.arange(1, presn.nzon):
             presn.chem_norm(k)
         # check
         for k in np.arange(1, presn.nzon):
-            self.assertAlmostEqual(sum(presn.abun(k)), 1., msg="  Norm should be 1 ")
+            self.assertAlmostEqual(sum(presn.abund(k)), 1., msg="  Norm should be 1 ")
 
     def test_presn_set_composition(self):
         nzon = 10
