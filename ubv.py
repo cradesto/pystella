@@ -21,10 +21,10 @@ def plot_grid(models_dic, bnames, call=None, **kwargs):
     import matplotlib.pyplot as plt
 
     title = kwargs.get('title', '')
+    fontsize = kwargs.get('fontsize', 12)
     # setup figure
-    plt.matplotlib.rcParams.update({'font.size': kwargs.get('fontsize', 12)})
-    fig, axs = plt.subplots(int(math.ceil(len(bnames) / 2)), 2, sharex='col', sharey='row',
-                            figsize=(8, 8))
+    # plt.matplotlib.rcParams.update({'font.size':})
+    fig, axs = plt.subplots(math.ceil(len(bnames)/2), 2, sharex='col', sharey='row', figsize=(8, 8))
     plt.subplots_adjust(wspace=0, hspace=0)
 
     for i, bname in enumerate(bnames):
@@ -44,7 +44,7 @@ def plot_grid(models_dic, bnames, call=None, **kwargs):
         props = dict(facecolor='wheat')
         # props = dict(boxstyle='round', facecolor='white')
         # props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-        ax.text(.95, .9, bname, horizontalalignment='right', transform=ax.transAxes, bbox=props)
+        ax.text(.95, .9, bname, horizontalalignment='right', transform=ax.transAxes, bbox=props, fontsize=fontsize)
 
         if kwargs.get('is_grid', False):
             ax.grid(linestyle=':')
@@ -449,11 +449,11 @@ def main(name=None, model_ext='.ph'):
                 fig.savefig(fsave, bbox_inches='tight', format='pdf')
             else:
                 import matplotlib.pyplot as plt
-                plt.ion()
+                # plt.ion()
                 plt.show()
-                plt.pause(0.0001)
-                print('')
-                input("===> Hit <return> to quit")
+                # plt.pause(0.0001)
+                # print('')
+                # input("===> Hit <return> to quit")
 
     else:
         print("There are no such models in the directory: %s with extension: %s " % (path, model_ext))
