@@ -41,6 +41,20 @@ class SnEveTests(unittest.TestCase):
         ax = presn.plot_chem(ylim=(1e-12, 1.))
         plt.show()
 
+    def test_mass_tot(self):
+        name = 'cat_R1000_M15_Ni007'
+        path = join(dirname(abspath(__file__)), 'data', 'stella')
+        rho_file = os.path.join(path, name + '.rho')
+        presn = sn_eve.load_rho(rho_file)
+        s, s1 = 0., 0.
+        for el, m in presn.mass_tot_el().items():
+            m = m / ps.phys.M_sun
+            m1 =  presn.mass_tot_el(el) / ps.phys.M_sun
+            print("{:4s}: {:.3e} df:  {:.3e}".format(el, m, m1))
+            s += m
+            s1 += m1
+        print(f"Total: {s} dm: {s1}    {presn.m_tot/ps.phys.M_sun - presn.m_core/ps.phys.M_sun}")
+
     def test_hyd_load(self):
         name = 'm030307mhh'
         path = join(dirname(abspath(__file__)), 'data', 'stella')
@@ -117,13 +131,13 @@ class SnEveTests(unittest.TestCase):
             presn.set_chem(ename, data)
 
         for k in np.arange(1, presn.nzon):
-            self.assertTrue(sum(presn.abun(k)) > 1., msg=" Norm should be large 1 ")
+            self.assertTrue(sum(presn.abund(k)) > 1., msg=" Norm should be large 1 ")
         # normalize
         for k in np.arange(1, presn.nzon):
             presn.chem_norm(k)
         # check
         for k in np.arange(1, presn.nzon):
-            self.assertAlmostEqual(sum(presn.abun(k)), 1., msg="  Norm should be 1 ")
+            self.assertAlmostEqual(sum(presn.abund(k)), 1., msg="  Norm should be 1 ")
 
     def test_presn_set_composition(self):
         nzon = 10
