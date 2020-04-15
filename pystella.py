@@ -143,6 +143,18 @@ class MyPrompt(HistConsole):
         MyPrompt.call_cmd(script, args)
 
     @staticmethod
+    def do_tau(args):
+        """Plot the optical depth of the model. For detailed help type 'tau -h'.
+        """
+        if len(args) == 0:
+            name = 'Please provide a tau-file.'
+        else:
+            name = args
+        print("tau %s" % name)
+        script = os.path.join(ROOT_DIRECTORY, 'tau.py')
+        MyPrompt.call_cmd(script, args)        
+
+    @staticmethod
     def do_eve(args):
         """Plot Stella Light Curves. For detailed help type 'eve -h'.
         """
