@@ -51,11 +51,12 @@ def plot_tau_moments(tau, moments=None, fcut=1.e-20, is_info=False):
     axT.set_xlabel('Radius [cm]')
     axT.set_ylabel('Temperature [K]')
 
-    for i, t in enumerate(moments):
-        b = tau.block_nearest(t)
-        p = axV.semilogx(b.R, b.V8, label="t={:.2f}".format(t))
+    for i, time in enumerate(moments):
+        b = tau.block_nearest(time)
+        n = 2 if b.Time >= 10. else 4  # label format
+        p = axV.semilogx(b.R, b.V8, label="t= {:.{}f}".format(b.Time, n))
         color = p[0].get_color()
-        axT.loglog(b.R, b.T, label="t={:.2f}".format(t), color=color)
+        axT.loglog(b.R, b.T, label="t={:.2f}".format(time), color=color)
 
     axV.legend(frameon=False)
     # axT.legend(frameon=False)
@@ -65,16 +66,16 @@ def plot_tau_moments(tau, moments=None, fcut=1.e-20, is_info=False):
 
     pos = 0
     t_data = []
-    for i, t in enumerate(tau.Time):
-        if t > moments[pos]:
-            t_data.append(t)
+    for i, time in enumerate(tau.Time):
+        if time > moments[pos]:
+            t_data.append(time)
             pos += 1
 
     verts = []
     T_cols = []
     x_lim = [float("inf"), float("-inf")]
     z_lim = [float("inf"), float("-inf")]
-    for i, t in enumerate(t_data):
+    for i, time in enumerate(t_data):
         spec = tau.get_block_by_time(t_data[i])
         spec.cut_flux(fcut * max(spec.Flux))  # cut flux
         ys = spec.Flux
@@ -90,7 +91,7 @@ def plot_tau_moments(tau, moments=None, fcut=1.e-20, is_info=False):
 
         T_cols.append(spec.T_color)
         if is_info:
-            print("time: %f  T_color=%f" % (t, spec.T_color))
+            print("time: %f  T_color=%f" % (time, spec.T_color))
             # print "time: %f  T_wien=%f wl_max=%f" % (t_data[i], spec.temp_wien, spec.wl_flux_max)
 
     Tmap = np.log(T_cols / np.min(T_cols))

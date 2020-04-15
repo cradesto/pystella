@@ -83,7 +83,7 @@ class StellaTauDetail:
         return os.path.expanduser(os.path.join(self._path, self._name + ".tau"))
 
     @staticmethod
-    def parse_start_end_blocks(fname, tnorm=24.*3600.):
+    def parse_start_end_blocks(fname, tnorm=24. * 3600.):
         """1
         Find the line indexes of the block data for all time moments if n is None.
         :param fname: filename
@@ -104,16 +104,16 @@ class StellaTauDetail:
                         start = i + 3
                     # times
                     t = float(line.split()[2])
-                    times.append(t/tnorm)  # in days
+                    times.append(t / tnorm)  # in days
             else:
                 indexes.append((start, i + 1))  # last block
 
         # check
-        check = [e-b for b, e in indexes]
+        check = [e - b for b, e in indexes]
         if not len(np.unique(check)) == 1:
             print("      Start    End     NZon-1")
             for i, (b, e) in enumerate(indexes, 1):
-                print("{:3d}  {:5d}  - {:5d} = {:5d} ".format(i, b, e, e-b))
+                print("{:3d}  {:5d}  - {:5d} = {:5d} ".format(i, b, e, e - b))
             print("Diff zone number: ", np.unique(check))
             raise ValueError("There are different number of zone in file {}".format(fname))
 
@@ -133,17 +133,23 @@ class StellaTauDetail:
         return freq
 
     @staticmethod
-    def parse_block(fname, start, nzon, nfreq):
-        colstr = " NZON    R14  V8    T5  " + ' '.join(list(map(str, range(1, nfreq + 1))))
-        cols = colstr.split()
-        dt = np.dtype({'names': cols, 'formats': [np.float] * len(cols)})
+    def parse_block(fname, start, nzon):
+        from itertools import islice
+        # colstr = " NZON    R14  V8    T5  " + ' '.join(list(map(str, range(1, nfreq + 1))))
+        # cols = colstr.split()
+        # dt = np.dtype({'names': cols, 'formats': [np.float] * len(cols)})
 
-        # with open(fname, "rb") as f:
-        #   from itertools import islice
-        #   b = np.genfromtxt(islice(f, start-1, end), names=cols, dtype=dt)
-        b = np.loadtxt(fname, dtype=dt, skiprows=start-1, max_rows=nzon)
+        b = []
+        with open(fname, "rb") as f:
+            # b = np.genfromtxt(islice(f, start-1, start-1+nzon), names=cols, dtype=dt)
+            for i, line in enumerate(islice(f, start - 1, start - 1 + nzon)):
+                items = [float(v) for v in line.split()]
+                b.append(items)
 
-        return b
+        # print(start, start-1+nzon, nzon)
+        # b = np.loadtxt(fname, dtype=dt, skiprows=start-1, max_rows=nzon)
+
+        return np.array(b)
 
     def load(self, is_info=False):
         """
@@ -182,7 +188,7 @@ class StellaTauDetail:
 
     def __getitem__(self, idx):
         b, e = self.Positions[idx]
-        block = self.parse_block(self.FName, b, self.Nzon, self.NFreq)
+        block = self.parse_block(self.FName, b, self.Nzon)
         # block = self.parse_block(self.FName, b, e, self.NFreq)
         return BlockTau(self.Times[idx], block)
 
@@ -244,6 +250,7 @@ class BlockTau:
         Block tau-data for given time
         line: " NZON    R14  V8    T5   + freqs"
     """
+    cols = {'Zon': 0, 'R14': 1, 'V8': 2, 'T5': 3}
 
     def __init__(self, time, block):
         self._time = time
@@ -259,11 +266,11 @@ class BlockTau:
 
     @property
     def Zon(self):
-        return self._block['NZON']
+        return self.ColByName('NZON')
 
     @property
     def R(self):
-        return self._block['R14'] * 1e14  # [cm]
+        return self.ColByName('R14') * 1e14  # [cm]
 
     @property
     def Rsun(self):
@@ -271,31 +278,39 @@ class BlockTau:
 
     @property
     def V(self):
-        return self._block['V8'] * 1e8  # [cm/s]
+        return self.V8 * 1e8  # [cm/s]
 
     @property
     def V8(self):
-        return self._block['V8']  # [1000 km/s]
+        return self.ColByName('V8')  # [1000 km/s]
 
     @property
     def T(self):
-        return self._block['T5'] * 1e5  # [K]
+        return self.ColByName('T5') * 1e5  # [K]
 
     @property
     def Tau(self):
-        return self._block[4:, :]
+        return self._block[len(self.cols):, :]
 
     @property
     def Size(self):
         return self._block.size
 
+    def Col(self, idx):
+        return self._block[:, idx]
+
+    def ColByName(self, name):
+        return self._block[:, self.cols[name]]
+
     @property
     def ph_indexes(self, tau_ph=2. / 3.):
         tau = self.Tau
-        nfreq = tau.size
-        nzon = tau.size
-        # for k in range(self.N)
-        # return self._block[4:, :]
+        nzon, nfreq = tau.shape
+        idxs = np.zeros(nfreq)
+        for k in range(nfreq):
+            array = tau[:, k]
+            idxs[k] = (np.abs(array - tau_ph)).argmin()
+        return idxs
 
 
 # ==================================================================

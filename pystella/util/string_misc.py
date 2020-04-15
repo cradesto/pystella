@@ -54,6 +54,17 @@ def list_to_table(lst, col=4):
     return table
 
 
+def parse_float_table(fname, start, nzon):
+    from itertools import islice
+    b = []
+    with open(fname, "rb") as f:
+        for i, line in enumerate(islice(f, start - 1, start - 1 + nzon)):
+            items = [float(v) for v in line.split()]
+            b.append(items)
+    # print(start, start-1+nzon, nzon)
+    return np.array(b)
+
+
 def print_table(tbl):
     # col_width = [max(len(x) for x in col) for col in zip(*tbl)]
     col_width = []
