@@ -108,6 +108,15 @@ class StellaTauDetail:
             else:
                 indexes.append((start, i + 1))  # last block
 
+        # check
+        check = [e-b for b, e in indexes]
+        if not len(np.unique(check)) == 1:
+            print("      Start    End     NZon-1")
+            for i, (b, e) in enumerate(indexes, 1):
+                print("{:3d}  {:5d}  - {:5d} = {:5d} ".format(i, b, e, e-b))
+            print("Diff zone number: ", np.unique(check))
+            raise ValueError("There are different number of zone in file {}".format(fname))
+
         return np.array(indexes), np.array(times)
 
     @staticmethod
