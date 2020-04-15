@@ -48,6 +48,17 @@ class TestTau(unittest.TestCase):
         self.assertEqual(self.tau.Nzon, nzon, "Error in block zones: nzon=%d, but should be tau.Nzon= %d"
                          % (nzon, self.tau.Nzon))
 
+    def test_vars(self):
+        import matplotlib.pyplot as plt
+
+        self.tau.load()
+        b = self.tau.block_nearest(4.)
+        # tau = b.Tau
+        # print(tau.shape)
+        plt.semilogx(b.Rsun, b.V8)
+        # plt.semilogx(b.Rsun, b.T)
+        plt.show()
+
 
 def main():
     unittest.main()

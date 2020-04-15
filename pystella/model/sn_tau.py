@@ -83,10 +83,11 @@ class StellaTauDetail:
         return os.path.expanduser(os.path.join(self._path, self._name + ".tau"))
 
     @staticmethod
-    def parse_start_end_blocks(fname):
+    def parse_start_end_blocks(fname, tnorm=24.*3600.):
         """1
         Find the line indexes of the block data for all time moments if n is None.
-        :param fname:
+        :param fname: filename
+        :param tnorm: normalisation of time. Default: 86400, days
         :return: array( (s1,e1),...), array(times)
         """
         # PROPER   T = 0.00000000E+00
@@ -100,12 +101,12 @@ class StellaTauDetail:
                     count += 1
                     if count > 1:
                         indexes.append((start, i))
-                        start = i+3
+                        start = i + 3
                     # times
                     t = float(line.split()[2])
-                    times.append(t)
+                    times.append(t/tnorm)  # in days
             else:
-                indexes.append((start, i+1))  # last block
+                indexes.append((start, i + 1))  # last block
 
         return np.array(indexes), np.array(times)
 
@@ -113,28 +114,29 @@ class StellaTauDetail:
     def parse_header(fname, nline):
         with open(fname) as f:
             try:
-                line = next(islice(f, nline, nline+1))
+                line = next(islice(f, nline, nline + 1))
             except StopIteration:
                 print('Not header line in file {}'.format(fname))
         # NZON        R14.  V8.    T5.          13.801        13.848
         arr = line.split()
         freq = np.array(list(map(float, arr[6:])))
-        freq = 10.**freq
+        freq = 10. ** freq
         return freq
 
     @staticmethod
-    def parse_block(fname, start, end, nfreq):
-        colstr = " NZON    R14  V8    T5  " + ' '.join(list(map(str, range(1, nfreq+1))))
+    def parse_block(fname, start, nzon, nfreq):
+        colstr = " NZON    R14  V8    T5  " + ' '.join(list(map(str, range(1, nfreq + 1))))
         cols = colstr.split()
         dt = np.dtype({'names': cols, 'formats': [np.float] * len(cols)})
 
-        with open(fname, "rb") as f:
-            from itertools import islice
-            b = np.genfromtxt(islice(f, start-1, end), names=cols, dtype=dt)
+        # with open(fname, "rb") as f:
+        #   from itertools import islice
+        #   b = np.genfromtxt(islice(f, start-1, end), names=cols, dtype=dt)
+        b = np.loadtxt(fname, dtype=dt, skiprows=start-1, max_rows=nzon)
 
         return b
 
-    def load(self):
+    def load(self, is_info=False):
         """
         Load data from tau-file
         :return: self
@@ -154,6 +156,10 @@ class StellaTauDetail:
         self._freq = self.parse_header(self.FName, s - 2)
 
         logger.debug("Load data from  %s " % self.FName)
+        if is_info:
+            logger.info('Loaded Tau from {} \n    '
+                        'nzone= {} ntimes= {} nfreq= {}'.format(self.FName, self.Nzon, self.Ntimes, self.NFreq))
+
         return self
 
     def time_nearest(self, time):
@@ -161,13 +167,14 @@ class StellaTauDetail:
         return idx, self.Times[idx]
 
     def block_nearest(self, time):
-        idx = self.time_nearest(time)
+        idx, t = self.time_nearest(time)
         block = self[idx]
-        return BlockTau(self.Times[idx], block)
+        return block
 
     def __getitem__(self, idx):
         b, e = self.Positions[idx]
-        block = self.parse_block(self.FName, b, e, self.NFreq)
+        block = self.parse_block(self.FName, b, self.Nzon, self.NFreq)
+        # block = self.parse_block(self.FName, b, e, self.NFreq)
         return BlockTau(self.Times[idx], block)
 
     def evolution(self, var, nz):
@@ -176,18 +183,12 @@ class StellaTauDetail:
             raise ValueError('NZ should be in range: 0 - {}'.format(self.Nzon))
 
         if var not in vars(BlockTau):
-            raise ValueError('var should be property of BlockTau, like Zon, M, R, Vel, T, Trad, Rho, Lum, Cappa, M')
+            raise ValueError('var should be property of BlockTau, like Zon, R, V, V8, T')
 
-        # x = []
-        # y = []
         for idx, time in enumerate(self.Times):
             b = self.block_nearest(time)
             v = getattr(b, var)[nz]
             yield time, v
-        # return False
-        #     x.append(time)
-        #     y.append(v)
-        # return x, y
 
     def taus(self):
         """Compute tau for each moment of time
@@ -203,16 +204,15 @@ class StellaTauDetail:
             #     taus[i, k] = tau
         return taus
 
-    def params_ph(self, cols=('R', 'T', 'V'), tau_ph=2./3.):
-        is_str = isinstance(cols, str)
-        if is_str:
+    def params_ph(self, cols=('R', 'T', 'V'), tau_ph=2. / 3.):
+        if isinstance(cols, str):
             cols = [cols]
         res = {k: np.zeros(self.Ntimes) for k in ['time', 'zone'] + list(cols)}
         taus = self.taus()
         for i, time in enumerate(self.Times):
             s = self[i]
             kph = 1  # todo check the default value
-            for k in range(self.Nzon-1, 1, -1):
+            for k in range(self.Nzon - 1, 1, -1):
                 if taus[i][k] >= tau_ph:
                     kph = k
                     break
@@ -222,7 +222,7 @@ class StellaTauDetail:
                 res[v][i] = getattr(s, v)[kph]
         return res
 
-    def vel_ph(self, tau_ph=2./3., z=0.):
+    def vel_ph(self, tau_ph=2. / 3., z=0.):
         v_dat = self.params_ph(tau_ph=tau_ph, cols=['V'])
         t = v_dat['time'] * (1. + z)  # redshifted time
         v = v_dat['V']
@@ -254,8 +254,9 @@ class BlockTau:
 
     @property
     def R(self):
-        return  self._block['R14'] * 1e14 # [cm]
+        return self._block['R14'] * 1e14  # [cm]
 
+    @property
     def Rsun(self):
         return self.R / phys.R_sun  # [Rsun]
 
@@ -278,6 +279,14 @@ class BlockTau:
     @property
     def Size(self):
         return self._block.size
+
+    @property
+    def ph_indexes(self, tau_ph=2. / 3.):
+        tau = self.Tau
+        nfreq = tau.size
+        nzon = tau.size
+        # for k in range(self.N)
+        # return self._block[4:, :]
 
 
 # ==================================================================

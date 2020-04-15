@@ -3,12 +3,7 @@
 import argparse
 import logging
 
-import matplotlib.pyplot as plt
 import numpy as np
-# from matplotlib import cm
-from matplotlib.collections import PolyCollection
-from matplotlib.colors import LinearSegmentedColormap
-
 import pystella as ps
 
 mpl_logger = logging.getLogger('matplotlib')
@@ -18,6 +13,8 @@ __author__ = 'bakl'
 
 
 def color_map_temp():
+    from matplotlib.colors import LinearSegmentedColormap
+
     cdict = {'blue': ((0.0, 0.0, 0.0),
                       (0.25, 0.0, 0.0),
                       (0.25, 0.0, 0.0),
@@ -41,14 +38,30 @@ def color_map_temp():
     return LinearSegmentedColormap('UWR', cdict, 256)
 
 
-def plot_tau(tau, moments=None, fcut=1.e-20, is_info=False):
-    # moments = moments or (1., 3., 5, 10., 15., 25., 35., 50., 70., 100., 120., 150., 200.)
-    # moments = moments or np.arange(0., 200., 3)
+def plot_tau_moments(tau, moments=None, fcut=1.e-20, is_info=False):
+    import matplotlib.pyplot as plt
+
     moments = moments or np.exp(np.linspace(np.log(0.5), np.log(400.), 40))
 
-    # init graph
-    fig = plt.figure()
-    ax = fig.gca(projection='3d')
+    fig, (axV, axT) = plt.subplots(2, figsize=(12, 12), sharex=True, gridspec_kw={'hspace': 0})
+    axV.set_title(tau.Name)
+    axV.set_xlabel('')
+    axV.set_ylabel('Velocity [1000 km/s]')
+
+    axT.set_xlabel('Radius [cm]')
+    axT.set_ylabel('Temperature [K]')
+
+    for i, t in enumerate(moments):
+        b = tau.block_nearest(t)
+        p = axV.semilogx(b.R, b.V8, label="t={:.2f}".format(t))
+        color = p[0].get_color()
+        axT.loglog(b.R, b.T, label="t={:.2f}".format(t), color=color)
+
+    axV.legend(frameon=False)
+    # axT.legend(frameon=False)
+
+    fig.tight_layout()
+    return fig
 
     pos = 0
     t_data = []
@@ -111,6 +124,8 @@ def plot_tau(tau, moments=None, fcut=1.e-20, is_info=False):
 
 
 def plot_spec_wl(times, series, tt, wl_ab, **kwargs):
+    import matplotlib.pyplot as plt
+
     font_size = kwargs.get('font_size', 12)
     nrow = np.math.ceil(len(times)/2.)
     ncol = 2
@@ -191,12 +206,19 @@ def get_parser():
                         default=False,
                         dest="path",
                         help="Model directory")
-    parser.add_argument('-t',
+    d = '0.1:0.5:1:4:15:65:99'
+    parser.add_argument('-t', '--time',
                         required=False,
                         type=str,
-                        default=None,
-                        dest="dt",
-                        help="Time interval [day]. Example: 5.:75. Default: all times in the tau-file")
+                        default=d,
+                        dest="times",
+                        help="Plot tau snap for selected time moments. Default: {0}".format(d))
+    # parser.add_argument('-t',
+    #                     required=False,
+    #                     type=str,
+    #                     default=None,
+    #                     dest="dt",
+    #                     help="Time interval [day]. Example: 5.:75. Default: all times in the tau-file")
     parser.add_argument('-x',
                         required=False,
                         type=str,
@@ -206,26 +228,14 @@ def get_parser():
 
     return parser
 
-#
-# def usage():
-#     bands = ps.band.band_get_names()
-#     print("Usage: show tau(t,nu) from tau-file")
-#     print("  tau.py [params]")
-#     print("  -b <set_bands>: delimiter '_'. Default: B-V.\n"
-#           "     Available: " + '-'.join(sorted(bands)))
-#     print("  -i <model name>.  Example: cat_R450_M15_Ni007_E7")
-#     # print("  -o  options: [fit, wl] - plot spectral fit")
-#     print("  -p <model path(directory)>, default: ./")
-#     # print("  -s <file-name> without extension. Save plot to pdf-file. Default: spec_<file-name>.pdf")
-#     print("  -t  time interval [day]. Example: 5.:75.")
-#     print("  -x  wave length interval [A]. Example: 1.:25e3")
-#     # print("  -w  write data to file. Example: flux to magAB, Tcolor and W [.hdf5]")
-#     print("  -h  print usage")
-
 
 def main():
     import os
     import sys
+    try:
+        import matplotlib.pyplot as plt
+    except ImportError:
+        plt = None
 
     ps.Band.load_settings()
 
@@ -236,14 +246,13 @@ def main():
 
     path = os.getcwd()
     if args.path:
-        path = os.path.expanduser(path)
+        path = os.path.expanduser(args.path)
 
     # Set model names
     fname = None
     if args.input:
-        for arg in args.input:
-            fname = args.input.strip()
-            fname = fname.replace(model_ext, '')
+        fname = args.input.strip()
+        fname = fname.replace(model_ext, '')
 
     if fname is None:
         parser.print_help()
@@ -255,12 +264,18 @@ def main():
         print("No tau-data for: " + str(model))
         return None
 
-    tau = model.get_tau().load()
-    print('Loaded Tau from {} \n    nzone= {} ntimes= {} nfreq= {}'.format(tau.FName, tau.Nzon, tau.Ntimes, tau.NFreq))
-    print(tau.Wl2angs)
-    # fig = plot_tau(tau)
-    # print("Plot  Tau(t,nu): " + str(model))
-    # plt.show()
+    times = list(map(float, args.times.split(':')))
+
+    tau = model.get_tau().load(is_info=True)
+    print("Times: {:.3e} - {:3e} days".format(min(tau.Times), max(tau.Times)))
+    # print(tau.Wl2angs)
+    # tau = b.Tau
+    # print(tau.shape)
+
+    ###
+    # Plot
+    fig = plot_tau_moments(tau, moments=times)
+    plt.show()
 
 
 if __name__ == '__main__':
