@@ -12,33 +12,82 @@ mpl_logger.setLevel(logging.WARNING)
 __author__ = 'bakl'
 
 
-def color_map_temp():
-    from matplotlib.colors import LinearSegmentedColormap
+def plot_tau_phot_moments(tau, par, moments, tau_ph=2./3., xlim=None):
+    """
+    Plot photosphere as  Func(nu). Maybe: R, V, V8, T
+    :param tau:
+    :param par: photosphere parameter. Maybe: R, V, V8, T
+    :param moments: time moments
+    :param tau_ph:  the photosphere location
+    :param xlim:   wave length interval [A]
+    :param is_info:
+    :return: figure
+    """
+    import matplotlib.pyplot as plt
 
-    cdict = {'blue': ((0.0, 0.0, 0.0),
-                      (0.25, 0.0, 0.0),
-                      (0.25, 0.0, 0.0),
-                      (0.5, 0.3, 0.3),
-                      (0.75, 0.75, 1.0),
-                      (1.0, 0.9, 1.0)),
+    # moments = moments or np.exp(np.linspace(np.log(tlim[0]), np.log(tlim[1]), 40))
 
-             'green': ((0.0, 0.0, 0.0),
-                       (0.25, 0., 0.0),
-                       (0.5, 0.9, 0.9),
-                       (0.75, 0., 0.0),
-                       (1.0, 0.0, 0.0)),
+    if isinstance(par, str):
+        par = [par]
 
-             'red': ((0.0, 0.0, 0.4),
-                     (0.15, 0.9, 0.9),
-                     (0.25, 0.8, 0.8),
-                     (0.5, 0.5, 0.5),
-                     (0.75, 0.0, 0.0),
-                     (1.0, 0.0, 0.0))
-             }
-    return LinearSegmentedColormap('UWR', cdict, 256)
+    fig, axs = plt.subplots(len(par)+1, figsize=(12, 12), sharex=True, gridspec_kw={'hspace': 0})
+
+    # Setup
+    ax = axs[0]
+    ax.set_ylabel('Tau_ph')
+    ax.set_title(tau.Name)
+    # ax.xaxis.set_ticks_position('top')
+    ax.xaxis.tick_top()
+
+    for i, p in enumerate(par, 1):
+        ax = axs[i]
+        ax.set_ylabel(p+'_ph')
+        if i < len(axs)-1:
+            ax.set_xlabel('')
+        else:
+            ax.set_xlabel('Wavelength [A]')
+
+    # Plot data
+    for j, time in enumerate(moments):
+        b = tau.block_nearest(time)
+        wl = b.Wl2angs
+        n = 2 if b.Time >= 10. else 4  # label format
+        idxs = b.ph_indexes(tau_ph=tau_ph)
+        if len(wl) != len(idxs):
+            raise ValueError("Error in photo. indexes: len(wl)= {}  len(idxs)= {}".format(len(wl), len(idxs)))
+
+        # Plot Tau
+        ax = axs[0]
+        lbl = "t= {:.{}f}".format(b.Time, n)
+        ll = ax.semilogx(wl, idxs, label=lbl)
+        color = ll[0].get_color()
+
+        for i, p in enumerate(par, 1):
+            ax = axs[i]
+            is_log = p.startswith('log')
+            p = p.replace('log', '')
+            arr = getattr(b, p)
+            x = wl
+            y = [arr[idx] for idx in idxs]
+
+            if is_log:
+                ll = ax.loglog(x, y, color=color)
+            else:
+                ll = ax.semilogx(x, y, color=color)
+            # color = ll[0].get_color()
+            # axT.loglog(b.R, b.T, label="t={:.2f}".format(time), color=color)
+
+    axs[0].legend(frameon=False)
+    # Post
+    for i, ax in enumerate(axs):
+        if xlim is not None:
+            ax.set_xlim(xlim)
+
+    fig.tight_layout()
+    return fig
 
 
-def plot_tau_moments(tau, moments=None, fcut=1.e-20, is_info=False):
+def plot_tau_moments(tau, moments=None, xlim=None):
     import matplotlib.pyplot as plt
 
     moments = moments or np.exp(np.linspace(np.log(0.5), np.log(400.), 40))
@@ -64,130 +113,6 @@ def plot_tau_moments(tau, moments=None, fcut=1.e-20, is_info=False):
     fig.tight_layout()
     return fig
 
-    pos = 0
-    t_data = []
-    for i, time in enumerate(tau.Time):
-        if time > moments[pos]:
-            t_data.append(time)
-            pos += 1
-
-    verts = []
-    T_cols = []
-    x_lim = [float("inf"), float("-inf")]
-    z_lim = [float("inf"), float("-inf")]
-    for i, time in enumerate(t_data):
-        spec = tau.get_block_by_time(t_data[i])
-        spec.cut_flux(fcut * max(spec.Flux))  # cut flux
-        ys = spec.Flux
-        # ys = np.log10(ys)
-        wl = spec.Wl * ps.phys.cm_to_angs
-        verts.append(list(zip(wl, ys)))
-
-        x_lim[0] = min(x_lim[0], np.min(wl))
-        x_lim[1] = max(x_lim[1], np.max(wl))
-
-        z_lim[0] = min(z_lim[0], np.min(ys))
-        z_lim[1] = max(z_lim[1], np.max(ys))
-
-        T_cols.append(spec.T_color)
-        if is_info:
-            print("time: %f  T_color=%f" % (time, spec.T_color))
-            # print "time: %f  T_wien=%f wl_max=%f" % (t_data[i], spec.temp_wien, spec.wl_flux_max)
-
-    Tmap = np.log(T_cols / np.min(T_cols))
-    color_map = color_map_temp()
-    m = plt.cm.ScalarMappable(cmap=color_map)
-    m.set_array(Tmap)
-    facecolors = m.to_rgba(Tmap * 1.e-4)
-    poly = PolyCollection(verts, facecolors=facecolors, linewidths=1.5)  # np.ones(len(t_data)))
-    poly.set_alpha(0.5)
-    ax.add_collection3d(poly, zs=t_data, zdir='y')
-
-    # Create a color bar with 11 ticks
-    cbar = plt.colorbar(m, shrink=0.85)
-    ticks = np.linspace(min(Tmap), max(Tmap), 10)
-    ticks_lbl = np.round(np.exp(ticks) * np.min(T_cols), -2)
-    cbar.ax.set_yticklabels(ticks_lbl)
-    cbar.ax.yaxis.set_label_text("Color temperature [K]")
-
-    ax.set_xlim3d(x_lim)
-    ax.set_ylim3d(min(t_data), max(t_data))
-    ax.set_zlim3d(z_lim)
-
-    # ax.set_xscale('log')
-    ax.set_zscale('log')
-
-    ax.xaxis.set_label_text('Wavelength [A]')
-    ax.yaxis.set_label_text('Time [days]')
-    ax.zaxis.set_label_text('Tau')
-
-    return fig
-
-
-def plot_spec_wl(times, series, tt, wl_ab, **kwargs):
-    import matplotlib.pyplot as plt
-
-    font_size = kwargs.get('font_size', 12)
-    nrow = np.math.ceil(len(times)/2.)
-    ncol = 2
-    fig = plt.figure(figsize=(12, nrow * 4))
-    plt.matplotlib.rcParams.update({'font.size': font_size})
-
-    series_cut = series.copy(wl_ab=wl_ab)
-    # radiuses = np.interp(times, tt['time'], tt['Rph'], 0, 0)
-    radiuses = np.interp(times, tt['time'], tt['rbb'], 0, 0)
-    Tbbes = np.interp(times, tt['time'], tt['Tbb'], 0, 0)
-    marker_style = dict(linestyle=':', markersize=5)
-
-    for i, t in enumerate(times):
-        ax = fig.add_subplot(nrow, ncol, i + 1)
-        spec = series.get_spec_by_time(t)
-        spec.cut_flux(max(spec.Flux) * 1e-6)  # cut flux
-        R = radiuses[i]
-
-        star_bb = ps.Star("bb", spec)
-        star_bb.set_distance(R)
-
-        spec_cut = series_cut.get_spec_by_time(t)
-        star_cut = ps.Star("bb_cut", spec_cut)
-        star_cut.set_distance(R)
-
-        # spectrum
-        ax.semilogy(star_bb.Wl * ps.phys.cm_to_angs, star_bb.FluxWlObs, label="Spec Ph")
-        # Tcolor
-        spec_obs = ps.Spectrum('wbb', star_cut.Freq, star_cut.FluxObs)
-        Tcol = spec_obs.T_color
-        T_wien = spec_obs.T_wien
-        zeta = (T_wien / Tcol) ** 4
-        wbb = ps.SpectrumDilutePlanck(spec.Freq, Tcol, zeta)
-        ax.semilogy(wbb.Wl * ps.phys.cm_to_angs, wbb.FluxWl, label="Tcol={:.0f} W={:.2f}".format(Tcol, zeta),
-                    marker='<', **marker_style)
-        # diluted
-        Tdil, W = spec_obs.T_color_zeta()
-        dil = ps.SpectrumDilutePlanck(spec.Freq, Tdil, W)
-        ax.semilogy(dil.Wl * ps.phys.cm_to_angs, dil.FluxWl, label="Tdil={:.0f} W={:.2f}".format(Tdil, W),
-                    marker='>', **marker_style)
-        # Tbb
-        Tbb = Tbbes[i]
-        bb = ps.SpectrumPlanck(spec.Freq, Tbb)
-        ax.semilogy(bb.Wl * ps.phys.cm_to_angs, bb.FluxWl, label="Tbb={:.0f}".format(Tbb),
-                    marker='d', **marker_style)
-
-        # wl range
-        if wl_ab is not None:
-            for xc in wl_ab:
-                plt.axvline(x=xc, color="grey", linestyle='--')
-        ax.legend(loc="best", prop={'size': 9})
-        ax.text(0.01, 0.05, "$t_d: {:.1f}$".format(t), horizontalalignment='left', transform=ax.transAxes,
-                bbox=dict(facecolor='green', alpha=0.3))
-        xlim = ax.get_xlim()
-        ax.set_xlim(xlim[0], min(xlim[1], 2e4))
-
-    # fig.subplots_adjust(wspace=0, hspace=0)
-    # fig.subplots_adjust(wspace=0, hspace=0, left=0.07, right=0.96, top=0.97, bottom=0.06)
-    plt.subplots_adjust(left=0.07, right=0.96, top=0.97, bottom=0.06)
-    return fig
-
 
 def get_parser():
     parser = argparse.ArgumentParser(description='Standard Candle Method.')
@@ -207,6 +132,18 @@ def get_parser():
                         default=False,
                         dest="path",
                         help="Model directory")
+    parser.add_argument('-ph', '--phot',
+                        required=False,
+                        type=str,
+                        default=False,
+                        dest="phot",
+                        help='Plot photosphere parameter. Maybe: R, V, V8, T. '
+                             'Yoy may use prefix log, e.g. logT or logV8')
+    parser.add_argument('-s', '--save',
+                        action='store_const',
+                        const=True,
+                        dest="is_save",
+                        help="To save the result plot to pdf-file. Format: swd_[name]_t[times].pdf.")
     d = '0.1:0.5:1:4:15:65:99'
     parser.add_argument('-t', '--time',
                         required=False,
@@ -214,20 +151,18 @@ def get_parser():
                         default=d,
                         dest="times",
                         help="Plot tau snap for selected time moments. Default: {0}".format(d))
-    # parser.add_argument('-t',
-    #                     required=False,
-    #                     type=str,
-    #                     default=None,
-    #                     dest="dt",
-    #                     help="Time interval [day]. Example: 5.:75. Default: all times in the tau-file")
-    parser.add_argument('-x',
+    parser.add_argument('-x', '--xlim',
                         required=False,
                         type=str,
                         default=None,
-                        dest="dw",
+                        dest="xlim",
                         help="wave length interval [A]. Example: 1.:25e3. Default: all waves in the tau-file")
 
     return parser
+
+
+def str2float(s):
+    return list(map(float, s.split(':')))
 
 
 def main():
@@ -265,7 +200,12 @@ def main():
         print("No tau-data for: " + str(model))
         return None
 
-    times = list(map(float, args.times.split(':')))
+    xlim = None
+    fsave = None
+    times = str2float(args.times)
+    if args.xlim is not None:
+        xlim = str2float(args.xlim)
+        print("   xlim: ", xlim)
 
     tau = model.get_tau().load(is_info=True)
     print("Times: {:.3e} - {:3e} days".format(min(tau.Times), max(tau.Times)))
@@ -275,8 +215,19 @@ def main():
 
     ###
     # Plot
-    fig = plot_tau_moments(tau, moments=times)
-    plt.show()
+    if args.phot:
+        fig = plot_tau_phot_moments(tau, par=args.phot.split(':'), moments=times, xlim=xlim)
+        fsave = os.path.expanduser("~/tau_{}_{}.pdf".format(fname, args.phot))
+    else:
+        fig = plot_tau_moments(tau, moments=times, xlim=xlim)
+
+    if args.is_save:
+        if fsave is None:
+            fsave = os.path.expanduser("~/tau_{0}.pdf".format(fname))
+        print("Save plot to {0}".format(fsave))
+        fig.savefig(fsave, bbox_inches='tight')
+    else:
+        plt.show()
 
 
 if __name__ == '__main__':

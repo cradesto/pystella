@@ -4,7 +4,7 @@ from itertools import islice
 import numpy as np
 
 from pystella.util.phys_var import phys
-from pystella.rf import rad_func as rf
+# from pystella.rf import rad_func as rf
 
 __author__ = 'bakl'
 
@@ -30,7 +30,6 @@ class StellaTauDetail:
         self._path = path  # path to model files
         self._times = None
         self._nzon = None
-        self._freq = None
         self._block_positions = None
 
     def __str__(self):
@@ -45,30 +44,12 @@ class StellaTauDetail:
         return self._nzon
 
     @property
-    def Freq(self):
-        return self._freq
-
-    @property
-    def Wl(self):
-        return rf.val_to_wl(self.Freq)
-        # return np.array(map(lambda x: phys.c/x, self.Freq))
-        # return phys.c / self.Freq
-
-    @property
-    def Wl2angs(self):
-        return self.Wl * phys.cm_to_angs
-
-    @property
     def Times(self):
         return self._times
 
     @property
     def Ntimes(self):
         return len(self.Times)
-
-    @property
-    def NFreq(self):
-        return len(self.Freq)
 
     @property
     def Positions(self):
@@ -92,7 +73,7 @@ class StellaTauDetail:
         """
         # PROPER   T = 0.00000000E+00
         # NZON        R14.  V8.    T5.          13.801        13.848
-        start = 3
+        start = 1
         indexes, times = [], []
         count = 0
         with open(fname, "r") as f:
@@ -100,13 +81,13 @@ class StellaTauDetail:
                 if line.lstrip().startswith("PROPER"):
                     count += 1
                     if count > 1:
-                        indexes.append((start, i))
-                        start = i + 3
+                        indexes.append((start, i-1))
+                        start = i + 1
                     # times
                     t = float(line.split()[2])
                     times.append(t / tnorm)  # in days
             else:
-                indexes.append((start, i + 1))  # last block
+                indexes.append((start, i))  # last block
 
         # check
         check = [e - b for b, e in indexes]
@@ -135,21 +116,21 @@ class StellaTauDetail:
     @staticmethod
     def parse_block(fname, start, nzon):
         from itertools import islice
-        # colstr = " NZON    R14  V8    T5  " + ' '.join(list(map(str, range(1, nfreq + 1))))
-        # cols = colstr.split()
-        # dt = np.dtype({'names': cols, 'formats': [np.float] * len(cols)})
+
+        #  Freq
+        freq = StellaTauDetail.parse_header(fname, start)
 
         b = []
         with open(fname, "rb") as f:
             # b = np.genfromtxt(islice(f, start-1, start-1+nzon), names=cols, dtype=dt)
-            for i, line in enumerate(islice(f, start - 1, start - 1 + nzon)):
+            for i, line in enumerate(islice(f, start+1, start+1 + nzon)):
                 items = [float(v) for v in line.split()]
                 b.append(items)
 
         # print(start, start-1+nzon, nzon)
         # b = np.loadtxt(fname, dtype=dt, skiprows=start-1, max_rows=nzon)
 
-        return np.array(b)
+        return np.array(b), freq
 
     def load(self, is_info=False):
         """
@@ -165,15 +146,13 @@ class StellaTauDetail:
 
         self._block_positions = se
         s, e = self._block_positions[0]
-        self._nzon = e - s + 1
+        self._nzon = e - s
         self._times = times
-        #  Freq
-        self._freq = self.parse_header(self.FName, s - 2)
 
         logger.debug("Load data from  %s " % self.FName)
         if is_info:
             logger.info('Loaded Tau from {} \n    '
-                        'nzone= {} ntimes= {} nfreq= {}'.format(self.FName, self.Nzon, self.Ntimes, self.NFreq))
+                        'nzone= {} ntimes= {}'.format(self.FName, self.Nzon, self.Ntimes))
 
         return self
 
@@ -188,9 +167,9 @@ class StellaTauDetail:
 
     def __getitem__(self, idx):
         b, e = self.Positions[idx]
-        block = self.parse_block(self.FName, b, self.Nzon)
+        block, freq = self.parse_block(self.FName, b, self.Nzon)
         # block = self.parse_block(self.FName, b, e, self.NFreq)
-        return BlockTau(self.Times[idx], block)
+        return BlockTau(self.Times[idx], freq, block)
 
     def evolution(self, var, nz):
         """Return the time evolution VAR in zone NZ"""
@@ -252,8 +231,9 @@ class BlockTau:
     """
     cols = {'Zon': 0, 'R14': 1, 'V8': 2, 'T5': 3}
 
-    def __init__(self, time, block):
+    def __init__(self, time, freq, block):
         self._time = time
+        self._freq = freq
         self._block = block
 
     @property
@@ -265,8 +245,24 @@ class BlockTau:
         return len(self.Zon)
 
     @property
+    def Freq(self):
+        return self._freq
+
+    @property
+    def NFreq(self):
+        return len(self.Freq)
+
+    @property
+    def Wl(self):
+        return phys.c / self.Freq
+
+    @property
+    def Wl2angs(self):
+        return self.Wl * phys.cm_to_angs
+
+    @property
     def Zon(self):
-        return self.ColByName('NZON')
+        return self.ColByName('Zon')
 
     @property
     def R(self):
@@ -290,7 +286,7 @@ class BlockTau:
 
     @property
     def Tau(self):
-        return self._block[len(self.cols):, :]
+        return self._block[:, len(self.cols):]
 
     @property
     def Size(self):
@@ -302,11 +298,10 @@ class BlockTau:
     def ColByName(self, name):
         return self._block[:, self.cols[name]]
 
-    @property
-    def ph_indexes(self, tau_ph=2. / 3.):
+    def ph_indexes(self, tau_ph=2./3.):
         tau = self.Tau
         nzon, nfreq = tau.shape
-        idxs = np.zeros(nfreq)
+        idxs = np.zeros(nfreq, dtype=int)
         for k in range(nfreq):
             array = tau[:, k]
             idxs[k] = (np.abs(array - tau_ph)).argmin()
