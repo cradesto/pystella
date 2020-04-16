@@ -20,6 +20,7 @@ class StellaTauDetail:
     """
     Reader for tau-files
     """
+    col_zon = 'zon'
 
     def __init__(self, name, path='./'):
         """Creates a StellaTauDetail instance.  Required parameters:  name."""
@@ -102,9 +103,9 @@ class StellaTauDetail:
 
     @staticmethod
     def parse_header(fname, nline):
-        with open(fname) as f:
+        with open(fname, "r") as f:
             try:
-                line = next(islice(f, nline, nline + 1))
+                line = next(islice(f, int(nline), int(nline+1)))
             except StopIteration:
                 print('Not header line in file {}'.format(fname))
         # NZON        R14.  V8.    T5.          13.801        13.848
@@ -121,9 +122,9 @@ class StellaTauDetail:
         freq = StellaTauDetail.parse_header(fname, start)
 
         b = []
-        with open(fname, "rb") as f:
+        with open(fname, "r") as f:
             # b = np.genfromtxt(islice(f, start-1, start-1+nzon), names=cols, dtype=dt)
-            for i, line in enumerate(islice(f, start+1, start+1 + nzon)):
+            for i, line in enumerate(islice(f, int(start+1), int(start+1+nzon))):
                 items = [float(v) for v in line.split()]
                 b.append(items)
 
@@ -171,57 +172,60 @@ class StellaTauDetail:
         # block = self.parse_block(self.FName, b, e, self.NFreq)
         return BlockTau(self.Times[idx], freq, block)
 
-    def evolution(self, var, nz):
-        """Return the time evolution VAR in zone NZ"""
-        if nz < 1 or nz > self.Nzon:
-            raise ValueError('NZ should be in range: 0 - {}'.format(self.Nzon))
-
-        if var not in vars(BlockTau):
-            raise ValueError('var should be property of BlockTau, like Zon, R, V, V8, T')
-
-        for idx, time in enumerate(self.Times):
-            b = self.block_nearest(time)
-            v = getattr(b, var)[nz]
-            yield time, v
-
-    def taus(self):
-        """Compute tau for each moment of time
-        Return: 2d-array[i,k], where i - time index, k - zone index.
+    def params_ph(self, pars, moments, tau_ph=2./3.):
         """
-        taus = np.zeros((self.Ntimes, self.Nzon))
-        for i, time in enumerate(self.Times):
-            s = self[i]
-            # tau = s.Tau
-            taus[i, :] = s.Tau[:]
-            # for k in range(self.Nzon-1, 1, -1):
-            #     tau += s.Cappa[k] * s.Rho[k] * (s.R[k] - s.R[k-1])
-            #     taus[i, k] = tau
-        return taus
+        Compute  photosphere as  Func(nu). Maybe: R, V, V8, T
+        :param pars: photosphere parameters. Maybe: R, V, V8, T. Example: [logR:V8:T]
+        :param moments: time moments
+        :param tau_ph:  the optical depth at the photosphere. Default: 2/3
+        :return: yield the Param(t, nu)
+        """
 
-    def params_ph(self, cols=('R', 'T', 'V'), tau_ph=2. / 3.):
-        if isinstance(cols, str):
-            cols = [cols]
-        res = {k: np.zeros(self.Ntimes) for k in ['time', 'zone'] + list(cols)}
-        taus = self.taus()
-        for i, time in enumerate(self.Times):
-            s = self[i]
-            kph = 1  # todo check the default value
-            for k in range(self.Nzon - 1, 1, -1):
-                if taus[i][k] >= tau_ph:
-                    kph = k
-                    break
-            res['time'][i] = time
-            res['zone'][i] = kph
-            for v in cols:
-                res[v][i] = getattr(s, v)[kph]
+        res = {k: [] for k in [self.col_zon] + list(pars)}
+
+        for j, time in enumerate(moments):
+            b = self.block_nearest(time)
+            idxs = b.ph_indexes(tau_ph=tau_ph)
+            if b.NFreq != len(idxs):
+                raise ValueError("Error in photo. indexes: len(wl)= {}  len(idxs)= {}".format(b.NFreq, len(idxs)))
+            # Add the zone of photosphere
+            res[self.col_zon].append((b.Time, b.Freq, idxs))
+
+            for i, p in enumerate(pars, 1):
+                arr = getattr(b, p)
+                y = [arr[idx] for idx in idxs]
+                res[p].append((b.Time, b.Freq, y))
         return res
 
-    def vel_ph(self, tau_ph=2. / 3., z=0.):
-        v_dat = self.params_ph(tau_ph=tau_ph, cols=['V'])
-        t = v_dat['time'] * (1. + z)  # redshifted time
-        v = v_dat['V']
-        z = v_dat['zone']
-        return t, v, z
+    @staticmethod
+    def data_save(fwrite_prefix, tau_data, pars, fmt_nu='6.3f', fmt_def='6.3f'):
+        pars = [StellaTauDetail.col_zon] + pars
+        formats = {
+            StellaTauDetail.col_zon: '6d',
+            'T': '6.1f',
+            'V': '6.3e',
+            'V8': '6.3f',
+            'R': '6.3e',
+        }
+
+        for i, p in enumerate(pars):
+            is_log = p.startswith('log')
+            p_data = p.replace('log', '') if is_log else p
+            fwrite = "{}{}.dat".format(fwrite_prefix, p_data)
+            with open(fwrite, 'w') as f:
+                for j, (t, freq, y) in enumerate(tau_data[p_data]):
+                    n = int(5 - np.log10(max(1e-03, abs(t))))  # label format
+                    freq = np.log10(freq)
+                    s = "Time Nfreq: {:.{}f}   {}".format(t, n, len(freq))
+                    print(s, file=f)
+                    s = "  ".join(["{:{}}".format(nu, fmt_nu) for nu in freq])
+                    print(s, file=f)
+                    fmt = formats.get(p_data, fmt_def)
+                    if is_log:
+                        y = np.log10(y)
+                    s = "  ".join(["{:{}}".format(v, fmt) for v in y])
+                    print(s, file=f)
+            print(' Saved {} to {}'.format(p, fwrite))
 
 
 class BlockTau:
@@ -306,7 +310,6 @@ class BlockTau:
             array = tau[:, k]
             idxs[k] = (np.abs(array - tau_ph)).argmin()
         return idxs
-
 
 # ==================================================================
 def isfloat(value):
