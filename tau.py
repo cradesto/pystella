@@ -151,6 +151,12 @@ def get_parser(times='0.1:1:10:25:65'):
                         default=times,
                         dest="times",
                         help="Plot tau snap for selected time moments. Default: {0}".format(times))
+    parser.add_argument('--tau_ph',
+                        required=False,
+                        type=float,
+                        default=2./3.,
+                        dest="tau_ph",
+                        help="The optical depth at the photosphere. Default: 2/3")
     parser.add_argument('-x', '--xlim',
                         required=False,
                         type=str,
@@ -212,6 +218,7 @@ def main():
     print('\n Arguments')
     times = str2float(args.times)
     print(' The time moments: ', args.times)
+    print(' The optical depth ', args.tau_ph)
     if args.xlim is not None:
         xlim = str2float(args.xlim)
         print(" xlim: ", xlim)
@@ -231,7 +238,7 @@ def main():
         if isinstance(pars, str):
             pars = [pars]
         pars_data = [p.replace('log', '') for p in pars]
-        tau_data = tau.params_ph(pars=pars_data, moments=times)
+        tau_data = tau.params_ph(pars=pars_data, moments=times, tau_ph=args.tau_ph)
         if args.write_prefix:
             fwrite = os.path.expanduser(args.write_prefix)
             tau.data_save(fwrite, tau_data, pars_data)
