@@ -243,7 +243,7 @@ def main():
             fwrite = os.path.expanduser(args.write_prefix)
             tau.data_save(fwrite, tau_data, pars_data)
         else:
-            fig = plot_tau_phot(tau_data, pars, xlim=xlim)
+            fig = plot_tau_phot(tau_data, pars, xlim=xlim, title=tau.Name)
             fplot = os.path.expanduser("~/tau_{}_{}.pdf".format(fname, str.replace(args.phot, ':', '-')))
     else:
         fig = plot_tau_moments(tau, moments=times, xlim=xlim)
