@@ -56,6 +56,18 @@ class BandTests(unittest.TestCase):
         b = band.band_by_name('U')
         self.assertAlmostEqual(b.zp, zp, msg="Zero points of band %s equals %f. Should be %f" % (b.Name, b.zp, zp))
 
+    def test_wl_eff(self):
+        # wl_eff = {'U': 3650, 'B': 4450, 'V': 5510, 'R': 6580, 'I': 8060}
+        wl_eff = {'u': 3560, 'g': 4830, 'r': 6260, 'i': 7670, 'z': 8890,
+                  'U': 3600, 'B': 4380, 'V': 5450, 'R': 6410, 'I': 7980, 'J': 12200, 'H': 16300,
+                  'K': 21900}
+        for bname, wl in wl_eff.items():
+            b = band.band_by_name(bname)
+            res = b.wl_eff_angs
+            print('{} {:.0f} VS {:.0f}'.format(bname, res, wl))
+            self.assertAlmostEqual(res, wl, delta=wl * 0.03, msg="The effective wavelength of band %s equals %f. "
+                                                                 "Should be %f" % (b.Name, res, wl))
+
     def test_band_uniform(self):
         b = band.BandUni()
         self.assertTrue(np.any(b.resp_wl == 1), "Response values is equal 1. band: %s" % b.name)

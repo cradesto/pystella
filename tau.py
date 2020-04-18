@@ -12,6 +12,10 @@ mpl_logger.setLevel(logging.WARNING)
 
 __author__ = 'bakl'
 
+# todo Show filters
+# todo show valuse for filters
+# todo compute SED = 4 pi R^2 sig T^4
+
 
 def plot_tau_moments(tau, moments=None, xlim=None):
     import matplotlib.pyplot as plt
@@ -43,7 +47,20 @@ def plot_tau_moments(tau, moments=None, xlim=None):
     return fig
 
 
-def plot_tau_phot(tau_data, pars, tau_ph=2. / 3., xlim=None, title=''):
+def plot_bands(ax, bnames, amp=30, alpha=0.5):
+    """Plot the filter responses"""
+    color_dic = ps.band.bands_colors()
+    for bname in bnames:
+        b = ps.band.band_by_name(bname)
+        wl = b.wl * ps.phys.cm_to_angs
+        ax.plot(wl, b.resp_wl*amp, color_dic[bname], alpha=alpha)
+
+        wl_eff = b.wl_eff_angs
+        ax.axvline(x=wl_eff, ymin=0., ymax=0.99, linestyle='--', color=color_dic[bname], alpha=alpha)
+        ax.text(wl_eff, 10, bname, fontsize=12)
+
+
+def plot_tau_phot(tau_data, pars, tau_ph, xlim=None, title='', bnames=None):
     """
     Plot photosphere as  Func(nu). Maybe: R, V, V8, T
     :param pars: the parameters of photosphere
@@ -51,6 +68,7 @@ def plot_tau_phot(tau_data, pars, tau_ph=2. / 3., xlim=None, title=''):
     :param tau_ph:  the photosphere location
     :param xlim:   wave length interval [A]
     :param title: the plot title
+    :param bnames: array of filter names to show the filter responses
     :return: figure
     """
     import matplotlib.pyplot as plt
@@ -58,7 +76,7 @@ def plot_tau_phot(tau_data, pars, tau_ph=2. / 3., xlim=None, title=''):
     def fr2wv(nu):
         return ps.phys.c / nu * ps.phys.cm_to_angs
 
-    fig, axs = plt.subplots(len(pars), figsize=(12, 12), sharex=True, gridspec_kw={'hspace': 0})
+    fig, axs = plt.subplots(len(pars)+1, figsize=(12, 12), sharex=True, gridspec_kw={'hspace': 0})
 
     # Setup
     ax = axs[0]
@@ -69,7 +87,7 @@ def plot_tau_phot(tau_data, pars, tau_ph=2. / 3., xlim=None, title=''):
     # ax.tick_params(axis="x", direction="in", pad=-22)
     # ax.tick_params(direction='in')
 
-    for i, p in enumerate(pars[1:], 1):
+    for i, p in enumerate(pars, 1):
         ax = axs[i]
         ax.set_ylabel(r'{}$_{{ph}}$'.format(p))
         if i < len(axs)-1:
@@ -88,9 +106,12 @@ def plot_tau_phot(tau_data, pars, tau_ph=2. / 3., xlim=None, title=''):
         ll = ax.semilogx(fr2wv(freq), y, label=lbl)
         color = ll[0].get_color()
         colors.append(color)
+    if bnames is not None:
+        ylim = ax.get_ylim()
+        plot_bands(ax, bnames, amp=ylim[1]*0.25)
 
-        # Plot other params
-    for i, p in enumerate(pars[1:], 1):
+    # Plot other params
+    for i, p in enumerate(pars, 1):
         is_log = p.startswith('log')
         p_data = p.replace('log', '') if is_log else p
         ax = axs[i]
@@ -115,14 +136,17 @@ def plot_tau_phot(tau_data, pars, tau_ph=2. / 3., xlim=None, title=''):
     return fig
 
 
-def get_parser(times='0.1:1:10:25:65'):
+def get_parser(times='0.1:1:10:25:65', bnames='U:B:V:R'):
     parser = argparse.ArgumentParser(description='Standard Candle Method.')
     print(" Plot the tau-wave diagram for STELLA models")
     parser.add_argument('-b', '--band',
+                        nargs='?',
                         required=False,
-                        default='V-I',
+                        # default=bnames,
+                        const=bnames,
+                        type=str,
                         dest="bnames",
-                        help="-b <bands>: string, default: V-I, for example B-R-V-I")
+                        help="-b <bands>: string. If set only -b BNAMES is {}".format(bnames))
     parser.add_argument('-i', '--input',
                         required=True,
                         dest="input",
@@ -219,9 +243,15 @@ def main():
     times = str2float(args.times)
     print(' The time moments: ', args.times)
     print(' The optical depth ', args.tau_ph)
+    if args.phot:
+        print(' The photospheric parameters ', args.phot)
     if args.xlim is not None:
         xlim = str2float(args.xlim)
         print(" xlim: ", xlim)
+    if args.bnames is not None:
+        ps.Band.load_settings()
+        bnames = args.bnames.split(':')
+        print(" bnames: ", bnames)
 
     tau = model.get_tau().load(is_info=False)
     print('\n Loaded data from {}'.format(tau.FName))
@@ -243,7 +273,7 @@ def main():
             fwrite = os.path.expanduser(args.write_prefix)
             tau.data_save(fwrite, tau_data, pars_data)
         else:
-            fig = plot_tau_phot(tau_data, pars, xlim=xlim, title=tau.Name)
+            fig = plot_tau_phot(tau_data, pars,  tau_ph=args.tau_ph, xlim=xlim, title=tau.Name, bnames=bnames)
             fplot = os.path.expanduser("~/tau_{}_{}.pdf".format(fname, str.replace(args.phot, ':', '-')))
     else:
         fig = plot_tau_moments(tau, moments=times, xlim=xlim)
