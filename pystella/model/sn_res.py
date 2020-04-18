@@ -2,7 +2,7 @@ import os
 import logging
 
 import numpy as np
-import itertools
+
 import re
 
 __author__ = 'bakl'

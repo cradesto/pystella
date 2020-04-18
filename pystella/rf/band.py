@@ -34,6 +34,7 @@ class Band(object):
         self.__wl = None  # wavelength of response [cm]
         self._resp = None  # response
         self._is_load = False
+        self._wl_eff = None  # the effective wavelength
         self._norm = None
         self._normWl = None
         if is_load:  # and os.path.isfile(self.fname):
@@ -90,6 +91,23 @@ class Band(object):
     @property
     def wlrange(self):
         return np.min(self.wl), np.max(self.wl)
+
+    @property
+    def wl_eff(self):
+        """The effective wavelength"""
+        if self._wl_eff is None:
+            from scipy.integrate import simps
+            wl = self.wl
+            resp = np.array(self.resp_wl)
+            num = simps(resp*wl, wl)
+            den = simps(resp, wl)
+            self._wl_eff = num / den
+        return self._wl_eff
+
+    @property
+    def wl_eff_angs(self):
+        """The effective wavelength"""
+        return self.wl_eff * phys.cm_to_angs
 
     @property
     def Name(self):

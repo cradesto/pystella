@@ -22,7 +22,7 @@ class StellaShockWaveDetail:
     def __init__(self, name, path='./'):
         """Creates a StellaShockWaveDetail instance.  Required parameters:  name."""
         fname, ext = os.path.splitext(name)
-        if ext is "swd":
+        if ext == "swd":
             name = fname
         self._name = name
         self._path = path  # path to model files

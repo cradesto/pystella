@@ -47,6 +47,11 @@ class Stella:
         return os.path.isfile(fname)
 
     @property
+    def is_tau(self):
+        fname = os.path.join(self.path, self.name + '.tau')
+        return os.path.isfile(fname)
+
+    @property
     def is_swd(self):
         fname = os.path.join(self.path, self.name + '.swd')
         return os.path.isfile(fname)
@@ -91,6 +96,11 @@ class Stella:
         from pystella.model.sn_swd import StellaShockWaveDetail
         swd = StellaShockWaveDetail(self.name, self.path)
         return swd
+
+    def get_tau(self):
+        from pystella.model.sn_tau import StellaTauDetail
+        tau = StellaTauDetail(self.name, self.path)
+        return tau
 
     def get_flx(self):
         import pystella.model.sn_flx as flx

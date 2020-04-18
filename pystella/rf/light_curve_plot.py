@@ -2,7 +2,6 @@ from itertools import cycle
 
 import numpy as np
 
-from pystella.model import sn_swd
 from pystella.rf import band
 
 try:
@@ -596,6 +595,8 @@ def lc_plot(lc, ax=None, xlim=None, ylim=None, title=None, fname=None, **kwargs)
 
 
 def plot_shock_details(swd, times, **kwargs):
+    from pystella.model import sn_swd
+
     is_legend = kwargs.get('is_legend', False)
     rnorm = kwargs.get('rnorm', 'lgr')
     vnorm = kwargs.get('vnorm', 1e8)
@@ -614,10 +615,12 @@ def plot_shock_details(swd, times, **kwargs):
     # fig = plt.figure(num=None, figsize=(12, len(times) * 4), dpi=100, facecolor='w', edgecolor='k')
     # gs1 = gridspec.GridSpec(len(times), 2)
 
+    axes1 = []
     # plot radius column
     for i, t in enumerate(times):
         b = swd.block_nearest(t)
         ax = fig.add_subplot(nrow, ncol, ncol * i + 1)
+        axes1.append(ax)
         # ax.tick_params(direction='in', which='both', length=4)
         ax.tick_params(direction='in', which='minor', length=3)
         ax.tick_params(direction='in', which='major', length=5)
@@ -641,10 +644,12 @@ def plot_shock_details(swd, times, **kwargs):
 
     # for i, t in list(reversed(list(enumerate(times)))):
     # ylim = None
+    axes2 = []
     # Plot mass column
     for i, t in enumerate(times):
         b = swd.block_nearest(t)
         ax2 = fig.add_subplot(nrow, ncol, ncol * i + 2)
+        axes2.append(ax2)
         ax2.tick_params(direction='in', which='minor', length=3)
         ax2.tick_params(direction='in', which='major', length=5)
         legmask = sn_swd.LEGEND_MASK_None
@@ -656,16 +661,17 @@ def plot_shock_details(swd, times, **kwargs):
                         is_day=False, is_grid=is_grid)
 
     # Set limits
-    for i, t in enumerate(times):
-        ax = fig.add_subplot(nrow, ncol, ncol * i + 1)
+    for i, ax in enumerate(axes1):
         ax.set_xlim(xlim)
         ax.set_ylim(ylim)
-
-        ax2 = fig.add_subplot(nrow, ncol, ncol * i + 2)
-        ax2.set_ylim(ylim)
         # remove labels between subplots
         if not i == len(times)-1:
             plt.setp(ax.get_xticklabels(), visible=False)
+
+    for i, ax2 in enumerate(axes2):
+        ax2.set_ylim(ylim)
+        # remove labels between subplots
+        if not i == len(times)-1:
             plt.setp(ax2.get_xticklabels(), visible=False)
 
     if is_adjust:
@@ -673,30 +679,30 @@ def plot_shock_details(swd, times, **kwargs):
 
     return fig
 
-
-def plot_shock_details_old(swd, times, **kwargs):
-    is_legend = kwargs.get('is_legend', True)
-    rnorm = kwargs.get('rnorm', 'm')
-    vnorm = kwargs.get('vnorm', 1e8)
-    lumnorm = kwargs.get('lumnorm', 1e40)
-    font_size = kwargs.get('font_size', 12)
-
-    fig = plt.figure(num=None, figsize=(12, len(times) * 4), dpi=100, facecolor='w', edgecolor='k')
-    gs1 = gridspec.GridSpec(len(times), 2)
-    plt.matplotlib.rcParams.update({'font.size': font_size})
-
-    i = 0
-    for t in times:
-        b = swd.block_nearest(t)
-        ax = fig.add_subplot(gs1[i, 0])
-        sn_swd.plot_swd(ax, b, is_xlabel=i == len(times) - 1, vnorm=vnorm, lumnorm=lumnorm, rnorm=rnorm,
-                        is_legend=is_legend)
-        ax2 = fig.add_subplot(gs1[i, 1])
-        sn_swd.plot_swd(ax2, b, is_xlabel=i == len(times) - 1, vnorm=vnorm, lumnorm=lumnorm,
-                        is_legend=is_legend, is_ylabel=False)
-        i += 1
-    plt.show()
-    return fig
+#
+# def plot_shock_details_old(swd, times, **kwargs):
+#     is_legend = kwargs.get('is_legend', True)
+#     rnorm = kwargs.get('rnorm', 'm')
+#     vnorm = kwargs.get('vnorm', 1e8)
+#     lumnorm = kwargs.get('lumnorm', 1e40)
+#     font_size = kwargs.get('font_size', 12)
+#
+#     fig = plt.figure(num=None, figsize=(12, len(times) * 4), dpi=100, facecolor='w', edgecolor='k')
+#     gs1 = gridspec.GridSpec(len(times), 2)
+#     plt.matplotlib.rcParams.update({'font.size': font_size})
+#
+#     i = 0
+#     for t in times:
+#         b = swd.block_nearest(t)
+#         ax = fig.add_subplot(gs1[i, 0])
+#         sn_swd.plot_swd(ax, b, is_xlabel=i == len(times) - 1, vnorm=vnorm, lumnorm=lumnorm, rnorm=rnorm,
+#                         is_legend=is_legend)
+#         ax2 = fig.add_subplot(gs1[i, 1])
+#         sn_swd.plot_swd(ax2, b, is_xlabel=i == len(times) - 1, vnorm=vnorm, lumnorm=lumnorm,
+#                         is_legend=is_legend, is_ylabel=False)
+#         i += 1
+#     plt.show()
+#     return fig
 
 
 ########################################
