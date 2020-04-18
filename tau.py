@@ -58,6 +58,7 @@ def plot_bands(ax, bnames, amp=30, alpha=0.5):
         wl_eff = b.wl_eff_angs
         ax.axvline(x=wl_eff, ymin=0., ymax=0.99, linestyle='--', color=color_dic[bname], alpha=alpha)
         ax.text(wl_eff, 10, bname, fontsize=12)
+        ax.text(wl_eff*.95, 3, "{:.0f}".format(wl_eff), fontsize=6)
 
 
 def plot_tau_phot(tau_data, pars, tau_ph, xlim=None, title='', bnames=None):
