@@ -237,6 +237,7 @@ def main():
         return None
 
     fig = None
+    bnames = None
     xlim = None
     fplot = None
     print('\n Arguments')
