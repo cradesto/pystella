@@ -27,7 +27,8 @@ class phys:
     R_sun = 6.957e10  # cm
     M_sun = 1.99e33  # g
     L_sun = 3.8270e33  # ergs  # see https://sites.google.com/site/mamajeksstarnotes/bc-scale
-    Mag_sun = 4.7554
+    Mag_sun = 4.62  # https://ui.adsabs.harvard.edu/abs/1938ApJ....88..429K/abstract
+    # Mag_sun = 4.7554
 
     FOE = 1.e51  # ergs
 
