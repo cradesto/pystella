@@ -104,6 +104,8 @@ class TestStar(unittest.TestCase):
         m = ps.rf.Lum2MagBol(L)
         # absolute visual magnitude, see http://iopscience.iop.org/article/10.1088/0004-6256/136/1/452/meta
         m_vega = 0.582
+        # print("Absolute magnitude of Vega is %4.3f. You have  m = %4.3f." % (m_vega, m))
+
         self.assertAlmostEqual(m, m_vega, msg="Absolute magnitude of Vega is %4.3f. You have  m = %4.3f." % (m_vega, m),
                                delta=0.05)
 

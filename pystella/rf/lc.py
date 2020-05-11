@@ -174,7 +174,6 @@ def LC_interp(orig, time, is_spline=True):
     return lc
 
 
-
 class SetLightCurve(SetTimeSeries):
     """Set of the Light Curves"""
 

@@ -25,13 +25,15 @@ eve_colors = dict(Ni56="red", H="blue", He="cyan", C="darkorange", N="coral",
                   Mg="skyblue", Si="olive", Al="lime",
                   S="indigo", Ar="brown", Ca="purple",
                   Fe='maroon', Ni='magenta',
-                  Fe52='blue', Cr48='cyan')
+                  Fe52='blue', Cr48='cyan',
+                  Z='black',)
 eve_lntypes = dict((k, '--') for k, v in eve_colors.items())  # no y-shift
 eve_lntypes['H'] = '-'
 eve_lntypes['He'] = '-'
 eve_lntypes['O'] = '-'
 eve_lntypes['C'] = '-'
 eve_lntypes['Ni56'] = '-'
+eve_lntypes['Z'] = '-'  # metals
 
 eve_el_m = {'H': 1.008, 'He': 4.003, 'C': 12.011, 'N': 14.007, 'O': 15.999,
             'F': 18.998, 'Ne': 20.180, 'Na': 22.990, 'Mg': 24.305,

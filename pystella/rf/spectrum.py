@@ -28,6 +28,9 @@ class Spectrum(object):
             self._freq = self._freq[sorti]
             self._flux = self._flux[sorti]
 
+    def __len__(self):
+        return len(self._freq)
+
     @property
     def Name(self):
         return self._name
@@ -304,6 +307,8 @@ class Spectrum(object):
         d_vega = np.loadtxt(fVega, unpack=True)
         sp_vega = Spectrum.from_lambda(name='Vega', lmd=d_vega[0], flux=d_vega[1], u_lmd='A')
         return sp_vega
+
+
 
 
 class SpectrumPlanck(Spectrum):
