@@ -619,7 +619,7 @@ def plot_shock_details(swd, times, **kwargs):
     # plot radius column
     for i, t in enumerate(times):
         b = swd.block_nearest(t)
-        ax = fig.add_subplot(nrow, ncol, ncol * i + 1)
+        ax = fig.add_subplot(nrow, ncol, ncol * i + 1, label='radius {}'.format(i))
         axes1.append(ax)
         # ax.tick_params(direction='in', which='both', length=4)
         ax.tick_params(direction='in', which='minor', length=3)
@@ -648,7 +648,7 @@ def plot_shock_details(swd, times, **kwargs):
     # Plot mass column
     for i, t in enumerate(times):
         b = swd.block_nearest(t)
-        ax2 = fig.add_subplot(nrow, ncol, ncol * i + 2)
+        ax2 = fig.add_subplot(nrow, ncol, ncol * i + 2, label='mass {}'.format(i))
         axes2.append(ax2)
         ax2.tick_params(direction='in', which='minor', length=3)
         ax2.tick_params(direction='in', which='major', length=5)
@@ -677,6 +677,7 @@ def plot_shock_details(swd, times, **kwargs):
     if is_adjust:
         fig.subplots_adjust(wspace=0., hspace=0.)
 
+    # print(len(axes1), len(axes2))
     return fig
 
 #

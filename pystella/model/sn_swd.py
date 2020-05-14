@@ -332,9 +332,9 @@ def plot_swd(ax, b, **kwargs):
     ax2.plot(x, y2, 'b-', label='V{0:d}'.format(int(np.log10(vnorm))))
 
     if legmask & LEGEND_MASK_Rho:
-        ax.legend(loc=1, prop={'size': 8}, frameon=is_frameon)
+        ax.legend(loc=1, prop={'size': 8}, frameon=is_frameon, handlelength=1)
     if legmask & LEGEND_MASK_Vars:
-        ax2.legend(loc=1, prop={'size': 8}, ncol=3, frameon=is_frameon)
+        ax2.legend(loc=1, prop={'size': 8}, ncol=1, frameon=is_frameon, handlelength=1)
 
     if is_grid:
         ax2.grid(linestyle=':')

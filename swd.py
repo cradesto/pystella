@@ -54,6 +54,45 @@ def plot_uph(uph, vnorm=1.e8, label='', lw=2, fontsize=18):
     return fig
 
 
+def plot_swd_chem(argsrho, fig, stella, alpha=0.25):
+    colors = ps.eve.eve_colors
+    print(argsrho)
+    frho = os.path.join(stella.Path, argsrho.pop(0))
+    pathrho, namerho = os.path.split(frho)
+
+    eve = stella.get_eve(name=namerho.replace('.rho', ''), path=pathrho)
+    elements = eve.Elements
+    if len(argsrho) > 0:
+        elements = argsrho.pop().split(':')
+    print('Add chem [{}] from {}'.format(':'.join(elements), frho))
+    x = eve.m / ps.phys.M_sun
+    if min(x) > 0.1:
+        print('Chem is shifted at {} Msun'.format(-min(x)))
+        x = x - min(x)
+    # print(len(fig.axes))
+    for i, ax in enumerate(fig.axes):
+        if i % 2 == 0 or i < len(fig.axes) / 2:
+            continue
+        ylim = ax.get_ylim()
+        if ylim[1] < 1.:
+            continue
+        # print(ylim)
+        yy_tot = np.zeros_like(x) # + ylim[1]
+        yy = np.zeros_like(x) # + ylim[0]
+        # for el in elements:
+        for el in reversed(elements):
+            y = eve.el(el)
+            yy += y
+            yyy = np.log10(yy) + ylim[1]
+            ax.fill_between(x, y1=yy_tot, y2=yyy, color=colors[el], alpha=alpha)
+            # ax.plot(x, yyy, color=colors[el], alpha=alpha)
+            # Print the element name
+            xp = np.average(x, weights=y)
+            yp = np.average(yyy, weights=y) * 0.9
+            ax.text(xp, yp, el, color=colors[el], fontsize=12)
+            yy_tot = yyy
+
+
 def make_cartoon(swd, times, vnorm, rnorm, lumnorm, is_legend, fout=None):
     import subprocess
     import matplotlib.pyplot as plt
@@ -82,7 +121,9 @@ def get_parser():
     parser = argparse.ArgumentParser(description='Process Stella Shock Wave Details.')
 
     parser.add_argument('-i', '--input', action='append', nargs=1,
-                        metavar='Model name', help='Key -i can be used multiple times')
+                        metavar='Model name', help='Key -i can be used multiple times. You may add the chemical '
+                                                   'composition from rho-file via +RhoFile+ListElements. '
+                                                   'Example: -i fmnane+frho+H:He:O:Fe')
     # parser.add_argument('-i', '--input',
     #                     required=False,
     #                     dest="input",
@@ -189,7 +230,12 @@ def main():
     times = list(map(float, args.times.split(':')))
 
     for nm in names:
-        path, name = os.path.split(nm)
+        argsrho = None
+        if '+' in nm:
+            fswd, *argsrho = nm.split('+')
+        else:
+            fswd = nm
+        path, name = os.path.split(fswd)
         if len(path) == 0:
             path = pathDef
         name = name.replace('.swd', '')  # remove extension
@@ -217,11 +263,11 @@ def main():
                     print("Save plot to {0}".format(fsave))
                     fig.savefig(fsave, bbox_inches='tight')
                 else:
-                    plt.ion()
+                    # plt.ion()
                     plt.show()
-                    plt.pause(0.0001)
-                    print('')
-                    input("===> Hit <return> to quit")
+                    # plt.pause(0.0001)
+                    # print('')
+                    # input("===> Hit <return> to quit")
                     # plt.show(block=False)
         elif args.is_mult:
             make_cartoon(swd, times, vnorm=args.vnorm, rnorm=args.rnorm,
@@ -229,18 +275,22 @@ def main():
         else:
             fig = ps.lcp.plot_shock_details(swd, times=times, vnorm=args.vnorm, rnorm=args.rnorm,
                                             lumnorm=args.lumnorm, is_legend=is_legend)
+            if argsrho is not None:
+                plot_swd_chem(argsrho, fig, stella)
+
             if args.is_save:
                 fsave = os.path.expanduser("~/swd_{0}_t{1}.pdf".format(name, str.replace(args.times, ':', '-')))
                 print("Save plot to {0}".format(fsave))
                 fig.savefig(fsave, bbox_inches='tight')
             else:
-                plt.ion()
+                # plt.ion()
                 plt.show()
-                plt.pause(0.0001)
-                print('')
-                input("===> Hit <return> to quit")
+                # plt.pause(0.0001)
+                # print('')
+                # input("===> Hit <return> to quit")
 
     # plt.show()
+
 
 
 if __name__ == '__main__':
