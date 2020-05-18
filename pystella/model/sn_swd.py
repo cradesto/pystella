@@ -338,3 +338,4 @@ def plot_swd(ax, b, **kwargs):
 
     if is_grid:
         ax2.grid(linestyle=':')
+    return ax, ax2

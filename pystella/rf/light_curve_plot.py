@@ -1,17 +1,15 @@
+import os
+import sys
 from itertools import cycle
 
 import numpy as np
-
 from pystella.rf import band
 
 try:
     import matplotlib.pyplot as plt
     from matplotlib import gridspec
 except ImportError as ex:
-    import os
-    import sys
     # import traceback
-
     exc_type, exc_obj, exc_tb = sys.exc_info()
     fn = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
     print(exc_type, fn, exc_tb.tb_lineno, ex)
@@ -469,7 +467,7 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname=None, *
                 y_el[lolims] = length_lo_up_lims
                 y_eu[uplims] = length_lo_up_lims
                 ax.errorbar(x, y, label=label, yerr=[y_el, y_eu], fmt=marker[bname],
-                            lolims=lolims, uplims=uplims,  xlolims=lolims, xuplims=uplims,
+                            lolims=lolims, uplims=uplims, xlolims=lolims, xuplims=uplims,
                             color=color, ls='', markersize=markersize, )
             else:
                 # ax.plot(x, y, label='{0} {1}'.format(bname, fname), color=bcolors[bname], ls='',
@@ -604,6 +602,7 @@ def plot_shock_details(swd, times, **kwargs):
     font_size = kwargs.get('font_size', 12)
     is_grid = kwargs.get('is_grid', False)
     is_adjust = kwargs.get('is_adjust', True)
+    is_axes = kwargs.get('is_axes', False)
 
     xlim = None
     ylim = None
@@ -616,6 +615,7 @@ def plot_shock_details(swd, times, **kwargs):
     # gs1 = gridspec.GridSpec(len(times), 2)
 
     axes1 = []
+    dic_axes = {'r': [], 'm': []}
     # plot radius column
     for i, t in enumerate(times):
         b = swd.block_nearest(t)
@@ -628,9 +628,10 @@ def plot_shock_details(swd, times, **kwargs):
         if is_legend and i == 0:
             legmask = sn_swd.LEGEND_MASK_Rho
         # plot swd(radius)
-        sn_swd.plot_swd(ax, b, is_xlabel=(i == len(times) - 1), vnorm=vnorm, lumnorm=lumnorm,
+        axrho, axpar = sn_swd.plot_swd(ax, b, is_xlabel=(i == len(times) - 1), vnorm=vnorm, lumnorm=lumnorm,
                         rnorm=rnorm, legmask=legmask, is_yrlabel=False, text_posy=0.88,
                         is_grid=is_grid)
+        dic_axes['r'].append({'itime': i, 't': t, 'rho': axrho, 'par': axpar})
         x = ax.get_xlim()
         if xlim is None:
             xlim = x
@@ -656,54 +657,155 @@ def plot_shock_details(swd, times, **kwargs):
 
         if is_legend and i == 0:
             legmask = sn_swd.LEGEND_MASK_Vars
-        sn_swd.plot_swd(ax2, b, is_xlabel=(i == len(times) - 1), vnorm=vnorm, lumnorm=lumnorm,
+        axrho, axpar = sn_swd.plot_swd(ax2, b, is_xlabel=(i == len(times) - 1), vnorm=vnorm, lumnorm=lumnorm,
                         rnorm='m', legmask=legmask, is_yllabel=False, text_posy=0.88,
                         is_day=False, is_grid=is_grid)
+        dic_axes['m'].append({'itime': i, 't': t, 'rho': axrho, 'par': axpar})
 
     # Set limits
     for i, ax in enumerate(axes1):
         ax.set_xlim(xlim)
         ax.set_ylim(ylim)
         # remove labels between subplots
-        if not i == len(times)-1:
+        if not i == len(times) - 1:
             plt.setp(ax.get_xticklabels(), visible=False)
 
     for i, ax2 in enumerate(axes2):
         ax2.set_ylim(ylim)
         # remove labels between subplots
-        if not i == len(times)-1:
+        if not i == len(times) - 1:
             plt.setp(ax2.get_xticklabels(), visible=False)
 
     if is_adjust:
         fig.subplots_adjust(wspace=0., hspace=0.)
 
     # print(len(axes1), len(axes2))
+    if is_axes:
+        return fig, dic_axes
     return fig
 
-#
-# def plot_shock_details_old(swd, times, **kwargs):
-#     is_legend = kwargs.get('is_legend', True)
-#     rnorm = kwargs.get('rnorm', 'm')
-#     vnorm = kwargs.get('vnorm', 1e8)
-#     lumnorm = kwargs.get('lumnorm', 1e40)
-#     font_size = kwargs.get('font_size', 12)
-#
-#     fig = plt.figure(num=None, figsize=(12, len(times) * 4), dpi=100, facecolor='w', edgecolor='k')
-#     gs1 = gridspec.GridSpec(len(times), 2)
-#     plt.matplotlib.rcParams.update({'font.size': font_size})
-#
-#     i = 0
-#     for t in times:
-#         b = swd.block_nearest(t)
-#         ax = fig.add_subplot(gs1[i, 0])
-#         sn_swd.plot_swd(ax, b, is_xlabel=i == len(times) - 1, vnorm=vnorm, lumnorm=lumnorm, rnorm=rnorm,
-#                         is_legend=is_legend)
-#         ax2 = fig.add_subplot(gs1[i, 1])
-#         sn_swd.plot_swd(ax2, b, is_xlabel=i == len(times) - 1, vnorm=vnorm, lumnorm=lumnorm,
-#                         is_legend=is_legend, is_ylabel=False)
-#         i += 1
-#     plt.show()
-#     return fig
+
+def plot_swd_chem(dic_axes, argsrho, path_relativ, alpha=0.25):
+    """Add chemical data to the plot_shock_details plot
+    :type dic_axes: dict, dic_axes['r' or 'm'].append({'itime': i, 't': t, 'rho': axrho, 'par': axpar})
+    :param argsrho: rho-file + Elements
+    :param path_relativ:
+    :param alpha: the transparanc
+    """
+    from pystella.model import sn_eve
+    from pystella.util.phys_var import phys
+
+    colors = sn_eve.eve_colors
+    s_elements = None
+    if '+' in argsrho:
+        frho, s_elements = argsrho.split('+')
+    else:
+        frho = argsrho
+    frho = os.path.join(path_relativ, frho)
+    pathrho, namerho = os.path.split(frho)
+
+    eve = sn_eve.load_rho(os.path.join(pathrho, namerho))
+    elements = eve.Elements
+    if s_elements is not None:
+        elements = s_elements.split(':')
+    print('Add chem [{}] from {}'.format(':'.join(elements), frho))
+    x = eve.m / phys.M_sun
+    if min(x) > 0.1:
+        print('Chem is shifted at {} Msun'.format(-min(x)))
+        x = x - min(x)
+
+    for i, d in enumerate(dic_axes['m']):
+        ax = d['par']
+        ylim = ax.get_ylim()
+        print(ylim)
+        yy_tot = np.zeros_like(x)  # + ylim[1]
+        yy = np.zeros_like(x)  # + ylim[0]
+        # for el in elements:
+        for el in reversed(elements):
+            y = eve.el(el)
+            yy += y
+            yyy = np.log10(yy) + ylim[1]
+            ax.fill_between(x, y1=yy_tot, y2=yyy, color=colors[el], alpha=alpha)
+            # ax.plot(x, yyy, color=colors[el], alpha=alpha)
+            # Print the element name
+            xp = np.average(x, weights=y)
+            yp = np.average(yyy, weights=y) * 0.9
+            ax.text(xp, yp, el, color=colors[el], fontsize=12)
+            yy_tot = yyy
+
+
+def plot_swd_tau(dic_axes, stella, times, bnames=('B',), tau_ph=2./3., **kwargs):
+    """Add photospheric data to the plot_shock_details plot
+    :type dic_axes: object
+    :param stella:
+    :param times:
+    :param bnames:
+    :param tau_ph: the photosphere location. Default: 2/3
+    :param vnorm: the transparanc
+    :param alpha: the transparanc
+    """
+    from pystella.rf.band import band_by_name
+
+    tempnorm = kwargs.get('tempnorm', 1e3)
+    vnorm = kwargs.get('vnorm', 1e8)
+    alpha = kwargs.get('alpha', 0.5)
+
+    if not stella.is_tau:
+        print('There is no tau-file for model {} in path: {}'.format(stella.Name, stella.Path))
+        return
+
+    print('Add tau [{}] for {} at tau_ph= {:.3f}'.format(':'.join(bnames), stella.Name, tau_ph))
+    pars_data = ['T', 'V', 'R']
+    tau = stella.get_tau().load(is_info=False)
+    tau_data = tau.params_ph(pars=pars_data, moments=times, tau_ph=tau_ph)
+
+    # Extract phot data
+    data = {bn: {p: [] for p in pars_data} for bn in bnames}
+
+    for bname in bnames:
+        b = band_by_name(bname)
+        fr_eff = b.freq_eff
+        for p in pars_data:
+            for i, (t, freq, y) in enumerate(tau_data[p]):
+                s = '{:9.4f} '.format(t)
+                idx = (np.abs(freq - fr_eff)).argmin()
+                s += ' {:10e}'.format(y[idx])
+                data[bname][p].append(y[idx])
+
+    # Plot
+    for ii, d in enumerate(dic_axes['r']):
+        ax = d['par']
+        t = d['t']
+        # print('{:9s} {}'.format('t_real',  ' '.join([f'{p}_{b:10s}' for b in bnames])))
+        # s = '{:9.4f} '.format(t)
+        for i, bname in enumerate(bnames):
+            r_ph = np.array(data[bname]['R'])
+            color = band.bands_colors(bname)
+            # print(bname)
+            xr = r_ph[ii]
+            ax.text(xr, 0.5 + i, bname, fontsize=12, color=color)
+            ax.axvline(x=xr, ymin=0., ymax=0.99, linestyle='--', color=color, alpha=alpha)
+            # par
+            yt = data[bname]['T'][ii] / tempnorm
+            ax.plot(xr, yt, color='green', ls='', marker='o', markerfacecolor='green', markersize=8, alpha=alpha)
+            yv = data[bname]['V'][ii] / vnorm
+            ax.plot(xr, yv, color='blue', ls='', marker='s', markerfacecolor='blue', markersize=8, alpha=alpha)
+        #     print(f't={t:9.3f}  R= {xr:e}  V= {yv:e} T= {yt:e}')
+        #     s += f'R= {xr:e}  V= {yv:e} T= {yt:e}'
+        # print(s)
+
+    # Print
+    for p in pars_data:
+        print('{:9s} {}'.format(
+            't_real', ' '.join([f'{p}({b:4s}:{band_by_name(b).wl_eff_angs:.0f})' for b in bnames])))
+        # print(p)
+        for ii, d in enumerate(dic_axes['r']):
+            t = d['t']
+            s = '{:9.4f} '.format(t)
+            for i, bname in enumerate(bnames):
+                v = np.array(data[bname][p][ii])
+                s += f'{v:12e} '
+            print(s)
 
 
 ########################################

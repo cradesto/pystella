@@ -54,45 +54,6 @@ def plot_uph(uph, vnorm=1.e8, label='', lw=2, fontsize=18):
     return fig
 
 
-def plot_swd_chem(argsrho, fig, stella, alpha=0.25):
-    colors = ps.eve.eve_colors
-    print(argsrho)
-    frho = os.path.join(stella.Path, argsrho.pop(0))
-    pathrho, namerho = os.path.split(frho)
-
-    eve = stella.get_eve(name=namerho.replace('.rho', ''), path=pathrho)
-    elements = eve.Elements
-    if len(argsrho) > 0:
-        elements = argsrho.pop().split(':')
-    print('Add chem [{}] from {}'.format(':'.join(elements), frho))
-    x = eve.m / ps.phys.M_sun
-    if min(x) > 0.1:
-        print('Chem is shifted at {} Msun'.format(-min(x)))
-        x = x - min(x)
-    # print(len(fig.axes))
-    for i, ax in enumerate(fig.axes):
-        if i % 2 == 0 or i < len(fig.axes) / 2:
-            continue
-        ylim = ax.get_ylim()
-        if ylim[1] < 1.:
-            continue
-        # print(ylim)
-        yy_tot = np.zeros_like(x) # + ylim[1]
-        yy = np.zeros_like(x) # + ylim[0]
-        # for el in elements:
-        for el in reversed(elements):
-            y = eve.el(el)
-            yy += y
-            yyy = np.log10(yy) + ylim[1]
-            ax.fill_between(x, y1=yy_tot, y2=yyy, color=colors[el], alpha=alpha)
-            # ax.plot(x, yyy, color=colors[el], alpha=alpha)
-            # Print the element name
-            xp = np.average(x, weights=y)
-            yp = np.average(yyy, weights=y) * 0.9
-            ax.text(xp, yp, el, color=colors[el], fontsize=12)
-            yy_tot = yyy
-
-
 def make_cartoon(swd, times, vnorm, rnorm, lumnorm, is_legend, fout=None):
     import subprocess
     import matplotlib.pyplot as plt
@@ -115,15 +76,20 @@ def make_cartoon(swd, times, vnorm, rnorm, lumnorm, is_legend, fout=None):
     # os.subprocess.call("ffmpeg -f image2 -r 1/5 -i img%04d.png -vcodec mpeg4 -y {}".format(fout), shell=False)
 
 
-def get_parser():
+def get_parser(times = '1:4:15:65', bnames='U:B:V:R', tau_ph=2./3):
     import argparse
 
     parser = argparse.ArgumentParser(description='Process Stella Shock Wave Details.')
-
+    parser.add_argument('-b', '--band',
+                        nargs='?',
+                        required=False,
+                        # default=bnames,
+                        const=bnames,
+                        type=str,
+                        dest="bnames",
+                        help="-b <bands>: string. If set only -b BNAMES is {}".format(bnames))
     parser.add_argument('-i', '--input', action='append', nargs=1,
-                        metavar='Model name', help='Key -i can be used multiple times. You may add the chemical '
-                                                   'composition from rho-file via +RhoFile+ListElements. '
-                                                   'Example: -i fmnane+frho+H:He:O:Fe')
+                        metavar='Model name', help='Key -i can be used multiple times.')
     # parser.add_argument('-i', '--input',
     #                     required=False,
     #                     dest="input",
@@ -152,13 +118,12 @@ def get_parser():
                         default=1e40,
                         dest="lumnorm",
                         help="Luminously normalization, example: 1e40")
-    d = '1:4:15:65'
     parser.add_argument('-t', '--time',
                         required=False,
                         type=str,
-                        default=d,
+                        default=times,
                         dest="times",
-                        help="Plot shock wave snap for selected time moments. Default: {0}".format('2:10:50'))
+                        help="Plot shock wave snap for selected time moments. Default: {}".format(times))
     parser.add_argument('-c', action='store_const', dest='constant_value',
                         const='value-to-store',
                         help='Store a constant value')
@@ -171,6 +136,32 @@ def get_parser():
                              + "ffmpeg -framerate 4 -i img%%04d.png -c:v libx264 -r 30 out.mp4 "
                              + r'convert -quality 100 img*.png out.mp4 ')
     # .format("ffmpeg -framerate 4 -i img%%04d.png -c:v libx264 -r 30 out.mp4 "))
+    parser.add_argument('--chem',
+                        required=False,
+                        type=str,
+                        default=None,
+                        dest="frho",
+                        help='Set RhoFile to plot the chemical composition via +RhoFile+ListElements. '
+                             'Example: -i RhoFile+H:He:O:Fe')
+    # parser.add_argument('--tau', action='store_const', dest='is_tau',
+    #                     const=True,
+    #                     help='Show the photosphere for the bands. It is needed the tau-file.')
+    parser.add_argument('--tau',
+                        nargs='?',
+                        required=False,
+                        const=tau_ph,
+                        type=float,
+                        # default=tau_ph,
+                        dest="tau",
+                        help="the photosphere for the bands. It is needed the tau-file.Default_tau_ph={}".
+                        format(tau_ph))
+    # parser.add_argument('--tau',
+    #                     required=False,
+    #                     type=str,
+    #                     default=None,
+    #                     dest="ftau",
+    #                     help='Set TauFile to plot the photospheric data via +RhoFile+Bands. Default band: B '
+    #                          'Example: -i TauFile+U:B:V')
     parser.add_argument('-s', '--save',
                         action='store_const',
                         const=True,
@@ -230,12 +221,7 @@ def main():
     times = list(map(float, args.times.split(':')))
 
     for nm in names:
-        argsrho = None
-        if '+' in nm:
-            fswd, *argsrho = nm.split('+')
-        else:
-            fswd = nm
-        path, name = os.path.split(fswd)
+        path, name = os.path.split(nm)
         if len(path) == 0:
             path = pathDef
         name = name.replace('.swd', '')  # remove extension
@@ -273,10 +259,26 @@ def main():
             make_cartoon(swd, times, vnorm=args.vnorm, rnorm=args.rnorm,
                          lumnorm=args.lumnorm, is_legend=is_legend)
         else:
-            fig = ps.lcp.plot_shock_details(swd, times=times, vnorm=args.vnorm, rnorm=args.rnorm,
-                                            lumnorm=args.lumnorm, is_legend=is_legend)
-            if argsrho is not None:
-                plot_swd_chem(argsrho, fig, stella)
+            fig, dic_axes = ps.lcp.plot_shock_details(swd, times=times, vnorm=args.vnorm, rnorm=args.rnorm,
+                                                      lumnorm=args.lumnorm, is_legend=is_legend, is_axes=True)
+            if args.frho is not None:
+                ps.lcp.plot_swd_chem(dic_axes, args.frho, stella.Path)
+
+            if args.tau:
+                ps.Band.load_settings()
+                # Set band names
+                bnames = ('B',)
+                if args.bnames:
+                    ps.Band.load_settings()
+                    bnames = []
+                    for bname in args.bnames.split('-'):
+                        if not ps.band.band_is_exist(bname):
+                            print('No such band: ' + bname)
+                            parser.print_help()
+                            sys.exit(2)
+                        bnames.append(bname)
+
+                ps.lcp.plot_swd_tau(dic_axes, stella, times=times, bnames=bnames, tau_ph=args.tau, vnorm=args.vnorm)
 
             if args.is_save:
                 fsave = os.path.expanduser("~/swd_{0}_t{1}.pdf".format(name, str.replace(args.times, ':', '-')))
@@ -288,9 +290,6 @@ def main():
                 # plt.pause(0.0001)
                 # print('')
                 # input("===> Hit <return> to quit")
-
-    # plt.show()
-
 
 
 if __name__ == '__main__':

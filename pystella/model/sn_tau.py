@@ -4,6 +4,7 @@ from itertools import islice
 import numpy as np
 
 from pystella.util.phys_var import phys
+
 # from pystella.rf import rad_func as rf
 
 __author__ = 'bakl'
@@ -32,6 +33,7 @@ class StellaTauDetail:
         self._times = None
         self._nzon = None
         self._block_positions = None
+        self._blocks = None
 
     def __str__(self):
         return "%s, path: %s" % (self._name, self._path)
@@ -53,6 +55,13 @@ class StellaTauDetail:
         return len(self.Times)
 
     @property
+    def TimesObs(self):
+        res = []
+        for block in self:
+            res.append(block.TimeObs)
+        return np.array(res)
+
+    @property
     def Positions(self):
         return self._block_positions
 
@@ -65,8 +74,8 @@ class StellaTauDetail:
         return os.path.expanduser(os.path.join(self._path, self._name + ".tau"))
 
     @staticmethod
-    def parse_start_end_blocks(fname, tnorm=24. * 3600.):
-        """1
+    def parse_start_end_blocks(fname, tnorm=24.*3600.):
+        """
         Find the line indexes of the block data for all time moments if n is None.
         :param fname: filename
         :param tnorm: normalisation of time. Default: 86400, days
@@ -82,7 +91,7 @@ class StellaTauDetail:
                 if line.lstrip().startswith("PROPER"):
                     count += 1
                     if count > 1:
-                        indexes.append((start, i-1))
+                        indexes.append((start, i - 1))
                         start = i + 1
                     # times
                     t = float(line.split()[2])
@@ -105,7 +114,7 @@ class StellaTauDetail:
     def parse_header(fname, nline):
         with open(fname, "r") as f:
             try:
-                line = next(islice(f, int(nline), int(nline+1)))
+                line = next(islice(f, int(nline), int(nline + 1)))
             except StopIteration:
                 print('Not header line in file {}'.format(fname))
         # NZON        R14.  V8.    T5.          13.801        13.848
@@ -124,7 +133,7 @@ class StellaTauDetail:
         b = []
         with open(fname, "r") as f:
             # b = np.genfromtxt(islice(f, start-1, start-1+nzon), names=cols, dtype=dt)
-            for i, line in enumerate(islice(f, int(start+1), int(start+1+nzon))):
+            for i, line in enumerate(islice(f, int(start + 1), int(start + 1 + nzon))):
                 items = [float(v) for v in line.split()]
                 b.append(items)
 
@@ -146,6 +155,7 @@ class StellaTauDetail:
             raise 'No data in file: {}'.format(self.FName)
 
         self._block_positions = se
+        self._blocks = [None] * len(times)
         s, e = self._block_positions[0]
         self._nzon = e - s
         self._times = times
@@ -167,12 +177,21 @@ class StellaTauDetail:
         return block
 
     def __getitem__(self, idx):
+        if idx in self._blocks:
+            return self._blocks[idx]
+
         b, e = self.Positions[idx]
         block, freq = self.parse_block(self.FName, b, self.Nzon)
         # block = self.parse_block(self.FName, b, e, self.NFreq)
-        return BlockTau(self.Times[idx], freq, block)
+        block = BlockTau(self.Times[idx], freq, block)
+        self._blocks[idx] = block
+        return block
 
-    def params_ph(self, pars, moments, tau_ph=2./3.):
+    def __iter__(self):
+        for i, t in enumerate(self.Times):
+            yield self[i]
+
+    def params_ph(self, pars, moments, tau_ph=2. / 3.):
         """
         Compute  photosphere as  Func(nu). Maybe: R, V, V8, T
         :param pars: photosphere parameters. Maybe: R, V, V8, T. Example: [logR:V8:T]
@@ -182,9 +201,10 @@ class StellaTauDetail:
         """
 
         res = {k: [] for k in [self.col_zon] + list(pars)}
-
         for j, time in enumerate(moments):
-            b = self.block_nearest(time)
+            # b = self.block_nearest(time)
+            idx = (np.abs(self.TimesObs - time)).argmin()
+            b = self[idx]
             idxs = b.ph_indexes(tau_ph=tau_ph)
             if b.NFreq != len(idxs):
                 raise ValueError("Error in photo. indexes: len(wl)= {}  len(idxs)= {}".format(b.NFreq, len(idxs)))
@@ -245,6 +265,13 @@ class BlockTau:
         return self._time
 
     @property
+    def TimeObs(self):
+        t_prop = self.Time
+        tretard = self.R[self.Nzon-1] / phys.c / (24.*3600.)  # to days
+        t_ob = t_prop - tretard
+        return t_ob
+
+    @property
     def Nzon(self):
         return len(self.Zon)
 
@@ -302,7 +329,7 @@ class BlockTau:
     def ColByName(self, name):
         return self._block[:, self.cols[name]]
 
-    def ph_indexes(self, tau_ph=2./3.):
+    def ph_indexes(self, tau_ph=2. / 3.):
         tau = self.Tau
         nzon, nfreq = tau.shape
         idxs = np.zeros(nfreq, dtype=int)
@@ -310,6 +337,7 @@ class BlockTau:
             array = tau[:, k]
             idxs[k] = (np.abs(array - tau_ph)).argmin()
         return idxs
+
 
 # ==================================================================
 def isfloat(value):

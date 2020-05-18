@@ -110,6 +110,11 @@ class Band(object):
         return self.wl_eff * phys.cm_to_angs
 
     @property
+    def freq_eff(self):
+        """The effective freq"""
+        return phys.c / self.wl_eff
+
+    @property
     def Name(self):
         return self.name
 
