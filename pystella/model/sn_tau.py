@@ -191,19 +191,25 @@ class StellaTauDetail:
         for i, t in enumerate(self.Times):
             yield self[i]
 
-    def params_ph(self, pars, moments, tau_ph=2. / 3.):
+    def params_ph(self, pars, moments, tau_ph=2./3., is_obs_time=False):
         """
         Compute  photosphere as  Func(nu). Maybe: R, V, V8, T
         :param pars: photosphere parameters. Maybe: R, V, V8, T. Example: [logR:V8:T]
         :param moments: time moments
         :param tau_ph:  the optical depth at the photosphere. Default: 2/3
+        :param is_obs_time:  If True to compute Obs.Time as ProperTime - R(N-1)/c and use them. Default: False
         :return: yield the Param(t, nu)
         """
 
+        if is_obs_time:
+            print('Tau: computing  Obs.Time as ProperTime - R(N-1)/c and use it.')
+            times = self.TimesObs
+        else:
+            times = self.Times
+
         res = {k: [] for k in [self.col_zon] + list(pars)}
         for j, time in enumerate(moments):
-            # b = self.block_nearest(time)
-            idx = (np.abs(self.TimesObs - time)).argmin()
+            idx = (np.abs(times - time)).argmin()
             b = self[idx]
             idxs = b.ph_indexes(tau_ph=tau_ph)
             if b.NFreq != len(idxs):

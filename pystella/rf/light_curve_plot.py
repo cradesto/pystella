@@ -592,20 +592,29 @@ def lc_plot(lc, ax=None, xlim=None, ylim=None, title=None, fname=None, **kwargs)
     return ax
 
 
+def ticks_on(ax, minor=3, major=6):
+    ax.minorticks_on()
+    ax.tick_params(direction='in', which='minor', length=minor)
+    ax.tick_params(direction='in', which='major', length=major)
+    return ax
+
+
 def plot_shock_details(swd, times, **kwargs):
     from pystella.model import sn_swd
 
     is_legend = kwargs.get('is_legend', False)
     rnorm = kwargs.get('rnorm', 'lgr')
+    tnorm = kwargs.get('tnorm', 1e3)
     vnorm = kwargs.get('vnorm', 1e8)
     lumnorm = kwargs.get('lumnorm', 1e40)
+    ylim_par = kwargs.get('ylim_par', None)
     font_size = kwargs.get('font_size', 12)
     is_grid = kwargs.get('is_grid', False)
     is_adjust = kwargs.get('is_adjust', True)
     is_axes = kwargs.get('is_axes', False)
 
     xlim = None
-    ylim = None
+    ylim_rho = None
     nrow = len(times)
     ncol = 2
     fig = plt.figure(figsize=(12, nrow * 4))
@@ -618,19 +627,17 @@ def plot_shock_details(swd, times, **kwargs):
     dic_axes = {'r': [], 'm': []}
     # plot radius column
     for i, t in enumerate(times):
-        b = swd.block_nearest(t)
         ax = fig.add_subplot(nrow, ncol, ncol * i + 1, label='radius {}'.format(i))
         axes1.append(ax)
-        # ax.tick_params(direction='in', which='both', length=4)
-        ax.tick_params(direction='in', which='minor', length=3)
-        ax.tick_params(direction='in', which='major', length=5)
         legmask = sn_swd.LEGEND_MASK_None
         if is_legend and i == 0:
             legmask = sn_swd.LEGEND_MASK_Rho
         # plot swd(radius)
-        axrho, axpar = sn_swd.plot_swd(ax, b, is_xlabel=(i == len(times) - 1), vnorm=vnorm, lumnorm=lumnorm,
-                        rnorm=rnorm, legmask=legmask, is_yrlabel=False, text_posy=0.88,
-                        is_grid=is_grid)
+        b = swd.block_nearest(t)
+        axrho, axpar = sn_swd.plot_swd(ax, b, is_xlabel=(i == len(times) - 1),
+                                       vnorm=vnorm, lumnorm=lumnorm, tnorm=tnorm,
+                                       rnorm=rnorm, legmask=legmask, is_yrlabel=False, text_posy=0.88,
+                                       is_grid=is_grid, ylim_par=ylim_par)
         dic_axes['r'].append({'itime': i, 't': t, 'rho': axrho, 'par': axpar})
         x = ax.get_xlim()
         if xlim is None:
@@ -638,17 +645,17 @@ def plot_shock_details(swd, times, **kwargs):
         else:
             xlim = (min(x[0], xlim[0]), max(x[1], xlim[1]))
         y = ax.get_ylim()
-        if ylim is None:
-            ylim = y
+        if ylim_rho is None:
+            ylim_rho = y
         else:
-            ylim = (min(y[0], ylim[0]), max(y[1], ylim[1]))
+            ylim_rho = (min(y[0], ylim_rho[0]), max(y[1], ylim_rho[1]))
+        # axpar.tick_params(direction='in', which='both', length=4)
+        ticks_on(axrho)
+        ticks_on(axpar)
 
-    # for i, t in list(reversed(list(enumerate(times)))):
-    # ylim = None
     axes2 = []
     # Plot mass column
     for i, t in enumerate(times):
-        b = swd.block_nearest(t)
         ax2 = fig.add_subplot(nrow, ncol, ncol * i + 2, label='mass {}'.format(i))
         axes2.append(ax2)
         ax2.tick_params(direction='in', which='minor', length=3)
@@ -657,21 +664,25 @@ def plot_shock_details(swd, times, **kwargs):
 
         if is_legend and i == 0:
             legmask = sn_swd.LEGEND_MASK_Vars
-        axrho, axpar = sn_swd.plot_swd(ax2, b, is_xlabel=(i == len(times) - 1), vnorm=vnorm, lumnorm=lumnorm,
-                        rnorm='m', legmask=legmask, is_yllabel=False, text_posy=0.88,
-                        is_day=False, is_grid=is_grid)
+        b = swd.block_nearest(t)
+        axrho, axpar = sn_swd.plot_swd(ax2, b, is_xlabel=(i == len(times) - 1),
+                                       vnorm=vnorm, lumnorm=lumnorm, tnorm=tnorm,
+                                       rnorm='m', legmask=legmask, is_yllabel=False, text_posy=0.88,
+                                       is_day=False, is_grid=is_grid, ylim_par=ylim_par)
         dic_axes['m'].append({'itime': i, 't': t, 'rho': axrho, 'par': axpar})
+        # ticks_on(axrho)
+        ticks_on(axpar)
 
     # Set limits
     for i, ax in enumerate(axes1):
         ax.set_xlim(xlim)
-        ax.set_ylim(ylim)
+        ax.set_ylim(ylim_rho)
         # remove labels between subplots
         if not i == len(times) - 1:
             plt.setp(ax.get_xticklabels(), visible=False)
 
     for i, ax2 in enumerate(axes2):
-        ax2.set_ylim(ylim)
+        ax2.set_ylim(ylim_rho)
         # remove labels between subplots
         if not i == len(times) - 1:
             plt.setp(ax2.get_xticklabels(), visible=False)
@@ -717,14 +728,15 @@ def plot_swd_chem(dic_axes, argsrho, path_relativ, alpha=0.25):
     for i, d in enumerate(dic_axes['m']):
         ax = d['par']
         ylim = ax.get_ylim()
-        print(ylim)
+        # print(ylim)
         yy_tot = np.zeros_like(x)  # + ylim[1]
         yy = np.zeros_like(x)  # + ylim[0]
         # for el in elements:
         for el in reversed(elements):
             y = eve.el(el)
-            yy += y
-            yyy = np.log10(yy) + ylim[1]
+            # yy += y
+            yy = y
+            yyy = np.log10(yy) + ylim[1]-1
             ax.fill_between(x, y1=yy_tot, y2=yyy, color=colors[el], alpha=alpha)
             # ax.plot(x, yyy, color=colors[el], alpha=alpha)
             # Print the element name
@@ -734,21 +746,24 @@ def plot_swd_chem(dic_axes, argsrho, path_relativ, alpha=0.25):
             yy_tot = yyy
 
 
-def plot_swd_tau(dic_axes, stella, times, bnames=('B',), tau_ph=2./3., **kwargs):
+def plot_swd_tau(dic_axes, stella, times, bnames=('B',), tau_ph=2./3., is_obs_time=False, **kwargs):
     """Add photospheric data to the plot_shock_details plot
     :type dic_axes: object
     :param stella:
     :param times:
     :param bnames:
     :param tau_ph: the photosphere location. Default: 2/3
-    :param vnorm: the transparanc
-    :param alpha: the transparanc
+    :param is_obs_time:  If True to compute Obs.Time as ProperTime - R(N-1)/c and use them. Default: False
+    :param tnorm: the T normalization. Default: None = log10(T)
+    :param vnorm: the V normalization. Default: 1e8
+    :param alpha: the transparent. Default: 0.5
     """
     from pystella.rf.band import band_by_name
 
-    tempnorm = kwargs.get('tempnorm', 1e3)
+    tnorm = kwargs.get('tnorm', None)
     vnorm = kwargs.get('vnorm', 1e8)
     alpha = kwargs.get('alpha', 0.5)
+    markersize = kwargs.get('markersize', 6)
 
     if not stella.is_tau:
         print('There is no tau-file for model {} in path: {}'.format(stella.Name, stella.Path))
@@ -757,7 +772,7 @@ def plot_swd_tau(dic_axes, stella, times, bnames=('B',), tau_ph=2./3., **kwargs)
     print('Add tau [{}] for {} at tau_ph= {:.3f}'.format(':'.join(bnames), stella.Name, tau_ph))
     pars_data = ['T', 'V', 'R']
     tau = stella.get_tau().load(is_info=False)
-    tau_data = tau.params_ph(pars=pars_data, moments=times, tau_ph=tau_ph)
+    tau_data = tau.params_ph(pars=pars_data, moments=times, tau_ph=tau_ph, is_obs_time=is_obs_time)
 
     # Extract phot data
     data = {bn: {p: [] for p in pars_data} for bn in bnames}
@@ -775,7 +790,7 @@ def plot_swd_tau(dic_axes, stella, times, bnames=('B',), tau_ph=2./3., **kwargs)
     # Plot
     for ii, d in enumerate(dic_axes['r']):
         ax = d['par']
-        t = d['t']
+        # t = d['t']
         # print('{:9s} {}'.format('t_real',  ' '.join([f'{p}_{b:10s}' for b in bnames])))
         # s = '{:9.4f} '.format(t)
         for i, bname in enumerate(bnames):
@@ -785,11 +800,16 @@ def plot_swd_tau(dic_axes, stella, times, bnames=('B',), tau_ph=2./3., **kwargs)
             xr = r_ph[ii]
             ax.text(xr, 0.5 + i, bname, fontsize=12, color=color)
             ax.axvline(x=xr, ymin=0., ymax=0.99, linestyle='--', color=color, alpha=alpha)
-            # par
-            yt = data[bname]['T'][ii] / tempnorm
-            ax.plot(xr, yt, color='green', ls='', marker='o', markerfacecolor='green', markersize=8, alpha=alpha)
+            # Temperature
+            if tnorm is None:
+                yt = np.log10(data[bname]['T'][ii])
+                ax.plot(xr, yt, color='green', ls='', marker='o', markersize=markersize, alpha=alpha)
+            else:
+                yt = data[bname]['T'][ii] / tnorm
+                ax.plot(xr, yt, color='green', ls='', marker='o', markersize=markersize, alpha=alpha)
+            # Velocity
             yv = data[bname]['V'][ii] / vnorm
-            ax.plot(xr, yv, color='blue', ls='', marker='s', markerfacecolor='blue', markersize=8, alpha=alpha)
+            ax.plot(xr, yv, color='blue', ls='', marker='s', markersize=markersize, alpha=alpha)
         #     print(f't={t:9.3f}  R= {xr:e}  V= {yv:e} T= {yt:e}')
         #     s += f'R= {xr:e}  V= {yv:e} T= {yt:e}'
         # print(s)

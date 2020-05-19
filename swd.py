@@ -101,29 +101,43 @@ def get_parser(times = '1:4:15:65', bnames='U:B:V:R', tau_ph=2./3):
                         default='./',
                         dest="path",
                         help="Model directory")
-    parser.add_argument('--rnorm',
-                        required=False,
-                        default='lgr',  # 1e14,
-                        dest="rnorm",
-                        help="Radius normalization, example: 'm' or 'sun' or 1e13")
-    parser.add_argument('--vnorm',
-                        required=False,
-                        type=float,
-                        default=1e8,
-                        dest="vnorm",
-                        help="Velocity normalization, example: 1e8")
     parser.add_argument('--lumnorm',
                         required=False,
                         type=float,
                         default=1e40,
                         dest="lumnorm",
                         help="Luminously normalization, example: 1e40")
+    parser.add_argument('--rnorm',
+                        required=False,
+                        default='lgr',  # 1e14,
+                        dest="rnorm",
+                        help="Radius normalization, example: 'm' or 'sun' or 1e13")
+    parser.add_argument('--tnorm',
+                        nargs='?',
+                        required=False,
+                        const=None,
+                        type=float,
+                        # default=1e3,
+                        dest="tnorm",
+                        help="Temperature normalization, example: 1e3")
+    parser.add_argument('--vnorm',
+                        required=False,
+                        type=float,
+                        default=1e8,
+                        dest="vnorm",
+                        help="Velocity normalization, example: 1e8")
     parser.add_argument('-t', '--time',
                         required=False,
                         type=str,
                         default=times,
                         dest="times",
                         help="Plot shock wave snap for selected time moments. Default: {}".format(times))
+    parser.add_argument('--ylim_par',
+                        required=False,
+                        type=str,
+                        default='0.001:11',
+                        dest="ylim_par",
+                        help="Ylim for the parameter axes. Default: 0:9.9")
     parser.add_argument('-c', action='store_const', dest='constant_value',
                         const='value-to-store',
                         help='Store a constant value')
@@ -143,17 +157,14 @@ def get_parser(times = '1:4:15:65', bnames='U:B:V:R', tau_ph=2./3):
                         dest="frho",
                         help='Set RhoFile to plot the chemical composition via +RhoFile+ListElements. '
                              'Example: -i RhoFile+H:He:O:Fe')
-    # parser.add_argument('--tau', action='store_const', dest='is_tau',
-    #                     const=True,
-    #                     help='Show the photosphere for the bands. It is needed the tau-file.')
     parser.add_argument('--tau',
                         nargs='?',
                         required=False,
                         const=tau_ph,
                         type=float,
-                        # default=tau_ph,
                         dest="tau",
-                        help="the photosphere for the bands. It is needed the tau-file.Default_tau_ph={}".
+                        help="To show the optical depth at tau. It is needed the tau-file at the same directory as swd."
+                             "  Default: tau={:.3f}".
                         format(tau_ph))
     # parser.add_argument('--tau',
     #                     required=False,
@@ -181,29 +192,26 @@ def main():
         import matplotlib.pyplot as plt
     except ImportError:
         plt = None
+    # try:
+    #     import seaborn as sns
+    #     # sns.set()
+    #     sns.set_style("ticks")
+    #
+    # except ImportError:
+    #     sns = None
 
+    ylim_par = None
     is_legend = True
     parser = get_parser()
     args, unknownargs = parser.parse_known_args()
+
+    if args.ylim_par:
+        ylim_par = ps.str2interval(args.ylim_par, llim=0, rlim=9.9, sep=':')
 
     if args.path:
         pathDef = os.path.expanduser(args.path)
     else:
         pathDef = os.getcwd()
-    #
-    # name = None
-    # if len(unknownargs) > 0:
-    #     path, name = os.path.split(unknownargs[0])
-    #     path = os.path.expanduser(path)
-    #     name = name.replace('.swd', '')
-    # else:
-    #     if args.path:
-    #         path = args.path
-    #     else:
-    #         path = ROOT_DIRECTORY
-    #     if args.name is not None:
-    #         name = os.path.splitext(os.path.basename(args.name))[0]
-
     # Set model names
     names = []
     if args.input:
@@ -259,8 +267,10 @@ def main():
             make_cartoon(swd, times, vnorm=args.vnorm, rnorm=args.rnorm,
                          lumnorm=args.lumnorm, is_legend=is_legend)
         else:
-            fig, dic_axes = ps.lcp.plot_shock_details(swd, times=times, vnorm=args.vnorm, rnorm=args.rnorm,
-                                                      lumnorm=args.lumnorm, is_legend=is_legend, is_axes=True)
+            fig, dic_axes = ps.lcp.plot_shock_details(swd, times=times,
+                                                      vnorm=args.vnorm, rnorm=args.rnorm, tnorm=args.tnorm,
+                                                      lumnorm=args.lumnorm, is_legend=is_legend, is_axes=True,
+                                                      ylim_par=ylim_par)
             if args.frho is not None:
                 ps.lcp.plot_swd_chem(dic_axes, args.frho, stella.Path)
 
@@ -278,7 +288,9 @@ def main():
                             sys.exit(2)
                         bnames.append(bname)
 
-                ps.lcp.plot_swd_tau(dic_axes, stella, times=times, bnames=bnames, tau_ph=args.tau, vnorm=args.vnorm)
+                ps.lcp.plot_swd_tau(dic_axes, stella, times=times, bnames=bnames, tau_ph=args.tau,
+                                    is_obs_time=False,
+                                    vnorm=args.vnorm, tnorm=args.tnorm)
 
             if args.is_save:
                 fsave = os.path.expanduser("~/swd_{0}_t{1}.pdf".format(name, str.replace(args.times, ':', '-')))
