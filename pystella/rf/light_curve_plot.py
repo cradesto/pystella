@@ -607,7 +607,7 @@ def plot_shock_details(swd, times, **kwargs):
     tnorm = kwargs.get('tnorm', 1e3)
     vnorm = kwargs.get('vnorm', 1e8)
     lumnorm = kwargs.get('lumnorm', 1e40)
-    ylim_par = kwargs.get('ylim_par', None)
+    ylim_par = kwargs.get('ylim_par', (0.001,11))
     font_size = kwargs.get('font_size', 12)
     is_grid = kwargs.get('is_grid', False)
     is_adjust = kwargs.get('is_adjust', True)
