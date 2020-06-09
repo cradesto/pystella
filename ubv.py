@@ -339,6 +339,7 @@ def main(name=None, model_ext='.ph'):
         names.append(name)
         is_set_model = True
 
+
     if len(names) == 0 and not is_set_model:  # run for all files in the path
         names = ps.path.get_model_names(path, model_ext)
 
