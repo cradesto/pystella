@@ -56,6 +56,13 @@ class TestTau(unittest.TestCase):
         plt.ylabel('V8')
         plt.show()
 
+    def test_TimesObs(self):
+        self.tau.load()
+        times = self.tau.Times
+        timeobs = self.tau.TimesObs
+        for t, to in zip(times, timeobs):
+            self.assertLess(to, t, 'Obs.time should be less proper time.')
+
 
 def main():
     unittest.main()

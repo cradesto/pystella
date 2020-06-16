@@ -970,8 +970,11 @@ class FitMCMC(FitLc):
         hist_kwargs = dict(lw=lw, alpha=0.5)
         fig = corner.corner(samples, labels=labels, bins=bins, hist_kwargs=hist_kwargs,
                             quantiles=quantiles,
-                            show_titles=True, title_fmt=title_fmt,
-                            label_kwargs={'labelpad': 1, 'fontsize': 14}, fontsize=8)
+                            show_titles=True, title_fmt=title_fmt, verbose=True,
+                            title_kwargs={"fontsize": 12}, label_kwargs={'labelpad': 1, 'fontsize': 14},
+                            fontsize=8)
+
+
         fig.set_size_inches((16, 12))
 
         if axhist is not None:

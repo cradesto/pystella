@@ -248,7 +248,8 @@ def isfloat(value):
 
 def plot_swd(ax, b, **kwargs):
     xlim = kwargs.get('xlim', None)
-    ylim = kwargs.get('ylim', None)
+    ylim_rho = kwargs.get('ylim_rho', None)
+    ylim_par = kwargs.get('ylim_par', (0., 9.9))
     legmask = kwargs.get('legmask', 0x11)  # mask 0x11 - both, 0x01-rho, 0x10 - pars
     is_frameon = kwargs.get('is_frameon', False)
     islim = kwargs.get('islim', True)
@@ -257,9 +258,10 @@ def plot_swd(ax, b, **kwargs):
     is_yrlabel = kwargs.get('is_yrlabel', True)
     is_day = kwargs.get('is_day', True)
     is_grid = kwargs.get('is_grid', False)
-    rnorm = kwargs.get('rnorm', 'm')
     text_posy = kwargs.get('text_posy', 1.01)
 
+    rnorm = kwargs.get('rnorm', 'm')
+    tnorm = kwargs.get('tnorm', None)
     vnorm = kwargs.get('vnorm', 1.e8)
     lumnorm = kwargs.get('lumnorm', 1.e40)
 
@@ -291,10 +293,10 @@ def plot_swd(ax, b, **kwargs):
     if islim:
         if xlim is None:
             xlim = [min(x), max(x) * 1.2]
-        if ylim is None:
-            ylim = [np.min(y), np.max(y) + 2]
+        if ylim_rho is None:
+            ylim_rho = [np.min(y), np.max(y) + 2]
         ax.set_xlim(xlim)
-        ax.set_ylim(ylim)
+        ax.set_ylim(ylim_rho)
 
     if is_xlabel:
         ax.set_xlabel(xlabel)
@@ -304,7 +306,7 @@ def plot_swd(ax, b, **kwargs):
 
     # Right axe
     ax2 = ax.twinx()
-    ax2.set_ylim((0., 9.9))
+    ax2.set_ylim(ylim_par)
 
     if is_yllabel:
         ax.set_ylabel(r'$\log_{10}(\rho)$')
@@ -320,8 +322,12 @@ def plot_swd(ax, b, **kwargs):
     y2 = np.ma.masked_where(b.Tau <= 0., b.Tau)
     ax2.plot(x, y2, 'r-', label='tau')
 
-    y2 = np.log10(b.T)
-    ax2.plot(x, y2, 'g-', label=r'$\log(T)$')
+    if tnorm is None:
+        y2 = np.log10(b.T)
+        ax2.plot(x, y2, 'g-', label=r'$\log(T)$')
+    else:
+        y2 = b.T / tnorm
+        ax2.plot(x, y2, 'g-', label='T{0:d}'.format(int(np.log10(tnorm))))
 
     y2 = np.ma.log10(b.Lum) - np.log10(lumnorm)
     y22 = np.ma.log10(-b.Lum) - np.log10(lumnorm)
@@ -338,3 +344,4 @@ def plot_swd(ax, b, **kwargs):
 
     if is_grid:
         ax2.grid(linestyle=':')
+    return ax, ax2

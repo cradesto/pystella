@@ -81,3 +81,81 @@ def print_table(tbl):
                         for i, x in enumerate(line)))
         # print("| " + " | ".join("{:{}}".format(x, col_width[i])
         #                         for i, x in enumerate(line)) + " |")
+
+
+def df2tex(a, pfx_err='err', pfx_errpm=('errp', 'errm'), fmt='.3f', fmt_err='.4f', math=' $ ', sep=' & ',
+           str_end=' \\\ \n'):
+    """
+    Convert pandas dataframe to latex table.
+    Usage:
+    arr = pd2np(df_fit_images)
+    s = df2tex(arr, pfx_err=None, fmt_err='.2f', sep='  &  ', strend='   \\\ \n')
+    print(s)
+    """
+    names = a.dtype.names
+    if not isinstance(fmt, dict):
+        fmt = {nm: fmt for nm in names}
+    if not isinstance(fmt_err, dict):
+        fmt_err = {nm: fmt_err for nm in names}
+
+    is_pm = pfx_err is not None
+    is_up_down = not is_pm and pfx_errpm is not None
+
+    var_names_errp, var_names_errm, var_names_errpm = {}, {}, {}
+    if is_up_down:
+        var_names = [x for x in names if not pfx_errpm[0] in x and not pfx_errpm[1] in x]
+        var_names_errp = {xx: x for xx in var_names for x in names if xx in x and pfx_errpm[0] in x}
+        var_names_errm = {xx: x for xx in var_names for x in names if xx in x and pfx_errpm[1] in x}
+    elif is_pm:
+        var_names = [x for x in names if not pfx_err in x]
+        var_names_errpm = {xx: x for xx in var_names for x in names if xx in x and pfx_err in x}
+    else:
+        var_names = names
+    #     print(var_names_errm)
+    s_res = sep.join([nm.replace('_', '\_') for nm in var_names]) + str_end
+
+    for i, row in enumerate(a):
+        srow = ''
+        for j, nm in enumerate(var_names):
+            scol = ''
+            x = row[nm]
+            try:
+                scol += '{:{fmt}}'.format(x, fmt=fmt[nm])
+            except ValueError:
+                scol += '{}'.format(x.replace('_', '\_'))
+            # print uncertanties
+            if is_up_down and nm in var_names_errp:
+                #                 print(nm, var_names_errp[nm], var_names_errm[nm])
+                ep, em = row[var_names_errp[nm]], row[var_names_errm[nm]]
+                #                 try:
+                scol += '^{{{ep:{fe}}}}_{{{em:{fe}}}}'.format(ep=ep, em=em, fe=fmt_err[nm])
+            #                 except ValueError:
+            # #                     print(f'  err: {nm+pfx_errpm[0]}   {nm+pfx_errpm[1]}  {row[nm+pfx_errpm[0]]}')
+            #                     pass
+            elif is_pm:
+                e = row[var_names_errpm[nm]]
+                scol += '\pm {e:{fe}}'.format(e=e, fe=fmt_err[nm])
+            else:
+                pass
+
+            if math is not None:
+                scol = '{math}{}{math}'.format(scol, math=math)
+            #                 print(scol)
+
+            if j < len(var_names) - 1:
+                scol += '{sep}'.format(sep=sep)
+
+            srow += scol
+
+        s_res += '{}{}'.format(srow, str_end)
+    return s_res
+
+
+def pd2np(df):
+    """
+    Convert pandas dataframe to numpy array with column names
+    """
+    arr_ip = [tuple(i) for i in df.to_numpy()]
+    dtyp = np.dtype(list(zip(df.dtypes.index, df.dtypes)))
+    arr = np.array(arr_ip, dtype=dtyp)
+    return arr

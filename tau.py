@@ -50,6 +50,7 @@ def plot_tau_moments(tau, moments=None, xlim=None):
 def plot_bands(ax, bnames, amp=30, alpha=0.5):
     """Plot the filter responses"""
     color_dic = ps.band.bands_colors()
+    res = {}
     for bname in bnames:
         b = ps.band.band_by_name(bname)
         wl = b.wl * ps.phys.cm_to_angs
@@ -59,6 +60,8 @@ def plot_bands(ax, bnames, amp=30, alpha=0.5):
         ax.axvline(x=wl_eff, ymin=0., ymax=0.99, linestyle='--', color=color_dic[bname], alpha=alpha)
         ax.text(wl_eff, 10, bname, fontsize=12)
         ax.text(wl_eff*.95, 3, "{:.0f}".format(wl_eff), fontsize=6)
+        res[bname] = (wl_eff, color_dic[bname])
+    return res
 
 
 def plot_tau_phot(tau_data, pars, tau_ph, xlim=None, title='', bnames=None):
@@ -100,16 +103,18 @@ def plot_tau_phot(tau_data, pars, tau_ph, xlim=None, title='', bnames=None):
     # Plot Zone_ph
     colors = []
     for j, (t, freq, y) in enumerate(tau_data[StellaTauDetail.col_zon]):
-        ax = axs[0]
+        axzon = axs[0]
         n = int(3 - np.log10(max(1e-03, abs(t))))  # label format
         lbl = "t= {:.{}f} d".format(t, n)
 
-        ll = ax.semilogx(fr2wv(freq), y, label=lbl)
+        ll = axzon.semilogx(fr2wv(freq), y, label=lbl)
         color = ll[0].get_color()
         colors.append(color)
+
+    bnames_waves = None
     if bnames is not None:
-        ylim = ax.get_ylim()
-        plot_bands(ax, bnames, amp=ylim[1]*0.25)
+        ylim = axzon.get_ylim()
+        bnames_waves = plot_bands(axzon, bnames, amp=ylim[1]*0.25, alpha=0.5)
 
     # Plot other params
     for i, p in enumerate(pars, 1):
@@ -122,6 +127,10 @@ def plot_tau_phot(tau_data, pars, tau_ph, xlim=None, title='', bnames=None):
                 ax.loglog(x, y, color=colors[j])
             else:
                 ax.semilogx(x, y, color=colors[j])
+
+        if bnames_waves is not None:
+            for bn,  (wl, col) in bnames_waves.items():
+                ax.axvline(x=wl, ymin=0., ymax=0.99, linestyle='--', color=col, alpha=0.5)
 
     # Post-plotting
     for i, ax in enumerate(axs):
@@ -163,8 +172,8 @@ def get_parser(times='0.1:1:10:25:65', bnames='U:B:V:R'):
                         type=str,
                         default=False,
                         dest="phot",
-                        help='Plot photosphere parameter. Maybe: R, V, V8, T. '
-                             'Yoy may use prefix log, e.g. logT or logV8')
+                        help='Plot photosphere parameter. Maybe: R, V, V8, T. Example: -ph R:V8:T ' 
+                             'You may use prefix log, e.g. logT or logV8')
     parser.add_argument('-s', '--save',
                         action='store_const',
                         const=True,
@@ -238,7 +247,6 @@ def main():
         return None
 
     fig = None
-    bnames = None
     xlim = None
     fplot = None
     print('\n Arguments')
@@ -250,15 +258,23 @@ def main():
     if args.xlim is not None:
         xlim = str2float(args.xlim)
         print(" xlim: ", xlim)
-    if args.bnames is not None:
-        ps.Band.load_settings()
-        bnames = args.bnames.split(':')
-        print(" bnames: ", bnames)
+    # Set band names
+    bnames = ('B',)
+    ps.Band.load_settings()
+    if args.bnames:
+        bnames = []
+        for bname in args.bnames.split('-'):
+            if not ps.band.band_is_exist(bname):
+                print('No such band: ' + bname)
+                parser.print_help()
+                sys.exit(2)
+            bnames.append(bname)
 
     tau = model.get_tau().load(is_info=False)
     print('\n Loaded data from {}'.format(tau.FName))
     print('Model has Nzone= {} Ntimes= {}'.format(tau.Nzon, tau.Ntimes))
     print("The model time interval: {:.3e} - {:3e} days".format(min(tau.Times), max(tau.Times)))
+    print("The bnames are  {}".format(', '.join(bnames)))
     # print(tau.Wl2angs)
     # tau = b.Tau
     # print(tau.shape)
@@ -271,10 +287,24 @@ def main():
             pars = [pars]
         pars_data = [p.replace('log', '') for p in pars]
         tau_data = tau.params_ph(pars=pars_data, moments=times, tau_ph=args.tau_ph)
+
         if args.write_prefix:
             fwrite = os.path.expanduser(args.write_prefix)
             tau.data_save(fwrite, tau_data, pars_data)
         else:
+            # Print parameters
+            print('\nPhotospheric parameters:')
+            for ii, p in enumerate(pars_data):
+                print('{:9s} {}'.format('t_real', ' '.join([f'{p}_{b:10s}' for b in bnames])))
+                for i, (t, freq, y) in enumerate(tau_data[p]):
+                    s = '{:9.4f} '.format(t)
+                    for bname in bnames:
+                        b = ps.band.band_by_name(bname)
+                        fr_eff = b.freq_eff
+                        idx = (np.abs(freq - fr_eff)).argmin()
+                        s += ' {:10e}'.format( y[idx])
+                    print(s)
+            # Plot
             fig = plot_tau_phot(tau_data, pars,  tau_ph=args.tau_ph, xlim=xlim, title=tau.Name, bnames=bnames)
             fplot = os.path.expanduser("~/tau_{}_{}.pdf".format(fname, str.replace(args.phot, ':', '-')))
     else:
