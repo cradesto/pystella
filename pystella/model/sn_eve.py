@@ -712,9 +712,9 @@ class PreSN(object):
         :param name: the name of new PreSN. Take from parent, if it's None.
         :param nstart: zone number to start reshaping. Default: 0 (first zone)
         :param nend: zone number to end reshaping. Default: None,  (equal last zone)
-        :param axis: [M OR R OR V] - reshape along mass or radius or velocity coordinate
-        :param xmode: [lin OR rlog OR resize] - linear OR reversed log10 OR add/remove points
-        :param kind: [np OR interp1d(..kind)], kind is  ('linear', 'nearest', 'zero', 'slinear', 'quadratic, 'cubic')
+        :param axis: [M OR R OR V] - reshape along mass or radius or velocity coordinate. Default: M
+        :param xmode: [lin OR rlog OR resize] - linear OR reversed log10 OR add/remove points. Default: rlog
+        :param kind: [np OR interp1d(..kind)], kind is  ('np=np.interp', 'linear', 'nearest', 'zero', 'slinear', 'quadratic, 'cubic'). Default: np
         :return: new preSN with reshaping zones
         """
         from scipy.interpolate import interp1d
