@@ -425,6 +425,7 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname=None, *
     legncol = kwargs.get('legncol', 1)
     legloc = kwargs.get('legloc', 1)
     alpha = kwargs.get('alpha', 1.)
+    label = kwargs.get('label', None)
     length_lo_up_lims = kwargs.get('length_lo_up_lims', 0.5)
 
     is_new_fig = ax is None
@@ -454,10 +455,12 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname=None, *
         x = lc.Time
         y = lc.Mag
         bname = lc.Band.Name
-        label = '{0} {1}'.format(bname, curves.Name.replace("_", ""))
+        lbl = '{0} {1}'.format(bname, curves.Name.replace("_", ""))
+        if label is not None:
+            lbl = label
         color = colors[bname]
         if is_line:
-            ax.plot(x, y, label=label, color=color, ls=ls[bname], linewidth=linewidth)
+            ax.plot(x, y, label=lbl, color=color, ls=ls[bname], linewidth=linewidth)
         else:
             if lc.IsErr:
                 y_el = np.copy(lc.MagErr)
@@ -466,13 +469,13 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname=None, *
                 uplims = np.array(y_eu == -1, dtype=bool)
                 y_el[lolims] = length_lo_up_lims
                 y_eu[uplims] = length_lo_up_lims
-                ax.errorbar(x, y, label=label, yerr=[y_el, y_eu], fmt=marker[bname],
+                ax.errorbar(x, y, label=lbl, yerr=[y_el, y_eu], fmt=marker[bname],
                             lolims=lolims, uplims=uplims, xlolims=lolims, xuplims=uplims,
                             color=color, ls='', markersize=markersize, )
             else:
                 # ax.plot(x, y, label='{0} {1}'.format(bname, fname), color=bcolors[bname], ls='',
                 #         marker=marker, markersize=markersize)
-                ax.plot(x, y, label=label, color=color, ls='', marker=marker[bname], markersize=markersize)
+                ax.plot(x, y, label=lbl, color=color, ls='', marker=marker[bname], markersize=markersize)
         if is_fill and lc.IsErr:
             yy_err = abs(lc.MagErr)
             # ax.fill(np.concatenate([x, x[::-1]]), np.concatenate([y - yyerr, (y + yyerr)[::-1]]),

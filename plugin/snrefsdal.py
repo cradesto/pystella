@@ -357,7 +357,8 @@ def read_lc(path=path_data):
 
 def read_curves(path=path_data, image='S1', bnames=None, no_limits=False):
     import pystella as ps
-    curves = ps.SetLightCurve("SN Refsdal, image: %s" % image)
+    curves = ps.SetLightCurve(f"image {image}")
+#    curves = ps.SetLightCurve("SN Refsdal, image: %s" % image)
 
     lc_data, sn_images = read_lc(path)
     bands = np.unique(lc_data[:, 0])
