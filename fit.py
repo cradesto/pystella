@@ -811,7 +811,7 @@ def arg2names(arg, path, ext):
             nm = os.path.splitext(os.path.basename(f))[0]
             if os.path.exists(os.path.join(path, nm + ext)):
                 names.append(nm)
-                print('input: {}'.format(nm))
+                print('input: {}'.format(nm+ext))
     return names
 
 
@@ -828,7 +828,8 @@ def main():
 
     path = os.getcwd()
     if args.path:
-        path = os.path.expanduser(path)
+        path = os.path.expanduser(args.path)
+        # print(f'-p: {path}')
 
     # Set model names
     names = []
@@ -842,6 +843,9 @@ def main():
         names = ps.path.get_model_names(path, model_ext)
 
     if len(names) == 0:
+        print(f'PATH: {path}')
+        print(f'-i: {args.input}')
+        print('I do not know the models for fitting. Please use the key -i MODEL or -i *R500* ')
         parser.print_help()
         sys.exit(2)
 
