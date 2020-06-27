@@ -100,7 +100,7 @@ class FitMPFit(FitLc):
         fit_result.tshift = tshift
         fit_result.tsigma = tsigma
         fit_result.measure = result.fnorm / result.dof
-        fit_result.comm = 'mpfit: status={:2d} niter={:3d} fnorm={:.2f} err= {:.3f}+-{:.4f}'.\
+        fit_result.comm = 'mpfit: status={:2d} niter={:3d} fnorm={:.2f} err= {:.3f}+-{:.4f}'. \
             format(result.status, result.niter, result.fnorm, err, errsig)
         #        fit_result.comm = 'The value of the summed squared residuals for the returned parameter values.'
         return fit_result
@@ -141,7 +141,7 @@ class FitMPFit(FitLc):
             parinfo.append({'value': 0., 'fixed': 1})
 
         #        print(parinfo)
-        result = mpfit.mpfit(least_sq, parinfo=parinfo, quiet=not self.is_info, maxiter=self.maxiter,
+        result = mpfit.mpfit(least_sq, parinfo=parinfo, quiet=self.is_quiet, maxiter=self.maxiter,
                              ftol=self.ftol, gtol=self.gtol, xtol=self.xtol)
         if result.status == 5:
             print('Maximum number of iterations exceeded in mangle_spectrum')
@@ -195,7 +195,7 @@ class FitMPFit(FitLc):
                 m = np.interp(time_o, ts_m.Time, ts_m.V)  # One-dimensional linear interpolation.
                 # sigma = sigma
                 w = np.abs(1. - At * (time_o - min(time_o)) / (max(time_o) - min(time_o)))  # weight
-                err_m = np.sqrt(np.sum((V_o - m)**2) / len(m))
+                err_m = np.sqrt(np.sum((V_o - m) ** 2) / len(m))
                 # err_m = abs(V_o - m)
                 if ts_o.IsErr:
                     # err_o = ts_o.Err[check]
@@ -226,35 +226,93 @@ class FitMPFit(FitLc):
 
         return result
 
-    def best_curves(self, curves_m, curves_o, dt0=None, dm0=None, is_spline=True,
-                    At=0.):
+    def best_curves(self, curves_m, curves_o, dt0=None, dm0=None, is_spline=True, At=0., **kwargs):
+        """
+        Find the values of time shift and magnitude shift minimizing the distance between the observational
+        and modal light curves
+        :param curves_m: modal LCs
+        :param curves_o: observational LCs
+        :param dt0: initial time shift
+        :param dm0: magnitude shift, default: 0.
+        :param is_spline:
+        :param At:
+        :param kwargs:
+                dt_limits = kwargs.get("dt_limits", [-250., 250.])
+                dm_limits = kwargs.get("dm_limits", [-5., 5])
+                band_limits = kwargs.get("band_limits", [0.001, 4.])
+                is_fit_sigmas = kwargs.get("is_fit_sigmas", False)
+        :return:
+        """
         dt_init = {lc.Band.Name: lc.tshift for lc in curves_o}
         dm_init = {lc.Band.Name: lc.mshift for lc in curves_o}
+        bnames = curves_o.BandNames
 
+        dt_limits = kwargs.get("dt_limits", [-250., 250.])
+        dm_limits = kwargs.get("dm_limits", [-5., 5])
+        band_limits = kwargs.get("band_limits", [0.001, 4.])
+        is_fit_sigmas = kwargs.get("is_fit_sigmas", False)
         # заменить модели их сплайном
         curves_m_spline = {}
         if is_spline:
             for lc_m in curves_m:
-                    curves_m_spline[lc_m.Band.Name] = InterpolatedUnivariateSpline(lc_m.Time, lc_m.Mag, k=1)
+                curves_m_spline[lc_m.Band.Name] = InterpolatedUnivariateSpline(lc_m.Time, lc_m.Mag, k=1)
+
+        def least_sq_simga(p, fjac):
+            dt, dm, sigs = FitMPFit.thetaDtDm2arr(p, len(bnames))
+            # dt, dm = p
+            # dt, dm, sigma = p
+            total = []
+            for i, bname in enumerate(bnames):
+                lc_o = curves_o[bname]
+                to, mo, eo = lc_o.Time, lc_o.Mag, lc_o.MagErr
+                # lc_o = curves_o.get(lc_m.Band.Name)
+                # lc_o.tshift = dt_init[lc_m.Band.Name] + dt
+                # lc_o.mshift = dm_init[lc_m.Band.Name] + dm
+                # model interpolation
+                lc_m = curves_m[bname]
+                tm, mm = lc_m.Time, lc_m.Mag
+                mm += dm
+                tm += dt
+                em = sigs[i]
+                m = np.interp(to, tm, mm)  # One-dimensional linear interpolation.
+                #                w = np.ones(len(m))
+                # err_m = abs(min(m)-m) * err_mdl
+                # w = np.abs(1. - At * (lc_o.Time - lc_o.TimeMin) / (lc_o.TimeMax - lc_o.TimeMin))  # weight
+                diff = lc_o.Mag - m
+                sig = np.ones(lc_o.Length) * em
+                if lc_o.IsErr:
+                    sig = np.sqrt(em**2 + lc_o.MagErr**2)
+
+                    # err_m = np.sqrt(np.sum(diff ** 2) / len(m))
+                inv_sigma2 = 1. / sig**2
+                chi = np.sqrt(np.abs(diff**2 * inv_sigma2 - np.log(inv_sigma2) + np.log(2 * np.pi)))
+                # chi = np.sum(diff**2 * inv_sigma2 - np.log(inv_sigma2)) + np.log(2 * np.pi) * len(diff)
+                # chi = np.sum(diff**2 * inv_sigma2 - np.log(inv_sigma2) + np.log(2 * np.pi))
+                # chi = diff / sig #+ np.log(sig*np.pi)/lc_o.Length
+                # chi += fjac[0]
+                # chi = np.ones(lc_o.Length) * chi
+                total = np.append(total, chi)
+            return 0, total
 
         def least_sq(p, fjac):
+            dt, dm, sigs = FitMPFit.thetaDtDm2arr(p, len(bnames))
             total = []
             for lc_m in curves_m:
-                sigma = p[0]
                 lc_o = curves_o.get(lc_m.Band.Name)
-                lc_o.tshift = dt_init[lc_m.Band.Name] + p[1]
-                lc_o.mshift = dm_init[lc_m.Band.Name] + p[2]
+                to, mo = lc_o.Time, lc_o.Mag
+                to -= dt
+                mo -= dm
                 # model interpolation
                 if is_spline:
                     s = curves_m_spline[lc_m.Band.Name]
-                    m = s(lc_o.Time)
+                    mm = s(to)
                 else:
-                    m = np.interp(lc_o.Time, lc_m.Time, lc_m.Mag)  # One-dimensional linear interpolation.
+                    mm = np.interp(to, lc_m.Time, lc_m.Mag)  # One-dimensional linear interpolation.
                 #                w = np.ones(len(m))
                 # err_m = abs(min(m)-m) * err_mdl
                 w = np.abs(1. - At * (lc_o.Time - lc_o.TimeMin) / (lc_o.TimeMax - lc_o.TimeMin))  # weight
-                diff = lc_o.Mag - m
-                err_m = np.sqrt(np.sum(diff ** 2) / len(m))
+                diff = mo - mm
+                err_m = np.sqrt(np.sum(diff ** 2) / len(mm))
                 if lc_o.IsErr:
                     chi = diff * w / (err_m + lc_o.MagErr)
                 else:
@@ -263,19 +321,27 @@ class FitMPFit(FitLc):
                 total = np.append(total, chi)
             return 0, total
 
-        parinfo = [{'value': 0.0, 'limited': [1, 1], 'limits': [0., 3.]}]  # todo changeable parameters
+        parinfo = []  # [{'value': 0.0, 'limited': [1, 1], 'limits': [0., 3.]}]  # todo changeable parameters
         if dt0 is not None:
-            parinfo.append({'value': dt0, 'limited': [1, 1], 'limits': [-250., 250.]})
+            dt_limits = [x+dt0 for x in dt_limits]
+            parinfo.append({'value': dt0, 'limited': [1, 1], 'limits': dt_limits})
         else:
             parinfo.append({'value': 0., 'fixed': 1})
 
         if dm0 is not None:
-            parinfo.append({'value': dm0, 'limited': [1, 1], 'limits': [-5. + dm0, 5. + dm0]})
+            dm_limits = [x + dm0 for x in dm_limits]
+            parinfo.append({'value': dm0, 'limited': [1, 1], 'limits': dm_limits})
         else:
             parinfo.append({'value': 0., 'fixed': 1})
 
+        for i, bname in enumerate(bnames):
+            parinfo.append({'value': 0.1, 'limited': [1, 1], 'limits': band_limits})  # todo changeable parameters
+
         if dt0 is not None or dm0 is not None:
-            result = mpfit.mpfit(least_sq, parinfo=parinfo, quiet=not self.is_info, maxiter=self.maxiter,
+            func = least_sq
+            if is_fit_sigmas:
+                func = least_sq_simga
+            result = mpfit.mpfit(func, parinfo=parinfo, quiet=self.is_quiet, maxiter=self.maxiter,
                                  ftol=self.ftol, gtol=self.gtol, xtol=self.xtol)
         else:
             dum, r = least_sq([x['value'] for x in parinfo], None)  # just return the weight diff
@@ -313,29 +379,30 @@ class FitMPFit(FitLc):
         if dm0 is not None:
             dof -= 1
 
-        # scaled uncertainties
-        err = result.params[0]
-        pcerror = result.perror * np.sqrt(result.fnorm / dof)
-        errsig = pcerror[0]  # todo tsigma check
+        # pcerror = result.perror  # * np.sqrt(result.fnorm / dof)
 
         # time and magnitude shifts
-        tshift = result.params[1]
-        tsigma = pcerror[1]  # todo tsigma check
-
-        dmshift = result.params[2]
-        dmsigma = pcerror[2]
+        dt, dtsig = result.params[0], result.perror[0]
+        dm, dmsig = result.params[1], result.perror[1]
 
         if self.is_info:
             print("The final params are: tshift=%f+-%f mshift=%f+-%f  chi2: %e" % (
-                tshift, tsigma, dmshift, dmsigma, result.fnorm))
+                dt, dtsig, dm, dmsig, result.fnorm))
 
-        res = {'dt': tshift, 'dtsig': tsigma, 'dm': dmshift, 'dmsig': dmsigma, 'err': err, 'errsig': errsig,
-               'chi2': result.fnorm, 'dof': result.dof}
+        res = {'dt': dt, 'dtsig': dtsig, 'dm': dm, 'dmsig': dmsig, 'chi2': result.fnorm, 'dof': result.dof}
+        # scaled uncertainties
+        if len(result.params) > 2:
+            err, errsig = result.params[2:], result.perror[2:]
+            res['err'] = err
+            res['errsig'] = errsig
+            if self.is_info:
+                for i, bname in enumerate(bnames):
+                    print("The sigma_{}= {} +- {}".format(bname, err[i], errsig[i]))
 
         fit_result = FitLcResult()
         fit_result.tshift = res['dt']
         fit_result.tsigma = res['dtsig']
-        fit_result.mshift = dmshift
+        fit_result.mshift = dm
         fit_result.msigma = res['dmsig']
         fit_result.measure = res['chi2']
         fit_result.comm = 'result MCMC:dof: {}'.format(res['dof'])
@@ -394,7 +461,7 @@ class FitMPFit(FitLc):
 
         parinfo = []
         if dt0 is not None:
-            parinfo.append({'value': dt0, 'limited': [1, 1], 'limits': [-250.+dt0, 250.+dt0]})
+            parinfo.append({'value': dt0, 'limited': [1, 1], 'limits': [-250. + dt0, 250. + dt0]})
         else:
             parinfo.append({'value': 0., 'fixed': 1})
 
@@ -404,7 +471,7 @@ class FitMPFit(FitLc):
             parinfo.append({'value': 0., 'fixed': 1})
 
         if dt0 is not None or dm0 is not None:
-            result = mpfit.mpfit(least_sq, parinfo=parinfo, quiet=not self.is_info, maxiter=self.maxiter,
+            result = mpfit.mpfit(least_sq, parinfo=parinfo, quiet=self.is_quiet, maxiter=self.maxiter,
                                  ftol=self.ftol, gtol=self.gtol, xtol=self.xtol)
         else:
             dum, r = least_sq([x['value'] for x in parinfo], None)  # just return the weight diff
