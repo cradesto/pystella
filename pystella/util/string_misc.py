@@ -242,7 +242,7 @@ def np2tex(a, sfx_err='err', sfx_errpm=('errp', 'errm'), fmt='.3f', fmt_err='.4f
             if nm in var_names_errp and nm in var_names_errm:
                 #                 print(nm, var_names_errp[nm], var_names_errm[nm])
                 ep, em = row[var_names_errp[nm]], row[var_names_errm[nm]]
-                scol += '^{{{ep:{fe}}}}_{{{em:{fe}}}}'.format(ep=ep, em=em, fe=fmt_err[var_names_errp[nm]])
+                scol += '^{{+{ep:{fe}}}}_{{-{em:{fe}}}}'.format(ep=ep, em=em, fe=fmt_err[var_names_errp[nm]])
             #                 except ValueError:
             # #                     print(f'  err: {nm+sfx_errpm[0]}   {nm+sfx_errpm[1]}  {row[nm+sfx_errpm[0]]}')
             #                     pass

@@ -51,6 +51,7 @@ class PreSN(object):
     """
     sRho = 'Rho'
     sM = 'M'
+    sMcore = 'm_core'
     sT = 'T'
     sR = 'R'
     sV = 'V'
@@ -119,7 +120,7 @@ class PreSN(object):
     @property
     def m_core(self):
         """Core mass"""
-        p = 'm_core'
+        p = PreSN.sMcore
         if self.is_set(PreSN.sM):
             d = self.hyd(PreSN.sM)[0]
         else:

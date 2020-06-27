@@ -15,7 +15,7 @@ class TestStringMisc(unittest.TestCase):
              'dterrp': [2, 3, 4, 5],
              'dterrm': [2.2, 2.5, 2.7, 3.5],
              'dm': [-1, -1.25, -2.27, -2.35],
-             'dmerr': [-0.1, -0.25, -0.27, -0.35]
+             'dmerr': [0.1, 0.25, 0.27, 0.35]
              }
         t_init = tuple(sorted(d.keys()))
         df = pd.DataFrame(d)
@@ -36,11 +36,11 @@ class TestStringMisc(unittest.TestCase):
              'dterrp': [2, 3, 4, 5],
              'dterrm': [2.2, 2.5, 2.7, 3.5],
              'dm': [-1, -1.25, -2.27, -2.35],
-             'dmerr': [-0.1, -0.25, -0.27, -0.35]
+             'dmerr': [0.1, 0.25, 0.27, 0.35]
              }
         df = pd.DataFrame(d)
 
         arr = ps.util.pd2np(df)
-        ss = ps.util.np2tex(arr)
+        ss = ps.util.np2tex(arr, fmt_err='.2f')
         for s in ss:
             print(s)
