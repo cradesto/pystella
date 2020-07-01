@@ -4,11 +4,11 @@ from scipy import interpolate
 
 path_data = os.path.expanduser('~/Sn/my/papers/2016/snrefsdal/data')
 grav_lens_def = 'ogu-g'
-marker_glens = {'ogu-g': 'o', 'ogu-a': 's', 'gri-g': '+', 'sha-g': '*', 'sha-a': '*', 'die-a': 'd',
+marker_glens = {'ogu-g': 'o', 'ogu-a': 's', 'gri-g': 'x', 'sha-g': '*', 'sha-a': '*', 'die-a': 'd',
                 'bakl': 'S', 'BMA': 'D',
                 'obs-pol': '>', 'obs-tmp': '<'}
 
-colors_gl = {'ogu-g': 'blue', 'gri-g': 'magenta', 'sha-g': 'orange',
+colors_gl = {'ogu-g': 'blue', 'gri-g': 'darkgreen', 'sha-g': 'orange',
              'ogu-a': 'skyblue', 'sha-a': 'red', 'die-a': 'olive', 'BMA': 'magenta',
              'obs-tmp': 'chocolate', 'obs-sn87a': 'brown', 'obs-pol': 'black'}
 colors_band = dict(F105W="magenta", F435W="skyblue", F606W="cyan", F125W="g",
@@ -63,10 +63,10 @@ def coef_glens():  # see http://arxiv.org/abs/1510.05750
                   'mag': {'S1': 1., 'S2': 1.14, 'S3': 1.03, 'S4': 0.37, 'SX': 1},
                   'emag': {'S1': (0, 0), 'S2': (.017, .017), 'S3': (.018, .018), 'S4': (.096, .096), 'SX': (0, 0)}
                   },
-         'BMA': {'time': {'S1': 0, 'S2': 9.6, 'S3': 4.3, 'S4': 29.8, 'SX': 316},  # S1(MJDpk = 57139.57 TimeLcMax = 217.15  t_exp = 56922.43)
-                  'etime': {'S1': (2.3, 2.5), 'S2': (2.2, 2.), 'S3': (2.3, 2.3), 'S4': (7.6, 7.1), 'SX': (84., 60.)},
-                  'mag': {'S1': 10.2, 'S2': 1.14, 'S3': 1.01, 'S4': 0.35, 'SX': 0.21},
-                  'emag': {'S1': (0.23, 0.31), 'S2': (.019, .019), 'S3': (.018, .018), 'S4': (.014, .016), 'SX': (0.06, 0.13)}
+         'BMA': {'time': {'S1': 0, 'S2': 9.5, 'S3': 4.2, 'S4': 30.0, 'SX': 340},  # S1(MJDpk = 57139.57 TimeLcMax = 217.15  t_exp = 56922.43)
+                  'etime': {'S1': (18.6, 18.6), 'S2': (2.7, 2.6), 'S3': (2.3, 2.3), 'S4': ( 8.2, 7.8), 'SX': (52., 43.)},
+                  'mag': {'S1': 10.2, 'S2': 1.14, 'S3': 1.01, 'S4': 0.35, 'SX': 0.24},
+                  'emag': {'S1': (1.6, 1.9), 'S2': (.02, .021), 'S3': (.018, .019), 'S4': (.015, .016), 'SX': (0.07, 0.12)}
                   },
          # 'bakl-old': {'time': {'S1': 0, 'S2': 4.56, 'S3': -1.79, 'S4': 15.07, 'SX': 0},  # sn_obs_refsdal_grav-lens.ipynb
          #          'etime': {'S1': (0., 0.), 'S2': (.25, .25), 'S3': (1., 1.), 'S4': (2.7, 2.7), 'SX': (0, 0)},
