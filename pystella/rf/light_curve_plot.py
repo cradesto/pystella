@@ -610,7 +610,7 @@ def plot_shock_details(swd, times, **kwargs):
     tnorm = kwargs.get('tnorm', 1e3)
     vnorm = kwargs.get('vnorm', 1e8)
     lumnorm = kwargs.get('lumnorm', 1e40)
-    ylim_par = kwargs.get('ylim_par', (0.001,11))
+    ylim_par = kwargs.get('ylim_par', (0.001, 11))
     font_size = kwargs.get('font_size', 12)
     is_grid = kwargs.get('is_grid', False)
     is_adjust = kwargs.get('is_adjust', True)
@@ -728,28 +728,36 @@ def plot_swd_chem(dic_axes, argsrho, path_relativ, alpha=0.25):
         print('Chem is shifted at {} Msun'.format(-min(x)))
         x = x - min(x)
 
+    def two_y(x, lims, up=0.85):
+        return (lims[1]*up - lims[0]) * x + lims[0]
+
     for i, d in enumerate(dic_axes['m']):
         ax = d['par']
+        xlim = ax.get_xlim()
         ylim = ax.get_ylim()
         # print(ylim)
+        xx = np.linspace(xlim[1]*0.8, xlim[0], len(elements))
         yy_tot = np.zeros_like(x)  # + ylim[1]
-        yy = np.zeros_like(x)  # + ylim[0]
-        # for el in elements:
-        for el in reversed(elements):
+        yy_prev = np.zeros_like(x)  # + ylim[0]
+        for ie, el in enumerate(elements):
+            # for el in reversed(elements):
             y = eve.el(el)
             # yy += y
-            yy = y
-            yyy = np.log10(yy) + ylim[1]-1
-            ax.fill_between(x, y1=yy_tot, y2=yyy, color=colors[el], alpha=alpha)
+            # yy = y
+            # yyy = yy
+            yy_tot += y
+            # yyy = np.log10(yy) + ylim[1]-1
+            ax.fill_between(x, y1=two_y(yy_tot, ylim), y2=two_y(yy_prev, ylim), color=colors[el], alpha=alpha)
             # ax.plot(x, yyy, color=colors[el], alpha=alpha)
             # Print the element name
-            xp = np.average(x, weights=y)
-            yp = np.average(yyy, weights=y) * 0.9
-            ax.text(xp, yp, el, color=colors[el], fontsize=12)
-            yy_tot = yyy
+            # xp = np.average(x, weights=y)
+            # yp = np.average(yyy, weights=y) * 0.9
+            xp = xx[ie]
+            ax.text(xp, ylim[1] * 0.9, el, color=colors[el], fontsize=11)
+            yy_prev = yy_tot.copy()
 
 
-def plot_swd_tau(dic_axes, stella, times, bnames=('B',), tau_ph=2./3., is_obs_time=False, **kwargs):
+def plot_swd_tau(dic_axes, stella, times, bnames=('B',), tau_ph=2. / 3., is_obs_time=False, **kwargs):
     """Add photospheric data to the plot_shock_details plot
     :type dic_axes: object
     :param stella:
