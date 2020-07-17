@@ -69,6 +69,24 @@ class SnEveTests(unittest.TestCase):
         eve = sn_eve.load_hyd_abn(name, path=path, is_dum=False)
         self.assertTrue(eve.is_set('Rho'), "hyd-file have not been loaded: %s" % name)
 
+    def test_presn_cut(self):
+        name = 'cat_R1000_M15_Ni007'
+        path = join(dirname(abspath(__file__)), 'data', 'stella')
+        rho_file = os.path.join(path, name + '.rho')
+        eve = sn_eve.load_rho(rho_file)
+
+        # for same size must be the same
+        s, e = int(eve.nzon/10), int(eve.nzon/2)
+        evenew = eve.cut(start=s, end=e)
+
+        self.assertEqual(evenew.nzon, e-s,
+                         "Cut PreSn: you have {} zone, but it should be {}".format(evenew.nzon, e-s))
+        self.assertEqual(eve.m[s], evenew.m[0],
+                         "Mass PreSn: you have the first zone where old mass {} = new {}".
+                         format(eve.m[s], evenew.m[0]))
+        self.assertEqual(eve.m[e-1], evenew.m[-1],
+                         "Mass PreSn: you have the last zone where old mass {} = new {}".format(eve.m[e], evenew.m[-1]))
+
     def test_presn_reshape(self):
         name = 'u50fenv'
         path = '/home/bakl/Sn/my/papers/18/fischer/model'
