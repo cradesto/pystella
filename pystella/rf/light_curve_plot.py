@@ -360,7 +360,7 @@ def plot_bands(dict_mags, bands, title='', fname='', distance=10., xlim=(-10, 20
     ax.set_ylim(ylim)
     ax.legend()
     ax.set_ylabel('Magnitude')
-    ax.set_xlabel('Time (days)')
+    ax.set_xlabel('Time [days]')
     # ax.set_title(title)
     fig.text(0.17, 0.07, title, family='monospace')
     ax.grid()
@@ -499,7 +499,7 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname=None, *
     if is_legend:
         ax.legend(ncol=legncol, loc=legloc)
     ax.set_ylabel('Magnitude')
-    ax.set_xlabel('Time (days)')
+    ax.set_xlabel('Time [days]')
     # ax.grid()
     if title is not None:
         ax.get_figure().title(title)
@@ -585,7 +585,7 @@ def lc_plot(lc, ax=None, xlim=None, ylim=None, title=None, fname=None, **kwargs)
     if is_legend:
         ax.legend()
     ax.set_ylabel('Magnitude')
-    ax.set_xlabel('Time (days)')
+    ax.set_xlabel('Time [days]')
     ax.grid()
     if title is not None:
         plt.title(title)
