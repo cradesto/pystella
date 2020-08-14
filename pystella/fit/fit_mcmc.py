@@ -867,7 +867,7 @@ class FitMCMC(FitLc):
 
     # @staticmethod
     @staticmethod
-    def plot_corner(samples, labels=("td", 'dm'), bnames=('',), axhist=None, **kwargs):
+    def plot_corner(samples, labels=("dt", 'dm'), bnames=('',), axhist=None, **kwargs):
         """
         To plot  a data set in a multi-dimensional space.
 
@@ -892,13 +892,19 @@ class FitMCMC(FitLc):
         lw = kwargs.get('lw', 2)
         bins = kwargs.get('bins', 30)
         alpha = kwargs.get('alpha', 1.)
+        istex = kwargs.get('istex', False)
         title_fmt = kwargs.get('title_fmt', '.2f')
         quantiles = kwargs.get('quantiles', [0.16, 0.5, 0.84])
         figsize = kwargs.get('figsize', (16, 12))
         verbose = kwargs.get('verbose', False)
+        
         if isinstance(labels, str):
             labels = [labels]
-        labels += tuple('sig+{}'.format(bn) for bn in bnames)
+            
+        if istex:
+            labels += tuple(r'$\sigma_m(\mathrm{{{}}})$'.format(bn) for bn in bnames)
+        else:            
+            labels += tuple('sig+{}'.format(bn) for bn in bnames)
         hist_kwargs = dict(lw=lw, alpha=0.5)
         fig = corner.corner(samples, labels=labels, bins=bins, hist_kwargs=hist_kwargs,
                             quantiles=quantiles,

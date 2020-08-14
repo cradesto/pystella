@@ -221,14 +221,16 @@ class SetLightCurve(SetTimeSeries):
         for n, lc in self.Set.items():
             lc.mshift = mshift
 
-    def clone(self, t=None, m=None, err=None):
+    def clone(self, name=None, t=None, m=None, err=None):
         def key_set(bn, nm, v):
             if isinstance(v, dict):
                 return v[bn]
             else:
                 return v
 
-        res = SetLightCurve(self.Name)
+        if name is None:
+            name  = self.Name
+        res = SetLightCurve(name)
         for lc in self:
             kwargs = {'t': key_set(lc.Band.Name, 'm', t),
                       'm': key_set(lc.Band.Name, 'm', m),
