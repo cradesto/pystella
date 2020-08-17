@@ -156,7 +156,7 @@ def get_parser(times = '1:4:15:65', bnames='U:B:V:R', tau_ph=2./3):
                         default=None,
                         dest="frho",
                         help='Set RhoFile to plot the chemical composition via +RhoFile+ListElements. '
-                             'Example: -i RhoFile+H:He:O:Fe')
+                             'Example: --chem RhoFile.rho+H:He:O:Fe')
     parser.add_argument('--tau',
                         nargs='?',
                         required=False,
@@ -281,7 +281,7 @@ def main():
                 if args.bnames:
                     ps.Band.load_settings()
                     bnames = []
-                    for bname in args.bnames.split('-'):
+                    for bname in args.bnames.split(':'):
                         if not ps.band.band_is_exist(bname):
                             print('No such band: ' + bname)
                             parser.print_help()
