@@ -224,7 +224,7 @@ def main(name=None, model_ext='.ph'):
         usage()
         sys.exit(2)
 
-    bnames = ['U', 'B', 'V', 'R', "I"]
+    bnames = ['U', 'B', 'V', 'R']
     # bands = ['U', 'B', 'V', 'R', "I", 'UVM2', "UVW1", "UVW2", 'g', "r", "i"]
 
     for opt, arg in opts:
