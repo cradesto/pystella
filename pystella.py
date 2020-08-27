@@ -4,8 +4,10 @@
 import os
 import readline
 import subprocess
+import shlex
 from cmd import Cmd
 from os.path import dirname
+import argparse
 
 import numpy as np
 
@@ -51,22 +53,77 @@ class HistConsole(Cmd):
 
 
 class MyPrompt(HistConsole):
+    options = {}
+
+    @staticmethod
+    def insert_options(line):
+        words = line.split()
+        keys = [w[1:] for w in words if w.startswith('$')]
+        res = line
+        if len(keys) > 0:
+            for k in keys:
+                v = MyPrompt.options.get(k, False)
+                if v:
+                    res = res.replace('$'+k, v)
+                else:
+                    print(f'You should set up the var: {k}')
+        return res
+
+    @staticmethod
+    def do_set(args, sep='='):
+        """Set global options via name = value.
+        To insert option to command use prefix: $.
+        For example:
+           pystella>set ebv=0.07
+           pystella>set mdl= cR500M20Ni06_3eps
+           pystella>ubv -i $mdl -e $ebv
+           >>/home/bakl/Sn/Release/python/pystella/ubv.py -i cR500M20Ni06_3eps -e 0.07
+        Run 'set' without arguments to see the current options: pystella>set
+        To remove name: pystella>set name= None
+        """
+        if not args:
+            print(MyPrompt.options)
+            return
+
+        if sep not in args:
+            print(f'Format:  key {sep} value')
+            return
+        # print('Before: ', MyPrompt.options)
+        k, v = args.split('=')
+        k, v = k.strip(), v.strip()
+        print(k, v)
+        if v == 'None':
+            MyPrompt.options.pop(k, None)  # remove key
+        else:
+            MyPrompt.options[k] = v.strip()
+        print(MyPrompt.options)
+
+    @staticmethod
+    def call_cmd(script, args, is_proc=False, is_shell=True):
+        # print(args, is_proc)
+        if is_proc:
+            print(f'Detach thread. script= {script}')
+            print(f'   args.strip()= {args.strip()}')
+            with subprocess.Popen([script, args.strip()], stdout=subprocess.PIPE, bufsize=1,
+                                  shell=True,
+                                  universal_newlines=True) as p:
+                stdout, stderr = p.communicate()
+                for line in stdout:
+                    print(line, end='')
+        else:
+            command = "{0} {1}".format(script, args).strip()
+            if '$' in command:
+                # print(command)
+                command = MyPrompt.insert_options(command)
+                print(f">>> {command}")
+            subprocess.call(command, shell=is_shell)
+
     @staticmethod
     def do_snespace(args):
         """Plot SN using json-file from https://sne. For detailed help type 'snespace -h'.
         """
         script = os.path.join(ROOT_DIRECTORY, 'sne_space.py')
         MyPrompt.call_cmd(script, args)
-
-    @staticmethod
-    def call_cmd(script, args, is_proc=False, is_shell=True):
-        if is_proc:
-            with subprocess.Popen([script, args.strip()], stdout=subprocess.PIPE, bufsize=1, universal_newlines=True) as p:
-                for line in p.stdout:
-                    print(line, end='')
-        else:
-            command = "{0} {1}".format(script, args).strip()
-            subprocess.call(command, shell=is_shell)
 
     @staticmethod
     def do_snec(args):
@@ -90,7 +147,7 @@ class MyPrompt(HistConsole):
             name = 'Please provide a model-file.'
         else:
             name = args
-        print("ubv %s" % name)
+        print(f"ubv {name}")
         script = os.path.join(ROOT_DIRECTORY, 'ubv.py')
         MyPrompt.call_cmd(script, args)
 

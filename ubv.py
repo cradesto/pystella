@@ -9,6 +9,7 @@ import math
 import pystella as ps
 
 import logging
+
 mpl_logger = logging.getLogger('matplotlib')
 mpl_logger.setLevel(logging.WARNING)
 
@@ -24,7 +25,7 @@ def plot_grid(models_dic, bnames, call=None, **kwargs):
     fontsize = kwargs.get('fontsize', 12)
     # setup figure
     # plt.matplotlib.rcParams.update({'font.size':})
-    fig, axs = plt.subplots(math.ceil(len(bnames)/2), 2, sharex='col', sharey='row', figsize=(8, 8))
+    fig, axs = plt.subplots(math.ceil(len(bnames) / 2), 2, sharex='col', sharey='row', figsize=(8, 8))
     plt.subplots_adjust(wspace=0, hspace=0)
 
     for i, bname in enumerate(bnames):
@@ -324,7 +325,7 @@ def main(name=None, model_ext='.ph'):
         for opt, arg in opts:
             if opt == '-i':
                 nm = os.path.splitext(os.path.basename(str(arg)))[0]
-                if os.path.exists(os.path.join(path, nm+model_ext)):
+                if os.path.exists(os.path.join(path, nm + model_ext)):
                     names.append(nm)
                 else:
                     files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))
@@ -338,7 +339,6 @@ def main(name=None, model_ext='.ph'):
         print(name)
         names.append(name)
         is_set_model = True
-
 
     if len(names) == 0 and not is_set_model:  # run for all files in the path
         names = ps.path.get_model_names(path, model_ext)
@@ -388,10 +388,10 @@ def main(name=None, model_ext='.ph'):
                 if vels is None:
                     sys.exit("Error: no data for: %s in %s" % (name, path))
                 models_vels[name] = vels
-                print("[%d/%d] Done mags & velocity for %s" % (i+1, len(names), name))
+                print("[%d/%d] Done mags & velocity for %s" % (i + 1, len(names), name))
             else:
                 models_vels = None
-                print("[%d/%d] Done mags for %s" % (i+1, len(names), name))
+                print("[%d/%d] Done mags for %s" % (i + 1, len(names), name))
 
         if label is None:
             if callback is not None:
