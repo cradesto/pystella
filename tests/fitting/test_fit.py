@@ -288,7 +288,50 @@ class TestFit(unittest.TestCase):
         plt.show()
 
     # @unittest.skip("just for plot")
-    def test_best_curves_gp_SN1999em(self):
+    def test_FitMPF_best_curves_SN1999em(self):
+        from pystella.rf import light_curve_func as lcf
+        from pystella.rf import light_curve_plot as lcp
+        # Get observations
+        D = 11.5e6  # pc
+        ebv_sn = 0.
+        # ebv_sn = 0.1
+        # dm = -5. * np.log10(D) + 5
+        # dm = -30.4  # D = 12.e6 pc
+        curves_obs = sn1999em.read_curves()
+
+        # Get model
+        name = 'cat_R500_M15_Ni006_E12'
+        path = join(dirname(dirname(abspath(__file__))), 'data', 'stella')
+
+        curves_mdl = ps.Stella(name, path=path).curves(curves_obs.BandNames, distance=D, ebv=ebv_sn)
+
+        # fit
+        fitter = ps.FitMPFit()
+        fitter.is_info = True
+        fitter.is_debug = True
+        fitter.is_quiet = True
+        fit_result, res, dum = fitter.best_curves(curves_mdl, curves_obs, dt0=0., is_fit_sigmas=False)
+        # fit_result, res, dum = fitter.best_curves(curves_mdl, curves_obs, dt0=0., dm0=0.)
+        dt, dtsig = res['dt'], res['dtsig']
+        dm, dmsig = res['dm'], res['dmsig']
+        # plot model
+
+        curves_mdl.set_tshift(dt)
+        ax = lcp.curves_plot(curves_mdl)
+
+        lt = {lc.Band.Name: 'o' for lc in curves_obs}
+        lcp.curves_plot(curves_obs, ax, lt=lt, xlim=(-10, 300), is_line=False)
+        # print
+        txt = '{:10} {:.2f} +- {:.4f}'.format('dt:', res['dt'], res['dtsig'])
+        txt += '\n{:10} {:.2f} +- {:.4f}'.format('dm:', res['dm'], res['dmsig'])
+        print(txt)
+        title_font = {'size': '12', 'color': 'black', 'weight': 'normal', 'verticalalignment': 'bottom'}
+        ax.text(0.03, 0.95, txt, transform=ax.transAxes,
+                bbox={'facecolor': 'none', 'alpha': 0.2, 'edgecolor': 'none'}, **title_font)
+        plt.show()
+
+    # @unittest.skip("just for plot")
+    def test_FitMPFit_best_curves_gp_SN1999em(self):
         from pystella.rf import light_curve_func as lcf
         from pystella.rf import light_curve_plot as lcp
         # matplotlib.rcParams['backend'] = "TkAgg"
@@ -296,6 +339,7 @@ class TestFit(unittest.TestCase):
         # from matplotlib import pyplot as plt
         # Get observations
         D = 11.5e6  # pc
+        ebv_sn = 0.1
         dm = -5. * np.log10(D) + 5
         # dm = -30.4  # D = 12.e6 pc
         curves_obs = sn1999em.read_curves()
@@ -327,21 +371,22 @@ class TestFit(unittest.TestCase):
         plt.show()
 
     # @unittest.skip("just for plot")
-    def test_best_curves_dtdm_SN1999em(self):
+    def test_FitMCMC_best_curves_dtdm_SN1999em(self):
         from pystella.rf import light_curve_func as lcf
         from pystella.rf import light_curve_plot as lcp
         # Get observations
         D = 11.5e6  # pc
-        dm = -5. * np.log10(D) + 5
+        # MD0 = -5. * np.log10(D) + 5
+        ebv_sn = 0.1
         # dm = -30.4  # D = 12.e6 pc
         curves_obs = sn1999em.read_curves()
-        curves_obs.set_mshift(dm)
+        # curves_obs.set_mshift(MD0)
 
         # Get model
         name = 'cat_R500_M15_Ni006_E12'
         path = join(dirname(dirname(abspath(__file__))), 'data', 'stella')
 
-        curves_mdl = lcf.curves_compute(name, path, distance=10, bands=curves_obs.BandNames)
+        curves_mdl = ps.Stella(name, path=path).curves(curves_obs.BandNames, distance=D, ebv=ebv_sn)
 
         # fit
         is_debug = True  # True
@@ -356,31 +401,45 @@ class TestFit(unittest.TestCase):
         threads = 3
 
         # fitter.is_debug = False
-        fit_result, res, samples = fitter.best_curves(curves_mdl, curves_obs, dt0=0., dm0=0., threads=threads,
-                                                      is_samples=True)
-        fig = fitter.plot_corner(samples)
+        # fit_result, res, samples \
+        fit_result, res, (th, ep, em), sampler = fitter.best_curves(curves_mdl, curves_obs, dt0=0., dm0=0.,
+                                                                    threads=threads, is_sampler=True)
+        nb = curves_obs.Length
+        dt, dm, sigs = fitter.theta2arr(th, nb)
+        ep_dt, ep_dm, ep_sigs = fitter.theta2arr(ep, nb)
+        em_dt, em_dm, em_sigs = fitter.theta2arr(em, nb)
+
+        samples = sampler.flatchain[fitter.nburn:, :]
+        fig = fitter.plot_corner(samples, bnames=curves_obs.BandNames, bins=55, alpha=0.5, verbose=fitter.is_info)
 
         # print
-        txt = '{:10s} {:.4f} ^{:.4f}_{:.4f} \n'.format('tshift:', res['dt'], res['dtsig2'], res['dtsig1']) + \
-              '{:10s} {:.4f} ^{:.4f}_{:.4f}\n'.format('msigma:', res['dm'], res['dmsig2'], res['dmsig1']) + \
-              '{:10s} {:.4f} ^{:.4f}_{:.4f}\n'.format('lnf:', res['lnf'], res['lnfsig2'], res['lnfsig1']) + \
-              '{:10s} chi2= {:.1f}  BIC= {:.1f} AIC= {:.1f} measure= {:.3f}\n'.\
-                  format('stat:', res['chi2'], res['bic'], res['aic'], res['measure']) + \
-              ' dof= {} accept= {:.3f}\n'.format(res['dof'], res['acceptance_fraction'])
+        txt = 'chi2= {:.1f}  BIC= {:.1f} AIC= {:.1f} measure= {:.3f}\n'.\
+            format(res['chi2'], res['bic'], res['aic'], res['measure'])
+        txt += '\n dt= {:.1f} ^{{{:.1f}}}_{{{:.1f}}} '.format(dt, ep_dt, em_dt)
+        txt += '\n dm= {:.2f} ^{{{:.2f}}}_{{{:.2f}}} '.format(dm, ep_dm, em_dm)
+        for i, bname in enumerate(curves_obs.BandNames):
+            txt += '\n sigma_{{{:s}}} = {:.2f}^{{{:.2f}}}_{{{:.2f}}} '. \
+                format(bname, sigs[i], ep_sigs[i], em_sigs[i])
         print(txt)
-        # plot model
-        curves_obs.set_tshift(res['dt'])
-        curves_obs.set_mshift(dm + res['dm'])
-        # curves_mdl.set_tshift(0.)
-        ax = lcp.curves_plot(curves_mdl)
 
+        curves_mdl.set_tshift(dt)
+        curves_mdl.set_mshift(dm)
+
+        ax = None
+        errs = {}
+        for i, bn in enumerate(curves_mdl.BandNames):
+            errs[bn] = [sigs[i]] * curves_mdl[bn].Length  # The error are the same for all points
+        curves_clone = curves_mdl.clone(err=errs)
+        ax = ps.curves_plot(curves_clone, ax=ax, is_legend=False, is_fill=True, alpha=0.2)
+        # Obs
         lt = {lc.Band.Name: 'o' for lc in curves_obs}
         lcp.curves_plot(curves_obs, ax, lt=lt, xlim=(-10, 300), is_line=False)
-        ax.text(0.1, 0.1, txt, transform=ax.transAxes)
+
+        ax.text(0.05, 0.05, txt, transform=ax.transAxes)
         plt.show()
 
     # @unittest.skip("just for plot")
-    def test_best_curves_dt_SN1999em(self):
+    def test_FitMCMC_best_curves_dt_SN1999em(self):
         from pystella.rf import light_curve_func as lcf
         from pystella.rf import light_curve_plot as lcp
         # Get observations
@@ -410,8 +469,8 @@ class TestFit(unittest.TestCase):
 
         # fitter.is_debug = False
         fit_result, res, (th, e1, e2), samples = fitter.best_curves(curves_mdl, curves_obs, dt0=0., threads=threads,
-                                                      is_samples=True)
-        fig = fitter.plot_corner(samples, labels=('dt', ), bnames=curves_obs.BandNames)
+                                                                    is_sampler=True)
+        fig = fitter.plot_corner(samples, labels=('dt',), bnames=curves_obs.BandNames)
 
         # print
         # '{:10s} {:.4f} ^{:.4f}_{:.4f}\n'.format('lnf:', res['lnf'], res['lnfsig2'], res['lnfsig1']) + \
@@ -429,7 +488,7 @@ class TestFit(unittest.TestCase):
         plt.show()
 
     # @unittest.skip("just for plot")
-    def test_best_curves_dt_sigmas_SN1999em(self):
+    def test_FitMCMC_best_curves_dt_sigmas_SN1999em(self):
         from pystella.rf import light_curve_func as lcf
         from pystella.rf import light_curve_plot as lcp
         # Get observations
@@ -460,7 +519,7 @@ class TestFit(unittest.TestCase):
         # fitter.is_debug = False
         bnames = curves_obs.BandNames
         res, samples = fitter.best_curves_sigmas(curves_mdl, curves_obs, bnames=bnames,
-                                                 dt0=0., threads=threads, is_samples=True)
+                                                 dt0=0., threads=threads, is_sampler=True)
         fig = fitter.plot_corner(samples, bnames=bnames)
 
         # print
@@ -484,7 +543,7 @@ class TestFit(unittest.TestCase):
         plt.show()
 
     # @unittest.skip("just for plot")
-    def test_best_curves_dtdm_sigmas_SN1999em(self):
+    def test_FitMCMC_best_curves_dtdm_sigmas_SN1999em(self):
         from pystella.rf import light_curve_func as lcf
         from pystella.rf import light_curve_plot as lcp
         # Get observations
@@ -515,7 +574,7 @@ class TestFit(unittest.TestCase):
         # fitter.is_debug = False
         bnames = curves_obs.BandNames
         res, samples = fitter.best_curves_sigmas(curves_mdl, curves_obs, bnames=bnames,
-                                                 dt0=0., dm0=0., threads=threads, is_samples=True)
+                                                 dt0=0., dm0=0., threads=threads, is_sampler=True)
         fig = fitter.plot_corner(samples, bnames=bnames)
 
         # print
@@ -541,7 +600,7 @@ class TestFit(unittest.TestCase):
         plt.show()
 
     # @unittest.skip("just for plot")
-    def test_mcmc_fake_curves(self):
+    def test_FitMCMC_fake_curves(self):
         # Get observations
         # D = 11.5e6  # pc
         D = 10.5e6  # pc
@@ -579,7 +638,7 @@ class TestFit(unittest.TestCase):
 
         print('is_debug ', is_debug)
 
-        res, samples = fitter.best_curves(curves_m, curves_o, dt0=0., dm0=0., is_samples=True)
+        res, samples = fitter.best_curves(curves_m, curves_o, dt0=0., dm0=0., is_sampler=True)
 
         curves_o.set_tshift(0.)
         curves_o.set_mshift(dm)

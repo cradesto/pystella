@@ -51,6 +51,7 @@ class PreSN(object):
     """
     sRho = 'Rho'
     sM = 'M'
+    sMcore = 'm_core'
     sT = 'T'
     sR = 'R'
     sV = 'V'
@@ -119,7 +120,7 @@ class PreSN(object):
     @property
     def m_core(self):
         """Core mass"""
-        p = 'm_core'
+        p = PreSN.sMcore
         if self.is_set(PreSN.sM):
             d = self.hyd(PreSN.sM)[0]
         else:
@@ -532,7 +533,8 @@ class PreSN(object):
                        title=None, figsize=(12, 8)):
         def set_xlim(ax, lim):
             if lim is not None:
-                ax.set_xlim(lim[0] * 0.5, lim[1] * 2.)
+                # ax.set_xlim(lim[0] * 0.5, lim[1] * 2.)
+                ax.set_xlim(lim)
 
         def set_ylim(ax, lim):
             if lim is not None:
@@ -543,12 +545,12 @@ class PreSN(object):
             res = np.interp(lim, ain, aout)
             return res
 
-        if xlimR is not None and xlimM is None:
-            xlimM = lims(self.r, self.m / phys.M_sun, xlimR)
-            print("xlimM = {} for xlimR={}".format(xlimM, xlimR))
-        elif xlimM is not None and xlimR is None:
-            xlimR = lims(self.m / phys.M_sun, self.r, xlimM)
-            print("xlimR = {} for xlimM={}".format(xlimR, xlimM))
+        # if xlimR is not None and xlimM is None:
+        #     xlimM = lims(self.r, self.m / phys.M_sun, xlimR)
+        #     print("xlimM = {} for xlimR={}".format(xlimM, xlimR))
+        # elif xlimM is not None and xlimR is None:
+        #     xlimR = lims(self.m / phys.M_sun, self.r, xlimM)
+        #     print("xlimR = {} for xlimM={}".format(xlimR, xlimM))
 
         # Set up the axes with gridspec
         fig = plt.figure(figsize=figsize)
@@ -705,26 +707,65 @@ class PreSN(object):
 
         return newPreSN
 
-    def reshape(self, nz, name=None, nstart=0, nend=None, axis=sM, xmode='rlog', kind='np'):
+    def cut(self, name=None, start=0, end=None, elements=None, pars=None):
+        """
+        Cut zones in the envelope between nstart:nend
+        @param name: the name of new PreSN. Take from parent, if it's None.
+        @param start: zone number of the left edge. Default: 0 (first zone)
+        @param end: zone number of the right edge. Default: None,  (equal last zone)
+        @param elements: the elements to be left on hold.. Take from parent, if it's None.
+        @return: new PreSN
+        """
+        if name is None:
+            name = self.Name
+        if end is None:
+            end = self.nzon
+        if elements is None:
+            elements = self.Elements
+
+        nznew = end - start
+        newPreSN = PreSN(name, nznew, elements=elements)
+
+        for v in PreSN.presn_hydro:
+            old = self.hyd(v)
+            new = old[start:end]
+            newPreSN.set_hyd(v, new)
+
+        # abn reshape
+        for el in elements:
+            old = self.el(el)
+            new = old[start:end]
+            newPreSN.set_chem(el, new)
+
+        # copy parameters
+        newPreSN.copy_par(self)
+        # for p in ['m_core', 'r_cen']:
+        #     v = getattr(newPreSN, p)
+        #     newPreSN.set_par(p, v)
+        # # newPreSN.copy_par(self)  # keys=['time_start', 'm_tot',  'm_core', 'r_cen'])
+        # newPreSN.copy_par(self, keys=['time_start', 'm_tot'])
+        return newPreSN
+
+    def reshape(self, nz, name=None, start=0, end=None, axis=sM, xmode='rlog', kind='np'):
         """
         Reshape parameters of envelope from nstart to nend to nz-zones
         :param nz: new zones
         :param name: the name of new PreSN. Take from parent, if it's None.
-        :param nstart: zone number to start reshaping. Default: 0 (first zone)
-        :param nend: zone number to end reshaping. Default: None,  (equal last zone)
-        :param axis: [M OR R OR V] - reshape along mass or radius or velocity coordinate
-        :param xmode: [lin OR rlog OR resize] - linear OR reversed log10 OR add/remove points
-        :param kind: [np OR interp1d(..kind)], kind is  ('linear', 'nearest', 'zero', 'slinear', 'quadratic, 'cubic')
+        :param start: zone number to start reshaping. Default: 0 (first zone)
+        :param end: zone number to end reshaping. Default: None,  (equal last zone)
+        :param axis: [M OR R OR V] - reshape along mass or radius or velocity coordinate. Default: M
+        :param xmode: [lin OR rlog OR resize] - linear OR reversed log10 OR add/remove points. Default: rlog
+        :param kind: [np OR interp1d(..kind)], kind is  ('np=np.interp', 'linear', 'nearest', 'zero', 'slinear', 'quadratic, 'cubic'). Default: np
         :return: new preSN with reshaping zones
         """
         from scipy.interpolate import interp1d
-        nznew = nstart + nz
+        nznew = start + nz
         if name is None:
             name = self.Name
 
         newPreSN = PreSN(name, nznew, elements=self.Elements)
-        if nend is None:
-            nend = self.nzon
+        if end is None:
+            end = self.nzon
 
         def rlogspace(s, e, n):
             r = np.exp(np.linspace(np.log(s), np.log(e), n))
@@ -773,12 +814,12 @@ class PreSN(object):
                 xn = f(xn)
             return xn
 
-        def interp(x, v, start, end):
+        def interp(x, v, s, e):
             res = []
-            if start > 0:
-                res = v[:start]  # save points before start
-            xi = x[start:end]
-            yi = v[start:end]
+            if s > 0:
+                res = v[:s]  # save points before start
+            xi = x[s:e]
+            yi = v[s:e]
             if xmode == 'lin':
                 xx = np.linspace(xi[0], xi[-1], nz)  # new x-points
             elif xmode == 'rlog':
@@ -799,23 +840,23 @@ class PreSN(object):
 
         # hyd reshape
         if axis == PreSN.sM:
-            x = self.m
+            xx = self.m
         elif axis == PreSN.sR:
-            x = self.r
+            xx = self.r
         elif axis == PreSN.sV:
-            x = self.V
+            xx = self.V
         else:
             raise ValueError('Such axis "{}" is not supported.'.format(axis))
 
-        for v in PreSN.presn_hydro:
-            old = self.hyd(v)
-            new = interp(x, old, start=nstart, end=nend)
-            newPreSN.set_hyd(v, new)
+        for vv in PreSN.presn_hydro:
+            old = self.hyd(vv)
+            new = interp(xx, old, s=start, e=end)
+            newPreSN.set_hyd(vv, new)
 
         # abn reshape
         for el in self.Elements:
             old = self.el(el)
-            new = interp(x, old, start=nstart, end=nend)
+            new = interp(xx, old, s=start, e=end)
             newPreSN.set_chem(el, new)
 
         # copy parameters

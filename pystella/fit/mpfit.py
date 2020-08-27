@@ -945,12 +945,12 @@ class mpfit:
         if (limited is not None) and (limits is not None):
             # Error checking on limits in parinfo
             if numpy.any((limited[:, 0] & (xall < limits[:, 0])) |
-                                 (limited[:, 1] & (xall > limits[:, 1]))):
+                         (limited[:, 1] & (xall > limits[:, 1]))):
                 self.errmsg = 'ERROR: parameters are not within PARINFO limits'
                 return
             if numpy.any((limited[:, 0] & limited[:, 1]) &
-                                 (limits[:, 0] >= limits[:, 1]) &
-                                 (pfixed == 0)):
+                         (limits[:, 0] >= limits[:, 1]) &
+                         (pfixed == 0)):
                 self.errmsg = 'ERROR: PARINFO parameter limits are not consistent'
                 return
 
@@ -1311,7 +1311,7 @@ class mpfit:
 
                 # Check for over/underflow
                 if ~numpy.all(numpy.isfinite(wa1) & numpy.isfinite(wa2) & \
-                                      numpy.isfinite(x)) or ~numpy.isfinite(ratio):
+                              numpy.isfinite(x)) or ~numpy.isfinite(ratio):
                     errmsg = ('''ERROR: parameter or function value(s) have become
 						'infinite; check model function for over- 'and underflow''')
                     self.status = -16
@@ -1429,7 +1429,6 @@ class mpfit:
     #		  endif
     #	  endif
     #  endif
-
 
     # Procedure to parse the parameter values in PARINFO, which is a list of dictionaries
     def parinfo(self, parinfo=None, key='a', default=None, n=0):

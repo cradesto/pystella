@@ -18,9 +18,9 @@ def long(models, path='.', pars=('R', 'M', 'Mni', 'E'), sep=' |', is_verbose=Fal
     units = {'R': 'Rsun', 'M': 'Msun', 'Mni': 'Msun', 'E': 'FOE'}
     is_dict = type(models) is dict
     if is_dict:
-        mnanes = list(models.keys())
+        mnames = list(models.keys())
     else:
-        mnanes = models
+        mnames = models
 
     # print header
     s1 = '{:>40s} '.format('Name')
@@ -34,9 +34,11 @@ def long(models, path='.', pars=('R', 'M', 'Mni', 'E'), sep=' |', is_verbose=Fal
     print(s2)
     # print("| %40s |  %8s |  %6s | %6s |  %s" % ('Name', 'R', 'M', 'E', 'comment'))
     # print("| %40s |  %8s |  %6s | %6s |  %s" % ('-' * 40, '-' * 8, '-' * 6, '-' * 6, '-' * 8))
-    for mdl in mnanes:
+    models_data = {}
+    for mdl in mnames:
         stella = Stella(mdl, path=path)
         exts = models[mdl] if is_dict else ''
+        dat = {}
         if stella.is_tt:
             info = stella.get_tt().Info
             try:
@@ -44,6 +46,7 @@ def long(models, path='.', pars=('R', 'M', 'Mni', 'E'), sep=' |', is_verbose=Fal
                 for k in pars:
                     v = getattr(info, k)
                     s += '{}  {:8.3f}'.format(sep, v)
+                    dat[k] = v
                 s += '{}  {}'.format(sep, exts)
                 print(s)
             except KeyError as ex:
@@ -51,9 +54,11 @@ def long(models, path='.', pars=('R', 'M', 'Mni', 'E'), sep=' |', is_verbose=Fal
             except:
                 print("| %40s |  %8s |  %6s | %6s | %s  | Unexpected error: %s"
                       % (info.Name, '', '', '', exts, sys.exc_info()[0]))
+            models_data[mdl] = dat
         else:
             if is_verbose:
                 print("| %40s |  %26s |  %s" % (stella.name, ' ', exts))
+    return models_data
 
 
 def summary(models, path='.', pars=('R', 'M', 'Mni', 'E'), sep='  ', is_verbose=False):

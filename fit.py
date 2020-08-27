@@ -166,7 +166,7 @@ def plot_curves(curves_o, res_models, res_sorted, **kwargs):
     from matplotlib import pyplot as plt
     import math
 
-    font_size = kwargs.get('font_size', 10)
+    font_size = kwargs.get('font_size', 8)
     xlim = kwargs.get('xlim', None)
     ylim = kwargs.get('ylim', None)
     num = len(res_sorted)
@@ -178,7 +178,7 @@ def plot_curves(curves_o, res_models, res_sorted, **kwargs):
     fig = plt.figure(figsize=(min(ncol, 2) * 4, min(nrow, 2) * 4))
     plt.matplotlib.rcParams.update({'font.size': font_size})
 
-    tshift0 = ps.first(curves_o).tshift
+    # tshift0 = ps.first(curves_o).tshift
     i = 0
     for k, v in res_sorted.items():
         i += 1
@@ -186,13 +186,14 @@ def plot_curves(curves_o, res_models, res_sorted, **kwargs):
 
         tshift_best = v.tshift
         curves = res_models[k]
+        curves.set_tshift(tshift_best)
         lcp.curves_plot(curves, ax=ax, figsize=(12, 8), linewidth=1, is_legend=False)
         if xlim is None or xlim[1] == float('inf'):
             xlim = ax.get_xlim()
         else:
             ax.set_xlim(xlim)
         lt = {lc.Band.Name: 'o' for lc in curves_o}
-        curves_o.set_tshift(tshift0 + tshift_best)
+        # curves_o.set_tshift(tshift0)
         lcp.curves_plot(curves_o, ax, xlim=xlim, lt=lt, markersize=4, is_legend=False, is_line=False)
 
         ax.text(0.99, 0.94, k, horizontalalignment='right', transform=ax.transAxes)
@@ -811,7 +812,7 @@ def arg2names(arg, path, ext):
             nm = os.path.splitext(os.path.basename(f))[0]
             if os.path.exists(os.path.join(path, nm + ext)):
                 names.append(nm)
-                print('input: {}'.format(nm))
+                print('input: {}'.format(nm+ext))
     return names
 
 
@@ -828,7 +829,8 @@ def main():
 
     path = os.getcwd()
     if args.path:
-        path = os.path.expanduser(path)
+        path = os.path.expanduser(args.path)
+        # print(f'-p: {path}')
 
     # Set model names
     names = []
@@ -842,6 +844,9 @@ def main():
         names = ps.path.get_model_names(path, model_ext)
 
     if len(names) == 0:
+        print(f'PATH: {path}')
+        print(f'-i: {args.input}')
+        print('I do not know the models for fitting. Please use the key -i MODEL or -i *R500* ')
         parser.print_help()
         sys.exit(2)
 
