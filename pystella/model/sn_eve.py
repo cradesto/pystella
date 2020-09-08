@@ -958,7 +958,7 @@ def load_rho(fname, path=None):
     return presn
 
 
-def load_hyd_abn(name, path='.', abn_elements=PreSN.stl_elements, skiprows=1,
+def load_hyd_abn(name, path='.', abn_elements=PreSN.stl_elements, skiprows=0, comments='#',
                  is_rho=False, is_dm=True, is_dum=False):
     """
     Load progenitor from hyd- + abn- files.
@@ -1061,7 +1061,7 @@ def load_hyd_abn(name, path='.', abn_elements=PreSN.stl_elements, skiprows=1,
     dt = np.dtype({'names': col_names,
                    'formats': ['i4'] + list(np.repeat('f8', len(col_names) - 1))})
     # logger.info(dt)
-    data_chem = np.loadtxt(abn_file, comments='#', skiprows=skiprows, dtype=dt)
+    data_chem = np.loadtxt(abn_file, comments=comments, skiprows=skiprows, dtype=dt)
 
     for ename in abn_elements:
         presn.set_chem(ename, data_chem[ename])

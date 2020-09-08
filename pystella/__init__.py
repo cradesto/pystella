@@ -1,6 +1,6 @@
 __author__ = 'bakl'
 
-__all__ = ['fit', 'model', 'rf', 'util']
+__all__ = ['fit', 'model', 'rf', 'util', 'phys']
 
 from .rf import band
 from .rf import light_curve_func as lcf
