@@ -113,7 +113,8 @@ def get_parser():
                         dest="reshape",
                         help="Reshape parameters of envelope from nstart to nend to nz-zones."
                              "\n Format: --reshape NZON:AXIS:XMODE:START:END"
-                             "\n NZON: new zones. If < 0 Nzon is the same as for the initial model "
+                             "\n NZON: value of zones between START and END. "
+                             "If < 0 Nzon is the same as Nzon of the initial model "
                              "\n AXIS: [M* OR R OR V] - reshape along mass or radius or velocity coordinate."
                              "\n XMODE: [lin OR rlog* OR resize] - linear OR reversed log10 OR add/remove points. "
                              "\n START: zone number to start reshaping. Default: 0 (first zone)"

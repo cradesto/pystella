@@ -90,31 +90,30 @@ class SnEveTests(unittest.TestCase):
     def test_presn_reshape(self):
         name = 'u50fenv'
         path = '/home/bakl/Sn/my/papers/18/fischer/model'
-        # eve = StellaHydAbn(name, path=path).load_hyd()
         eve = sn_eve.load_hyd_abn(name, path=path, is_dum=False)
 
         # for same size must be the same
-        nstart = 1
-        nzon = eve.nzon
         evenew = eve.reshape(nz=eve.nzon)
         self.assertEqual(evenew.nzon, eve.nzon,
                          "Reshape PreSn: you have {} zone, but it should be {}".format(eve.nzon, eve.nzon))
         # todo check range for Rho, V, T
-        k = 0
-        self.assertAlmostEqual(eve.m[k]/evenew.m[k], 1.,
-                               msg="Mass PreSn: you have the first zone where old mass {} = new {}".format(eve.m[k],
-                                                                                                           evenew.m[k]))
-        k = -1
-        self.assertAlmostEqual(eve.m[k]/evenew.m[k], 1.,
-                               msg="Mass PreSn: you have the last zone where old mass {} = new {}".format(eve.m[k],
-                                                                                                          evenew.m[k]))
+        for k in (0, -1):
+            self.assertAlmostEqual(eve.m[k]/evenew.m[k], 1.,
+                                   msg="Mass PreSn: you have the first zone where old mass {} = new {}".
+                                   format(eve.m[k], evenew.m[k]))
+            self.assertAlmostEqual(eve.r[k]/evenew.r[k], 1.,
+                                   msg="Radius PreSn: you have the last zone where old r {} = new {}".
+                                   format(eve.r[k], evenew.r[k]))
+            self.assertAlmostEqual(eve.rho[k]/evenew.rho[k], 1.,
+                                   msg="Density PreSn: you have the last zone where old rho {} = new {}".
+                                   format(eve.rho[k], evenew.rho[k]))
         nzon = 300
         nstart = 309
         evenew = eve.reshape(nz=nzon, start=nstart, end=None)
-        evenew.plot_chem()
-        plt.show()
         self.assertEqual(evenew.nzon, nstart + nzon,
                          "Reshape PreSn: you have {} zone, but it should be {}".format(eve.nzon, nstart + nzon))
+        evenew.plot_chem()
+        plt.show()
 
     def test_presn_zone_reduce(self):
         name = 'u50fenv'
