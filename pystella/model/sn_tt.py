@@ -54,6 +54,7 @@ class StellaTt:
                     break
         # time Tbb rbb Teff Rlast_sc R(tau2/3) Mbol MU MB MV MI MR Mbolavg  gdepos
         # time Tbb rbb Teff Rlast_sc R(tau2/3) Mbol MU MB MV MI MR   Mbolavg  gdepos
+        # print(i, header)
         if header != '':
             names = map(str.strip, header.split())
             names = [w.replace('R(tau2/3)', 'Rph') for w in names]
