@@ -170,7 +170,9 @@ def plot_vel(ax, vel, xlim=None, ylim=None, vnorm=1e8, color='blue', label='Velo
     # ax.grid()
 
 
-def compute_vel_swd(name, path, z=0.):
+def compute_vel_swd(name, path, z=0., is_info=False):
+    if is_info:
+        print(f'Run model: {name} in dir: {path} z= {z}')
     model = Stella(name, path=path)
     # check data
     if not model.is_swd:
@@ -187,7 +189,9 @@ def compute_vel_swd(name, path, z=0.):
     return res
 
 
-def compute_vel_res_tt(name, path, z=0., t_beg=0.1, t_end=None, t_diff=1.05, line_header=80, is_info=False):
+def compute_vel_res_tt(name, path, z=0., t_beg=0.1, t_end=None, line_header=80, is_info=False):
+    if is_info:
+        print(f'Run model: {name} in dir: {path} z= {z}')
     model = Stella(name, path=path)
     # check data
     if not model.is_res:
