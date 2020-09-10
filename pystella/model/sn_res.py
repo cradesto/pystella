@@ -46,6 +46,8 @@ class StellaRes:
         :param end: line number to finish
         :return:
         """
+        from itertools import islice
+
         fname = os.path.join(self.path, self.name + ".res")
         colstr = "ZON M R14 V8 T5 Trad5 lgDm6   lgP7  lgQv lgQRT XHI ENG LUM CAPPA ZON1 n_bar n_e Fe II III"
         cols = colstr.split()
@@ -63,7 +65,6 @@ class StellaRes:
         #     b = np.genfromtxt(itertools.islice(f_in, start - 1, end),
         #                       names=cols, dtype=dt, delimiter=delimiter)
         with open(fname, "rb") as f:
-            from itertools import islice
             b = np.genfromtxt(islice(f, start-1, end),
                               names=cols, dtype=dt, delimiter=delimiter)
 
@@ -92,6 +93,41 @@ class StellaRes:
         return b
 
     def find_block(self, time):
+        """
+        The block data with the nearest OBS.Time > time
+        @param time:
+        @return: i, (t, start, end)
+        """
+        for i, (t, start, end) in enumerate(self.blocks()):
+            if t > time:
+                return i, (t, start, end)
+        return None, None, None
+    # def bad_find_block(self, time):
+    #     t = 0.
+    #     start = end = 0
+    #     is_block = False
+    #     fname = os.path.join(self.path, self.name + '.res')
+    #     i = 0
+    #     with open(fname, "r") as f:
+    #         for line in f:
+    #             i += 1
+    #             if is_block and line.lstrip().startswith("%B"):
+    #                 end = i - 1  # %B - next line
+    #                 break
+    #             if not is_block and line.lstrip().startswith("OBS.TIME"):
+    #                 header = line
+    #                 names = header.split()
+    #                 t = float(names[1])
+    #                 if t > time:
+    #                     is_block = True
+    #                     start = i + 2  # data after OBS.TIME line
+    #
+    #     if start < end:
+    #         return t, start, end
+    #     else:
+    #         return None, None, None
+
+    def blocks(self):
         t = 0.
         start = end = 0
         is_block = False
@@ -102,19 +138,15 @@ class StellaRes:
                 i += 1
                 if is_block and line.lstrip().startswith("%B"):
                     end = i - 1  # %B - next line
-                    break
+                    is_block = False
+                    if start < end:
+                        yield t, start, end
                 if not is_block and line.lstrip().startswith("OBS.TIME"):
                     header = line
                     names = header.split()
                     t = float(names[1])
-                    if t > time:
-                        is_block = True
-                        start = i + 2  # data after OBS.TIME line
-
-        if start < end:
-            return t, start, end
-        else:
-            return None, None, None
+                    is_block = True
+                    start = i + 2  # data after OBS.TIME line
 
 
 class StellaResInfo:
@@ -247,7 +279,7 @@ class StellaResInfo:
     def print_tex(self, o=None, lend=''):
         # print "INFO %s" % self.name
         # print " %40s: R = %7.2f M = %6.2f E = %6.2f " % (self.name, self.R, self.M, self.E)
-        s = " \\mbox{%s} &  %7.2f &  %6.2f & %6.2f & %6.2f \\\ %s " % \
+        s = r" \mbox{%s} &  %7.2f &  %6.2f & %6.2f & %6.2f \\\ %s " % \
             (self.name, self.R, self.M, self.E, self.Mni, lend)
         if o is not None and o:
             return s
