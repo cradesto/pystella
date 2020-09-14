@@ -333,7 +333,8 @@ def main(name=None, model_ext='.ph'):
                     for f in files:
                         nm = os.path.splitext(os.path.basename(f))[0]
                         names.append(nm)
-                        print('input: {}'.format(nm))
+                    names = list(set(names))
+                    print('Input {} models: {}'.format(len(names), ' '.join(names)))
                 is_set_model = True
     else:
         print(name)
