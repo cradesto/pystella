@@ -107,7 +107,7 @@ class SnEveTests(unittest.TestCase):
             self.assertAlmostEqual(eve.rho[k]/evenew.rho[k], 1.,
                                    msg="Density PreSn: you have the last zone where old rho {} = new {}".
                                    format(eve.rho[k], evenew.rho[k]))
-        nzon = 300
+        nzon = 500
         nstart = 309
         evenew = eve.reshape(nz=nzon, start=nstart, end=None)
         self.assertEqual(evenew.nzon, nstart + nzon,
