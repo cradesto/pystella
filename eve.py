@@ -120,10 +120,16 @@ def get_parser():
                              "\n START: zone number to start reshaping. Default: 0 (first zone)"
                              "\n END: zone number to end reshaping. Default: None,  (equal last zone)"
                         )
+    # parser.add_argument('-w', '--write',
+    #                     action='store_const',
+    #                     const=True,
+    #                     dest="is_write",
+    #                     help="To write the data to hyd-, abn-files")
     parser.add_argument('-w', '--write',
-                        action='store_const',
-                        const=True,
-                        dest="is_write",
+                        required=False,
+                        type=str,
+                        default=False,
+                        dest="write_to",
                         help="To write the data to hyd-, abn-files")
     return parser
 
@@ -232,14 +238,18 @@ def main():
             print("The element masses: After")
             print_masses(eve)
 
-        if args.is_write:
-            fname = os.path.join(path, name)
-            f = fname + '.eve.abn'
+        if args.write_to:
+            fname = os.path.join(path, args.write_to)
+            # fname = os.path.join(path, name)
+            # f = fname + '.eve.abn'
+            fname = fname.replace('.rho', '')
+            f = fname + '.abn'
             if eve.write_abn(f, is_header=True):
                 print(" abn has been saved to {}".format(f))
             else:
                 print("Error with abn saving to {}".format(f))
-            f = fname + '.eve.hyd'
+            # f = fname + '.eve.hyd'
+            f = fname + '.hyd'
             if eve.write_hyd(f):
                 print(" hyd has been saved to {}".format(f))
             else:
@@ -277,7 +287,7 @@ def main():
                     ax2 = ax.twinx()
                 ax2.legend(handles=handles_nm, loc=4, fancybox=False, frameon=False)
 
-    if not args.is_write:
+    if not args.write_to:
         if args.is_save_plot:
             if args.rho:
                 fsave = os.path.join(os.path.expanduser('~/'), 'rho_%s.pdf' % names[0])
