@@ -158,7 +158,8 @@ def usage():
     print("  -s  <file-name> without extension. Save plot to pdf-file. Default: ubv_<file-name>.pdf")
     print("  -x  <xbeg:xend> - xlim, ex: 0:12. Default: None, used all days.")
     print("  -y  <ybeg:yend> - ylim, ex: 26:21. Default: None, used top-magnitude+-5.")
-    print("  -v  <swd OR ttres> - plot model velocities computed from swd OR tt-res files.")
+    print("-v  <swd OR ttres[ttresold]> - plot model velocities computed from swd OR tt-res files[ttresold for old res "
+          "format].")
     print("  -w  write magnitudes to out-file. Use '1' for the default name of out-file")
     print("  -z <redshift>.  Default: 0")
     print("  --dt=<t_diff>  time difference between two spectra")
@@ -379,10 +380,11 @@ def main(name=None, model_ext='.ph'):
             models_mags[name] = curves
 
             if vel_mode is not None:
-                if vel_mode == 'ttres':
-                    vels = ps.vel.compute_vel_res_tt(name, path, z=z)
-                elif vel_mode == 'swd':
+                if vel_mode == 'swd':
                     vels = ps.vel.compute_vel_swd(name, path, z=z)
+                elif vel_mode.startswith('ttres'):
+                    vels = ps.vel.compute_vel_res_tt(name, path, z=z,
+                                                     is_info=False, is_new_std='old' not in vel_mode.lower())
                 else:
                     raise ValueError('This mode [{}] for velocity is not supported'.format(vel_mode))
 

@@ -189,7 +189,8 @@ def compute_vel_swd(name, path, z=0., is_info=False):
     return res
 
 
-def compute_vel_res_tt(name, path, z=0., t_beg=0.1, t_end=None, line_header=80, is_info=False):
+def compute_vel_res_tt(name, path, z=0., t_beg=0.1, t_end=None, line_header=80,
+                       is_info=False, is_new_std=False):
     if is_info:
         print(f'Run model: {name} in dir: {path} z= {z}')
     model = Stella(name, path=path)
@@ -214,13 +215,14 @@ def compute_vel_res_tt(name, path, z=0., t_beg=0.1, t_end=None, line_header=80, 
             continue
 
         r_ph = np.interp(t, tt['time'], tt['Rph'])  # One-dimensional linear interpolation.
-        block = res.read_res_block(start, end)
+        block = res.read_res_block(start, end, is_new_std=is_new_std)
         if block is None:
             break
         if True:
             vel = np.interp(r_ph, block['R14']*1e14, block['V8']*1e8, 0, 0)  # One-dimensional linear interpolation.
             if is_info:
-                print('nblock= {}: t[={:e}] vel= {:e}'.format(i, t, vel))
+                # print('            blockR14= {}   blockV8= {}'.format(block['R14'], block['V8']))
+                print('nblock= {} [{}:{}]: t= {:e} r_ph= {:e}   vel= {:e}'.format(i, start, end, t, r_ph, vel))
             vels.append(vel)
         else:
             idx = np.abs(block['R14'] - r_ph/1e14).argmin()

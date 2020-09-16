@@ -39,22 +39,28 @@ class StellaRes:
         else:
             return None
 
-    def read_res_block(self, start, end):
+    def read_res_block(self, start, end, is_new_std=True):
         """
         Read one part of res-data
-        :param start: line number to start
-        :param end: line number to finish
+        @param start: line number to start
+        @param end: line number to finish
+        @param is_new_std: new format for res-file
         :return:
         """
         from itertools import islice
 
         fname = os.path.join(self.path, self.name + ".res")
+        col_w = "i4 f9 f12 f8 f10 f8 f7 f7 f7 f7 e10 e10 e10 e10 i5 e10 e10 e10 e10 e10"
         colstr = "ZON M R14 V8 T5 Trad5 lgDm6   lgP7  lgQv lgQRT XHI ENG LUM CAPPA ZON1 n_bar n_e Fe II III"
+        if is_new_std:
+            col_w = "i5 f10 f12 f8 f10 f8 f7 f7 f7 f7 e10 e10 e10 e10 i5 e10 e10 e10 e10 e10"
+            colstr += ' accel'
+            col_w += " e10"
+
         cols = colstr.split()
         # FORMAT(1X,I3,1P,E9.2,0P,F12.7,F8.4,F10.3,F8.3,4F7.2,1P,4E10.2,I5, 11e10.2);
 
         # delimiter = (4, 9, 12, 8, 10, 8, 7, 7, 7, 7, 10, 10, 10, 10, 5, 10, 10, 10, 10, 10)
-        col_w = "i4 f9 f12 f8 f10 f8 f7 f7 f7 f7 e10 e10 e10 e10 i5 e10 e10 e10 e10 e10"
         delimiter = (int(re.sub(r'\D', '', w)) for w in map(str.strip, col_w.split()))
         # dt = np.dtype({'names': cols, 'formats': map(str.strip, col_w.split())})
         dt = np.dtype({'names': cols, 'formats': [np.float] * len(cols)})
@@ -65,6 +71,9 @@ class StellaRes:
         #     b = np.genfromtxt(itertools.islice(f_in, start - 1, end),
         #                       names=cols, dtype=dt, delimiter=delimiter)
         with open(fname, "rb") as f:
+            # if is_new_std:
+            #     b = np.loadtxt(islice(f, start-1, end))
+            # else:
             b = np.genfromtxt(islice(f, start-1, end),
                               names=cols, dtype=dt, delimiter=delimiter)
 
@@ -73,7 +82,7 @@ class StellaRes:
         # c = np.vstack((block['ZON'],  # z
         #               block['M'],  # m
         #               block['R14'] * 1e14,  # r
-        #               10 ** (block['lgDm6'] - 6.),  # rho
+        #               10 ** (bl   ock['lgDm6'] - 6.),  # rho
         #               block['V8'] * 1e8,
         #               block['T5'] * 1e5,
         #               block['Trad5'] * 1e5))
