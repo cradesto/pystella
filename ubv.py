@@ -20,18 +20,26 @@ ROOT_DIRECTORY = dirname(dirname(abspath(__file__)))
 
 def plot_grid(models_dic, bnames, call=None, **kwargs):
     import matplotlib.pyplot as plt
+    import numpy as np
 
-    title = kwargs.get('title', '')
+    title = kwargs.get('title', False)
     fontsize = kwargs.get('fontsize', 12)
+    figsize = kwargs.get('figsize', (8, 8))
     # setup figure
     # plt.matplotlib.rcParams.update({'font.size':})
-    fig, axs = plt.subplots(math.ceil(len(bnames) / 2), 2, sharex='col', sharey='row', figsize=(8, 8))
+    if len(bnames) == 1:
+        fig, axs = plt.subplots(figsize=figsize)
+        axs = np.array(axs)
+    else:
+        fig, axs = plt.subplots(math.ceil(len(bnames) / 2), 2, sharex='col', sharey='row', figsize=figsize)
     plt.subplots_adjust(wspace=0, hspace=0)
 
     for i, bname in enumerate(bnames):
         icol = i % 2
         irow = int(i / 2)
-        ax = axs[irow, icol]
+        # print(i, irow, icol, axs.shape[0])
+        # ax = axs[irow, icol]
+        ax = axs.ravel()[2*irow+icol]
         ps.lcp.plot_models_band(ax, models_dic, bname, **kwargs)
 
         # plot callback
@@ -50,9 +58,13 @@ def plot_grid(models_dic, bnames, call=None, **kwargs):
         if kwargs.get('is_grid', False):
             ax.grid(linestyle=':')
 
-    # Setup axes
-    for ax in axs[-1, :]:
-        ax.set_xlabel('Time [days]')
+    # # Setup axes
+    # for i, bname in enumerate(bnames):
+    #     icol = i % 2
+    #     irow = int(i / 2)
+    #     ax = axs.ravel()[i * irow + icol]
+        if irow == math.ceil(len(bnames)/2)-1:
+            ax.set_xlabel('Time [days]')
 
     if title:
         plt.title(title)
