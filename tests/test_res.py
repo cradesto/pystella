@@ -64,6 +64,19 @@ class TestStellaRes(unittest.TestCase):
         tmp = 15.
         self.assertEquals(info.E, tmp, "Ebstht [%f] should be %f" % (info.E, tmp))
 
+    def test_res_times(self):
+        res = []
+        for i, a in enumerate(self.res.blocks()):
+            res.append(a)
+            print(i, a)
+        self.assertEqual(len(res), 141)
+
+    def test_res_find_block(self):
+        time = 99.
+        i, (t, start, end) = self.res.find_block(time=time)
+        print("{}: t= {} start= {} end= {}".format(i, t, start, end))
+        self.assertGreater(t, time)
+
 
 def main():
     unittest.main()

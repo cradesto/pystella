@@ -49,11 +49,11 @@ class SnEveTests(unittest.TestCase):
         s, s1 = 0., 0.
         for el, m in presn.mass_tot_el().items():
             m = m / ps.phys.M_sun
-            m1 =  presn.mass_tot_el(el) / ps.phys.M_sun
+            m1 = presn.mass_tot_el(el) / ps.phys.M_sun
             print("{:4s}: {:.3e} df:  {:.3e}".format(el, m, m1))
             s += m
             s1 += m1
-        print(f"Total: {s} dm: {s1}    {presn.m_tot/ps.phys.M_sun - presn.m_core/ps.phys.M_sun}")
+        print(f"Total: {s} dm: {s1}    {presn.m_tot / ps.phys.M_sun - presn.m_core / ps.phys.M_sun}")
 
     def test_hyd_load(self):
         name = 'm030307mhh'
@@ -76,44 +76,44 @@ class SnEveTests(unittest.TestCase):
         eve = sn_eve.load_rho(rho_file)
 
         # for same size must be the same
-        s, e = int(eve.nzon/10), int(eve.nzon/2)
+        s, e = int(eve.nzon / 10), int(eve.nzon / 2)
         evenew = eve.cut(start=s, end=e)
 
-        self.assertEqual(evenew.nzon, e-s,
-                         "Cut PreSn: you have {} zone, but it should be {}".format(evenew.nzon, e-s))
+        self.assertEqual(evenew.nzon, e - s,
+                         "Cut PreSn: you have {} zone, but it should be {}".format(evenew.nzon, e - s))
         self.assertEqual(eve.m[s], evenew.m[0],
                          "Mass PreSn: you have the first zone where old mass {} = new {}".
                          format(eve.m[s], evenew.m[0]))
-        self.assertEqual(eve.m[e-1], evenew.m[-1],
+        self.assertEqual(eve.m[e - 1], evenew.m[-1],
                          "Mass PreSn: you have the last zone where old mass {} = new {}".format(eve.m[e], evenew.m[-1]))
 
     def test_presn_reshape(self):
         name = 'u50fenv'
         path = '/home/bakl/Sn/my/papers/18/fischer/model'
-        # eve = StellaHydAbn(name, path=path).load_hyd()
         eve = sn_eve.load_hyd_abn(name, path=path, is_dum=False)
 
         # for same size must be the same
-        nstart = 1
-        nzon = eve.nzon
         evenew = eve.reshape(nz=eve.nzon)
         self.assertEqual(evenew.nzon, eve.nzon,
                          "Reshape PreSn: you have {} zone, but it should be {}".format(eve.nzon, eve.nzon))
         # todo check range for Rho, V, T
-        k = 0
-        self.assertEqual(eve.m[k], evenew.m[k],
-                         "Mass PreSn: you have the first zone where old mass {} = new {}".format(eve.m[k], evenew.m[k]))
-        k = -1
-        self.assertEqual(eve.m[k], evenew.m[k],
-                         "Mass PreSn: you have the last zone where old mass {} = new {}".format(eve.m[k], evenew.m[k]))
-
-        nzon = 300
+        for k in (0, -1):
+            self.assertAlmostEqual(eve.m[k]/evenew.m[k], 1.,
+                                   msg="Mass PreSn: you have the first zone where old mass {} = new {}".
+                                   format(eve.m[k], evenew.m[k]))
+            self.assertAlmostEqual(eve.r[k]/evenew.r[k], 1.,
+                                   msg="Radius PreSn: you have the last zone where old r {} = new {}".
+                                   format(eve.r[k], evenew.r[k]))
+            self.assertAlmostEqual(eve.rho[k]/evenew.rho[k], 1.,
+                                   msg="Density PreSn: you have the last zone where old rho {} = new {}".
+                                   format(eve.rho[k], evenew.rho[k]))
+        nzon = 500
         nstart = 309
-        evenew = eve.reshape(nz=nzon, nstart=nstart, nend=None)
-        evenew.plot_chem()
-        plt.show()
+        evenew = eve.reshape(nz=nzon, start=nstart, end=None)
         self.assertEqual(evenew.nzon, nstart + nzon,
                          "Reshape PreSn: you have {} zone, but it should be {}".format(eve.nzon, nstart + nzon))
+        evenew.plot_chem()
+        plt.show()
 
     def test_presn_zone_reduce(self):
         name = 'u50fenv'
@@ -145,7 +145,7 @@ class SnEveTests(unittest.TestCase):
         nzon = 10
         presn = PreSN('sol', nzon)
         data = np.ones(presn.nzon)
-        for ename in PreSN.presn_elements:
+        for ename in PreSN.stl_elements:
             presn.set_chem(ename, data)
 
         for k in np.arange(1, presn.nzon):
@@ -160,24 +160,24 @@ class SnEveTests(unittest.TestCase):
     def test_presn_set_composition(self):
         nzon = 10
         presn = PreSN('sol', nzon)
-        presn.set_hyd(PreSN.sM, np.arange(1, presn.nzon+1)*ps.phys.M_sun)
+        presn.set_hyd(PreSN.sM, np.arange(1, presn.nzon + 1) * ps.phys.M_sun)
         # set chemical
         data = np.ones(presn.nzon)
-        for ename in PreSN.presn_elements:
+        for ename in PreSN.stl_elements:
             presn.set_chem(ename, data)
 
-        for k in np.arange(1, presn.nzon+1):
+        for k in np.arange(1, presn.nzon + 1):
             presn.chem_norm(k)
 
         idxs = np.arange(presn.nzon)
-        zones = idxs[presn.el('S') > 0.01]+1
+        zones = idxs[presn.el('S') > 0.01] + 1
         # Remove S
         sample = {'S': 1e-4}
         presn.set_composition(zones, sample=sample, is_add=False, is_normalize=True)
         ax = presn.plot_chem(ylim=(1e-6, 1.1))
 
         # set solar composition
-        zones = range(3, presn.nzon-3)
+        zones = range(3, presn.nzon - 3)
         presn.set_composition(zones, is_add=False)
 
         # plot

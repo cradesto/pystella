@@ -57,6 +57,15 @@ class MyPrompt(HistConsole):
 
     @staticmethod
     def insert_options(line):
+        res = line
+        if len(MyPrompt.options) > 0:
+            for k, v in MyPrompt.options.items():
+                s = '$'+k
+                if s in res:
+                    res = res.replace(s, v)
+        return res
+
+    def bad_insert_options(line):
         words = line.split()
         keys = [w[1:] for w in words if w.startswith('$')]
         res = line
@@ -70,7 +79,7 @@ class MyPrompt(HistConsole):
         return res
 
     @staticmethod
-    def do_set(args, sep='='):
+    def do_set(args, sep='=', sep_group=';'):
         """Set global options via name = value.
         To insert option to command use prefix: $.
         For example:
@@ -79,6 +88,8 @@ class MyPrompt(HistConsole):
            pystella>ubv -i $mdl -e $ebv
            >>/home/bakl/Sn/Release/python/pystella/ubv.py -i cR500M20Ni06_3eps -e 0.07
         Run 'set' without arguments to see the current options: pystella>set
+        You may set  many options separating them via semicolon ;
+           pystella>set ebv=0.07; mdl= cR500M20Ni06_3eps
         To remove name: pystella>set name= None
         """
         if not args:
@@ -88,14 +99,22 @@ class MyPrompt(HistConsole):
         if sep not in args:
             print(f'Format:  key {sep} value')
             return
+        if sep_group not in args:
+            args += sep_group  # add 1 sep_group
+
         # print('Before: ', MyPrompt.options)
-        k, v = args.split('=')
-        k, v = k.strip(), v.strip()
-        print(k, v)
-        if v == 'None':
-            MyPrompt.options.pop(k, None)  # remove key
-        else:
-            MyPrompt.options[k] = v.strip()
+        for group in args.split(sep_group):
+            group = group.strip()
+            if sep not in group:
+                print(f'No {sep} in "{group}"')
+                continue
+            k, v = group.split(sep)
+            k, v = k.strip(), v.strip()
+            print(k, v)
+            if v == 'None':
+                MyPrompt.options.pop(k, None)  # remove key
+            else:
+                MyPrompt.options[k] = v.strip()
         print(MyPrompt.options)
 
     @staticmethod

@@ -141,7 +141,7 @@ def plot_vels_models(ax, models_dic, xlim=None, ylim=None, vnorm=1e8):
     ax.set_xlabel('Time [days]')
 
 
-def plot_vel(ax, vel, xlim=None, ylim=None, vnorm=1e8, color='blue', label='Velocity'):
+def plot_vel(ax, vel, xlim=None, ylim=None, vnorm=1e8, color='blue', label='Velocity', **kwargs):
     is_x_lim = xlim is None
     is_y_lim = ylim is None
 
@@ -150,7 +150,7 @@ def plot_vel(ax, vel, xlim=None, ylim=None, vnorm=1e8, color='blue', label='Velo
     y_mid = []
     x = vel['time']
     y = vel['vel'] / vnorm
-    ax.plot(x, y, label=label, color=color, ls="-", linewidth=lw)
+    ax.plot(x, y, label=label, color=color, linewidth=lw, **kwargs)
     if is_x_lim:
         x_max.append(np.max(x))
     if is_y_lim:
@@ -170,7 +170,9 @@ def plot_vel(ax, vel, xlim=None, ylim=None, vnorm=1e8, color='blue', label='Velo
     # ax.grid()
 
 
-def compute_vel_swd(name, path, z=0.):
+def compute_vel_swd(name, path, z=0., is_info=False):
+    if is_info:
+        print(f'Run model: {name} in dir: {path} z= {z}')
     model = Stella(name, path=path)
     # check data
     if not model.is_swd:
@@ -187,7 +189,58 @@ def compute_vel_swd(name, path, z=0.):
     return res
 
 
-def compute_vel_res_tt(name, path, z=0., t_beg=1., t_end=None, t_diff=1.05):
+def compute_vel_res_tt(name, path, z=0., t_beg=0.1, t_end=None, line_header=80,
+                       is_info=False, is_new_std=False):
+    if is_info:
+        print(f'Run model: {name} in dir: {path} z= {z}')
+    model = Stella(name, path=path)
+    # check data
+    if not model.is_res:
+        raise ValueError("There are no res-file for %s in the directory: %s " % (name, path))
+    if not model.is_tt:
+        raise ValueError(("There are no tt-file for %s in the directory: %s " % (name, path)))
+
+    if t_end is None:
+        t_end = float('inf')
+
+    res = model.get_res()
+    tt = model.get_tt().load(line_header=line_header)
+    tt = tt[tt['time'] >= t_beg]  # time cut  days
+
+    radii, vels, times = [], [], []
+    for i, (t, start, end) in enumerate(res.blocks()):
+        if t < min(tt['time']) or t > max(tt['time']):
+            if is_info:
+                print('Error: nblock= {}: t_res[={:e}] not in range time_tt: {:e}, {:e}'.format(i, t, min(tt['time']), max(tt['time'])))
+            continue
+
+        r_ph = np.interp(t, tt['time'], tt['Rph'])  # One-dimensional linear interpolation.
+        block = res.read_res_block(start, end, is_new_std=is_new_std)
+        if block is None:
+            break
+        if True:
+            vel = np.interp(r_ph, block['R14']*1e14, block['V8']*1e8, 0, 0)  # One-dimensional linear interpolation.
+            if is_info:
+                # print('            blockR14= {}   blockV8= {}'.format(block['R14'], block['V8']))
+                print('nblock= {} [{}:{}]: t= {:e} r_ph= {:e}   vel= {:e}'.format(i, start, end, t, r_ph, vel))
+            vels.append(vel)
+        else:
+            idx = np.abs(block['R14'] - r_ph/1e14).argmin()
+            vels.append(block['V8'][idx]*1e8)
+
+        radii.append(r_ph)
+        times.append(t * (1. + z))  # redshifted time
+
+    # show results
+    res = np.array(np.zeros(len(vels)),
+                   dtype=np.dtype({'names': ['time', 'vel', 'r'], 'formats': [np.float] * 3}))
+    res['time'] = times
+    res['vel'] = vels
+    res['r'] = radii
+    return res
+
+
+def bad_compute_vel_res_tt(name, path, z=0., t_beg=1., t_end=None, t_diff=1.05, line_header=80):
     from scipy import interpolate
 
     model = Stella(name, path=path)
@@ -201,7 +254,7 @@ def compute_vel_res_tt(name, path, z=0., t_beg=1., t_end=None, t_diff=1.05):
         t_end = float('inf')
 
     res = model.get_res()
-    tt = model.get_tt().load()
+    tt = model.get_tt().load(line_header=line_header)
     tt = tt[tt['time'] >= t_beg]  # time cut  days
     Rph_spline = interpolate.splrep(tt['time'], tt['Rph'], s=0)
 

@@ -1,6 +1,6 @@
 __author__ = 'bakl'
 
-__all__ = ['fit', 'model', 'rf', 'util']
+__all__ = ['fit', 'model', 'rf', 'util', 'phys']
 
 from .rf import band
 from .rf import light_curve_func as lcf
@@ -35,6 +35,7 @@ from .fit import FitLc, FitMPFit, mpfit, FitMCMC
 from .rf.light_curve_plot import curves_plot
 from .rf.extinction import reddening, reddening_z
 from .rf.light_curve_func import curves_save, curves_read, curves_read_mix
+from .rf.rad_func import Lum2MagBol, MagBol2Lum
 
 from .util.phys_var import cosmology_D_by_z
 from .util.string_misc import str2interval

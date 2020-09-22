@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# #!/usr/bin/python3
 
 import logging
 
@@ -104,20 +103,46 @@ def get_parser():
     parser.add_argument('-e', '--elements',
                         required=False,
                         type=str,
-                        default='H-He-C-O-Si-Fe-Ni-Ni56',
+                        default='H:He:C:O:Si:Fe:Ni:Ni56',
                         dest="elements",
                         help="Elements directory. \n   Available: {0}".format('-'.join(sneve.eve_elements)))
+    parser.add_argument('--reshape',
+                        required=False,
+                        type=str,
+                        default=None,
+                        dest="reshape",
+                        help="Reshape parameters of envelope from nstart to nend to nz-zones."
+                             "\n Format: --reshape NZON:AXIS:XMODE:START:END"
+                             "\n NZON: value of zones between START and END. "
+                             "If < 0 Nzon is the same as Nzon of the initial model "
+                             "\n AXIS: [M* OR R OR V] - reshape along mass or radius or velocity coordinate."
+                             "\n XMODE: [lin OR rlog* OR resize] - linear OR reversed log10 OR add/remove points. "
+                             "\n START: zone number to start reshaping. Default: 0 (first zone)"
+                             "\n END: zone number to end reshaping. Default: None,  (equal last zone)"
+                        )
+    # parser.add_argument('-w', '--write',
+    #                     action='store_const',
+    #                     const=True,
+    #                     dest="is_write",
+    #                     help="To write the data to hyd-, abn-files")
     parser.add_argument('-w', '--write',
-                        action='store_const',
-                        const=True,
-                        dest="is_write",
+                        required=False,
+                        type=str,
+                        default=False,
+                        dest="write_to",
                         help="To write the data to hyd-, abn-files")
     return parser
 
 
 def main():
     import os
+    import sys
     from itertools import cycle
+
+    def get(arr, i, default):
+        if i < len(arr):
+            return a[i]
+        return default
 
     parser = get_parser()
     args, unknownargs = parser.parse_known_args()
@@ -130,7 +155,7 @@ def main():
         pathDef = os.getcwd()
 
     # if args.elements:
-    elements = args.elements.split('-')
+    elements = args.elements.split(':')
     for e in elements:
         if e not in sneve.eve_elements:
             logger.error('No such element: ' + e)
@@ -179,6 +204,17 @@ def main():
                 # No header
                 eve = sneve.load_hyd_abn(name=name, path=path, is_dm=False, skiprows=0)
 
+        if args.reshape is not None:
+            a = args.reshape.split(':')
+            nz, axis, xmode = get(a, 0, eve.nzon), get(a, 1, 'M'), get(a, 2, 'rlog')
+            start, end = get(a, 3, 0), get(a, 4, None)
+            nz = int(nz)
+            print(f'Resize: before Nzon={eve.nzon}')
+            print(f'Resize parameters: nznew= {nz}  axis={axis}  xmode={xmode}  start= {start}  end= {end}')
+            eve = eve.reshape(nz=nz, axis=axis, xmode=xmode, start=start, end=end)
+            # eve = eve_resize
+            print(f'Resize: after Nzon={eve.nzon}')
+
         # Boxcar
         if args.box is not None:
             is_info = False
@@ -202,14 +238,18 @@ def main():
             print("The element masses: After")
             print_masses(eve)
 
-        if args.is_write:
-            fname = os.path.join(path, name)
-            f = fname + '.eve.abn'
+        if args.write_to:
+            fname = os.path.join(path, args.write_to)
+            # fname = os.path.join(path, name)
+            # f = fname + '.eve.abn'
+            fname = fname.replace('.rho', '')
+            f = fname + '.abn'
             if eve.write_abn(f, is_header=True):
                 print(" abn has been saved to {}".format(f))
             else:
                 print("Error with abn saving to {}".format(f))
-            f = fname + '.eve.hyd'
+            # f = fname + '.eve.hyd'
+            f = fname + '.hyd'
             if eve.write_hyd(f):
                 print(" hyd has been saved to {}".format(f))
             else:
@@ -247,7 +287,7 @@ def main():
                     ax2 = ax.twinx()
                 ax2.legend(handles=handles_nm, loc=4, fancybox=False, frameon=False)
 
-    if not args.is_write:
+    if not args.write_to:
         if args.is_save_plot:
             if args.rho:
                 fsave = os.path.join(os.path.expanduser('~/'), 'rho_%s.pdf' % names[0])

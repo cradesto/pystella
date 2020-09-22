@@ -750,7 +750,7 @@ class PreSN(object):
         """
         Reshape parameters of envelope from nstart to nend to nz-zones
         :param nz: new zones
-        :param name: the name of new PreSN. Take from parent, if it's None.
+        :param name: the name of new PreSN. Take from parent, if it's <=0.
         :param start: zone number to start reshaping. Default: 0 (first zone)
         :param end: zone number to end reshaping. Default: None,  (equal last zone)
         :param axis: [M OR R OR V] - reshape along mass or radius or velocity coordinate. Default: M
@@ -759,6 +759,10 @@ class PreSN(object):
         :return: new preSN with reshaping zones
         """
         from scipy.interpolate import interp1d
+
+        if nz <= 0:
+            nz = self.nzon
+
         nznew = start + nz
         if name is None:
             name = self.Name
@@ -958,7 +962,7 @@ def load_rho(fname, path=None):
     return presn
 
 
-def load_hyd_abn(name, path='.', abn_elements=PreSN.stl_elements, skiprows=1,
+def load_hyd_abn(name, path='.', abn_elements=PreSN.stl_elements, skiprows=0, comments='#',
                  is_rho=False, is_dm=True, is_dum=False):
     """
     Load progenitor from hyd- + abn- files.
@@ -1061,7 +1065,7 @@ def load_hyd_abn(name, path='.', abn_elements=PreSN.stl_elements, skiprows=1,
     dt = np.dtype({'names': col_names,
                    'formats': ['i4'] + list(np.repeat('f8', len(col_names) - 1))})
     # logger.info(dt)
-    data_chem = np.loadtxt(abn_file, comments='#', skiprows=skiprows, dtype=dt)
+    data_chem = np.loadtxt(abn_file, comments=comments, skiprows=skiprows, dtype=dt)
 
     for ename in abn_elements:
         presn.set_chem(ename, data_chem[ename])

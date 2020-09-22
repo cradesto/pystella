@@ -20,18 +20,26 @@ ROOT_DIRECTORY = dirname(dirname(abspath(__file__)))
 
 def plot_grid(models_dic, bnames, call=None, **kwargs):
     import matplotlib.pyplot as plt
+    import numpy as np
 
-    title = kwargs.get('title', '')
+    title = kwargs.get('title', False)
     fontsize = kwargs.get('fontsize', 12)
+    figsize = kwargs.get('figsize', (8, 8))
     # setup figure
     # plt.matplotlib.rcParams.update({'font.size':})
-    fig, axs = plt.subplots(math.ceil(len(bnames) / 2), 2, sharex='col', sharey='row', figsize=(8, 8))
+    if len(bnames) == 1:
+        fig, axs = plt.subplots(figsize=figsize)
+        axs = np.array(axs)
+    else:
+        fig, axs = plt.subplots(math.ceil(len(bnames) / 2), 2, sharex='col', sharey='row', figsize=figsize)
     plt.subplots_adjust(wspace=0, hspace=0)
 
     for i, bname in enumerate(bnames):
         icol = i % 2
         irow = int(i / 2)
-        ax = axs[irow, icol]
+        # print(i, irow, icol, axs.shape[0])
+        # ax = axs[irow, icol]
+        ax = axs.ravel()[2*irow+icol]
         ps.lcp.plot_models_band(ax, models_dic, bname, **kwargs)
 
         # plot callback
@@ -50,9 +58,13 @@ def plot_grid(models_dic, bnames, call=None, **kwargs):
         if kwargs.get('is_grid', False):
             ax.grid(linestyle=':')
 
-    # Setup axes
-    for ax in axs[-1, :]:
-        ax.set_xlabel('Time [days]')
+    # # Setup axes
+    # for i, bname in enumerate(bnames):
+    #     icol = i % 2
+    #     irow = int(i / 2)
+    #     ax = axs.ravel()[i * irow + icol]
+        if irow == math.ceil(len(bnames)/2)-1:
+            ax.set_xlabel('Time [days]')
 
     if title:
         plt.title(title)
@@ -158,7 +170,8 @@ def usage():
     print("  -s  <file-name> without extension. Save plot to pdf-file. Default: ubv_<file-name>.pdf")
     print("  -x  <xbeg:xend> - xlim, ex: 0:12. Default: None, used all days.")
     print("  -y  <ybeg:yend> - ylim, ex: 26:21. Default: None, used top-magnitude+-5.")
-    print("  -v  <swd OR ttres> - plot model velocities computed from swd OR tt-res files.")
+    print("-v  <swd OR ttres[ttresold]> - plot model velocities computed from swd OR tt-res files[ttresold for old res "
+          "format].")
     print("  -w  write magnitudes to out-file. Use '1' for the default name of out-file")
     print("  -z <redshift>.  Default: 0")
     print("  --dt=<t_diff>  time difference between two spectra")
@@ -333,7 +346,8 @@ def main(name=None, model_ext='.ph'):
                     for f in files:
                         nm = os.path.splitext(os.path.basename(f))[0]
                         names.append(nm)
-                        print('input: {}'.format(nm))
+                    names = list(set(names))
+                    print('Input {} models: {}'.format(len(names), ' '.join(names)))
                 is_set_model = True
     else:
         print(name)
@@ -378,10 +392,11 @@ def main(name=None, model_ext='.ph'):
             models_mags[name] = curves
 
             if vel_mode is not None:
-                if vel_mode == 'ttres':
-                    vels = ps.vel.compute_vel_res_tt(name, path, z=z)
-                elif vel_mode == 'swd':
+                if vel_mode == 'swd':
                     vels = ps.vel.compute_vel_swd(name, path, z=z)
+                elif vel_mode.startswith('ttres'):
+                    vels = ps.vel.compute_vel_res_tt(name, path, z=z,
+                                                     is_info=False, is_new_std='old' not in vel_mode.lower())
                 else:
                     raise ValueError('This mode [{}] for velocity is not supported'.format(vel_mode))
 
