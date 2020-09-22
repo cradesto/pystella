@@ -229,7 +229,7 @@ class SetLightCurve(SetTimeSeries):
                 return v
 
         if name is None:
-            name  = self.Name
+            name = self.Name
         res = SetLightCurve(name)
         for lc in self:
             kwargs = {'t': key_set(lc.Band.Name, 'm', t),
@@ -273,18 +273,21 @@ class SetLightCurve(SetTimeSeries):
 
         return res
 
-    def merge(self, curves2):
-        res = SetLightCurve.Merge(self, curves2)
+    def merge(self, curves2, name=None):
+        res = SetLightCurve.Merge(self, curves2, name)
         return res
 
     @classmethod
-    def Merge(cls, curves1, curves2):
+    def Merge(cls, curves1, curves2, name=None):
         if curves1 is None:
             return curves2
         if curves2 is None:
             return curves1
 
-        res = SetLightCurve("{}+{}".format(curves1.Name, curves2.Name))
+        if name is None:
+            name = "{}+{}".format(curves1.Name, curves2.Name)
+
+        res = SetLightCurve(name)
         # Add Light Curves from the first set
         for lc1 in curves1:
             lc2 = curves2.get(lc1.Band.Name)
