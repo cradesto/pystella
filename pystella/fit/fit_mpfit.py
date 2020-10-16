@@ -405,7 +405,7 @@ class FitMPFit(FitLc):
         fit_result.mshift = dm
         fit_result.msigma = res['dmsig']
         fit_result.measure = res['chi2']
-        fit_result.comm = 'result MCMC:dof: {}'.format(res['dof'])
+        fit_result.comm = 'result {}:dof: {}'.format(self.Name, res['dof'])
 
         return fit_result, res, None  # as Fit_MCMC
 

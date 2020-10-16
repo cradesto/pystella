@@ -172,10 +172,10 @@ def plot_curves(curves_o, res_models, res_sorted, **kwargs):
     num = len(res_sorted)
     # nrow = int(num / 2.1) + 1
     # ncol = 2 if num > 1 else 1
-    ncol = int(np.sqrt(num))  # 2 if num > 1 else 1
+    ncol = min(4, int(np.sqrt(num)))  # 2 if num > 1 else 1
     nrow = math.ceil(num / ncol)
     # fig = plt.figure(figsize=(12, nrow * 4))
-    fig = plt.figure(figsize=(min(ncol, 2) * 4, min(nrow, 2) * 4))
+    fig = plt.figure(figsize=(min(ncol, 2)*5, max(nrow, 2)*4))
     plt.matplotlib.rcParams.update({'font.size': font_size})
 
     # tshift0 = ps.first(curves_o).tshift
@@ -197,7 +197,7 @@ def plot_curves(curves_o, res_models, res_sorted, **kwargs):
         lcp.curves_plot(curves_o, ax, xlim=xlim, lt=lt, markersize=4, is_legend=False, is_line=False)
 
         ax.text(0.99, 0.94, k, horizontalalignment='right', transform=ax.transAxes)
-        ax.text(0.98, 0.85, "dt={:.2f}".format(tshift_best), horizontalalignment='right', transform=ax.transAxes)
+        ax.text(0.98, 0.85, "{} dt={:.2f}".format(i, tshift_best), horizontalalignment='right', transform=ax.transAxes)
         ax.text(0.01, 0.05, r"$\chi^2: {:.2f}$".format(v.measure), horizontalalignment='left', transform=ax.transAxes,
                 bbox=dict(facecolor='green', alpha=0.3))
         # ax.text(0.9, 0.9, "{:.2f}".format(v.measure), horizontalalignment='right', transform=ax.transAxes,
