@@ -256,8 +256,8 @@ class Spectrum(object):
         star.set_redshift(z)
         star.set_magnification(magnification)
         # mag = star.flux_to_mag(b)
-        if b.Name == band.Band.NameBol:
-            mag = star.magBol()
+        if b.Name in [band.Band.NameBol, band.Band.NameUBVRI]:
+            mag = star.magBol(b)
         else:
             mag = star.magAB(b)
         return mag
@@ -614,7 +614,7 @@ class SeriesSpectrum(object):
                 star.set_magnification(magnification)
                 # mag = star.flux_to_mag(b)
                 if b.Name == band.Band.NameBol:
-                    mag = star.magBol()
+                    mag = star.magBol(b)
                 else:
                     mag = star.magAB(b)
                 times.append(t)

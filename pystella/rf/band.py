@@ -19,6 +19,7 @@ class Band(object):
     FileFilters = 'filters.ini'
     FileSettings = 'settings.ini'
     NameBol = 'bol'
+    NameUBVRI = 'ubvri'
     NameZp = 'zp'
     NameJy = 'Jy'
     DirRoot = os.path.join(dirname(dirname(dirname(os.path.realpath(__file__)))), 'data/bands')
@@ -99,7 +100,7 @@ class Band(object):
             from scipy.integrate import simps
             wl = self.wl
             resp = np.array(self.resp_wl)
-            num = simps(resp*wl, wl)
+            num = simps(resp * wl, wl)
             den = simps(resp, wl)
             self._wl_eff = num / den
         return self._wl_eff
@@ -222,7 +223,7 @@ class Band(object):
         return True
 
     @staticmethod
-    def response_nu(nu, flux, b):
+    def response_nu(nu, flux, b, is_freq_norm=True):
         from scipy import integrate
         """
         Compute response flux using provided spectral band.
@@ -258,7 +259,10 @@ class Band(object):
         log_interp = log_interp1d(nu_s, flux_s)
         flux_interp = log_interp(nu_b)
 
-        a = integrate.simps(flux_interp * resp_b / nu_b, nu_b)
+        if is_freq_norm:
+            a = integrate.simps(flux_interp * resp_b / nu_b, nu_b)
+        else:
+            a = integrate.simps(flux_interp * resp_b, nu_b)
         return a
 
     def response_freq(self, nu, flux):
@@ -277,8 +281,8 @@ class Band(object):
                 interpolator to use.
                 Default is 'linear'
         """
-        import scipy.integrate  # import simps as integralfunc
-        import scipy.interpolate  # import simps as integralfunc
+        import scipy.integrate
+        import scipy.interpolate
         from pystella.util.math import log_interp1d
 
         if len(wl) == 0 or len(flux) == 0:
@@ -382,15 +386,19 @@ class BandUni(Band):
         elif mode_int == 'trapz':
             res = scipy.integrate.trapz(y, x=x)
         else:
-            raise ValueError('Unknown type for integration: mode_int= '+mode_int)
+            raise ValueError('Unknown type for integration: mode_int= ' + mode_int)
 
         return res
 
         # return 1.
 
     @classmethod
-    def get_bol(cls):  # todo check this filter: values less then g-u etc.
+    def get_bol(cls):
         return BandUni(name=Band.NameBol, wlrange=(1e0, 42e3), length=300)
+
+    @classmethod
+    def get_ubvri(cls):
+        return BandUni(name=Band.NameUBVRI, wlrange=(3e3, 9e3), length=300)
 
 
 ROOT_DIRECTORY = dirname(dirname(dirname(os.path.abspath(__file__))))
@@ -401,7 +409,7 @@ ROOT_DIRECTORY = dirname(dirname(dirname(os.path.abspath(__file__))))
 #     return os.path.join(ROOT_DIRECTORY, fname)
 
 
-def bands_colors(bname=None):
+def bands_colors(bname=None, default='magenta'):
     colors = dict(
         U="blue", B="cyan", V="darkgreen", R="red", I="magenta",
         BesU="blue", BesB="cyan", BesV="darkgreen", BesR="red", BesI="magenta",
@@ -422,6 +430,7 @@ def bands_colors(bname=None):
         UBVRI='chocolate', GaiaG='g'
     )
     colors[Band.NameBol] = 'black'
+    colors[Band.NameUBVRI] = 'black'
     # for Subaru HCS: colors
     for b in list('grizY'):
         colors['HSC' + b] = colors[b]
@@ -429,7 +438,28 @@ def bands_colors(bname=None):
     if bname is None:
         return colors
     else:
-        return colors[bname]
+        if bname in colors:
+            return colors[bname]
+        return default
+
+
+def bands_lntypes(bname=None, default='-'):
+    lntypes = {"U": "-", 'B': "-", 'V': "-", 'R': "-", 'I': "-", 'UVM2': "-.", 'UVW1': "-.", 'UVW2': "-.", 'F125W': ":",
+               'F160W': "-.", 'F140W': "--", 'F105W': "-.", 'F435W': "--", 'F606W': "-.", 'F814W': "--", 'u': "--",
+               'g': "--", 'r': "--", 'i': "--", 'z': "--", 'Y': '--', 'GaiaG': '--'}
+    lntypes[Band.NameBol] = '-'
+    lntypes[Band.NameUBVRI] = '-.'
+    # for Subaru HCS: colors
+    for b in list('grizY'):
+        lntypes['HSC' + b] = lntypes[b]
+
+    if bname is None:
+        return lntypes
+    else:
+        return lntypes[bname]
+        # if bname in lntypes:
+        #     return lntypes[bname]
+        # return default
 
 
 #
@@ -556,7 +586,8 @@ def band_load_names(path=Band.DirRoot):
         return res
 
     bol = BandUni.get_bol()
-    bands = {Band.NameBol: bol}
+    ubvri = BandUni.get_ubvri()
+    bands = {Band.NameBol: bol, Band.NameUBVRI: ubvri}
     for d, dir_names, file_names in os.walk(path):
         if Band.FileFilters in file_names:  # check that there are info-file in this directory
             fname = os.path.join(d, Band.FileFilters)
@@ -602,7 +633,7 @@ def band_by_name(name):
     """
         Get rf by name, for example "U"
     :param name: for example "U" or "B"
-    :return: class Band with waves and respons
+    :return: class Band with waves and responses
     """
     if name in Band.Cache:
         b = Band.Cache[name]
@@ -610,8 +641,10 @@ def band_by_name(name):
             b.load()
         return Band.Cache[name]
 
-    if Band.Alias is None or band_is_exist_alias(name):
+    if Band.Alias is None:
         Band.load_settings()
+
+    if band_is_exist_alias(name):
         for aname, oname in Band.Alias.items():
             if band_is_exist(oname):
                 bo = Band.Cache[oname]

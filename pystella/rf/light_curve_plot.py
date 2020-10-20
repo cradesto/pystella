@@ -23,12 +23,7 @@ __author__ = 'bakl'
 
 lc_colors = band.bands_colors()
 
-lc_lntypes = {'U': "-", 'B': "-", 'V': "-", 'R': "-", 'I': "-",
-              'UVM2': "-.", 'UVW1': "-.", 'UVW2': "-.",
-              'F125W': ":", 'F160W': "-.", 'F140W': "--", 'F105W': "-.", 'F435W': "--", 'F606W': "-.",
-              'F814W': "--",
-              'u': "--", 'g': "--", 'r': "--", 'i': "--", 'z': "--",
-              'bol': '-', 'UBVRI': '--', 'GaiaG': '--'}
+lc_lntypes = band.bands_lntypes()
 
 linestyles = ('-', '--', '-.', ':')
 
@@ -441,7 +436,7 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname=None, *
             item.set_fontsize(fontsize)
             # ax = fig.add_axes((0.1, 0.3, 0.8, 0.65))
 
-    # plt.title(''.join(bands) + ' filter response')
+    # ax.set_title(''.join(bands) + ' filter response')
     is_xlim = False
     is_ylim = False
     if xlim is None:
