@@ -108,7 +108,7 @@ class Stella:
         return res
 
     def get_ph(self, t_diff=1.005, t_beg=float('-inf'), t_end=float('inf'), is_nfrus=True):
-        import pystella.model.sn_ph as ph
+        from pystella.model import sn_ph as ph
         res = ph.read(self.name, self.path, t_diff=t_diff, t_beg=t_beg, t_end=t_end, is_nfrus=is_nfrus)
         return res
 

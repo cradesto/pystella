@@ -282,7 +282,7 @@ def main():
                     ps.Band.load_settings()
                     bnames = []
                     for bname in args.bnames.split(':'):
-                        if not ps.band.band_is_exist(bname):
+                        if not ps.band.is_exist(bname):
                             print('No such band: ' + bname)
                             parser.print_help()
                             sys.exit(2)

@@ -21,9 +21,9 @@ except ImportError as ex:
 
 __author__ = 'bakl'
 
-lc_colors = band.bands_colors()
+lc_colors = band.colors()
 
-lc_lntypes = band.bands_lntypes()
+lc_lntypes = band.lntypes()
 
 linestyles = ('-', '--', '-.', ':')
 
@@ -87,7 +87,7 @@ def plot_ubv_models(ax, models_dic, bands, **kwargs):
     is_compute_y_lim = ylim is None
 
     t_points = [0.2, 1, 2, 3, 4, 5, 10, 20, 40, 80, 150]
-    colors = band.bands_colors()
+    colors = band.colors()
     band_shift = dict((k, 0) for k, v in colors.items())  # no y-shift
     if bshift is not None:
         for k, v in bshift.items():
@@ -392,7 +392,7 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname=None, *
         marker = kwargs.get('marker', 'o')
         if not isinstance(marker, (list, dict, tuple)):
             marker = {lc.Band.Name: marker for lc in curves}
-        colors = kwargs.get('colors', lc_colors)
+        colors = like {'B': 'blue', 'V': 'green}
         if not isinstance(colors, (list, dict, tuple)):
             colors = {lc.Band.Name: colors for lc in curves}
     :return: ax
@@ -409,8 +409,8 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname=None, *
     marker = kwargs.get('marker', 'o')
     if not isinstance(marker, (list, dict, tuple)):
         marker = {lc.Band.Name: marker for lc in curves}
-    colors = kwargs.get('colors', lc_colors)
-    if not isinstance(colors, (list, dict, tuple)):
+    colors = kwargs.get('colors', None)
+    if colors is not None and not isinstance(colors, (list, dict, tuple)):
         colors = {lc.Band.Name: colors for lc in curves}
     linewidth = kwargs.get('linewidth', 2.0)
     markersize = kwargs.get('markersize', 5)
@@ -454,7 +454,11 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname=None, *
         if label is not None:
             lbl = label.format(bname)
 
-        color = colors[bname]
+        if colors is not None:
+            color = colors[bname]
+        else:
+            color = band.colors(bname)
+
         if is_line:
             ax.plot(x, y, label=lbl, color=color, ls=ls[bname], linewidth=linewidth)
         else:
@@ -802,7 +806,7 @@ def plot_swd_tau(dic_axes, stella, times, bnames=('B',), tau_ph=2. / 3., is_obs_
         # s = '{:9.4f} '.format(t)
         for i, bname in enumerate(bnames):
             r_ph = np.array(data[bname]['R'])
-            color = band.bands_colors(bname)
+            color = band.colors(bname)
             # print(bname)
             xr = r_ph[ii]
             ax.text(xr, 0.5 + i, bname, fontsize=12, color=color)

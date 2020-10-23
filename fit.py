@@ -854,7 +854,7 @@ def main():
     bnames = []
     if args.bnames:
         for bname in args.bnames.split('-'):
-            if not ps.band.band_is_exist(bname):
+            if not ps.band.is_exist(bname):
                 print('No such band: ' + bname)
                 parser.print_help()
                 sys.exit(2)
@@ -873,7 +873,7 @@ def main():
 
     # set bands  as observed
     if curves_o is not None and len(bnames) == 0:
-        bnames = [bn for bn in curves_o.BandNames if ps.band.band_is_exist(bn)]
+        bnames = [bn for bn in curves_o.BandNames if ps.band.is_exist(bn)]
 
     # Set distance and redshift
     z = args.redshift

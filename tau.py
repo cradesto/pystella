@@ -49,7 +49,7 @@ def plot_tau_moments(tau, moments=None, xlim=None):
 
 def plot_bands(ax, bnames, amp=30, alpha=0.5):
     """Plot the filter responses"""
-    color_dic = ps.band.bands_colors()
+    color_dic = ps.band.colors()
     res = {}
     for bname in bnames:
         b = ps.band.band_by_name(bname)
@@ -264,7 +264,7 @@ def main():
     if args.bnames:
         bnames = []
         for bname in args.bnames.split('-'):
-            if not ps.band.band_is_exist(bname):
+            if not ps.band.is_exist(bname):
                 print('No such band: ' + bname)
                 parser.print_help()
                 sys.exit(2)

@@ -62,6 +62,9 @@ def read_obs_table_header(fname, header=None, skip=0, colt=('time', 'JD', 'MJD')
     :return:  ndarray - data is read from the file
     """
     lskip = 0
+    if isinstance(colt, str):
+        colt = [colt]
+
     if header is None:
         with open(fname, "r") as f:
             i = 0
@@ -145,7 +148,7 @@ def table2curves(name, tbl, bands=None, colt=('time', 'JD', 'MJD'), is_filter_ze
     curves = SetLightCurve(name)
 
     if bands is None:
-        bands = [n for n in tbl.dtype.names if band.band_is_exist(n)]
+        bands = [n for n in tbl.dtype.names if band.is_exist(n)]
 
     for bname in bands:
         b = band.band_by_name(bname)

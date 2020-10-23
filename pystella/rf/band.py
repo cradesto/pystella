@@ -1,6 +1,8 @@
-import numpy as np
+
 import os
 from os.path import dirname
+from functools import lru_cache
+import numpy as np
 
 from pystella.rf.rad_func import MagAB2Flux, Flux2MagAB
 from pystella.util.phys_var import phys
@@ -397,8 +399,8 @@ class BandUni(Band):
         return BandUni(name=Band.NameBol, wlrange=(1e0, 42e3), length=300)
 
     @classmethod
-    def get_ubvri(cls):
-        return BandUni(name=Band.NameUBVRI, wlrange=(3e3, 9e3), length=300)
+    def get_ubvri(cls, Ushort=3250., Rlong=8900., length=300):
+        return BandUni(name=Band.NameUBVRI, wlrange=(Ushort, Rlong), length=length)
 
 
 ROOT_DIRECTORY = dirname(dirname(dirname(os.path.abspath(__file__))))
@@ -408,55 +410,53 @@ ROOT_DIRECTORY = dirname(dirname(dirname(os.path.abspath(__file__))))
 # def get_full_path(fname):
 #     return os.path.join(ROOT_DIRECTORY, fname)
 
-
-def bands_colors(bname=None, default='magenta'):
-    colors = dict(
-        U="blue", B="cyan", V="darkgreen", R="red", I="magenta",
-        BesU="blue", BesB="cyan", BesV="darkgreen", BesR="red", BesI="magenta",
-        SwiftU="blue", SwiftB="cyan", SwiftV="darkgreen",
-        KaitU="blue", KaitB="cyan", KaitV="darkgreen", KaitR="red", KaitI="magenta",
-        J="blueviolet", H="plum", K="saddlebrown",  # darkred rosybrown blueviolet
-        massJ="green", massH="cyan", massK="black",
-        LcoJ="green", LcoH="cyan", LcoK="black",
-        UVM2="skyblue", UVW1="orange", UVW2="mediumpurple",
-        UVM2o="deepskyblue", UVW1o="darkviolet", UVW2o="darkblue",
-        USNO40i="blue", USNO40g="cyan", USNO40z="darkgreen", USNO40r="darkviolet", USNO40u="magenta",
-        F105W="magenta", F435W="skyblue", F606W="cyan", F125W="g", F140W="orange", F160W="r", F814W="blue",
-        Kepler="magenta", Lum="orchid",
-        g="olive", r="red", i="plum", u="darkslateblue", z="chocolate",
-        Sdssg="olive", Sdssr="pink", Sdssi="magenta", Sdssu="blue", Sdssz="chocolate",
-        PS1g="olive", PS1r="red", PS1i="magenta", PS1u="blue", PS1z="chocolate", PS1y="cyan", PS1w="orange",
-        y='y', Y='y', w='tomato', AtlasC="cyan", AtlasO="orange",
-        UBVRI='chocolate', GaiaG='g'
-    )
-    colors[Band.NameBol] = 'black'
-    colors[Band.NameUBVRI] = 'black'
+# @lru_cache
+def colors(bname=None, default='magenta'):
+    c = {'U': "blue", 'B': "cyan", 'V': "darkgreen", 'R': "red", 'I': "magenta",
+         'J': "blueviolet", 'H': "plum", 'K': "saddlebrown",
+         'BesU': "blue", 'BesB': "cyan", 'BesV': "darkgreen", 'BesR': "red", 'BesI': "magenta",
+         'SwiftU': "blue", 'SwiftB': "cyan", 'SwiftV': "darkgreen",
+         'KaitU': "blue", 'KaitB': "cyan", 'KaitV': "darkgreen", 'KaitR': "red", 'KaitI': "magenta",
+         'massJ': "green", 'massH': "cyan", 'massK': "black",
+         'LcoJ': "green", 'LcoH': "cyan", 'LcoK': "black",
+         'UVM2': "skyblue", 'UVW1': "orange", 'UVW2': "mediumpurple",
+         'UVM2o': "deepskyblue", 'UVW1o': "darkviolet", 'UVW2o': "darkblue",
+         'USNO40i': "blue", 'USNO40g': "cyan", 'USNO40z': "darkgreen", 'USNO40r': "darkviolet", 'USNO40u': "magenta",
+         'F105W': "magenta", 'F435W': "skyblue", 'F606W': "cyan", 'F125W': "g",
+         'F140W': "orange", 'F160W': "r", 'F814W': "blue",
+         'Kepler': "magenta", 'Lum': "orchid",
+         'g': "olive", 'r': "red", 'i': "plum", 'u': "darkslateblue", 'z': "chocolate",
+         'Sdssg': "olive", 'Sdssr': "pink", 'Sdssi': "magenta", 'Sdssu': "blue", 'Sdssz': "chocolate",
+         'PS1g': "olive", 'PS1r': "red", 'PS1i': "magenta", 'PS1u': "blue", 'PS1z': "chocolate", 'PS1y': "cyan",
+         'PS1w': "orange", 'y': 'y', 'Y': 'y', 'w': 'tomato',
+         'AtlasC': "cyan", 'AtlasO': "orange",
+         'UBVRI': 'chocolate', 'GaiaG': 'g',
+         'L_ubvri': 'sandybrown', 'L_bol': 'saddlebrown', 'XEUV<325': 'sienna', 'IR>890': 'peru',
+         Band.NameBol: 'black', Band.NameUBVRI: 'black'}
     # for Subaru HCS: colors
     for b in list('grizY'):
-        colors['HSC' + b] = colors[b]
+        c['HSC' + b] = c[b]
 
     if bname is None:
-        return colors
+        return c
     else:
-        if bname in colors:
-            return colors[bname]
+        if bname in c:
+            return c[bname]
         return default
 
 
-def bands_lntypes(bname=None, default='-'):
-    lntypes = {"U": "-", 'B': "-", 'V': "-", 'R': "-", 'I': "-", 'UVM2': "-.", 'UVW1': "-.", 'UVW2': "-.", 'F125W': ":",
-               'F160W': "-.", 'F140W': "--", 'F105W': "-.", 'F435W': "--", 'F606W': "-.", 'F814W': "--", 'u': "--",
-               'g': "--", 'r': "--", 'i': "--", 'z': "--", 'Y': '--', 'GaiaG': '--'}
-    lntypes[Band.NameBol] = '-'
-    lntypes[Band.NameUBVRI] = '-.'
+def lntypes(bname=None, default='-'):
+    ln = {"U": "-", 'B': "-", 'V': "-", 'R': "-", 'I': "-", 'UVM2': "-.", 'UVW1': "-.", 'UVW2': "-.", 'F125W': ":",
+          'F160W': "-.", 'F140W': "--", 'F105W': "-.", 'F435W': "--", 'F606W': "-.", 'F814W': "--", 'u': "--",
+          'g': "--", 'r': "--", 'i': "--", 'z': "--", 'Y': '--', 'GaiaG': '--', Band.NameBol: '-', Band.NameUBVRI: '-.'}
     # for Subaru HCS: colors
     for b in list('grizY'):
-        lntypes['HSC' + b] = lntypes[b]
+        ln['HSC' + b] = ln[b]
 
     if bname is None:
-        return lntypes
+        return ln
     else:
-        return lntypes[bname]
+        return ln[bname]
         # if bname in lntypes:
         #     return lntypes[bname]
         # return default
@@ -598,7 +598,7 @@ def band_load_names(path=Band.DirRoot):
     return bands
 
 
-def band_get_names():
+def get_names():
     if len(Band.Cache) == 0:
         Band.Cache = band_load_names()
 
@@ -609,22 +609,22 @@ def band_get_aliases():
     return Band.Alias
 
 
-def band_is_exist_names(name):
-    return name in band_get_names()
+def is_exist_names(name):
+    return name in get_names()
 
 
-def band_is_exist_alias(name):
+def is_exist_alias(name):
     if band_get_aliases() is None:
         return False
     return name in band_get_aliases().keys()
 
 
-def band_is_exist(name):
-    return band_is_exist_names(name) or band_is_exist_alias(name)
+def is_exist(name):
+    return is_exist_names(name) or is_exist_alias(name)
 
 
 def band_get_names_alias():
-    res = band_get_names()
+    res = get_names()
     res.extend(band_get_aliases().keys())
     return res
 
@@ -644,9 +644,9 @@ def band_by_name(name):
     if Band.Alias is None:
         Band.load_settings()
 
-    if band_is_exist_alias(name):
+    if is_exist_alias(name):
         for aname, oname in Band.Alias.items():
-            if band_is_exist(oname):
+            if is_exist(oname):
                 bo = Band.Cache[oname]
                 ba = bo.clone(aname)
                 if not ba.is_load:
@@ -656,7 +656,7 @@ def band_by_name(name):
                 raise ValueError("Errors in your aliases: for alias [%s] no such band [%s]. See settings in  %s"
                                  % (aname, oname, Band.FileSettings))
 
-    if band_is_exist(name):
+    if is_exist(name):
         # if name == Band.BolName:  # bolometric
         #     # todo check this filter: values less then g-u etc.
         #     b = BandUni(name=Band.BolName, wlrange=(1e0, 42e3), length=300)
@@ -672,7 +672,7 @@ def band_by_name(name):
 
 
 def print_bands(ncol=5):
-    bands = sorted(band_get_names())
+    bands = sorted(get_names())
     print("Available bands:")
     # print "   Available bands: \n   %s" % '-'.join(sorted(bands))
     if bands is not None and len(bands) > 0:

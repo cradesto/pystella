@@ -54,7 +54,7 @@ def plot(ax, dic=None, mag_lim=30.):
     marker = dic.get('marker', 'o')
     markersize = dic.get('markersize', 5)
     bnames = dic.get('bnames', None)
-    bcolors = dic.get('bcolors', band.bands_colors())
+    bcolors = dic.get('bcolors', band.colors())
     comments = dic.get('comments', '#')
 
     arg = dic.get('args', [])

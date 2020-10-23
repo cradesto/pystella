@@ -259,7 +259,7 @@ def main(name=None, model_ext='.ph'):
                         bshift[bname] = float(shift)
                 else:
                     bname = b
-                if not ps.band.band_is_exist(bname):
+                if not ps.band.is_exist(bname):
                     print('No such band: ' + bname)
                     sys.exit(2)
                 bnames.append(bname)

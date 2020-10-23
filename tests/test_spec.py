@@ -5,7 +5,7 @@ import pystella.rf.rad_func as rf
 import pystella.rf.spectrum as spectrum
 from pystella.util.phys_var import phys
 from pystella.rf.rad_func import kcorrection, kcorrection_spec
-from pystella.rf.band import band_is_exist, band_by_name
+from pystella.rf.band import is_exist, band_by_name
 
 __author__ = 'bakl'
 

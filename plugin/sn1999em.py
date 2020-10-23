@@ -28,7 +28,7 @@ def plot(ax, dic=None):
 
 
 def plot_ubv(ax, path, jd_shift=0., mshift=0.):
-    colors = band.bands_colors()
+    colors = band.colors()
     curves = read_curves(path)
     for lc in curves:
         x = lc.Time + jd_shift

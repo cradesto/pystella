@@ -38,7 +38,7 @@ class TestStellaLightCurves(unittest.TestCase):
                         msg="There ara values Time less then t_beg = {}".format(t_beg))
 
     def test_stella_curves_VS_tt_plot(self):
-        from pystella.rf.band import bands_colors
+        from pystella.rf.band import colors
         name = 'cat_R500_M15_Ni006_E12'
         path = join(dirname(abspath(__file__)), 'data', 'stella')
         bands = ('U', 'B', 'V', 'R', 'I')
@@ -50,7 +50,7 @@ class TestStellaLightCurves(unittest.TestCase):
 
         ax = ps.lcp.curves_plot(curves)
         for bname in bands:
-            ax.plot(tt['time'], tt['M'+bname], label="tt "+bname, color=bands_colors(bname),
+            ax.plot(tt['time'], tt['M'+bname], label="tt "+bname, color=colors(bname),
                     marker='*', markersize=3, ls='')
         ax.legend()
 

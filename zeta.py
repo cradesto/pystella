@@ -925,7 +925,7 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False):
             set_bands = str(arg).split('_')
             for bset in set_bands:
                 for b in bset.split('-'):
-                    if not ps.band.band_is_exist(b):
+                    if not ps.band.is_exist(b):
                         print('No such band: ' + b)
                         sys.exit(2)
             continue

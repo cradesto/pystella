@@ -147,7 +147,7 @@ def plot_Kepler():
 
 def plot_bands(bands, color_dic=None):
     if color_dic is None:
-        color_dic = band.bands_colors()
+        color_dic = band.colors()
 
     for bname in bands:
         b = band.band_by_name(bname)

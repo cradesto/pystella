@@ -15,7 +15,7 @@ class BandTests(unittest.TestCase):
     def test_band_colors_name(self):
         bands = band.band_load_names()
         for bname in bands:
-            self.assertTrue(bname in band.bands_colors(), "You have not color for band: %s" % bname)
+            self.assertTrue(bname in band.colors(), "You have not color for band: %s" % bname)
 
     def test_band_by_name(self):
         b = band.band_by_name("BesU")

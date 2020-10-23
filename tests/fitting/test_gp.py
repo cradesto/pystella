@@ -239,7 +239,7 @@ class TestFitGaussianProcess(unittest.TestCase):
             ax = fig.add_axes((0.1, 0.3, 0.8, 0.65))
             ax.invert_yaxis()
 
-            bcolor = band.bands_colors()[bname]
+            bcolor = band.colors()[bname]
             ax.plot(t, y, color=bcolor, label='L bol', lw=2.5)
             ax.errorbar(t, y, yerr=yerr, fmt='o', color=bcolor, label='%s obs.')
 
@@ -384,7 +384,7 @@ class TestFitGaussianProcess(unittest.TestCase):
         from plugin import sn1999em
         from pystella.fit.fit_gp import FitGP
 
-        colors = band.bands_colors()
+        colors = band.colors()
         fig, ax = plt.subplots(figsize=(12, 10))
         ax.invert_yaxis()
 
@@ -411,7 +411,7 @@ class TestFitGaussianProcess(unittest.TestCase):
         from pystella.fit.fit_gp import FitGP
 
         Ntime = 50
-        colors = band.bands_colors()
+        colors = band.colors()
         fig, ax = plt.subplots(figsize=(12, 10))
         ax.invert_yaxis()
 
