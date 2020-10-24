@@ -21,7 +21,7 @@ class Band(object):
     FileFilters = 'filters.ini'
     FileSettings = 'settings.ini'
     NameBol = 'bol'
-    NameUBVRI = 'ubvri'
+    NameUBVRI = 'qbol'
     NameZp = 'zp'
     NameJy = 'Jy'
     DirRoot = os.path.join(dirname(dirname(dirname(os.path.realpath(__file__)))), 'data/bands')
