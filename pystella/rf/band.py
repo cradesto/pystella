@@ -1,7 +1,6 @@
-
 import os
 from os.path import dirname
-from functools import lru_cache
+from operator import itemgetter
 import numpy as np
 
 from pystella.rf.rad_func import MagAB2Flux, Flux2MagAB
@@ -21,13 +20,15 @@ class Band(object):
     FileFilters = 'filters.ini'
     FileSettings = 'settings.ini'
     NameBol = 'bol'
-    NameUBVRI = 'qbol'
+    NameUBVRI = 'ubvri'
+    NameBolQuasi = 'bolq'
     NameZp = 'zp'
     NameJy = 'Jy'
     DirRoot = os.path.join(dirname(dirname(dirname(os.path.realpath(__file__)))), 'data/bands')
 
     def __init__(self, name=None, fname=None, zp=None, jy=None, is_load=False):
         """Creates a band instance.  Required parameters:  name and file."""
+        self._fwhm = None
         self.name = name
         self._fname = fname  # location of the filter response
         self._zp = zp  # zero points for mag
@@ -106,6 +107,27 @@ class Band(object):
             den = simps(resp, wl)
             self._wl_eff = num / den
         return self._wl_eff
+
+    @property
+    def fwhm(self):
+        """The FWHM"""
+        if self._fwhm is None:
+            from scipy.interpolate import interp1d
+            x = self.wl
+            y = np.array(self.resp_wl)
+            imax = np.argmax(y)
+
+            def val(xx, yy, v=0.5):
+                # f = interp1d(xx, yy, kind='quadratic')
+                # xx = np.exp(np.linspace(np.log(min(x)), np.log(max(x)), 100))
+                # yy = f(xx)
+                # return np.interp(v, yy, xx)
+                return np.interp(v, yy, xx)
+
+            wl_l = val(x[:imax], y[:imax])
+            wl_r = val(x[:imax:-1], y[:imax:-1])
+            self._fwhm = wl_r - wl_l
+        return self._fwhm
 
     @property
     def wl_eff_angs(self):
@@ -365,7 +387,7 @@ class Band(object):
 
 
 class BandUni(Band):
-    def __init__(self, name='bol', wlrange=(1e1, 5e4), length=999):
+    def __init__(self, name='bol', wlrange=(1e1, 5e4), length=300):
         """Creates a band with uniform responce.
         :param name:  default 'Uniform'.
         :param wlrange:  the wavelength range, default (1e1, 5e4) [A]
@@ -399,8 +421,90 @@ class BandUni(Band):
         return BandUni(name=Band.NameBol, wlrange=(1e0, 42e3), length=300)
 
     @classmethod
-    def get_ubvri(cls, Ushort=3250., Rlong=8900., length=300):
-        return BandUni(name=Band.NameUBVRI, wlrange=(Ushort, Rlong), length=length)
+    def get_qbol(cls, Ushort=3250., Rlong=8900., length=300):
+        return BandUni(name=Band.NameBolQuasi, wlrange=(Ushort, Rlong), length=length)
+
+
+class BandJoin(Band):
+    def __init__(self, bnames, name=None, length=300, is_norm=True, is_sum=False, is_load=False):
+        """Creates a band from the join response for input bands.
+        :param bnames:  input bands
+        :param name:  default from bnames
+        :param length: numbers of bins default 300
+        :param is_norm: normalize to 1  default False
+        :param is_sum: if True response is SUM, else ENVELOPE default False
+        """
+        self._is_sum = is_sum
+        if name is None:
+            name = ':'.join(bnames)
+        super().__init__(name)
+
+        self._bnames = bnames
+        self._length = length
+        self._is_norm = is_norm
+
+        # self.wl = None  # wavelength of response [cm]
+        # self.resp_wl = None  # response
+        if is_load:
+            self.load()
+
+    def load(self):
+        from scipy import interpolate
+
+        wl = []
+        # resps = []
+        bands_int = {}
+
+        for bn in self._bnames:
+            b = band_by_name(bn)
+            wl.extend(b.wl)
+            # resps.extend(b.resp_wl)
+            bands_int[bn] = interpolate.interp1d(b.wl, b.resp_wl, bounds_error=False, fill_value=(0., 0.))
+
+        wl_min, wl_max = min(wl), max(wl)
+        # print('wl_min, wl_max = ', wl_min, wl_max)
+        wl_int = np.exp(np.linspace(np.log(wl_min), np.log(wl_max), self._length))
+        resp_int = np.zeros_like(wl_int)
+        # wl_int
+        #  Response is sum for all bands
+        if self._is_sum:
+            for bn in self._bnames:
+                f = bands_int[bn]
+                resp_int += [f(w) for w in wl_int]
+        else:
+            resps = []
+            for bn in self._bnames:
+                f = bands_int[bn]
+                resps.append([f(w) for w in wl_int])
+            resp_int = np.max(np.array(resps).transpose(), axis=1)
+            # for i, w in enumerate(wl_int):
+            #     resp_int[i] = np.max([bands_int[bn](w)])
+
+        if self._is_norm:
+            resp_int = resp_int / max(resp_int)  # normalization
+
+        self.wl = wl_int  # wavelength of response [cm]
+        self.resp_wl = resp_int  # response
+
+    # @property
+    # def Norm(self, mode_int='simps'):
+    #     import scipy.integrate  # import simps as integralfunc
+    #     x = np.array(self.wl)
+    #     y = np.array(self.resp_wl)
+    #     # resp_b = np.ones(len(nu_b))
+    #     if mode_int == 'simps':
+    #         res = scipy.integrate.simps(y, x=x, even='avg')
+    #     elif mode_int == 'trapz':
+    #         res = scipy.integrate.trapz(y, x=x)
+    #     else:
+    #         raise ValueError('Unknown type for integration: mode_int= ' + mode_int)
+    #
+    #     return res
+
+    @classmethod
+    def get_ubvri(cls, length=300):
+        return BandJoin(name=Band.NameUBVRI, bnames=('U', 'B', 'V', 'R', 'I'), length=length,
+                        is_norm=True, is_sum=False)
 
 
 ROOT_DIRECTORY = dirname(dirname(dirname(os.path.abspath(__file__))))
@@ -432,7 +536,7 @@ def colors(bname=None, default='magenta'):
          'AtlasC': "cyan", 'AtlasO': "orange",
          'UBVRI': 'chocolate', 'GaiaG': 'g',
          'L_ubvri': 'sandybrown', 'L_bol': 'saddlebrown', 'XEUV<325': 'sienna', 'IR>890': 'peru',
-         Band.NameBol: 'black', Band.NameUBVRI: 'black'}
+         Band.NameBol: 'black', Band.NameUBVRI: 'dimgrey', Band.NameBolQuasi: 'dimgray'}
     # for Subaru HCS: colors
     for b in list('grizY'):
         c['HSC' + b] = c[b]
@@ -448,7 +552,8 @@ def colors(bname=None, default='magenta'):
 def lntypes(bname=None, default='-'):
     ln = {"U": "-", 'B': "-", 'V': "-", 'R': "-", 'I': "-", 'UVM2': "-.", 'UVW1': "-.", 'UVW2': "-.", 'F125W': ":",
           'F160W': "-.", 'F140W': "--", 'F105W': "-.", 'F435W': "--", 'F606W': "-.", 'F814W': "--", 'u': "--",
-          'g': "--", 'r': "--", 'i': "--", 'z': "--", 'Y': '--', 'GaiaG': '--', Band.NameBol: '-', Band.NameUBVRI: '-.'}
+          'g': "--", 'r': "--", 'i': "--", 'z': "--", 'Y': '--', 'GaiaG': '--',
+          Band.NameBol: '-', Band.NameUBVRI: '-.', Band.NameBolQuasi: '..'}
     # for Subaru HCS: colors
     for b in list('grizY'):
         ln['HSC' + b] = ln[b]
@@ -460,107 +565,6 @@ def lntypes(bname=None, default='-'):
         # if bname in lntypes:
         #     return lntypes[bname]
         # return default
-
-
-#
-# def bands_dict_Bessell():
-#     bands = dict(U="U-bessell.dat", B="B-bessell.dat", V="V-bessell.dat", R="R-bessell.dat", I="I-bessell.dat")
-#     # bands = dict(U="U-bessell.dat", B="B-bessell.dat", V="Vprompt135.dat", R="R-bessell.dat", I="I-bessell.dat")
-#     # bands = dict(U="U-bessell.dat", B="BD+174708.dat", V="V-bessell.dat", R="R-bessell.dat", I="I-bessell.dat")
-#     d = os.path.join(ROOT_DIRECTORY, "data/bands/Bessell")
-#     for k, v in bands.items():
-#         bands[k] = os.path.join(d, v)
-#
-#     return bands
-#
-#
-# def bands_dict_KAIT():
-#     bands = dict(U="kait_U.dat", B="kait_B.dat", V="kait_V.dat", R="kait_R.dat", I="kait_I.dat")
-#     d = os.path.join(ROOT_DIRECTORY, "data/bands/KAIT")
-#     for k, v in bands.items():
-#         bands[k] = os.path.join(d, v)
-#
-#     return bands
-#
-#
-# def bands_dict_Persson():
-#     bands = dict(J="jfilter", H="hfilter", K="kfilter")
-#     d = os.path.join(ROOT_DIRECTORY, "data/bands/Persson")
-#     for k, v in bands.items():
-#         bands[k] = os.path.join(d, v)
-#
-#     return bands
-#
-#
-# def bands_dict_USNO():
-#     # bands = dict(V="usno_g.res", I="usno_i.res", R="usno_r.res", U="usno_u.res", B="usno_z.res") # for comparison
-#     bands = dict(g="usno_g.res", i="usno_i.res", r="usno_r.res", u="usno_u.res", z="usno_z.res")
-#     d = os.path.join(ROOT_DIRECTORY, "data/bands/USNO40")
-#     for k, v in bands.items():
-#         bands[k] = os.path.join(d, v)
-#     return bands
-# #
-# def bands_dict_SDSS():
-#     bands = dict(g="sdss_g.dat", i="sdss_i.dat", r="sdss_r.dat", u="sdss_u.dat", z="sdss_z.dat")
-#     d = os.path.join(ROOT_DIRECTORY, "data/bands/SDSS")
-#     for k, v in bands.items():
-#         bands[k] = os.path.join(d, v)
-#     return bands
-#
-#
-# def bands_dict_HST():
-#     d = os.path.join(ROOT_DIRECTORY, "data/bands/HST")
-#     # bands = dict(F125W="hst_wfc3_ir_f125w.dat", F160W="hst_wfc3_ir_f160w.dat")
-#     fname = os.path.join(d, 'filters.dat')
-#     bands = {}
-#     with open(fname, "r") as f:
-#         for line in f:
-#             names = map(str.strip, line.split())
-#             bands[names[0]] = os.path.join(d, names[1])
-#     return bands
-#
-#
-# def bands_dict_PS1():
-#     """
-#         The Pan-STARRS1 Photometric System
-#         see http://ipp.ifa.hawaii.edu/ps1.filters/
-#
-#     :return: band-pass filters
-#     """
-#     bands = dict(PS1g="ps1_g.dat", PS1i="ps1_i.dat", PS1r="ps1_r.dat", PS1z="ps1_z.dat",
-#                  y="ps1_y.dat", w="ps1_w.dat")
-#     d = os.path.join(ROOT_DIRECTORY, "data/bands/PS1")
-#     for k, v in bands.items():
-#         bands[k] = os.path.join(d, v)
-#     return bands
-#
-#
-# def bands_dict_SWIFT():
-#     bands4 = dict(UVM2="Swift-UVOT.UVM2.dat", UVW1="Swift-UVOT.UVW1.dat", UVW2="Swift-UVOT.UVW2.dat",
-#                   UVOTU="Swift-UVOT.U.dat", UVOTB="Swift-UVOT.B.dat", UVOTV="Swift-UVOT.V.dat")
-#     #  bands4 = dict(UVM2="photonUVM2.dat", UVW1="photonUVW1.dat", UVW2="photonUVW2.dat",
-#     #               UVOTU="photonU_UVOT.dat", UVOTB="photonB_UVOT.dat", UVOTV="photonV_UVOT.dat")
-#     d = os.path.join(ROOT_DIRECTORY, "data/bands/SWIFTUVOT")
-#     for k, v in bands4.items():
-#         bands4[k] = os.path.join(d, v)
-#     return bands4
-#
-#
-# def bands_dict_SubaruHSC():
-#     bands4 = dict(HSCg="HSC-g.txt", HSCr="HSC-r.txt", HSCi="HSC-i.txt",
-#                   HSCz="HSC-z.txt", HSCy="HSC-Y.txt")
-#     d = os.path.join(ROOT_DIRECTORY, "data/bands/SubaruHSC")
-#     for k, v in bands4.items():
-#         bands4[k] = os.path.join(d, v)
-#     return bands4
-#
-#
-# def bands_dict_Kepler():
-#     bands = dict(Kepler="kepler_response_hires1.txt")
-#     d = os.path.join(ROOT_DIRECTORY, "data/bands/Kepler")
-#     for k, v in bands.items():
-#         bands[k] = os.path.join(d, v)
-#     return bands
 
 
 def band_load_names(path=Band.DirRoot):
@@ -586,8 +590,9 @@ def band_load_names(path=Band.DirRoot):
         return res
 
     bol = BandUni.get_bol()
-    ubvri = BandUni.get_ubvri()
-    bands = {Band.NameBol: bol, Band.NameUBVRI: ubvri}
+    qbol = BandUni.get_qbol()
+    ubvri = BandJoin.get_ubvri()
+    bands = {Band.NameBol: bol, Band.NameUBVRI: ubvri, Band.NameBolQuasi: qbol}
     for d, dir_names, file_names in os.walk(path):
         if Band.FileFilters in file_names:  # check that there are info-file in this directory
             fname = os.path.join(d, Band.FileFilters)

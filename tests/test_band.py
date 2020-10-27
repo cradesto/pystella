@@ -56,6 +56,17 @@ class BandTests(unittest.TestCase):
         b = band.band_by_name('U')
         self.assertAlmostEqual(b.zp, zp, msg="Zero points of band %s equals %f. Should be %f" % (b.Name, b.zp, zp))
 
+    def test_band_ubvri(self):
+        import pylab as plt
+
+        b = band.band_by_name(band.Band.NameUBVRI)
+        plt.plot(b.wl * phys.cm_to_angs, b.resp_wl, band.colors(b.Name), label=b.Name, linewidth=2)
+        plt.legend(loc=4)
+        plt.ylabel('Amplitude Response')
+        plt.xlabel('Wave [A]')
+        plt.grid(linestyle=':')
+        plt.show()
+
     def test_wl_eff(self):
         # wl_eff = {'U': 3650, 'B': 4450, 'V': 5510, 'R': 6580, 'I': 8060}
         wl_eff = {'u': 3560, 'g': 4830, 'r': 6260, 'i': 7670, 'z': 8890,
@@ -67,6 +78,19 @@ class BandTests(unittest.TestCase):
             print('{} {:.0f} VS {:.0f}'.format(bname, res, wl))
             self.assertAlmostEqual(res, wl, delta=wl * 0.03, msg="The effective wavelength of band %s equals %f. "
                                                                  "Should be %f" % (b.Name, res, wl))
+
+    def test_fwhm(self):
+        # wl_eff = {'U': 3650, 'B': 4450, 'V': 5510, 'R': 6580, 'I': 8060}
+        wl_fwhm = {'U': 660., 'B': 940., 'V': 880, 'R': 1380., 'I': 1490.,
+                   'J': 2130., 'H': 3070., 'K': 3900.}  # AA
+        # convert to cm
+        wl_fwhm = {bn: wl * 1e-8 for bn, wl in wl_fwhm.items()}
+        for bname, wl in wl_fwhm.items():
+            b = band.band_by_name(bname)
+            res = b.fwhm
+            print('{} {:.3e} VS {:.3e}'.format(bname, res, wl))
+            self.assertAlmostEqual(res, wl, delta=wl * 0.1,
+                                   msg="The fwhm of band {} equals {:.3e}.  Should be {:.3e}".format(b.Name, res, wl))
 
     def test_band_uniform(self):
         b = band.BandUni()

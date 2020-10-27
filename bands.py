@@ -191,7 +191,10 @@ def main():
             sys.exit(2)
 
     if len(bands) > 0:
-        plot_bands(bands)
+        try:
+            plot_bands(bands)
+        except AttributeError:
+            pass
     else:
         plot_UBVRI()
         plot_JHK()

@@ -256,7 +256,7 @@ class Spectrum(object):
         star.set_redshift(z)
         star.set_magnification(magnification)
         # mag = star.flux_to_mag(b)
-        if b.Name in [band.Band.NameBol, band.Band.NameUBVRI]:
+        if b.Name in [band.Band.NameBol, band.Band.NameBolQuasi, band.Band.NameUBVRI]:
             mag = star.magBol(b)
         else:
             mag = star.magAB(b)
