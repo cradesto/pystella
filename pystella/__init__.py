@@ -26,7 +26,8 @@ from .rf.spectrum import SeriesSpectrum, Spectrum, SpectrumDilutePlanck, Spectru
 from .rf.lc import SetLightCurve, LightCurve
 
 from .rf.reddening import ReddeningLaw, LawFitz, LawPei
-from .rf.star import Star, Flux2MagAB
+from .rf.star import Star
+from .rf.rad_func import MagAB2Flux, Flux2MagAB
 from .rf.ts import SetTimeSeries, TimeSeries
 
 from .fit import FitLc, FitMPFit, mpfit, FitMCMC
