@@ -1,41 +1,63 @@
-# pystella
+# PySTELLA
 
 IMPORTANT: the package is under heavy development. 
 Keep this in mind if you want to use it on your research.
 
 ## Command shell
 
-  Run the script "PATH-to-PYSTELLA/pystella.py" in the directory with models.
+  Run the script "PATH-to-PySTELLA/pystella.py" in the directory with models.
   See help if needed.
 
 
-## Flux from ph-files to the bands
+## Load the flux from ph-files  and convert them to the bands
 
-#### Usage:
+#### Usage:   ubv.py [params]
 
-
-  ubv.py [params]
-
--  -b "bands": string, default: U-B-V-R-I, for example U-B-V-R-I-u-g-i-r-z-UVW1-UVW2.
-    shift: to move lc along y-axe (minus is '_', for example -b R:2-V-I:_4-B:5  
-     Available bands: B-F105W-F125W-F140W-F160W-F435W-F606W-F814W-H-HSCg-HSCi-HSCr-HSCy-HSCz-I-J-K-
-                      -Kepler-PS1g-PS1i-PS1r-PS1z-R-U-UVM2-UVOTB-UVOTU-UVOTV-UVW1-UVW2-
-                      -V-bol-g-i-r-u-w-y-z
--  -i "model name".  Example: cat_R450_M15_Ni007_E7
--  -p "model directory", default: ./
--  -e "extinction, E(B-V)" is used to define A_nu, default: 0
--  -c "callback function" [plot_tolstov, popov[:R:M:E[FOE]:Mni]]. You can add parameters in format func:params
--  -d "distance" [pc].  Default: 10 pc
+-  -b <bands:shift>: string, default: U-B-V-R-I, for example U-B-V-R-I-u-g-i-r-z-UVW1-UVW2.
+     shift: to move lc along y-axe (minus is '_', for example -b R:2-V-I:_4-B:5 
+-  -i <model-name OR pattern, like '*R450*'>.  Example: cat_R450_M15_Ni007_E7
+-  -p <model directory>, default: ./
+-  -e <extinction, E(B-V)> is used to define A_nu, default: 0 
+-  -c <callback> [lcobs:fname:marker:dt:dm, velobs:fname:marker:dt:vnorm(1e8), popov[:R:M:E[FOE]:Mni], lcobssm as lcobs, but for sm-format data-files]. You can add parameters in format func:params
+-  -d <distance> [pc].  Default: 10 pc
+-  -g <single, grid, gridm, gridl> Select plot view.  single [default] = all models in one figure, grid = for each band separate figure.
+-  -o <is_axes_right>.  Default: empty string
+-  -m <magnification>.  Default: None, used for grav lens
 -  -q  turn off quiet mode: print info and additional plots
--  -s  "file-name" without extension. Save plot to pdf-file. Default: ubv_<file-name>.pdf
 -  -t  plot time points
--  -x  "xbeg:xend" - xlim, ex: 0:12. Default: None, used all days.
--  -y  "ybeg:yend" - ylim, ex: 26:21. Default: None, used top-magnitude+-5. 
--  -w  write magnitudes to file, default 'False'
--  -z "redshift".  Default: 0
+-  -s  <file-name> without extension. Save plot to pdf-file. Default: ubv_<file-name>.pdf
+-  -x  <xbeg:xend> - xlim, ex: 0:12. Default: None, used all days.
+-  -y  <ybeg:yend> - ylim, ex: 26:21. Default: None, used top-magnitude+-5.
+-  -v  <swd OR ttres[ttresold]> - plot model velocities computed from swd OR tt-res files[ttresold for old res format].
+-  -w  write magnitudes to out-file. Use '1' for the default name of out-file
+-  -z <redshift>.  Default: 0
+-  --dt=<t_diff>  time difference between two spectra
+-  --curve-old  - use old procedure
+-  --curve-tt  - take curves from tt-file: UBVRI+bol
 -  -l  write plot label
 -  -h  print usage
+    
+#### Available bands:
+  - AtlasC   AtlasO  
+  - BesB     BesI     BesR     BesU     BesV    
+  - F105W    F125W    F140W    F160W    F435W    F606W    F814W   
+  - GaiaG   
+  - HSCY     HSCg     HSCi     HSCr     HSCz    
+  - KaitB    KaitI    KaitR    KaitU    KaitV    Kepler  
+  - LcoH     LcoJ     LcoK     Lum     
+  - PS1g     PS1i     PS1r     PS1w     PS1y     PS1z    
+  - Sdssg    Sdssi    Sdssr    Sdssu    Sdssz    SwiftB   SwiftU   SwiftV  
+  - USNO40g  USNO40i  USNO40r  USNO40u  USNO40z  UVM2     UVW1     UVW2    
+  - bol      bolq    
+  - massH    massJ    massK   
+  - ubvri   
 
+#### Available aliases of bands: 
+  - U => BesU       B => BesB       V => BesV       R => BesR       I => BesI    
+  - g => Sdssg      r => Sdssr      i => Sdssi      u => Sdssu      z => Sdssz   
+  - J => massJ      H => massH      K => massK  
+
+### Run
 
 ```shell
 >>>./ubv.py  -i cat_R1000_M15_Ni007_E15  -p stella/res/tt  -b U:2-B-V-R:_1 -z 2 -d 16e9
@@ -107,8 +129,11 @@ Testing can take a long time.
 Some tests plot the comparison charts, they must be closed to continue the work.
 It is not necessary that all tests show OK. Some of them are non-working yet.
 
+### Citing PySTELLA
 
-Acknowledgments:
+Please add some form of acknowledgement that you used this code.
+
+### Acknowledgments:
     Some of the passbands was taken from  SNPY (see http://csp.obs.carnegiescience.edu/data/snpy/) and
     SnCosmost (see https://github.com/srodney/sncosmost).
-  Special thanks to JetBrains for open source and education licenses of PyCharm/Clion.
+  
