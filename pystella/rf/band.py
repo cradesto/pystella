@@ -553,7 +553,7 @@ def lntypes(bname=None, default='-'):
     ln = {"U": "-", 'B': "-", 'V': "-", 'R': "-", 'I': "-", 'UVM2': "-.", 'UVW1': "-.", 'UVW2': "-.", 'F125W': ":",
           'F160W': "-.", 'F140W': "--", 'F105W': "-.", 'F435W': "--", 'F606W': "-.", 'F814W': "--", 'u': "--",
           'g': "--", 'r': "--", 'i': "--", 'z': "--", 'Y': '--', 'GaiaG': '--',
-          Band.NameBol: '-', Band.NameUBVRI: '-.', Band.NameBolQuasi: '..'}
+          Band.NameBol: '-', Band.NameUBVRI: '-.', Band.NameBolQuasi: ':'}
     # for Subaru HCS: colors
     for b in list('grizY'):
         ln['HSC' + b] = ln[b]
