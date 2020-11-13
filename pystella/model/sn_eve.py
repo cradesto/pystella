@@ -285,11 +285,43 @@ class PreSN(object):
             self._data_chem[e][k - 1] = self.el(e)[k - 1] / norm
 
     def el(self, el):
+        """
+        Get abundances for the element
+        :param el: the Element name
+        :return: array
+        """
         if el not in self.Elements:
             raise ValueError("There is no  element [%s] in elements" % el)
         if el not in self._loads:
             raise ValueError("There is no information about the element [%s]. You should set it." % el)
         return self._data_chem[el]
+
+    def xyz(self, k=-1, xy=('H', 'He'), is_norm=False):
+        """
+        Compute XYZ for chemical abundances
+        :param k: zone, default: -1, last zone. If k = None, return the array for all zones
+        :param xy: array Not-metal elements, default: ('H', 'He')
+        :param is_norm: normalize to 1, default: False
+        :return: XYZ value(s) for zone(s)
+        """
+        if any([el not in self.Elements for el in xy]):
+            raise ValueError("There is no  elements of xy [{}] in Elements [{}]".format(xy, self.Elements))
+
+        norm = 1.
+        metals = [el for el in self.Elements if el not in xy]
+        if k is None:
+            if is_norm:
+                norm = np.sum([self.el(ze) for ze in self.Elements], axis=0)
+            ed = {el: self.el(el) / norm for el in xy}
+            y = np.sum([self.el(ze) for ze in metals], axis=0)
+            ed['Z'] = y / norm
+        else:
+            if is_norm:
+                norm = np.sum([self.el(ze)[k] for ze in self.Elements], axis=0)
+            ed = {el: self.el(el)[k] / norm for el in xy}
+            y = np.sum([self.el(ze)[k] for ze in metals])
+            ed['Z'] = y / norm
+        return ed
 
     def write_hyd(self, fname):
         """
