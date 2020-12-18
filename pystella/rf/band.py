@@ -1,6 +1,6 @@
 import os
 from os.path import dirname
-from operator import itemgetter
+
 import numpy as np
 
 from pystella.rf.rad_func import MagAB2Flux, Flux2MagAB
@@ -466,12 +466,12 @@ class BandJoin(Band):
         wl_int = np.exp(np.linspace(np.log(wl_min), np.log(wl_max), self._length))
         resp_int = np.zeros_like(wl_int)
         # wl_int
-        #  Response is sum for all bands
-        if self._is_sum:
+
+        if self._is_sum:  # Response is sum for all bands
             for bn in self._bnames:
                 f = bands_int[bn]
                 resp_int += [f(w) for w in wl_int]
-        else:
+        else:  # Response is max among bands
             resps = []
             for bn in self._bnames:
                 f = bands_int[bn]

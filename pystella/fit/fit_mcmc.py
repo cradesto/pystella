@@ -20,7 +20,7 @@ mpl_logger.setLevel(logging.WARNING)
 
 
 class FitMCMC(FitLc):
-    def __init__(self, nwalkers=200, nburn=100, nsteps=500):
+    def __init__(self, nwalkers=200, nburn=200, nsteps=1000):
         super().__init__("MCMCFit")
         self._par = {
             "nwalkers": nwalkers,  # number of MCMC walkers
@@ -558,7 +558,7 @@ class FitMCMC(FitLc):
         fit_result = FitLcResult()
         fit_result.tshift = res['dt']
         fit_result.tsigma = (e1.dt + e2.dt) / 2.  # res['dtsig']
-        fit_result.measure = res['bic']
+        fit_result.measure = res['measure']
         fit_result.comm = 'result MCMC: CHI2|BIC|AIC: {:.0f}|{:.0f}|{:.0f} acceptance_fraction: {:.3f}'. \
             format(res['chi2'], res['bic'], res['aic'], res['acceptance_fraction'])
 

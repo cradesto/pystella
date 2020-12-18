@@ -6,6 +6,11 @@ class FitLc:
         self._name = name
         self._par = {'is_info': False, 'is_debug': False, 'is_quiet': True}
 
+    def print_parameters(self):
+        print(f'Parmeters of {self.Name}')
+        for k, v in self._par.items():
+            print(f'{k:20s}: {v}')
+
     def fit_lc(self, lc_o, lc_m):
         pass
 

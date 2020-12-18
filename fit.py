@@ -160,7 +160,8 @@ def engines(nm=None):
     switcher = {
         'mpfit': ps.FitMPFit(),
         # 'mcmc': ps.FitMCMC(nwalkers=200, nburn=100, nsteps=500),
-        'mcmc': ps.FitMCMC(nwalkers=100, nburn=50, nsteps=200),
+        'mcmc': ps.FitMCMC(),
+        # 'mcmc': ps.FitMCMC(nwalkers=100, nburn=50, nsteps=200),
     }
     if nm is not None:
         return switcher.get(nm)
@@ -898,6 +899,8 @@ def main():
     if is_sigma:
         print("Fit magnitudes with model uncertainties.")
 
+    print("Color excess E(B-V) ={:f}".format(args.color_excess))
+
     # Time limits for models
     tlim = (0, float('inf'))
 
@@ -908,7 +911,10 @@ def main():
     # The fit engine
     fitter = engines(args.engine)
     fitter.is_info = args.is_not_quiet  # fitter = FitMPFit(is_debug=args.is_not_quiet)
-    fitter.is_debug = args.is_not_quiet
+    # fitter.is_debug = args.is_not_quiet
+
+    if args.is_not_quiet:
+        fitter.print_parameters()
 
     # The filter results by tshift
     if args.dtshift:
