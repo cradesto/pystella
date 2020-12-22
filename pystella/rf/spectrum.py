@@ -672,7 +672,8 @@ class SeriesSpectrum(object):
         mags = dict((k, None) for k in bands)
         for bn in bands:
             b = band.band_by_name(bn)
-            mags[bn] = self.to_mags(b, z=z, d=d, magnification=magnification)
+            times, m = self.to_mags(b, z=z, d=d, magnification=magnification)
+            mags[bn] = m
 
         mags['time'] = self.Time * (1. + z)
         return mags
