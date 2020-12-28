@@ -233,6 +233,8 @@ class Snec:
     def plot_chem(self, x='m', ax=None, xlim=None, ylim=None, **kwargs):
         elements = kwargs.get('elements', snec_elements)
         lntypes = kwargs.get('lntypes', snec_el_lntypes)
+        if isinstance(lntypes, str):
+            lntypes = {el: lntypes for el in elements}
         colors = kwargs.get('colors', snec_el_colors)
         loc = kwargs.get('leg_loc', 3)
         font_size = kwargs.get('font_size', 14)

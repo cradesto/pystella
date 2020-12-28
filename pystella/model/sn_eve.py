@@ -358,30 +358,38 @@ class PreSN(object):
         """
         Plot the chemical composition.
 
-        lntypes = kwargs.get('lntypes', eve_lntypes)
-        colors = kwargs.get('colors', eve_colors)
+        ls = kwargs.get('ls', eve_lntypes), if ls is str then ls is the same for all elements
+        colors = kwargs.get('colors', eve_colors), if colors is str then colors is the same for all elements
         loc = kwargs.get('leg_loc', 'best')
         leg_ncol = kwargs.get('leg_ncol', 4)
-        lw = kwargs.get('lw', 2)
+        lw = kwargs.get('lw', 2), if lw is number then lw is the same for all elements
         marker = kwargs.get('marker', None)
         markersize = kwargs.get('markersize', 4)
         alpha = kwargs.get('alpha', 1)
         figsize = kwargs.get('figsize', (8, 8))
+        fontsize = kwargs.get('fontsize', 14)
         is_legend = kwargs.get('is_legend', True)
         """
         if not is_matplotlib:
             return
         # elements = kwargs.get('elements', eve_elements)
-        lntypes = kwargs.get('lntypes', eve_lntypes)
+        # lntypes = kwargs.get('lntypes', eve_lntypes)
         lntypes = kwargs.get('ls', eve_lntypes)
+        if isinstance(lntypes, str):
+            lntypes = {el: lntypes for el in elements}
         colors = kwargs.get('colors', eve_colors)
+        if isinstance(colors, str):
+            colors = {el: colors for el in elements}
+        lw = kwargs.get('lw', 2)
+        if isinstance(lw, (int, float)):
+            lw = {el: lw for el in elements}
         loc = kwargs.get('leg_loc', 'best')
         leg_ncol = kwargs.get('leg_ncol', 4)
-        lw = kwargs.get('lw', 2)
         marker = kwargs.get('marker', None)
         markersize = kwargs.get('markersize', 4)
         alpha = kwargs.get('alpha', 1)
         figsize = kwargs.get('figsize', (8, 8))
+        fontsize = kwargs.get('fontsize', 14)
         is_legend = kwargs.get('is_legend', True)
 
         if isinstance(lntypes, str):
@@ -391,7 +399,7 @@ class PreSN(object):
         is_new_plot = ax is None
         # setup figure
         if is_new_plot:
-            plt.matplotlib.rcParams.update({'font.size': 14})
+            plt.matplotlib.rcParams.update({'font.size': fontsize})
             fig = plt.figure(num=None, figsize=figsize, dpi=100, facecolor='w', edgecolor='k')
 
             gs1 = gridspec.GridSpec(1, 1)
@@ -435,7 +443,7 @@ class PreSN(object):
                 # x = y[np.nonzero(y)]
                 # y = y[np.nonzero(y)]
                 # y[y<=0] == 1e-15
-                ax.plot(x, y, label='{0}'.format(el), color=colors[el], ls=lntypes[el], linewidth=lw
+                ax.plot(x, y, label='{0}'.format(el), color=colors[el], ls=lntypes[el], linewidth=lw[el]
                         , marker=marker, markersize=markersize, alpha=alpha)
                 # ax.semilogy(x, y, label='{0}'.format(el), color=colors[el], ls=lntypes[el], linewidth=lw
                 #             , marker=marker, markersize=markersize)
@@ -460,7 +468,8 @@ class PreSN(object):
             ax.set_ylabel(r'$X_i$')
 
         if is_legend:
-            ax.legend(prop={'size': 9}, loc=loc, ncol=leg_ncol, fancybox=False, frameon=False, markerscale=0)
+            ax.legend(prop={'size': 9}, loc=loc, ncol=leg_ncol, fancybox=False, frameon=False,
+                      markerscale=0, handlelength=3)
             # ax.legend(prop={'size': 9}, loc=3, ncol=4, fancybox=True, shadow=True)
             # plt.grid()
             # plt.show()
