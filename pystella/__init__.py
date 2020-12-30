@@ -45,3 +45,6 @@ from .util.arr_dict import first
 from .util.reader_table import read_obs_table_header
 from .util.reader_table import curves2table, table2curves
 from .util import ls
+
+# Collections
+from .rf.light_curve_plot import linestyles_extend

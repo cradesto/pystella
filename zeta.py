@@ -148,6 +148,12 @@ epm_coef = {
 #     plt.grid()
 #     plt.show()
 
+def ticks_on(ax, minor=3, major=6):
+    ax.minorticks_on()
+    ax.tick_params(direction='in', which='minor', length=minor)
+    ax.tick_params(direction='in', which='major', length=major)
+    return ax
+
 
 def plot_zeta(models_dic, set_bands, theta, t_points=None, is_time_points_only=False,
               is_plot_Tcolor=True, is_plot_Tnu=True,
@@ -186,15 +192,16 @@ def plot_zeta(models_dic, set_bands, theta, t_points=None, is_time_points_only=F
             ax.set_xlabel(r'$T_{color}$')
 
         ax.set_xlim(xlim)
-        xstart, xend = 0, 20000.
-        ax.xaxis.set_ticks(np.arange(5000, xend, (xend - xstart) / 4.))
-        ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%d'))
+        xstart, xend = 0.1, 19900.
+        # ax.xaxis.set_ticks(np.arange(5000, xend, (xend - xstart) / 4.))
+        # ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%d'))
         # y
         ax.set_ylim(ylim)
-        ax.set_yticks(np.arange(0.5, ylim[1], 0.5))
+        # ax.set_yticks(np.arange(0.5, ylim[1], 0.5))
         # ax.text(.5, .9, bset, horizontalalignment='center', transform=ax.transAxes)
         # ax.set_title(bset)
         ax.set_title(bset, x=0.5, y=0.9)
+        ticks_on(ax)
 
     if len(models_dic) > 0:
         for ib, bset in enumerate(set_bands):
@@ -491,10 +498,8 @@ def models_join(bands_models):
 
 def zeta_fit_rev_temp(T, a_coef):
     z = 0
-    i = 0
-    for ai in a_coef:
+    for i, ai in enumerate(a_coef):
         z += ai * (1.e4 / T) ** i
-        i += 1
     return z
 
 
@@ -1056,7 +1061,7 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False):
 
                 # print("\nFit: %s [%d/%d]" % (bset, im, len(set_bands)))
                 # theta = fit_bayesian(models, is_debug=True, is_info=is_info, title=bset)
-                theta_mcmc = fit_bayesian(tbl, is_debug=True, is_info=is_info, title=bset)
+                theta_mcmc = fit_bayesian(tbl, is_debug=False, is_info=is_info, title=bset)
                 # results_filter[bset] = total_zt[bset]
                 theta[bset] = theta_mcmc
                 # print_coef(theta)

@@ -1,6 +1,7 @@
 import os
 import sys
 from itertools import cycle
+from collections import OrderedDict
 
 import numpy as np
 from pystella.rf import band
@@ -26,6 +27,24 @@ lc_colors = band.colors()
 lc_lntypes = band.lntypes()
 
 linestyles = ('-', '--', '-.', ':')
+linestyles_extend = list( OrderedDict(   # ref https://stackoverflow.com/a/54804349
+    [
+        ('solid', (0, ())),
+        ('dashed', (0, (5, 5))),
+        ('dashdotted', (0, (3, 5, 1, 5))),
+        ('densely dotted', (0, (1, 1))),
+        ('densely dashed', (0, (5, 1))),
+        ('dotted', (0, (1, 5))),
+
+        ('loosely dashed', (0, (5, 10))),
+
+        ('loosely dotted', (0, (1, 10))),
+        ('loosely dashdotted', (0, (3, 10, 1, 10))),
+        ('densely dashdotted', (0, (3, 1, 1, 1))),
+
+        ('loosely dashdotdotted', (0, (3, 10, 1, 10, 1, 10))),
+        ('dashdotdotted', (0, (3, 5, 1, 5, 1, 5))),
+        ('densely dashdotdotted', (0, (3, 1, 1, 1, 1, 1)))]).values())
 
 markers = {u'D': u'diamond', 6: u'caretup', u's': u'square', u'x': u'x',
            5: u'caretright', u'^': u'triangle_up', u'd': u'thin_diamond', u'h': u'hexagon1',
@@ -606,75 +625,91 @@ def plot_shock_details(swd, times, **kwargs):
     from pystella.model import sn_swd
 
     is_legend = kwargs.get('is_legend', False)
-    rnorm = kwargs.get('rnorm', 'lgr')
-    tnorm = kwargs.get('tnorm', 1e3)
-    vnorm = kwargs.get('vnorm', 1e8)
-    lumnorm = kwargs.get('lumnorm', 1e40)
-    ylim_par = kwargs.get('ylim_par', (0.001, 11))
+    # ylim_par = kwargs.get('ylim_par', (0.001, 11))
     font_size = kwargs.get('font_size', 12)
-    is_grid = kwargs.get('is_grid', False)
+    # is_grid = kwargs.get('is_grid', False)
     is_adjust = kwargs.get('is_adjust', True)
     is_axes = kwargs.get('is_axes', False)
-
+    dic_axes = kwargs.get('dic_axes', None)
+    is_ax_old = False
     xlim = None
     ylim_rho = None
     nrow = len(times)
     ncol = 2
-    fig = plt.figure(figsize=(12, nrow * 4))
-    plt.matplotlib.rcParams.update({'font.size': font_size})
-    # plt.minorticks_on()
-    # fig = plt.figure(num=None, figsize=(12, len(times) * 4), dpi=100, facecolor='w', edgecolor='k')
-    # gs1 = gridspec.GridSpec(len(times), 2)
 
     axes1 = []
-    dic_axes = {'r': [], 'm': []}
+    if dic_axes is None:
+        dic_axes = {'r': [], 'm': []}
+        fig = plt.figure(figsize=(12, nrow * 4))
+        # plt.minorticks_on()
+        # fig = plt.figure(num=None, figsize=(12, len(times) * 4), dpi=100, facecolor='w', edgecolor='k')
+        # gs1 = gridspec.GridSpec(len(times), 2)
+    else:
+        fig = (dic_axes['r'][0]['rho']).get_figure()
+        is_ax_old = True
+        is_adjust = False
+        # is_legend = False
+        kwargs['is_day'] = False
+
+    plt.matplotlib.rcParams.update({'font.size': font_size})
     # plot radius column
     for i, t in enumerate(times):
-        ax = fig.add_subplot(nrow, ncol, ncol * i + 1, label='radius {}'.format(i))
-        axes1.append(ax)
+        if is_ax_old:
+            axrho, axpar = dic_axes['r'][i]['rho'], dic_axes['r'][i]['par']
+        else:
+            axrho = fig.add_subplot(nrow, ncol, ncol * i + 1, label='radius {}'.format(i))
+            axpar = None
+        axes1.append(axrho)
         legmask = sn_swd.LEGEND_MASK_None
         if is_legend and i == 0:
             legmask = sn_swd.LEGEND_MASK_Rho
         # plot swd(radius)
         b = swd.block_nearest(t)
-        axrho, axpar = sn_swd.plot_swd(ax, b, is_xlabel=(i == len(times) - 1),
-                                       vnorm=vnorm, lumnorm=lumnorm, tnorm=tnorm,
-                                       rnorm=rnorm, legmask=legmask, is_yrlabel=False, text_posy=0.88,
-                                       is_grid=is_grid, ylim_par=ylim_par)
-        dic_axes['r'].append({'itime': i, 't': t, 'rho': axrho, 'par': axpar})
-        x = ax.get_xlim()
-        if xlim is None:
-            xlim = x
-        else:
-            xlim = (min(x[0], xlim[0]), max(x[1], xlim[1]))
-        y = ax.get_ylim()
-        if ylim_rho is None:
-            ylim_rho = y
-        else:
-            ylim_rho = (min(y[0], ylim_rho[0]), max(y[1], ylim_rho[1]))
-        # axpar.tick_params(direction='in', which='both', length=4)
-        ticks_on(axrho)
-        ticks_on(axpar)
+        axrho, axpar = sn_swd.plot_swd((axrho, axpar), b, name=swd.Name, is_xlabel=(i == len(times) - 1),
+                                       legmask=legmask, is_yrlabel=False, text_posy=0.88,
+                                       **kwargs)
+        if not is_ax_old:
+            x = axrho.get_xlim()
+            if xlim is None:
+                xlim = x
+            else:
+                xlim = (min(x[0], xlim[0]), max(x[1], xlim[1]))
+            y = axrho.get_ylim()
+            if ylim_rho is None:
+                ylim_rho = y
+            else:
+                ylim_rho = (min(y[0], ylim_rho[0]), max(y[1], ylim_rho[1]))
+            # axpar.tick_params(direction='in', which='both', length=4)
+            ticks_on(axrho)
+            ticks_on(axpar)
+            dic_axes['r'].append({'itime': i, 't': t, 'rho': axrho, 'par': axpar})
 
+    if 'rnorm' in kwargs:
+        kwargs.pop('rnorm')
     axes2 = []
     # Plot mass column
     for i, t in enumerate(times):
-        ax2 = fig.add_subplot(nrow, ncol, ncol * i + 2, label='mass {}'.format(i))
-        axes2.append(ax2)
-        ax2.tick_params(direction='in', which='minor', length=3)
-        ax2.tick_params(direction='in', which='major', length=5)
+        if is_ax_old:
+            # ax2 = dic_axes['m'][i]['rho']
+            axrho, axpar = dic_axes['m'][i]['rho'], dic_axes['m'][i]['par']
+        else:
+            axrho = fig.add_subplot(nrow, ncol, ncol * i + 2, label='mass {}'.format(i))
+            axrho.tick_params(direction='in', which='minor', length=3)
+            axpar = None
+        axes2.append(axrho)
         legmask = sn_swd.LEGEND_MASK_None
 
         if is_legend and i == 0:
             legmask = sn_swd.LEGEND_MASK_Vars
         b = swd.block_nearest(t)
-        axrho, axpar = sn_swd.plot_swd(ax2, b, is_xlabel=(i == len(times) - 1),
-                                       vnorm=vnorm, lumnorm=lumnorm, tnorm=tnorm,
+        axrho, axpar = sn_swd.plot_swd((axrho, axpar), b, name=swd.Name, is_xlabel=(i == len(times) - 1),
                                        rnorm='m', legmask=legmask, is_yllabel=False, text_posy=0.88,
-                                       is_day=False, is_grid=is_grid, ylim_par=ylim_par)
-        dic_axes['m'].append({'itime': i, 't': t, 'rho': axrho, 'par': axpar})
-        # ticks_on(axrho)
-        ticks_on(axpar)
+                                       **kwargs)
+        if not is_ax_old:
+            dic_axes['m'].append({'itime': i, 't': t, 'rho': axrho, 'par': axpar})
+            ticks_on(axrho)
+            axpar.tick_params(direction='in', which='major', length=5)
+            ticks_on(axpar)
 
     # Set limits
     for i, ax in enumerate(axes1):
@@ -775,6 +810,7 @@ def plot_swd_tau(dic_axes, stella, times, bnames=('B',), tau_ph=2. / 3., is_obs_
     vnorm = kwargs.get('vnorm', 1e8)
     alpha = kwargs.get('alpha', 0.5)
     markersize = kwargs.get('markersize', 6)
+    marker = kwargs.get('marker', 'o')
 
     if not stella.is_tau:
         print('There is no tau-file for model {} in path: {}'.format(stella.Name, stella.Path))
@@ -814,13 +850,13 @@ def plot_swd_tau(dic_axes, stella, times, bnames=('B',), tau_ph=2. / 3., is_obs_
             # Temperature
             if tnorm is None:
                 yt = np.log10(data[bname]['T'][ii])
-                ax.plot(xr, yt, color='green', ls='', marker='o', markersize=markersize, alpha=alpha)
+                ax.plot(xr, yt, color='green', ls='', marker=marker, markersize=markersize, alpha=alpha)
             else:
                 yt = data[bname]['T'][ii] / tnorm
-                ax.plot(xr, yt, color='green', ls='', marker='o', markersize=markersize, alpha=alpha)
+                ax.plot(xr, yt, color='green', ls='', marker=marker, markersize=markersize, alpha=alpha)
             # Velocity
             yv = data[bname]['V'][ii] / vnorm
-            ax.plot(xr, yv, color='blue', ls='', marker='s', markersize=markersize, alpha=alpha)
+            ax.plot(xr, yv, color='blue', ls='', marker=marker, markersize=markersize, alpha=alpha)
         #     print(f't={t:9.3f}  R= {xr:e}  V= {yv:e} T= {yt:e}')
         #     s += f'R= {xr:e}  V= {yv:e} T= {yt:e}'
         # print(s)

@@ -2,6 +2,7 @@
 
 import logging
 import os
+from itertools import cycle
 
 import numpy as np
 import pystella as ps
@@ -18,7 +19,7 @@ mpl_logger = logging.getLogger('matplotlib')
 mpl_logger.setLevel(logging.WARNING)
 
 
-def uph_save(dictionary, fname, sep='\t'):
+def uph_write(dictionary, fname, sep='\t'):
     """
     Save dict to file. Keys are column's names, values are column data
     :param dictionary:
@@ -35,7 +36,7 @@ def uph_save(dictionary, fname, sep='\t'):
             writer.writerow(['{:8.3e}'.format(x) for x in row])
 
 
-def plot_uph(uph, vnorm=1.e8, label='', lw=2, fontsize=18):
+def plot_uph(uph, vnorm=1.e8, label='', lw=2, fontsize=18, ls="-", color='blue'):
     import matplotlib.pyplot as plt
 
     # setup plot
@@ -49,7 +50,7 @@ def plot_uph(uph, vnorm=1.e8, label='', lw=2, fontsize=18):
 
     x = uph['time']
     y = uph['V'] / vnorm
-    ax.plot(x, y, label=label, color='blue', ls="-", linewidth=lw)
+    ax.plot(x, y, label=label, color=color, ls=ls, linewidth=lw)
     ax.legend()
     return fig
 
@@ -76,7 +77,7 @@ def make_cartoon(swd, times, vnorm, rnorm, lumnorm, is_legend, fout=None):
     # os.subprocess.call("ffmpeg -f image2 -r 1/5 -i img%04d.png -vcodec mpeg4 -y {}".format(fout), shell=False)
 
 
-def get_parser(times = '1:4:15:65', bnames='U:B:V:R', tau_ph=2./3):
+def get_parser(times='1:4:15:65', bnames='U:B:V:R', tau_ph=2. / 3):
     import argparse
 
     parser = argparse.ArgumentParser(description='Process Stella Shock Wave Details.')
@@ -199,9 +200,13 @@ def main():
     #
     # except ImportError:
     #     sns = None
-
+    fsave = None
+    dic_axes = None
     ylim_par = None
     is_legend = True
+    ls_cycle = cycle(ps.linestyles_extend)
+    marker_cycle = cycle(ps.lcp.markers)
+
     parser = get_parser()
     args, unknownargs = parser.parse_known_args()
 
@@ -228,7 +233,7 @@ def main():
 
     times = list(map(float, args.times.split(':')))
 
-    for nm in names:
+    for i, nm in enumerate(names):
         path, name = os.path.split(nm)
         if len(path) == 0:
             path = pathDef
@@ -249,28 +254,21 @@ def main():
             if args.is_write:
                 fsave = os.path.join(path, "{0}.uph".format(name))
                 print("Save uph to {0}".format(fsave))
-                uph_save(duph, fsave)
+                uph_write(duph, fsave)
             else:
                 fig = plot_uph(duph, vnorm=args.vnorm, label=name)
                 if args.is_save:
                     fsave = os.path.expanduser("~/uph_{0}.pdf".format(name))
-                    print("Save plot to {0}".format(fsave))
-                    fig.savefig(fsave, bbox_inches='tight')
-                else:
-                    # plt.ion()
-                    plt.show()
-                    # plt.pause(0.0001)
-                    # print('')
-                    # input("===> Hit <return> to quit")
-                    # plt.show(block=False)
         elif args.is_mult:
             make_cartoon(swd, times, vnorm=args.vnorm, rnorm=args.rnorm,
                          lumnorm=args.lumnorm, is_legend=is_legend)
         else:
+            # ls = next(ls_cycle) # skip solid
             fig, dic_axes = ps.lcp.plot_shock_details(swd, times=times,
                                                       vnorm=args.vnorm, rnorm=args.rnorm, tnorm=args.tnorm,
                                                       lumnorm=args.lumnorm, is_legend=is_legend, is_axes=True,
-                                                      ylim_par=ylim_par)
+                                                      ylim_par=ylim_par,
+                                                      dic_axes=dic_axes, ls=next(ls_cycle))
             if args.frho is not None:
                 ps.lcp.plot_swd_chem(dic_axes, args.frho, stella.Path)
 
@@ -289,19 +287,21 @@ def main():
                         bnames.append(bname)
 
                 ps.lcp.plot_swd_tau(dic_axes, stella, times=times, bnames=bnames, tau_ph=args.tau,
-                                    is_obs_time=False,
+                                    is_obs_time=False, marker=next(marker_cycle),
                                     vnorm=args.vnorm, tnorm=args.tnorm)
 
             if args.is_save:
                 fsave = os.path.expanduser("~/swd_{0}_t{1}.pdf".format(name, str.replace(args.times, ':', '-')))
-                print("Save plot to {0}".format(fsave))
-                fig.savefig(fsave, bbox_inches='tight')
-            else:
-                # plt.ion()
-                plt.show()
-                # plt.pause(0.0001)
-                # print('')
-                # input("===> Hit <return> to quit")
+        #  Save the figure or show
+    if fsave is not None:
+        print("Save plot to {0}".format(fsave))
+        fig.savefig(fsave, bbox_inches='tight')
+    else:
+        # plt.ion()
+        plt.show()
+        # plt.pause(0.0001)
+        # print('')
+        # input("===> Hit <return> to quit")
 
 
 if __name__ == '__main__':

@@ -11,3 +11,5 @@ from .ts import SetTimeSeries, TimeSeries
 
 from .rad_func import compute_x_bb, val_to_hz, val_to_wl, Lum2MagBol, MagBol2Lum, MagAB2Flux
 from .rad_func import planck, bb_luminosity_bolometric, distance_modulus, distance_from_modulus
+
+from .light_curve_plot import linestyles_extend
