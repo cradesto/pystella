@@ -26,7 +26,8 @@ from .rf.spectrum import SeriesSpectrum, Spectrum, SpectrumDilutePlanck, Spectru
 from .rf.lc import SetLightCurve, LightCurve
 
 from .rf.reddening import ReddeningLaw, LawFitz, LawPei
-from .rf.star import Star, Flux2MagAB
+from .rf.star import Star
+from .rf.rad_func import MagAB2Flux, Flux2MagAB
 from .rf.ts import SetTimeSeries, TimeSeries
 
 from .fit import FitLc, FitMPFit, mpfit, FitMCMC
@@ -44,3 +45,6 @@ from .util.arr_dict import first
 from .util.reader_table import read_obs_table_header
 from .util.reader_table import curves2table, table2curves
 from .util import ls
+
+# Collections
+from .rf.light_curve_plot import linestyles_extend

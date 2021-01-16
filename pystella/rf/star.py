@@ -187,7 +187,20 @@ class Star:
         # # mag1 = -2.5 * np.log10(response1 ) - 21.1 - b.zp
         # return mag1
 
-    def magBol(self):
+    def magBol(self, b, kind='spline'):  # kind='spline' log  line
+        """
+        Bolometric magnitude via Luminosity of Sun
+        :return:
+        """
+        from scipy.integrate import simps
+
+        lum = Band.response_nu(self.Freq, self.Flux, b, is_freq_norm=False)
+        M = phys.Mag_sun + 5. * np.log10(self.distance/phys.pc) - 5
+        bol = M - 2.5 * np.log10(np.abs(lum) / phys.L_sun)
+        # print('bol= ', bol)
+        return bol
+
+    def magBolOld(self):
         """
         Bolometric magnitude via Luminosity of Sun
         :return:

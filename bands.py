@@ -147,7 +147,7 @@ def plot_Kepler():
 
 def plot_bands(bands, color_dic=None):
     if color_dic is None:
-        color_dic = band.bands_colors()
+        color_dic = band.colors()
 
     for bname in bands:
         b = band.band_by_name(bname)
@@ -191,7 +191,10 @@ def main():
             sys.exit(2)
 
     if len(bands) > 0:
-        plot_bands(bands)
+        try:
+            plot_bands(bands)
+        except AttributeError:
+            pass
     else:
         plot_UBVRI()
         plot_JHK()

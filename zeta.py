@@ -52,7 +52,7 @@ epm_coef = {
         'B-V': [0.64, -0.69, 0.51],
         'B-V-I': [0.65, -0.55, 0.4],
         'V-I': [0.83, -0.7, 0.41],
-        'J-H-K':  [-0.7, 2.76, -0.99],
+        'J-H-K': [-0.7, 2.76, -0.99],
         'g-r': [0.64, -0.65, 0.47],
         'g-r-i': [0.68, -0.62, 0.43],
         'r-i': [0.95, -0.86, 0.46]
@@ -148,10 +148,16 @@ epm_coef = {
 #     plt.grid()
 #     plt.show()
 
+def ticks_on(ax, minor=3, major=6):
+    ax.minorticks_on()
+    ax.tick_params(direction='in', which='minor', length=minor)
+    ax.tick_params(direction='in', which='major', length=major)
+    return ax
+
 
 def plot_zeta(models_dic, set_bands, theta, t_points=None, is_time_points_only=False,
               is_plot_Tcolor=True, is_plot_Tnu=True,
-               is_fit_bakl=False, fits=None,
+              is_fit_bakl=False, fits=None,
               xlim=(0, 18000), ylim=(0, 2.5), tcut=None, t_fit_lim=None):
     import matplotlib.pyplot as plt
     import matplotlib.ticker as ticker
@@ -186,15 +192,16 @@ def plot_zeta(models_dic, set_bands, theta, t_points=None, is_time_points_only=F
             ax.set_xlabel(r'$T_{color}$')
 
         ax.set_xlim(xlim)
-        xstart, xend = 0, 20000.
-        ax.xaxis.set_ticks(np.arange(5000, xend, (xend - xstart) / 4.))
-        ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%d'))
+        xstart, xend = 0.1, 19900.
+        # ax.xaxis.set_ticks(np.arange(5000, xend, (xend - xstart) / 4.))
+        # ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%d'))
         # y
         ax.set_ylim(ylim)
-        ax.set_yticks(np.arange(0.5, ylim[1], 0.5))
+        # ax.set_yticks(np.arange(0.5, ylim[1], 0.5))
         # ax.text(.5, .9, bset, horizontalalignment='center', transform=ax.transAxes)
         # ax.set_title(bset)
         ax.set_title(bset, x=0.5, y=0.9)
+        ticks_on(ax)
 
     if len(models_dic) > 0:
         for ib, bset in enumerate(set_bands):
@@ -302,13 +309,13 @@ def plot_zeta(models_dic, set_bands, theta, t_points=None, is_time_points_only=F
             bcolor = "orange"
             ax.plot(xx, yf, color=bcolor, dashes=[12, 6, 12, 6, 3, 6], linewidth=2.5, label=r'MCMC $\zeta-T$')
 
-        # PRINT coef
+            # PRINT coef
             print(bset + "  a_i coefficients")
             print("  {:8s}: {}".format('MCMC', ', '.join(map(str, np.round(theta[bset]['v'], 2)))))
             # print("    MCMC zeta-T %s: %s " % (bset, ' '.join(map(str, np.round(theta_dic[bset]['v'], 4)))))
 
     if is_fit_bakl:  # bakl fit
-            # find a_coef
+        # find a_coef
         a = {}
         err = {}
         total_zt = models_join(models_dic)
@@ -367,7 +374,7 @@ def plot_fits(set_bands, is_grid=True, used=('dessart', 'eastman', 'hamuy', 'bak
             irow = int(ib / 2)
             ax = fig.add_subplot(gs1[irow, icol])
 
-        bcolor = _colors[(ib+1) % (len(_colors) - 1)]
+        bcolor = _colors[(ib + 1) % (len(_colors) - 1)]
 
         # figure parameters
         xstart, xend = xlim[0], 20000.
@@ -382,9 +389,9 @@ def plot_fits(set_bands, is_grid=True, used=('dessart', 'eastman', 'hamuy', 'bak
         # lines
         opts = {
             'dessart': {'c': "darkviolet", 'ls': "--", 'lbl': 'Dessart 05'},
-            'eastman': {'c': "tomato",     'ls': "-.", 'lbl': 'Eastman 96'},
-            'hamuy':   {'c': "skyblue",    'ls': "-.", 'lbl': 'Hamuy 01'},
-            'bakl':    {'c': "orange",     'ls': "-",  'lbl': 'Baklanov 18'},
+            'eastman': {'c': "tomato", 'ls': "-.", 'lbl': 'Eastman 96'},
+            'hamuy': {'c': "skyblue", 'ls': "-.", 'lbl': 'Hamuy 01'},
+            'bakl': {'c': "orange", 'ls': "-", 'lbl': 'Baklanov 18'},
         }
         xx = np.linspace(max(100, xlim[0]), xlim[1], num=50)
         for mn in used:
@@ -491,10 +498,8 @@ def models_join(bands_models):
 
 def zeta_fit_rev_temp(T, a_coef):
     z = 0
-    i = 0
-    for ai in a_coef:
+    for i, ai in enumerate(a_coef):
         z += ai * (1.e4 / T) ** i
-        i += 1
     return z
 
 
@@ -564,7 +569,7 @@ def compute_Tcolor_zeta(mags, tt, bands, freq, d, z):
         # res = minimize(lambda x: epsilon(x, freq, mag, bands, radius, d, z),
         #                x0=[1.e4, 1], method='Nelder-Mead', tol=1e-4)
         # tcolor, w = res.x
-        tcolor, w = fmin(epsilon, x0=np.array([1.e4, 0.5]), args=(freq, mag, bands, radius, d, z), disp=False)
+        tcolor, w = fmin(epsilon, x0=np.array([1.e4, 1.]), args=(freq, mag, bands, radius, d, z), disp=False)
         temp.append(tcolor)
         zeta_radius.append(w)
         times.append(t)
@@ -599,7 +604,7 @@ def compute_Tnu_w(serial_spec, tt):
     return temp_nu, temp_eff, W
 
 
-def compute_tcolor(name, path, bands, d=ps.phys.pc2cm(10.), z=0., t_cut=(1., np.inf), t_diff=1.05):
+def compute_tcolor(name, path, bands, d=ps.phys.pc2cm(10.), z=0., t_cut=(1., np.inf), t_diff=1.1, ):
     model = ps.Stella(name, path=path)
 
     if not model.is_ph:
@@ -683,7 +688,7 @@ def fit_bayesian_models(models_zt, is_debug=True, is_info=False, title='', threa
     # run
     nwalkers = 50  # number of MCMC walkers
     nburn = 100  # "burn-in" period to let chains stabilize
-    nsteps = 2000  # number of MCMC steps to take
+    nsteps = 1000  # number of MCMC steps to take
     if is_debug:  # debug
         nwalkers = 20
         nburn = 50  # "burn-in" period to let chains stabilize
@@ -731,8 +736,8 @@ def fit_bayesian(total_zt, is_debug=True, is_info=False, title='', threads=2):
     ndim = 3  # number of parameters in the model
     # run
     nwalkers = 50  # number of MCMC walkers
-    nburn = 100  # "burn-in" period to let chains stabilize
-    nsteps = 2000  # number of MCMC steps to take
+    nburn = 200  # "burn-in" period to let chains stabilize
+    nsteps = 1000  # number of MCMC steps to take
     if is_debug:  # debug
         nwalkers = 20
         nburn = 50  # "burn-in" period to let chains stabilize
@@ -802,7 +807,8 @@ def usage():
     print("  -e <model extension> is used to define model name, default: tt ")
     print("  -s  silence mode: no info, no plot")
     print("  -f  force mode: rewrite zeta-files even if it exists")
-    print("  -o  options: <fit:fitb:ubv:Tnu> - fit E&D: fit bakl:  show time points: plot UBV")
+    print(
+        "  -o  options: <dessart:eastman:hamuy:bakl:fitb:ubv:Tnu> - fit E&D&H&B: fit bakl: show time points: plot UBV")
     print("  -x  <tbeg:tend> - time range for fitting. Special value tend={0}, used as tend=t(zeta_max)"
           " Default: 1:{0} , used all days.".format(int(t_fit_zeta_max)))
     print("  -w  write magnitudes to file, default 'False'")
@@ -868,16 +874,15 @@ def cache_name(name, path, bands, z=0., tcut=None):
         fname += ".z%.2f" % z
 
     fname += tcut2str(tcut)
-    fname += ".pkl"
-#     print("cshe name: {}".format(fname))
+    #     print("cshe name: {}".format(fname))
     return fname
 
 
 def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False):
     import pickle as pickle
 
+    fits = None
     is_info = False
-    is_fit = False
     is_save_plot = False
     is_fit_bakl = False
     is_fit_only = False
@@ -925,7 +930,7 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False):
             set_bands = str(arg).split('_')
             for bset in set_bands:
                 for b in bset.split('-'):
-                    if not ps.band.band_is_exist(b):
+                    if not ps.band.is_exist(b):
                         print('No such band: ' + b)
                         sys.exit(2)
             continue
@@ -940,8 +945,8 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False):
             continue
         if opt == '-o':
             ops = str(arg).split(':')
+            fits = ops
             is_plot_Tnu = "Tnu" in ops
-            is_fit = "fit" in ops
             is_fit_only = "only" in ops
             is_fit_bakl = "fitb" in ops
             continue
@@ -1004,19 +1009,25 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False):
                 im += 1
                 is_err = False
                 fname = cache_name(name, path, bset, z, tcut=t_cut)
-                if not is_force and os.path.exists(fname):
+                fname_pkl = fname + ".pkl"
+                fname_csv = fname + ".csv"
+                if not is_force and os.path.exists(fname_pkl):
                     print("Load: %s [%d/%d]" % (name, im, len(names)))
                     # res = ps.util.cache_load(fname)
-                    with open(fname, 'rb') as f:
+                    with open(fname_pkl, 'rb') as f:
                         res = pickle.load(f)
                 else:
                     print("Run: %s [%d/%d]" % (name, im, len(names)))
-                    res = compute_tcolor(name, path, bset.split('-'), d=distance, z=z, t_cut=t_cut, t_diff=1.1)
+                    res = compute_tcolor(name, path, bset.split('-'), d=distance, z=z, t_cut=t_cut)
                     if is_save and res is not None:
-                        print("Save Tcolor & Zeta for %s in %s" % (bset, fname))
-                        with open(fname, 'wb') as output:
+                        import pandas as pd
+                        print("Save Tcolor & Zeta for %s in %s" % (bset, fname_pkl))
+                        with open(fname_pkl, 'wb') as output:
                             pickle.dump(res, output, pickle.HIGHEST_PROTOCOL)
                         # ps.util.cache_save(res, fname=fname)
+                        df = pd.DataFrame(res)
+                        df.to_csv(fname_csv, float_format='%.4f', index=False)
+                        print("Saved Tcolor & Zeta for {} in {}".format(bset, fname_csv))
 
                 dic[name] = res
                 # check for errors
@@ -1029,7 +1040,7 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False):
             results[bset] = dic
             print("Finish: %s" % name)
 
-        if is_fit:
+        if fits is not None:
             # join all data
             total_zt = models_join(results)
 
@@ -1050,13 +1061,13 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False):
 
                 # print("\nFit: %s [%d/%d]" % (bset, im, len(set_bands)))
                 # theta = fit_bayesian(models, is_debug=True, is_info=is_info, title=bset)
-                theta_mcmc = fit_bayesian(tbl, is_debug=True, is_info=is_info, title=bset)
+                theta_mcmc = fit_bayesian(tbl, is_debug=False, is_info=is_info, title=bset)
                 # results_filter[bset] = total_zt[bset]
                 theta[bset] = theta_mcmc
                 # print_coef(theta)
                 print("{}: {}".format(bset, fitcoef2str(theta_mcmc)))
 
-        fig = plot_zeta(results, set_bands, theta=theta, tcut=t_cut, t_fit_lim=xlim, is_fit=is_fit,
+        fig = plot_zeta(results, set_bands, theta=theta, tcut=t_cut, t_fit_lim=xlim, fits=fits,
                         is_fit_bakl=is_fit_bakl, is_plot_Tnu=is_plot_Tnu)
 
         if is_save_plot and len(results) > 0:

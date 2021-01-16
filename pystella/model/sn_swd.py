@@ -132,7 +132,7 @@ class StellaShockWaveDetail:
             #     taus[i, k] = tau
         return taus
 
-    def params_ph(self, cols=('R', 'M', 'T', 'V', 'Rho'), tau_ph=2./3.):
+    def params_ph(self, cols=('R', 'M', 'T', 'V', 'Rho'), tau_ph=2. / 3.):
         is_str = isinstance(cols, str)
         if is_str:
             cols = [cols]
@@ -141,7 +141,7 @@ class StellaShockWaveDetail:
         for i, time in enumerate(self.Times):
             s = self[i]
             kph = 1  # todo check the default value
-            for k in range(self.Nzon-1, 1, -1):
+            for k in range(self.Nzon - 1, 1, -1):
                 if taus[i][k] >= tau_ph:
                     kph = k
                     break
@@ -155,7 +155,7 @@ class StellaShockWaveDetail:
             # res['V'][i] = s.V[kph] / 1e8  # to 1000 km/s
         return res
 
-    def vel_ph(self, tau_ph=2./3., z=0.):
+    def vel_ph(self, tau_ph=2. / 3., z=0.):
         v_dat = self.params_ph(tau_ph=tau_ph, cols=['V'])
         t = v_dat['time'] * (1. + z)  # redshifted time
         v = v_dat['V']
@@ -246,7 +246,8 @@ def isfloat(value):
         return False
 
 
-def plot_swd(ax, b, **kwargs):
+def plot_swd(axs, b, **kwargs):
+    name = kwargs.get('name', '')
     xlim = kwargs.get('xlim', None)
     ylim_rho = kwargs.get('ylim_rho', None)
     ylim_par = kwargs.get('ylim_par', (0., 9.9))
@@ -262,10 +263,12 @@ def plot_swd(ax, b, **kwargs):
 
     rnorm = kwargs.get('rnorm', 'm')
     tnorm = kwargs.get('tnorm', None)
-    vnorm = kwargs.get('vnorm', 1.e8)
-    lumnorm = kwargs.get('lumnorm', 1.e40)
+    # tnorm = kwargs.get('tnorm', 1e3)
+    vnorm = kwargs.get('vnorm', 1e8)
+    lumnorm = kwargs.get('lumnorm', 1e40)
 
-    lw = 1.
+    ls = kwargs.get('ls', '-')
+    lw = kwargs.get('lw', 1.)
 
     if rnorm == 'sun':
         rnorm = phys.R_sun
@@ -280,68 +283,69 @@ def plot_swd(ax, b, **kwargs):
         x, xlabel = b.M, r'Ejecta Mass [$\mathtt{M}_\odot$]'
 
     y = np.log10(b.Rho)
+    axrho, axpar = axs
+    is_axpar_none = axpar is None
     if rnorm == 'lgr':
-        ax.semilogx(x, y, label='Rho', color='black', ls="-", linewidth=lw)
+        axrho.semilogx(x, y, label=rf'$\rho$ {name}', color='black', ls=ls, linewidth=lw)
     else:
-        ax.plot(x, y, label='Rho', color='black', ls="-", linewidth=lw)
+        axrho.plot(x, y, label=rf'$\rho$ {name}', color='black', ls=ls, linewidth=lw)
 
     if is_day:
-        ax.text(.02, text_posy, r'$%5.2f^d$' % b.Time, horizontalalignment='left',
-                transform=ax.transAxes)
-    # ax.text(.5, 1.01, '%5.2f days' % b.Time, horizontalalignment='center', transform=ax.transAxes)
+        axrho.text(.02, text_posy, r'$%5.2f^d$' % b.Time, horizontalalignment='left',
+                   transform=axrho.transAxes)
 
     if islim:
         if xlim is None:
             xlim = [min(x), max(x) * 1.2]
         if ylim_rho is None:
             ylim_rho = [np.min(y), np.max(y) + 2]
-        ax.set_xlim(xlim)
-        ax.set_ylim(ylim_rho)
+        axrho.set_xlim(xlim)
+        axrho.set_ylim(ylim_rho)
 
     if is_xlabel:
-        ax.set_xlabel(xlabel)
+        axrho.set_xlabel(xlabel)
     else:
         pass
         # ax.set_xticklabels([])
 
     # Right axe
-    ax2 = ax.twinx()
-    ax2.set_ylim(ylim_par)
+    if is_axpar_none:
+        axpar = axrho.twinx()
+        axpar.set_ylim(ylim_par)
+        if is_yrlabel:
+            axpar.set_ylabel(r'T, Vel, Lum, $\tau$')
+        else:
+            axpar.set_yticklabels([])
 
     if is_yllabel:
-        ax.set_ylabel(r'$\log_{10}(\rho)$')
+        axrho.set_ylabel(r'$\log_{10}(\rho)$')
     else:
-        ax.set_yticklabels([])
-
-    if is_yrlabel:
-        ax2.set_ylabel('T, Vel, Lum, Tau')
-    else:
-        ax2.set_yticklabels([])
+        axrho.set_yticklabels([])
 
     # y2 = b.Tau
     y2 = np.ma.masked_where(b.Tau <= 0., b.Tau)
-    ax2.plot(x, y2, 'r-', label='tau')
+    axpar.plot(x, y2, color='red', ls=ls, label=r'$\tau$')
 
     if tnorm is None:
         y2 = np.log10(b.T)
-        ax2.plot(x, y2, 'g-', label=r'$\log(T)$')
+        axpar.plot(x, y2, color='green', ls=ls, label=r'$\log(T)$')
     else:
         y2 = b.T / tnorm
-        ax2.plot(x, y2, 'g-', label='T{0:d}'.format(int(np.log10(tnorm))))
+        axpar.plot(x, y2, color='green', ls=ls, label='T{0:d}'.format(int(np.log10(tnorm))))
 
     y2 = np.ma.log10(b.Lum) - np.log10(lumnorm)
     y22 = np.ma.log10(-b.Lum) - np.log10(lumnorm)
-    ax2.plot(x, y2, color='orange', ls="-", label='Lum{0:d}'.format(int(np.log10(lumnorm))))
-    ax2.plot(x, y22, color='brown', ls="--", label='-Lum{0:d}'.format(int(np.log10(lumnorm))))
+    axpar.plot(x, y2, color='orange', ls=ls, label=r'$Lum_{{{0:d}}}$'.format(int(np.log10(lumnorm))))
+    axpar.plot(x, y22, color='brown', ls="--", label=r'$-Lum_{{{0:d}}}$'.format(int(np.log10(lumnorm))))
 
     y2 = b.V / vnorm
-    ax2.plot(x, y2, 'b-', label='V{0:d}'.format(int(np.log10(vnorm))))
+    axpar.plot(x, y2, color='blue', ls=ls, label=r'$V_{{{0:d}}}$'.format(int(np.log10(vnorm))))
 
     if legmask & LEGEND_MASK_Rho:
-        ax.legend(loc=1, prop={'size': 8}, frameon=is_frameon, handlelength=1)
-    if legmask & LEGEND_MASK_Vars:
-        ax2.legend(loc=1, prop={'size': 8}, ncol=1, frameon=is_frameon, handlelength=1)
+        axrho.legend(loc=1, prop={'size': 8}, frameon=is_frameon, handlelength=2.5)
+    if (legmask & LEGEND_MASK_Vars) and is_axpar_none:
+        axpar.legend(loc=1, prop={'size': 8}, ncol=1, frameon=is_frameon, handlelength=1)
 
     if is_grid:
-        ax2.grid(linestyle=':')
-    return ax, ax2
+        axpar.grid(linestyle=':')
+    return axrho, axpar

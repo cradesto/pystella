@@ -591,7 +591,7 @@ def interval2float(v):
 
 
 def usage():
-    bands = ps.band.band_get_names()
+    bands = ps.band.get_names()
     print("Usage: show F(t,nu) from ph-file")
     print("  spec.py [params]")
     print("  -b <set_bands>: delimiter '_'. Default: B-V.\n"
@@ -696,7 +696,7 @@ def main():
             set_bands = str(arg).split('_')
             for bset in set_bands:
                 for b in bset.split('-'):
-                    if not ps.band.band_is_exist(b):
+                    if not ps.band.is_exist(b):
                         print('No such band: ' + b)
                         sys.exit(2)
             continue

@@ -20,7 +20,7 @@ mpl_logger.setLevel(logging.WARNING)
 
 
 class FitMCMC(FitLc):
-    def __init__(self, nwalkers=200, nburn=100, nsteps=500):
+    def __init__(self, nwalkers=200, nburn=200, nsteps=1000):
         super().__init__("MCMCFit")
         self._par = {
             "nwalkers": nwalkers,  # number of MCMC walkers
@@ -518,8 +518,8 @@ class FitMCMC(FitLc):
         #     return res, samples
         # return res
 
-    def best_curves(self, curves_m, curves_o, dt0, dm0=None,
-                    threads=1, dt_lim=(-100., 100.), dm_lim=(-5., 5.), is_sampler=False):
+    def best_curves(self, curves_m, curves_o, dt0, dm0=None, **kwargs):
+                    # threads=1, dt_lim=(-100., 100.), dm_lim=(-5., 5.), is_sampler=False):
         """
         Find the values of time shift and magnitude shift minimizing the distance between the observational
         and modal light curves
@@ -527,12 +527,21 @@ class FitMCMC(FitLc):
         :param curves_o: observational LCs
         :param dt0: initial time shift
         :param dm0: magnitude shift, default: 0.
-        :param threads: threads for MCMC
-        :param dt_lim: limits for  time shift for prior probability
-        :param dm_lim: limits for  magnitude shift for prior probability
-        :param is_sampler: if True also return sampler
+        :param kwargs: dictionary with
+               threads: threads for MCMC
+                dt_lim: limits for  time shift for prior probability
+                dm_lim: limits for  magnitude shift for prior probability
+                is_sampler: if True also return sampler
+                is_fit_sigmas: always True
         :return: the dictionary with fitting results
         """
+
+        threads = kwargs.get("threads", 1)
+        dt_lim = kwargs.get("dt_lim", (-300., 300.))
+        dm_lim = kwargs.get("dm_lim", (-5., 5.))
+        is_sampler = kwargs.get("is_sampler", False)
+        is_fit_sigmas = kwargs.get("is_fit_sigmas", True)
+
         samples = None
         if dm0 is not None:
             result = self.best_curvesDtDm(curves_m, curves_o, dt0, dm0,
@@ -549,7 +558,7 @@ class FitMCMC(FitLc):
         fit_result = FitLcResult()
         fit_result.tshift = res['dt']
         fit_result.tsigma = (e1.dt + e2.dt) / 2.  # res['dtsig']
-        fit_result.measure = res['bic']
+        fit_result.measure = res['measure']
         fit_result.comm = 'result MCMC: CHI2|BIC|AIC: {:.0f}|{:.0f}|{:.0f} acceptance_fraction: {:.3f}'. \
             format(res['chi2'], res['bic'], res['aic'], res['acceptance_fraction'])
 

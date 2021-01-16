@@ -10,7 +10,7 @@ from pystella.rf import band
 def plot(ax, arg):
     lw = 2.
     band_shift = arg
-    colors = band.bands_colors()
+    colors = band.colors()
     fname = "~/Desktop/Downloads/2/100z0E60Ni_6.ph.hsc.2"
     data = np.loadtxt(fname, comments='#')
     fs = list('grizy')

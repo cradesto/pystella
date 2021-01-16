@@ -310,7 +310,7 @@ class TestFit(unittest.TestCase):
         fitter.is_info = True
         fitter.is_debug = True
         fitter.is_quiet = True
-        fit_result, res, dum = fitter.best_curves(curves_mdl, curves_obs, dt0=0., is_fit_sigmas=False)
+        fit_result, res, dum = fitter.best_curves(curves_mdl, curves_obs, dt0=0., )
         # fit_result, res, dum = fitter.best_curves(curves_mdl, curves_obs, dt0=0., dm0=0.)
         dt, dtsig = res['dt'], res['dtsig']
         dm, dmsig = res['dm'], res['dmsig']

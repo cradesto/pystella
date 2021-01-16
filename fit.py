@@ -109,7 +109,13 @@ def get_parser():
                         default=False,
                         const=True,
                         dest="is_not_quiet",
-                        help="Result with additional information")
+                        help="Result with additional information"),\
+    parser.add_argument('--sigma',
+                        action='store_const',
+                        default=False,
+                        const=True,
+                        dest="is_fit_sigmas",
+                        help="Fit with the model uncertainties as free parameter")
     parser.add_argument('-n', '--node',
                         required=False,
                         type=int,
@@ -154,7 +160,8 @@ def engines(nm=None):
     switcher = {
         'mpfit': ps.FitMPFit(),
         # 'mcmc': ps.FitMCMC(nwalkers=200, nburn=100, nsteps=500),
-        'mcmc': ps.FitMCMC(nwalkers=100, nburn=50, nsteps=200),
+        'mcmc': ps.FitMCMC(),
+        # 'mcmc': ps.FitMCMC(nwalkers=100, nburn=50, nsteps=200),
     }
     if nm is not None:
         return switcher.get(nm)
@@ -172,10 +179,10 @@ def plot_curves(curves_o, res_models, res_sorted, **kwargs):
     num = len(res_sorted)
     # nrow = int(num / 2.1) + 1
     # ncol = 2 if num > 1 else 1
-    ncol = int(np.sqrt(num))  # 2 if num > 1 else 1
+    ncol = min(4, int(np.sqrt(num)))  # 2 if num > 1 else 1
     nrow = math.ceil(num / ncol)
     # fig = plt.figure(figsize=(12, nrow * 4))
-    fig = plt.figure(figsize=(min(ncol, 2) * 4, min(nrow, 2) * 4))
+    fig = plt.figure(figsize=(min(ncol, 2)*5, max(nrow, 2)*4))
     plt.matplotlib.rcParams.update({'font.size': font_size})
 
     # tshift0 = ps.first(curves_o).tshift
@@ -197,7 +204,7 @@ def plot_curves(curves_o, res_models, res_sorted, **kwargs):
         lcp.curves_plot(curves_o, ax, xlim=xlim, lt=lt, markersize=4, is_legend=False, is_line=False)
 
         ax.text(0.99, 0.94, k, horizontalalignment='right', transform=ax.transAxes)
-        ax.text(0.98, 0.85, "dt={:.2f}".format(tshift_best), horizontalalignment='right', transform=ax.transAxes)
+        ax.text(0.98, 0.85, "{} dt={:.2f}".format(i, tshift_best), horizontalalignment='right', transform=ax.transAxes)
         ax.text(0.01, 0.05, r"$\chi^2: {:.2f}$".format(v.measure), horizontalalignment='left', transform=ax.transAxes,
                 bbox=dict(facecolor='green', alpha=0.3))
         # ax.text(0.9, 0.9, "{:.2f}".format(v.measure), horizontalalignment='right', transform=ax.transAxes,
@@ -689,7 +696,7 @@ def plot_squared_3d(ax, res_sorted, path='./', p=('R', 'M', 'E'), is_rbf=True, *
         plt.show()
 
 
-def fit_mfl(args, curves_o, bnames, fitter, name, path, t_diff, tlim):
+def fit_mfl(args, curves_o, bnames, fitter, name, path, t_diff, tlim, is_fit_sigmas):
     distance = args.distance  # pc
     z = args.redshift
     # Set distance and redshift
@@ -709,7 +716,7 @@ def fit_mfl(args, curves_o, bnames, fitter, name, path, t_diff, tlim):
         curves_m = mdl.curves(bnames, z=z, distance=distance, ebv=args.color_excess,
                               t_beg=tlim[0], t_end=tlim[1], t_diff=t_diff)
 
-    fit_result, res, dum = fitter.best_curves(curves_m, curves_o, dt0=0.)
+    fit_result, res, dum = fitter.best_curves(curves_m, curves_o, dt0=0., is_fit_sigmas=is_fit_sigmas)
 
     return curves_m, fit_result, res
 
@@ -854,7 +861,7 @@ def main():
     bnames = []
     if args.bnames:
         for bname in args.bnames.split('-'):
-            if not ps.band.band_is_exist(bname):
+            if not ps.band.is_exist(bname):
                 print('No such band: ' + bname)
                 parser.print_help()
                 sys.exit(2)
@@ -873,9 +880,10 @@ def main():
 
     # set bands  as observed
     if curves_o is not None and len(bnames) == 0:
-        bnames = [bn for bn in curves_o.BandNames if ps.band.band_is_exist(bn)]
+        bnames = [bn for bn in curves_o.BandNames if ps.band.is_exist(bn)]
 
     # Set distance and redshift
+    is_sigma = args.is_fit_sigmas
     z = args.redshift
     t_diff = args.t_diff
     if args.distance is not None:
@@ -888,6 +896,10 @@ def main():
             distance = ps.cosmology_D_by_z(z) * 1e6
             print("Fit magnitudes on z={0:F} with cosmology D(z)={1:E} pc".format(z, distance))
         args.distance = distance
+    if is_sigma:
+        print("Fit magnitudes with model uncertainties.")
+
+    print("Color excess E(B-V) ={:f}".format(args.color_excess))
 
     # Time limits for models
     tlim = (0, float('inf'))
@@ -899,7 +911,10 @@ def main():
     # The fit engine
     fitter = engines(args.engine)
     fitter.is_info = args.is_not_quiet  # fitter = FitMPFit(is_debug=args.is_not_quiet)
-    fitter.is_debug = args.is_not_quiet
+    # fitter.is_debug = args.is_not_quiet
+
+    if args.is_not_quiet:
+        fitter.print_parameters()
 
     # The filter results by tshift
     if args.dtshift:
@@ -922,10 +937,10 @@ def main():
         #                               t_beg=tlim[0], t_end=tlim[1], t_diff=t_diff)
         # res = fitter.fit_curves(curves_o, curves_m)
         if vels_o is None:
-            curves_m, res, res_full = fit_mfl(args, curves_o, bnames, fitter, name, path, t_diff, tlim)
+            curves_m, res, res_full = fit_mfl(args, curves_o, bnames, fitter, name, path, t_diff, tlim, is_sigma)
         else:
             curves_m, res, vel_m = fit_mfl_vel(args, curves_o, vels_o, bnames, fitter, name, path,
-                                               t_diff, tlim, A=args.tweight)
+                                               t_diff, tlim, is_sigma, A=args.tweight)
             vels_m[name] = vel_m
 
         print("{}: time shift  = {:.2f}+/-{:.4f} Measure: {:.4f} {}".
@@ -940,12 +955,13 @@ def main():
             with futures.ProcessPoolExecutor(max_workers=args.nodes) as executor:
                 if vels_o is None:
                     future_to_name = {
-                        executor.submit(fit_mfl, args, curves_o, bnames, fitter, n, path, t_diff, tlim):
+                        executor.submit(fit_mfl, args, curves_o, bnames, fitter, n, path, t_diff, tlim, is_sigma):
                             n for n in names
                     }
                 else:
                     future_to_name = {
-                        executor.submit(fit_mfl_vel, args, curves_o, vels_o, bnames, fitter, n, path, t_diff, tlim):
+                        executor.submit(fit_mfl_vel, args, curves_o, vels_o, bnames, fitter,
+                                        n, path, t_diff, tlim, is_sigma):
                             n for n in names
                     }
 
@@ -973,10 +989,10 @@ def main():
                     sys.stdout.flush()
 
                 if vels_o is None:
-                    curves_m, res, res_full = fit_mfl(args, curves_o, bnames, fitter, name, path, t_diff, tlim)
+                    curves_m, res, res_full = fit_mfl(args, curves_o, bnames, fitter, name, path, t_diff, tlim, is_sigma)
                 else:
                     curves_m, res, vel_m = fit_mfl_vel(args, curves_o, vels_o, bnames, fitter, name, path,
-                                                       t_diff, tlim, A=args.tweight)
+                                                       t_diff, tlim, is_sigma, A=args.tweight)
                     vels_m[name] = vel_m
                 res_models[name] = curves_m
                 res_chi[name] = res

@@ -311,7 +311,7 @@ def main(name=None):
     bnames = args.bnames.split('-')
     # check bnames
     for bname in bnames:
-        if not band.band_is_exist(bname):
+        if not band.is_exist(bname):
             print('No such band: ' + bname)
             parser.print_help()
             sys.exit(2)

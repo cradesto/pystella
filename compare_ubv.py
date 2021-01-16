@@ -99,7 +99,7 @@ def cache_load(fname, colnames, skiprows=1):
 
 
 def usage():
-    bands = band.band_get_names()
+    bands = band.get_names()
     print("Usage:")
     print("  compare_ubv.py [params]")
     print("  -b <set_bands>: delimiter '_'. Default: u-g-r-i.\n"
@@ -171,7 +171,7 @@ def main():
         if opt == '-b':
             bands = str(arg).split('-')
             for b in bands:
-                if not band.band_is_exist(b):
+                if not band.is_exist(b):
                     print('No such band: ' + b)
                     sys.exit(2)
             continue

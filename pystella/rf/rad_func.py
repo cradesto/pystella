@@ -174,11 +174,11 @@ def kcorrection(series, z, bn_rest, bn_obs, is_verbose=False):
     :param is_verbose: if True print info
     :return: iterator for tuple of (t, k)
     """
-    from ..rf.band import band_is_exist, band_by_name
+    from ..rf.band import is_exist, band_by_name
 
-    if not band_is_exist(bn_rest):
+    if not is_exist(bn_rest):
         raise ValueError('No such rest band: {}'.format(bn_rest))
-    if not band_is_exist(bn_obs):
+    if not is_exist(bn_obs):
         raise ValueError('No such obs band: {}'.format(bn_obs))
 
     br = band_by_name(bn_rest)

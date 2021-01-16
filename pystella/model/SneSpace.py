@@ -135,7 +135,7 @@ class SneSpace:
         band.Band.load_settings()
         curves = SetLightCurve(self.Name)
         for bname in bands:
-            if band.band_is_exist(bname):
+            if band.is_exist(bname):
                 tt = list(map(float, times[bname]))
                 mm = list(map(float, mags[bname]))
                 if len(err) > 0:

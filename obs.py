@@ -193,7 +193,7 @@ def main():
                         bshift[bname] = float(shift)
                 else:
                     bname = b
-                if not band.band_is_exist(bname):
+                if not band.is_exist(bname):
                     print('No such band: ' + bname)
                     sys.exit(2)
                 bnames.append(bname)

@@ -28,7 +28,7 @@ def plot(ax, dic=None, mag_lim=30.):
     marker = dic.get('marker', 'o')
     markersize = dic.get('markersize', 9)
     bnames = dic.get('bnames', None)
-    bcolors = dic.get('bcolors', band.bands_colors())
+    bcolors = dic.get('bcolors', band.colors())
 
     arg = dic.get('args', [])
     if len(arg) > 0:
@@ -123,7 +123,7 @@ def load(dic=None):
 
     curves = SetLightCurve()
     for bname in bnames:
-        if band.band_is_exist(bname.decode()):
+        if band.is_exist(bname.decode()):
             # filter of the current band
             d = lc_data[np.where( lc_data['b'] == bname)]
             # is_good = list(map(lambda x: x == bname, b_tot))

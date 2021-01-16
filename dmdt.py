@@ -179,7 +179,7 @@ def main(name='', path='./'):
         if opt == '-b':
             bands = str(arg).split('-')
             for b in bands:
-                if not band.band_is_exist(b):
+                if not band.is_exist(b):
                     print('No such band: ' + b)
                     sys.exit(2)
         elif opt == '-p':

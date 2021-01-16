@@ -192,7 +192,7 @@ def curves_read_mix(fname, dtype=None,
             bname_s = bname_s.decode()
         except AttributeError:
             pass
-        if band.band_is_exist(bname_s):
+        if band.is_exist(bname_s):
             # filter of the current band
             is_good = np.array(list(map(lambda x: x == bname, b_tot)), dtype=bool)
             t = lc_data['time'][is_good]

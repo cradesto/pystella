@@ -226,7 +226,8 @@ class FitMPFit(FitLc):
 
         return result
 
-    def best_curves(self, curves_m, curves_o, dt0=None, dm0=None, is_spline=True, At=0., **kwargs):
+    def best_curves(self, curves_m, curves_o, dt0=None, dm0=None, **kwargs):
+        # is_spline=True, At=0., **kwargs):
         """
         Find the values of time shift and magnitude shift minimizing the distance between the observational
         and modal light curves
@@ -247,6 +248,8 @@ class FitMPFit(FitLc):
         dm_init = {lc.Band.Name: lc.mshift for lc in curves_o}
         bnames = curves_o.BandNames
 
+        is_spline = kwargs.get("is_spline", True)
+        At = kwargs.get("At", 0.)
         dt_limits = kwargs.get("dt_limits", [-250., 250.])
         dm_limits = kwargs.get("dm_limits", [-5., 5])
         band_limits = kwargs.get("band_limits", [0.001, 4.])
@@ -312,13 +315,12 @@ class FitMPFit(FitLc):
                 # err_m = abs(min(m)-m) * err_mdl
                 w = np.abs(1. - At * (lc_o.Time - lc_o.TimeMin) / (lc_o.TimeMax - lc_o.TimeMin))  # weight
                 diff = mo - mm
-                err_m = np.sqrt(np.sum(diff ** 2) / len(mm))
+                chi = diff * w
                 if lc_o.IsErr:
-                    chi = diff * w / (err_m + lc_o.MagErr)
-                else:
-                    chi = diff * w
+                    chi /= lc_o.MagErr
                 #                    res = diff**2 * w
                 total = np.append(total, chi)
+                # total = np.append(total, chi)
             return 0, total
 
         parinfo = []  # [{'value': 0.0, 'limited': [1, 1], 'limits': [0., 3.]}]  # todo changeable parameters
@@ -382,6 +384,7 @@ class FitMPFit(FitLc):
         # pcerror = result.perror  # * np.sqrt(result.fnorm / dof)
 
         # time and magnitude shifts
+
         dt, dtsig = result.params[0], result.perror[0]
         dm, dmsig = result.params[1], result.perror[1]
 
@@ -405,7 +408,13 @@ class FitMPFit(FitLc):
         fit_result.mshift = dm
         fit_result.msigma = res['dmsig']
         fit_result.measure = res['chi2']
-        fit_result.comm = 'result MCMC:dof: {}'.format(res['dof'])
+
+        dt, dm, sigs = FitMPFit.thetaDtDm2arr(result.params, len(bnames))
+        if is_fit_sigmas:
+            fit_result.comm = 'result {}:dof: {} sigmas: {}'.\
+                format(self.Name, res['dof'], ' '.join([f'{bn}: {sigs[i]:.3f}' for i, bn in enumerate(bnames)]))
+        else:
+            fit_result.comm = 'result {}:dof: {}'.format(self.Name, res['dof'])
 
         return fit_result, res, None  # as Fit_MCMC
 

@@ -43,7 +43,7 @@ def plot(ax, dic=None, mag_lim=30.):
     marker = dic.get('marker', 'o')
     markersize = dic.get('markersize', 9)
     bnames = dic.get('bnames', None)
-    bcolors = dic.get('bcolors', ps.band.bands_colors())
+    bcolors = dic.get('bcolors', ps.band.colors())
 
     arg = dic.get('args', [])
     fname, marker, tshift, mshift = parse_arg(arg)

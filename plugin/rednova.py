@@ -34,7 +34,7 @@ def plot_ubv(ax, path, jd_shift=0., mshift=0., **kwargs):
     is_kur = kwargs.pop('is_kur', True)
     is_wil = kwargs.pop('is_wil', True)
     bnames_fix = kwargs.pop('bnames', None)
-    colors = kwargs.pop('bcolors', band.bands_colors())
+    colors = kwargs.pop('bcolors', band.colors())
     path = os.path.expanduser(path)
 
     print("Plot RedNova: jd_shift=%f mshift=%f " % (jd_shift, mshift))
