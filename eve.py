@@ -105,7 +105,7 @@ def get_parser():
                         type=str,
                         default='H:He:C:O:Si:Fe:Ni:Ni56',
                         dest="elements",
-                        help="Elements directory. \n   Available: {0}".format('-'.join(sneve.eve_elements)))
+                        help="Elements directory. \n   Available: {0}".format(':'.join(sneve.eve_elements)))
     parser.add_argument('--reshape',
                         required=False,
                         type=str,
@@ -239,7 +239,7 @@ def main():
             print_masses(eve)
 
         if args.write_to:
-            fname = os.path.join(path, args.write_to)
+            fname = os.path.expanduser(args.write_to)
             # fname = os.path.join(path, name)
             # f = fname + '.eve.abn'
             fname = fname.replace('.rho', '')
@@ -297,8 +297,8 @@ def main():
             if fig is None:
                 fig = ax.get_figure()
             fig.savefig(fsave, bbox_inches='tight')
-
-        plt.show()
+        else:
+            plt.show()
 
 
 if __name__ == '__main__':
