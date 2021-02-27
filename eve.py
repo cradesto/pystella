@@ -64,6 +64,12 @@ def get_parser():
                         metavar="<r OR m>",
                         help="Plot Rho-figure")
 
+    parser.add_argument('--is_dum', nargs="?",
+                        required=False,
+                        const=True,
+                        dest="is_dum",
+                        help="Set is_dum = TRUE to parse abn-file with dum columns")
+
     parser.add_argument('-x',
                         required=False,
                         dest="x",
@@ -199,10 +205,10 @@ def main():
         except ValueError:
             try:
                 # With header
-                eve = sneve.load_hyd_abn(name=name, path=path, is_dm=False)
+                eve = sneve.load_hyd_abn(name=name, path=path, is_dm=False, is_dum=args.is_dum)
             except ValueError:
                 # No header
-                eve = sneve.load_hyd_abn(name=name, path=path, is_dm=False, skiprows=0)
+                eve = sneve.load_hyd_abn(name=name, path=path, is_dm=False, is_dum=args.is_dum, skiprows=0)
 
         if args.reshape is not None:
             a = args.reshape.split(':')
