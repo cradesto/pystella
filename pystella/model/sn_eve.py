@@ -521,6 +521,7 @@ class PreSN(object):
         xnorm = kwargs.get('xnorm', 1)
         marker = kwargs.get('marker', None)
         markersize = kwargs.get('markersize', 4)
+        alpha = kwargs.get('alpha', 1)
 
         is_new_plot = ax is None
         # setup figure
@@ -558,7 +559,8 @@ class PreSN(object):
             xi = self.r * xnorm
 
         y = self.rho
-        ax.semilogy(xi, y, color=color, ls=ls, linewidth=lw, marker=marker, markersize=markersize, label=label)
+        ax.semilogy(xi, y, color=color, ls=ls, linewidth=lw,
+                    marker=marker, markersize=markersize, label=label, alpha=alpha)
 
         if is_new_plot:
             if not is_x_lim and len(xi) > 0:
@@ -928,17 +930,19 @@ class PreSN(object):
 
         return presn
 
-    def boxcar(self, box_dm=0.5, n=4, is_info=False):
+    def boxcar(self, box_dm=0.5, n=4, el_included=None, is_info=False):
         """
         The function runs a boxcar average to emulate the mixing of chemical composition.
-        @type box_dm: float. The boxcar width. Default value is 0.5 Msun.
-        @type n: int. The number of repeats. Default value is 4
-        @type is_info: bool. Prints some debug information. Default value is False
+        :param box_dm: float. The boxcar width. Default value is 0.5 Msun.
+        :param n: int. The number of repeats. Default value is 4
+        :param el_included: the tuple of included elements. If None = all elements are included. Default: None
+        :param is_info: bool. Prints some debug information. Default value is False
         """
         clone = self.clone()
         abund = clone.abund()
         #     abun = np.zeros((clone.nzon, len(clone.Elements)))
-
+        if el_included is None:
+            el_included = clone.Elements
         m = clone.m / phys.M_sun
         dmass = np.diff(m)
         dmass = np.insert(dmass, -1, dmass[-1])
@@ -957,7 +961,7 @@ class PreSN(object):
                 if is_info:
                     print(f'{k}: kk= {kk} dm= {dm:.4f} m= {m[k]:.4f}')
                 if dm > 1e-6:
-                    for i, ename in enumerate(clone.Elements):
+                    for i, ename in enumerate(el_included):
                         dm_e = np.dot(abund[k:kk, i], dmass[k:kk])
                         abund[k, i] = dm_e / dm
             #             abun[k,i] = x[k]
