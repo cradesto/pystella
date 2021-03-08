@@ -112,7 +112,7 @@ class PreSN(object):
         """Center radius"""
         p = 'r_cen'
         if self.is_set(PreSN.sR):
-            d = self.hyd(PreSN.sR)[0] / 2.  # todo check Rcen
+            d = self.hyd(PreSN.sR)[0] * 0.99 # / 2.  # todo check Rcen
         else:
             d = 0.
         return self.par(p, d)
@@ -209,6 +209,9 @@ class PreSN(object):
 
     def par(self, name, d=None):
         return self._params.get(name, d)
+
+    def is_par(self, key):
+        return key in self._params
 
     def set_par(self, name, v):
         self._params[name] = v
@@ -1039,6 +1042,24 @@ def load_hyd_abn(name, path='.', abn_elements=PreSN.stl_elements, skiprows=0, co
         return None
 
     logger.info(' Load hyd-data from  %s' % hyd_file)
+    
+    def set_params(pre, a):
+        if len(a) > 0:
+            if len(a) == 5:
+                time_start, nzon, m_core, r_cen, rho_cen = a
+                pre.set_par('time_start', time_start)
+                pre.set_par('m_core', m_core * phys.M_sun)
+                pre.set_par('r_cen', r_cen)
+                pre.set_par('rho_cen', rho_cen)
+            elif len(a) == 4:
+                time_start, nzon, m_core, r_cen = a
+                pre.set_par('time_start', time_start)
+                pre.set_par('m_core', m_core * phys.M_sun)
+                pre.set_par('r_cen', r_cen)
+            elif len(a) == 2:
+                time_start, nzon = a
+                pre.set_par('time_start', time_start)
+        return pre
 
     # read table data
     if is_dm:
@@ -1046,6 +1067,14 @@ def load_hyd_abn(name, path='.', abn_elements=PreSN.stl_elements, skiprows=0, co
     else:
         col_names = "zone M R Rho T V M2".split()
 
+    a = []
+    # Load header
+    with open(hyd_file, 'r') as f:
+        header_line = f.readline()
+    if len(header_line) > 0:
+        a = [float(x) for x in header_line.split()]
+
+    # Load data
     dt = np.dtype({'names': col_names,
                    'formats': ['i4'] + list(np.repeat('f8', len(col_names) - 1))})
 
@@ -1054,29 +1083,15 @@ def load_hyd_abn(name, path='.', abn_elements=PreSN.stl_elements, skiprows=0, co
     nz = len(data_hyd['R'])
 
     presn = PreSN(name, nz, elements=abn_elements)
+    set_params(presn, a)
+    
     col_map = {PreSN.sR, PreSN.sT, PreSN.sRho, PreSN.sV}
     for v in col_map:
         presn.set_hyd(v, data_hyd[v], is_exp=v.startswith('lg'))
 
     # Set header data
-    with open(hyd_file, 'r') as f:
-        line = f.readline()
-    if len(line) > 0:
-        a = [float(x) for x in line.split()]
-        if len(a) == 5:
-            time_start, nzon, m_core, r_cen, rho_cen = a
-            presn.set_par('time_start', time_start)
-            presn.set_par('m_core', m_core * phys.M_sun)
-            presn.set_par('r_cen', r_cen)
-            presn.set_par('rho_cen', rho_cen)
-        elif len(a) == 4:
-            time_start, nzon, m_core, r_cen = a
-            presn.set_par('time_start', time_start)
-            presn.set_par('m_core', m_core * phys.M_sun)
-            presn.set_par('r_cen', r_cen)
-        elif len(a) == 2:
-            time_start, nzon = a
-            presn.set_par('time_start', time_start)
+    set_params(presn, a)
+        
 
     # Set Mass
     if is_rho:
