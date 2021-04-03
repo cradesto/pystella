@@ -112,7 +112,7 @@ class PreSN(object):
         """Center radius"""
         p = 'r_cen'
         if self.is_set(PreSN.sR):
-            d = self.hyd(PreSN.sR)[0] / 2.  # todo check Rcen
+            d = self.hyd(PreSN.sR)[0] * 0.99 # / 2.  # todo check Rcen
         else:
             d = 0.
         return self.par(p, d)
@@ -209,6 +209,9 @@ class PreSN(object):
 
     def par(self, name, d=None):
         return self._params.get(name, d)
+
+    def is_par(self, key):
+        return key in self._params
 
     def set_par(self, name, v):
         self._params[name] = v
@@ -521,6 +524,7 @@ class PreSN(object):
         xnorm = kwargs.get('xnorm', 1)
         marker = kwargs.get('marker', None)
         markersize = kwargs.get('markersize', 4)
+        alpha = kwargs.get('alpha', 1)
 
         is_new_plot = ax is None
         # setup figure
@@ -558,7 +562,8 @@ class PreSN(object):
             xi = self.r * xnorm
 
         y = self.rho
-        ax.semilogy(xi, y, color=color, ls=ls, linewidth=lw, marker=marker, markersize=markersize, label=label)
+        ax.semilogy(xi, y, color=color, ls=ls, linewidth=lw,
+                    marker=marker, markersize=markersize, label=label, alpha=alpha)
 
         if is_new_plot:
             if not is_x_lim and len(xi) > 0:
@@ -928,17 +933,19 @@ class PreSN(object):
 
         return presn
 
-    def boxcar(self, box_dm=0.5, n=4, is_info=False):
+    def boxcar(self, box_dm=0.5, n=4, el_included=None, is_info=False):
         """
         The function runs a boxcar average to emulate the mixing of chemical composition.
-        @type box_dm: float. The boxcar width. Default value is 0.5 Msun.
-        @type n: int. The number of repeats. Default value is 4
-        @type is_info: bool. Prints some debug information. Default value is False
+        :param box_dm: float. The boxcar width. Default value is 0.5 Msun.
+        :param n: int. The number of repeats. Default value is 4
+        :param el_included: the tuple of included elements. If None = all elements are included. Default: None
+        :param is_info: bool. Prints some debug information. Default value is False
         """
         clone = self.clone()
         abund = clone.abund()
         #     abun = np.zeros((clone.nzon, len(clone.Elements)))
-
+        if el_included is None:
+            el_included = clone.Elements
         m = clone.m / phys.M_sun
         dmass = np.diff(m)
         dmass = np.insert(dmass, -1, dmass[-1])
@@ -957,7 +964,7 @@ class PreSN(object):
                 if is_info:
                     print(f'{k}: kk= {kk} dm= {dm:.4f} m= {m[k]:.4f}')
                 if dm > 1e-6:
-                    for i, ename in enumerate(clone.Elements):
+                    for i, ename in enumerate(el_included):
                         dm_e = np.dot(abund[k:kk, i], dmass[k:kk])
                         abund[k, i] = dm_e / dm
             #             abun[k,i] = x[k]
@@ -1035,6 +1042,24 @@ def load_hyd_abn(name, path='.', abn_elements=PreSN.stl_elements, skiprows=0, co
         return None
 
     logger.info(' Load hyd-data from  %s' % hyd_file)
+    
+    def set_params(pre, a):
+        if len(a) > 0:
+            if len(a) == 5:
+                time_start, nzon, m_core, r_cen, rho_cen = a
+                pre.set_par('time_start', time_start)
+                pre.set_par('m_core', m_core * phys.M_sun)
+                pre.set_par('r_cen', r_cen)
+                pre.set_par('rho_cen', rho_cen)
+            elif len(a) == 4:
+                time_start, nzon, m_core, r_cen = a
+                pre.set_par('time_start', time_start)
+                pre.set_par('m_core', m_core * phys.M_sun)
+                pre.set_par('r_cen', r_cen)
+            elif len(a) == 2:
+                time_start, nzon = a
+                pre.set_par('time_start', time_start)
+        return pre
 
     # read table data
     if is_dm:
@@ -1042,6 +1067,14 @@ def load_hyd_abn(name, path='.', abn_elements=PreSN.stl_elements, skiprows=0, co
     else:
         col_names = "zone M R Rho T V M2".split()
 
+    a = []
+    # Load header
+    with open(hyd_file, 'r') as f:
+        header_line = f.readline()
+    if len(header_line) > 0:
+        a = [float(x) for x in header_line.split()]
+
+    # Load data
     dt = np.dtype({'names': col_names,
                    'formats': ['i4'] + list(np.repeat('f8', len(col_names) - 1))})
 
@@ -1050,29 +1083,15 @@ def load_hyd_abn(name, path='.', abn_elements=PreSN.stl_elements, skiprows=0, co
     nz = len(data_hyd['R'])
 
     presn = PreSN(name, nz, elements=abn_elements)
+    set_params(presn, a)
+    
     col_map = {PreSN.sR, PreSN.sT, PreSN.sRho, PreSN.sV}
     for v in col_map:
         presn.set_hyd(v, data_hyd[v], is_exp=v.startswith('lg'))
 
     # Set header data
-    with open(hyd_file, 'r') as f:
-        line = f.readline()
-    if len(line) > 0:
-        a = [float(x) for x in line.split()]
-        if len(a) == 5:
-            time_start, nzon, m_core, r_cen, rho_cen = a
-            presn.set_par('time_start', time_start)
-            presn.set_par('m_core', m_core * phys.M_sun)
-            presn.set_par('r_cen', r_cen)
-            presn.set_par('rho_cen', rho_cen)
-        elif len(a) == 4:
-            time_start, nzon, m_core, r_cen = a
-            presn.set_par('time_start', time_start)
-            presn.set_par('m_core', m_core * phys.M_sun)
-            presn.set_par('r_cen', r_cen)
-        elif len(a) == 2:
-            time_start, nzon = a
-            presn.set_par('time_start', time_start)
+    set_params(presn, a)
+        
 
     # Set Mass
     if is_rho:

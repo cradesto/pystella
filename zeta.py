@@ -43,10 +43,10 @@ epm_coef = {
         'J-H-K': [1.45, -0.45, 0.]
     },
     'hamuy': {
-        'B-V': [0.7557, -0.8997, 0.5199, 0.048],
-        'B-V-I': [0.7336, -0.6942, 0.3740, 0.027],
-        'V-I': [0.7013, -0.5304, 0.2646, 0.029],
-        'J-H-K': [1.4787, -0.4799, 0., 0.046]
+        'B-V': [0.7557, -0.8997, 0.5199],
+        'B-V-I': [0.7336, -0.6942, 0.3740],
+        'V-I': [0.7013, -0.5304, 0.2646],
+        'J-H-K': [1.4787, -0.4799, 0.]
     },
     'bakl': {  # dir /home/bakl/Sn/Release/seb_git/res/tt/tcolor/r500/1
         'B-V': [0.64, -0.69, 0.51],
@@ -157,7 +157,7 @@ def ticks_on(ax, minor=3, major=6):
 
 def plot_zeta(models_dic, set_bands, theta, t_points=None, is_time_points_only=False,
               is_plot_Tcolor=True, is_plot_Tnu=True,
-              is_fit_bakl=False, fits=None,
+              is_fit_fmin=False, fits=None,
               xlim=(0, 18000), ylim=(0, 2.5), tcut=None, t_fit_lim=None):
     import matplotlib.pyplot as plt
     import matplotlib.ticker as ticker
@@ -314,7 +314,7 @@ def plot_zeta(models_dic, set_bands, theta, t_points=None, is_time_points_only=F
             print("  {:8s}: {}".format('MCMC', ', '.join(map(str, np.round(theta[bset]['v'], 2)))))
             # print("    MCMC zeta-T %s: %s " % (bset, ' '.join(map(str, np.round(theta_dic[bset]['v'], 4)))))
 
-    if is_fit_bakl:  # bakl fit
+    if is_fit_fmin:  # bakl fit
         # find a_coef
         a = {}
         err = {}
@@ -331,9 +331,9 @@ def plot_zeta(models_dic, set_bands, theta, t_points=None, is_time_points_only=F
 
             a[bset], err[bset] = zeta_fit_coef_my(tbl)
             # print "%s & %s " % (bset, ', '.join([str(round(x, 4)) for x in a[bset]]))
-            print(" Baklan zeta-T  {}: {} : err {:.3f}".
+            print(" Fmin zeta-T  {}: {} : err {:.3f}".
                   format(bset, ' '.join([str(round(x, 4)) for x in a[bset]]), err[bset]))
-            # print " Baklan errors  %s: %s " % (bset, ' '.join([str(round(x, 4)) for x in ]))
+            # print " Fmin errors  %s: %s " % (bset, ' '.join([str(round(x, 4)) for x in ]))
             # print("")
 
             # show fit
@@ -808,7 +808,7 @@ def usage():
     print("  -s  silence mode: no info, no plot")
     print("  -f  force mode: rewrite zeta-files even if it exists")
     print(
-        "  -o  options: <dessart:eastman:hamuy:bakl:fitb:ubv:Tnu> - fit E&D&H&B: fit bakl: show time points: plot UBV")
+        "  -o  options: <dessart:eastman:hamuy:bakl:fmin:ubv:Tnu> - fit E&D&H&B: fit bakl: show time points: plot UBV")
     print("  -x  <tbeg:tend> - time range for fitting. Special value tend={0}, used as tend=t(zeta_max)"
           " Default: 1:{0} , used all days.".format(int(t_fit_zeta_max)))
     print("  -w  write magnitudes to file, default 'False'")
@@ -884,7 +884,7 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False):
     fits = None
     is_info = False
     is_save_plot = False
-    is_fit_bakl = False
+    is_fit_fmin = False
     is_fit_only = False
     model_ext = '.tt'
     theta = None
@@ -948,7 +948,7 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False):
             fits = ops
             is_plot_Tnu = "Tnu" in ops
             is_fit_only = "only" in ops
-            is_fit_bakl = "fitb" in ops
+            is_fit_fmin = "fmin" in ops
             continue
         if opt == '-x':
             xlim = ps.str2interval(arg, llim=0, rlim=float('inf'))
@@ -1068,7 +1068,7 @@ def main(name='', path='./', is_force=False, is_save=False, is_plot_Tnu=False):
                 print("{}: {}".format(bset, fitcoef2str(theta_mcmc)))
 
         fig = plot_zeta(results, set_bands, theta=theta, tcut=t_cut, t_fit_lim=xlim, fits=fits,
-                        is_fit_bakl=is_fit_bakl, is_plot_Tnu=is_plot_Tnu)
+                        is_fit_fmin=is_fit_fmin, is_plot_Tnu=is_plot_Tnu)
 
         if is_save_plot and len(results) > 0:
             n = max([len(results[b]) for b in set_bands])

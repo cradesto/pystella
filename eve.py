@@ -55,7 +55,7 @@ def get_parser():
                         default=None,
                         dest='box',
                         help='Make boxcar average, for example: '
-                             'Delta_mass:Number], -b 0.5:4 ')
+                             'Delta_mass:Number:[True, if info], -b 0.5:4 ')
 
     parser.add_argument('-r', '--rho', nargs="?",
                         required=False,
@@ -63,6 +63,12 @@ def get_parser():
                         dest="rho",
                         metavar="<r OR m>",
                         help="Plot Rho-figure")
+
+    parser.add_argument('--is_dum', nargs="?",
+                        required=False,
+                        const=True,
+                        dest="is_dum",
+                        help="Set is_dum = TRUE to parse abn-file with dum columns")
 
     parser.add_argument('-x',
                         required=False,
@@ -105,7 +111,7 @@ def get_parser():
                         type=str,
                         default='H:He:C:O:Si:Fe:Ni:Ni56',
                         dest="elements",
-                        help="Elements directory. \n   Available: {0}".format('-'.join(sneve.eve_elements)))
+                        help="Elements directory. \n   Available: {0}".format(':'.join(sneve.eve_elements)))
     parser.add_argument('--reshape',
                         required=False,
                         type=str,
@@ -146,6 +152,7 @@ def main():
 
     parser = get_parser()
     args, unknownargs = parser.parse_known_args()
+    eve_prev = None
     markersize = 4
     fig = None
 
@@ -155,11 +162,24 @@ def main():
         pathDef = os.getcwd()
 
     # if args.elements:
-    elements = args.elements.split(':')
-    for e in elements:
-        if e not in sneve.eve_elements:
-            logger.error('No such element: ' + e)
-            sys.exit(2)
+    if '_' in args.elements:
+        elements = list(sneve.eve_elements)
+        excluded = args.elements.split(':')
+        for e in excluded:
+            if not e.startswith('_'):
+                logger.error('For excluded mode all elements should be starts from -. Even element: ' + e)
+                sys.exit(2)
+            e = e[1:]
+            if e not in sneve.eve_elements:
+                logger.error('No such element: ' + e)
+                sys.exit(2)
+            elements.remove(e)
+    else:
+        elements = args.elements.split(':')
+        for e in elements:
+            if e not in sneve.eve_elements:
+                logger.error('No such element: ' + e)
+                sys.exit(2)
 
     # Set model names
     names = []
@@ -199,10 +219,10 @@ def main():
         except ValueError:
             try:
                 # With header
-                eve = sneve.load_hyd_abn(name=name, path=path, is_dm=False)
+                eve = sneve.load_hyd_abn(name=name, path=path, is_dm=False, is_dum=args.is_dum)
             except ValueError:
                 # No header
-                eve = sneve.load_hyd_abn(name=name, path=path, is_dm=False, skiprows=0)
+                eve = sneve.load_hyd_abn(name=name, path=path, is_dm=False, is_dum=args.is_dum, skiprows=0)
 
         if args.reshape is not None:
             a = args.reshape.split(':')
@@ -234,12 +254,13 @@ def main():
                 print(f'  M_total =  {m_tot:.3f}')
 
             print_masses(eve)
-            eve = eve.boxcar(box_dm=dm, n=n, is_info=is_info)
+            eve_box = eve.boxcar(box_dm=dm, n=n, el_included=elements, is_info=is_info)
             print("The element masses: After")
-            print_masses(eve)
+            print_masses(eve_box)
+            eve, eve_prev = eve_box, eve
 
         if args.write_to:
-            fname = os.path.join(path, args.write_to)
+            fname = os.path.expanduser(args.write_to)
             # fname = os.path.join(path, name)
             # f = fname + '.eve.abn'
             fname = fname.replace('.rho', '')
@@ -267,6 +288,10 @@ def main():
                 # print "Plot eve-model %s" % name
                 ax = eve.plot_chem(elements=elements, ax=ax, x=args.x, ylim=(1e-8, 1.), marker=marker,
                                    markersize=markersize)
+                if eve_prev is not None:
+                    eve_prev.plot_chem(elements=elements, ax=ax, x=args.x, ylim=(1e-8, 1.), marker=marker,
+                                       markersize=max(1, markersize - 2), alpha=0.5)
+                    # ax.set_title('{}: before boxcar'.format(eve_prev.Name))
 
             if args.rho:
                 if args.is_chem:
@@ -276,6 +301,8 @@ def main():
                 else:
                     ax2 = ax
                 ax = eve.plot_rho(x=args.x, ax=ax2, ls=ls)
+                if eve_prev is not None:
+                    eve_prev.plot_rho(x=args.x, ax=ax2, ls=ls, markersize=max(1, markersize - 2), alpha=0.5)
             else:
                 ls = 'None'
 
@@ -297,8 +324,8 @@ def main():
             if fig is None:
                 fig = ax.get_figure()
             fig.savefig(fsave, bbox_inches='tight')
-
-        plt.show()
+        else:
+            plt.show()
 
 
 if __name__ == '__main__':

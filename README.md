@@ -134,6 +134,6 @@ It is not necessary that all tests show OK. Some of them are non-working yet.
 Please add some form of acknowledgement that you used this code.
 
 ### Acknowledgments:
-    Some of the passbands was taken from  SNPY (see http://csp.obs.carnegiescience.edu/data/snpy/) and
-    SnCosmost (see https://github.com/srodney/sncosmost).
+    Some of the passbands was taken from  SNPY (see http://csp.obs.carnegiescience.edu/data/snpy/),
+    SnCosmost (see https://github.com/srodney/sncosmost), and http://svo2.cab.inta-csic.es/svo/theory/fps3/index.php.
   

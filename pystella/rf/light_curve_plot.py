@@ -439,6 +439,7 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname=None, *
     legncol = kwargs.get('legncol', 1)
     legloc = kwargs.get('legloc', 1)
     alpha = kwargs.get('alpha', 1.)
+    flabel = kwargs.get('flabel', None)
     label = kwargs.get('label', None)
     length_lo_up_lims = kwargs.get('length_lo_up_lims', 0.5)
 
@@ -470,7 +471,9 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname=None, *
         y = lc.Mag
         bname = lc.Band.Name
         lbl = '{0} {1}'.format(bname, curves.Name.replace("_", ""))
-        if label is not None:
+        if flabel is not None:
+            lbl = flabel(bname)
+        elif label is not None:
             lbl = label.format(bname)
 
         if colors is not None:
