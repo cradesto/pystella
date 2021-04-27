@@ -69,6 +69,13 @@ class H5Stella(object):
         return res
 
     @property
+    def Iray(self):
+        logging.debug('Iray from {}'.format(self.Fname))
+        with h5py.File(self.Fname, "r") as h5f:
+            res = H5Iray('Iray').fill(h5f)
+        return res
+
+    @property
     def Hyd(self):
         logging.debug('Hyd from {}'.format(self.Fname))
         with h5py.File(self.Fname, "r") as h5f:
@@ -221,6 +228,16 @@ class H5Tau(H5FreqTimeElement):
     def __init__(self, name):
         self._name = name
         super(H5Tau, self).__init__(name, path='/timing/Tau')
+
+
+class H5Iray(H5FreqTimeElement):
+    def __init__(self, name):
+        self._name = name
+        super(H5Iray, self).__init__(name, path='/timing/Iray')
+
+    @property
+    def Nrays(self):
+        return self.Shape[-1]
 
 
 class H5Hyd(H5TimeElement):
