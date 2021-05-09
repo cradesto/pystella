@@ -2,6 +2,7 @@ import logging
 import numpy as np
 import os
 
+
 try:
     import matplotlib.pyplot as plt
     from matplotlib import gridspec
@@ -26,7 +27,7 @@ eve_colors = dict(Ni56="red", H="blue", He="cyan", C="darkorange", N="coral",
                   S="indigo", Ar="brown", Ca="purple",
                   Fe='maroon', Ni='magenta',
                   Fe52='blue', Cr48='cyan',
-                  Z='black',)
+                  Z='black', )
 eve_lntypes = dict((k, '--') for k, v in eve_colors.items())  # no y-shift
 eve_lntypes['H'] = '-'
 eve_lntypes['He'] = '-'
@@ -112,7 +113,7 @@ class PreSN(object):
         """Center radius"""
         p = 'r_cen'
         if self.is_set(PreSN.sR):
-            d = self.hyd(PreSN.sR)[0] * 0.99 # / 2.  # todo check Rcen
+            d = self.hyd(PreSN.sR)[0] * 0.99  # / 2.  # todo check Rcen
         else:
             d = 0.
         return self.par(p, d)
@@ -235,13 +236,14 @@ class PreSN(object):
         :param is_diff: if True use  np.sum(self.el(e)*np.diff(self.m))
         :return: the total mass of the element el
         """
+
         def m_el(e):
             return np.trapz(self.el(e), self.m)
 
         def m_el_diff(e):
             dmass = np.diff(self.m)
             dmass = np.insert(dmass, -1, dmass[-1])
-            return np.sum(self.el(e)*dmass)
+            return np.sum(self.el(e) * dmass)
 
         fm = m_el
         if is_diff:
@@ -353,7 +355,7 @@ class PreSN(object):
             a = '#No. M  R  Rho T   V   M  dum '.split()
             f.write('  ' + '             '.join(a) + '\n')
             for _ in zip(zones, self.m / phys.M_sun, self.r, self.rho, self.T, self.V, self.m / phys.M_sun, dum):
-                f.write(' %4d %15.7e %15.7e %15.7e %15.7e %15.7e  %15.7e  %8.1e\n' % _)
+                f.write(' %4d %15.8e %15.8e %15.7e %15.7e %15.7e  %15.7e  %8.1e\n' % _)
                 # f.write(' %4d %15.5e %15.5e %15.5e %15.5e %15.5e  %15.5e  %8.1e\n' % _)
         return os.path.isfile(fname)
 
@@ -792,7 +794,7 @@ class PreSN(object):
         # newPreSN.copy_par(self, keys=['time_start', 'm_tot'])
         return newPreSN
 
-    def reshape(self, nz, name=None, start=0, end=None, axis=sM, xmode='rlog', kind='np'):
+    def reshape(self, nz: int, name=None, start: int = 0, end=None, axis=sM, xmode='rlog', kind='np'):
         """
         Reshape parameters of envelope from nstart to nend to nz-zones
         :param nz: new zones
@@ -805,6 +807,99 @@ class PreSN(object):
         :return: new preSN with reshaping zones
         """
         from scipy.interpolate import interp1d
+        # from scipy.interpolate import splev, splrep
+        from scipy.interpolate import UnivariateSpline
+
+        def rlogspace(s, e, n):
+            r = np.exp(np.linspace(np.log(s), np.log(e), n))
+            r = (e - r + s)
+            return r[::-1]
+
+        def add_point(x, mode='lin'):  # 'lin' 'log'
+            """
+            Find max interval in x and insert the new point in the middle (lin or geom) of it
+            :param x: array
+            :param mode:
+            :return:
+            """
+            dif = np.diff(x)
+            idx = np.argmax(dif)
+            if mode == 'lin':
+                p = (x[idx] + x[idx + 1]) / 2.
+            elif mode == 'geom':
+                p = np.sqrt(x[idx] * x[idx + 1])
+            else:
+                raise ValueError('Mode should be "lin" lor "geom"')
+            # print('To interval dx={:12.6e}[{}] added {} '.format(dif[idx]/phys.M_sun, idx, p/phys.M_sun))
+            xn = np.insert(x, idx + 1, p)
+            return xn
+
+        def remove_point(x):  # 'lin' 'log'
+            """
+            Find min delta and remove the right point
+            """
+            dif = np.diff(x)
+            idx = np.argmin(dif)
+            xn = np.delete(x, idx + 1)
+            return xn
+
+        def resize_points(x, n: int, mode: str = 'lin'):
+            """
+            Add or remove points in the array x
+            :param x:  the array is not changed
+            :param n: number points to add or remove
+            :param mode:  should be "lin" or "geom". Default: lin
+            :return: the resized array
+            """
+            n_old = len(x)
+            xn = np.copy(x)
+            if n == n_old:  # nothing to do, return the copy
+                return xn
+
+            if n > n_old:
+                f = lambda xxx: add_point(xxx, mode=mode)
+            else:
+                f = lambda xxx: remove_point(xxx)
+
+            for i in range(abs(n - n_old)):
+                xn = f(xn)
+            return xn
+
+        def x_reshaped(x, n):
+            if xmode == 'lin':
+                res = np.linspace(x[0], x[-1], n)
+            elif xmode == 'rlog':
+                res = rlogspace(x[0], x[-1], n)
+            elif xmode == 'resize':
+                res = resize_points(x, n)
+            else:
+                raise ValueError('Such xmode "{}" is not supported.'.format(xmode))
+            return res
+
+        def interp(xn, x, v, s: int, e: int, kind: str, is_log: bool = False):
+            res = []
+            if s > 0:
+                res = v[:s]  # save points before start
+            xi = x[s:e]
+            yi = v[s:e]
+            if is_log:
+                yi = np.log10(yi)
+
+            if kind == 'np':
+                yy = np.interp(xn, xi, yi)
+            elif kind == 'spline':
+                spl = UnivariateSpline(xi, yi)
+                yy = spl(xn)
+                # spl = splrep(xi, yi, w=w)
+                # yy = splev(xn, spl)
+            else:
+                interp_linear = interp1d(xi, yi, kind=kind)
+                yy = interp_linear(xn)
+
+            if is_log:
+                yy = 10.**yy
+            res = np.append(res, yy)
+            return res
 
         if nz <= 0:
             nz = self.nzon
@@ -817,76 +912,7 @@ class PreSN(object):
         if end is None:
             end = self.nzon
 
-        def rlogspace(s, e, n):
-            r = np.exp(np.linspace(np.log(s), np.log(e), n))
-            r = (e - r + s)
-            return r[::-1]
-
-        def add_point(x, mode='lin'):  # 'lin' 'log'
-            # find max delta
-            dif = np.diff(x)
-            idx = np.argmax(dif)
-            if mode == 'lin':
-                p = (x[idx] + x[idx + 1]) / 2.
-            elif mode == 'geom':
-                p = np.sqrt(x[idx] * x[idx + 1])
-            else:
-                raise ValueError('Mode should be "lin" lor "geom"')
-            xn = np.insert(x, idx + 1, p)
-            return xn
-
-        def remove_point(x):  # 'lin' 'log'
-            # find max delta
-            dif = np.diff(x)
-            idx = np.argmin(dif)
-            xn = np.delete(x, idx + 1)
-            return xn
-
-        def resize_points(x, n, mode='lin'):
-            """
-            Add or remove points in the array x
-            :param x:  the array is not changed
-            :param n: number points to add or remove
-            :param mode:  should be "lin" lor "geom". Default: lin
-            :return: the resized array
-            """
-            nold = len(x)
-            if n == nold:  # nothing to do
-                return x
-
-            xn = np.copy(x)
-            if n > nold:
-                f = lambda xx: add_point(xx, mode=mode)
-            else:
-                f = lambda xx: remove_point(xx)
-
-            for i in range(abs(n - nold)):
-                xn = f(xn)
-            return xn
-
-        def interp(x, v, s, e):
-            res = []
-            if s > 0:
-                res = v[:s]  # save points before start
-            xi = x[s:e]
-            yi = v[s:e]
-            if xmode == 'lin':
-                xx = np.linspace(xi[0], xi[-1], nz)  # new x-points
-            elif xmode == 'rlog':
-                xx = rlogspace(xi[0], xi[-1], nz)  # new x-points
-            elif xmode == 'resize':
-                xx = resize_points(xi, nz)  # new x-points
-            else:
-                xx = np.linspace(xi[0], xi[-1], nz)  # new x-points
-
-            if kind == 'np':
-                yy = np.interp(xx, xi, yi)
-            else:
-                interp_linear = interp1d(xi, yi, kind=kind)
-                yy = interp_linear(xx)
-
-            res = np.append(res, yy)
-            return res
+        print(f'axis= {axis} nz= {nz} nznew= {nznew} start= {start} end= {end}')
 
         # hyd reshape
         if axis == PreSN.sM:
@@ -898,15 +924,31 @@ class PreSN(object):
         else:
             raise ValueError('Such axis "{}" is not supported.'.format(axis))
 
+        xxx = x_reshaped(xx, nz)
+        if np.any(np.diff(xxx) < 0.):
+            print('ERROR:', xxx)
+            raise ValueError('Some of {} elements is < 0.'.format(len(xxx)))
+
+        from pprint import pprint
+
         for vv in PreSN.presn_hydro:
             old = self.hyd(vv)
-            new = interp(xx, old, s=start, e=end)
+            new = interp(xxx, xx, old, s=start, e=end, kind=kind, is_log=True)
+            # if vv == PreSN.sRho:
+            #     new = interp(xxx, xx, old, s=start, e=end, kind=kind, is_log=True)
+            # else:
+            #     new = interp(xxx, xx, old, s=start, e=end, kind=kind)
             newPreSN.set_hyd(vv, new)
+            # print(f'\n{vv} before: {len(xx)}')
+            # pprint(list(zip(range(1, len(xx)+1), xx, old)))
+            # print(f'{vv} after:  {len(xxx)}')
+            # pprint(list(zip(range(1, len(xxx)+1), xxx, new)))
 
         # abn reshape
         for el in self.Elements:
             old = self.el(el)
-            new = interp(xx, old, s=start, e=end)
+            new = interp(xxx, xx, old, s=start, e=end, kind='np')
+            # new = interp(xxx, xx, old, s=start, e=end, kind=kind, is_log=True)
             newPreSN.set_chem(el, new)
 
         # copy parameters
@@ -927,13 +969,11 @@ class PreSN(object):
 
         # chem
         for ename in self.Elements:
-            #         b = boxcar(b, weight=m, wbox=1.5)
-
             presn.set_chem(ename, self.el(ename))
 
         return presn
 
-    def boxcar(self, box_dm=0.5, n=4, el_included=None, is_info=False):
+    def boxcar(self, box_dm: float = 0.5, n: int = 4, el_included=None, is_info: bool = False):
         """
         The function runs a boxcar average to emulate the mixing of chemical composition.
         :param box_dm: float. The boxcar width. Default value is 0.5 Msun.
@@ -979,7 +1019,7 @@ class PreSN(object):
 
 
 # ==============================================
-def load_rho(fname, path=None):
+def load_rho(fname, path: str = None):
     if path is not None:
         fname = os.path.join(path, fname)
     if not os.path.isfile(fname):
@@ -1042,7 +1082,7 @@ def load_hyd_abn(name, path='.', abn_elements=PreSN.stl_elements, skiprows=0, co
         return None
 
     logger.info(' Load hyd-data from  %s' % hyd_file)
-    
+
     def set_params(pre, a):
         if len(a) > 0:
             if len(a) == 5:
@@ -1084,14 +1124,13 @@ def load_hyd_abn(name, path='.', abn_elements=PreSN.stl_elements, skiprows=0, co
 
     presn = PreSN(name, nz, elements=abn_elements)
     set_params(presn, a)
-    
+
     col_map = {PreSN.sR, PreSN.sT, PreSN.sRho, PreSN.sV}
     for v in col_map:
         presn.set_hyd(v, data_hyd[v], is_exp=v.startswith('lg'))
 
     # Set header data
     set_params(presn, a)
-        
 
     # Set Mass
     if is_rho:
