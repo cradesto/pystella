@@ -809,6 +809,7 @@ class PreSN(object):
         from scipy.interpolate import interp1d
         # from scipy.interpolate import splev, splrep
         from scipy.interpolate import UnivariateSpline
+        from scipy.ndimage import gaussian_filter1d
 
         def rlogspace(s, e, n):
             r = np.exp(np.linspace(np.log(s), np.log(e), n))
@@ -890,8 +891,9 @@ class PreSN(object):
             elif kind == 'spline':
                 spl = UnivariateSpline(xi, yi)
                 yy = spl(xn)
-                # spl = splrep(xi, yi, w=w)
-                # yy = splev(xn, spl)
+            elif kind == 'gauss':
+                yii = gaussian_filter1d(yi, 3)
+                yy = np.interp(xn, xi, yii)
             else:
                 interp_linear = interp1d(xi, yi, kind=kind)
                 yy = interp_linear(xn)

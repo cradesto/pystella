@@ -126,7 +126,8 @@ def get_parser():
                              "\n START: zone number to start reshaping. Default: 0 (first zone)"
                              "\n END: zone number to end reshaping. Default: None,  (equal last zone)"
                              "\n KIND: [np OR interp1d(..kind)], kind is  ('np=np.interp', 'linear', 'nearest', "
-                             "'zero', 'slinear', 'quadratic, 'cubic'). Default: np "
+                             "'zero', 'slinear', 'quadratic, 'cubic', "
+                             "'spline' = UnivariateSpline, 'gauss' = gaussian_filter1d). Default: np "
                         )
     # parser.add_argument('-w', '--write',
     #                     action='store_const',
