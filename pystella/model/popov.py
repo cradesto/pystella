@@ -110,7 +110,7 @@ class Popov:
 
     @property
     def t_max(self):
-        """The time of the maximum of the bolometric luminocity"""
+        """The time of the maximum of the bolometric luminosity"""
         t = 0.75 * self.t_i * self.t_a ** 2 + 0.25 * self.t_i ** 3
         t **= 1. / 3.
         return t

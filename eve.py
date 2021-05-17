@@ -118,13 +118,16 @@ def get_parser():
                         default=None,
                         dest="reshape",
                         help="Reshape parameters of envelope from nstart to nend to nz-zones."
-                             "\n Format: --reshape NZON:AXIS:XMODE:START:END"
+                             "\n Format: --reshape NZON:AXIS:XMODE:START:END:KIND. You may use * to set default value."
                              "\n NZON: value of zones between START and END. "
                              "If < 0 Nzon is the same as Nzon of the initial model "
                              "\n AXIS: [M* OR R OR V] - reshape along mass or radius or velocity coordinate."
                              "\n XMODE: [lin OR rlog* OR resize] - linear OR reversed log10 OR add/remove points. "
                              "\n START: zone number to start reshaping. Default: 0 (first zone)"
                              "\n END: zone number to end reshaping. Default: None,  (equal last zone)"
+                             "\n KIND: [np OR interp1d(..kind)], kind is  ('np=np.interp', 'linear', 'nearest', "
+                             "'zero', 'slinear', 'quadratic, 'cubic', "
+                             "'spline' = UnivariateSpline, 'gauss' = gaussian_filter1d). Default: np "
                         )
     # parser.add_argument('-w', '--write',
     #                     action='store_const',
@@ -147,7 +150,8 @@ def main():
 
     def get(arr, i, default):
         if i < len(arr):
-            return a[i]
+            if a[i] != '*':
+                return a[i]
         return default
 
     parser = get_parser()
@@ -228,10 +232,15 @@ def main():
             a = args.reshape.split(':')
             nz, axis, xmode = get(a, 0, eve.nzon), get(a, 1, 'M'), get(a, 2, 'rlog')
             start, end = get(a, 3, 0), get(a, 4, None)
+            kind = get(a, 5, 'np')
+            start = int(start)
+            if end is not None:
+                end = int(end)
             nz = int(nz)
             print(f'Resize: before Nzon={eve.nzon}')
-            print(f'Resize parameters: nznew= {nz}  axis={axis}  xmode={xmode}  start= {start}  end= {end}')
-            eve = eve.reshape(nz=nz, axis=axis, xmode=xmode, start=start, end=end)
+            print(f'Resize parameters: nznew= {nz}  axis={axis}  xmode={xmode}  '
+                  f'start= {start}  end= {end} kind= {kind}')
+            eve = eve.reshape(nz=nz, axis=axis, xmode=xmode, start=start, end=end, kind=kind)
             # eve = eve_resize
             print(f'Resize: after Nzon={eve.nzon}')
 
@@ -300,7 +309,7 @@ def main():
                         ax2.set_ylabel(r'$\rho, [g/cm^3]$ ')
                 else:
                     ax2 = ax
-                ax = eve.plot_rho(x=args.x, ax=ax2, ls=ls)
+                ax = eve.plot_rho(x=args.x, ax=ax2, ls=ls, marker=marker)
                 if eve_prev is not None:
                     eve_prev.plot_rho(x=args.x, ax=ax2, ls=ls, markersize=max(1, markersize - 2), alpha=0.5)
             else:
