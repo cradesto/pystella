@@ -1006,9 +1006,10 @@ class PreSN(object):
                 if is_info:
                     print(f'{k}: kk= {kk} dm= {dm:.4f} m= {m[k]:.4f}')
                 if dm > 1e-6:
-                    for i, ename in enumerate(el_included):
-                        dm_e = np.dot(abund[k:kk, i], dmass[k:kk])
-                        abund[k, i] = dm_e / dm
+                    for i, ename in enumerate(clone.Elements):
+                        if ename in el_included:
+                            dm_e = np.dot(abund[k:kk, i], dmass[k:kk])
+                            abund[k, i] = dm_e / dm
             #             abun[k,i] = x[k]
         #
         for i, ename in enumerate(clone.Elements):

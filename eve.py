@@ -143,6 +143,15 @@ def get_parser():
     return parser
 
 
+def print_masses(presn):
+    m_tot = 0.
+    for ii, el in enumerate(presn.Elements):
+        m = presn.mass_tot_el(el) / phys.M_sun
+        m_tot += m
+        print(f'  {el:3}:  {m:.3e}')
+    print(f'  M_total =  {m_tot:.3f}')
+
+
 def main():
     import os
     import sys
@@ -240,9 +249,13 @@ def main():
             print(f'Resize: before Nzon={eve.nzon}')
             print(f'Resize parameters: nznew= {nz}  axis={axis}  xmode={xmode}  '
                   f'start= {start}  end= {end} kind= {kind}')
+            print("The element masses: before Resize")
+            print_masses(eve)
             eve = eve.reshape(nz=nz, axis=axis, xmode=xmode, start=start, end=end, kind=kind)
             # eve = eve_resize
             print(f'Resize: after Nzon={eve.nzon}')
+            print("The element masses: after Resize")
+            print_masses(eve)
 
         # Boxcar
         if args.box is not None:
@@ -252,19 +265,10 @@ def main():
             if len(s) == 3:
                 is_info = bool(s[2])
             print(f'Running boxcar average: dm= {dm} Msun  Repeats= {n}')
-            print("The element masses: Before")
-
-            def print_masses(presn):
-                m_tot = 0.
-                for ii, el in enumerate(presn.Elements):
-                    m = presn.mass_tot_el(el) / phys.M_sun
-                    m_tot += m
-                    print(f'  {el:3}:  {m:.3e}')
-                print(f'  M_total =  {m_tot:.3f}')
-
+            print("The element masses: Before boxcar")
             print_masses(eve)
             eve_box = eve.boxcar(box_dm=dm, n=n, el_included=elements, is_info=is_info)
-            print("The element masses: After")
+            print("The element masses: After boxcar")
             print_masses(eve_box)
             eve, eve_prev = eve_box, eve
 
