@@ -55,7 +55,8 @@ def get_parser():
                         default=None,
                         dest='box',
                         help='Make boxcar average, for example: '
-                             'Delta_mass:Number:[True, if info], -b 0.5:4 ')
+                             'Delta_mass:Number:[True, if info], -b 0.5:4 . '
+                             'Use key -e _ELEM [-e _Ni56]to exclude elements')
 
     parser.add_argument('-r', '--rho', nargs="?",
                         required=False,
