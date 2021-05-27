@@ -264,6 +264,18 @@ class Runner(object):
         for sec in self.Cfg.Sections:
             opts = self.Cfg.Options(sec)
             pattern = None
+            
+            if 'mode_sample' in opts:
+                mode_sample = int(self.Cfg.get(sec, 'mode_sample'))
+
+            if 'dir' in opts:
+                path = os.path.join(self.Cfg.Root, self.Cfg.get(sec, 'dir'))
+            else:
+                path = self.Cfg.Root
+            path = os.path.realpath(path)
+
+            # print("{}: mode_sample= {}".format(sec, mode_sample));
+                
             if 'pattern' in opts:
                 pattern = self.Cfg.get(sec, 'pattern')
 
@@ -277,17 +289,14 @@ class Runner(object):
                 fname = os.path.join(self.Cfg.Root, self.Cfg.get(sec, 'sample'))
                 extension = os.path.splitext(fname)[1]
                 fout = os.path.join(os.path.dirname(fname), '{}{}'.format(mname, extension))
-                if 'mode_sample' in opts:
-                    mode_sample = int(self.Cfg.get(sec, 'mode_sample'))
                 self.cp_sample(fname, fout, mode=mode_sample, is_demo=is_demo)
 
-            if is_sys and 'cmd' in opts:
-                if 'dir' in opts:
-                    path = os.path.join(self.Cfg.Root, self.Cfg.get(sec, 'dir'))
-                else:
-                    path = self.Cfg.Root
-                path = os.path.realpath(path)
+            if mode_sample == -1:
+                cmd = './delstel.pl  {};'.format(mname)
+                return_code, stdout, stderr = self.eval_cmd(cmd, path, is_demo=is_demo)
 
+                
+            if is_sys and 'cmd' in opts:
                 cmd = self.Cfg.get(sec, 'cmd')
                 return_code, stdout, stderr = self.eval_cmd(cmd, path, is_demo=is_demo)
                 # return_code, stdout, stderr = self.eval_cmd_log(cmd, path, is_demo=is_demo)

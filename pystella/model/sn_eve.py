@@ -263,6 +263,20 @@ class PreSN(object):
 
         return mass
 
+    def mass_tot_rho(self):
+        """
+        Compute the total mass via Radius and Density
+        """
+
+        dm = np.zeros(self.nzon)
+        dm[0] = 4.*np.pi/3. * (self.r[0]**3 - self.r_cen**3)*self.rho[0]
+        for i in range(1, self.nzon):
+            dm[i] = 4./3.*np.pi*( self.r[i]**3 - self.r[i-1]**3 )*self.rho[i]
+        #print(f'  M_tot(Density) =  {np.sum(dm)/phys.M_sun:.3f}')
+        return np.sum(dm)
+
+
+        
     def abund(self, k=None):
         """
         Abundances in k-zone.  k in [1, Nzon]
@@ -354,6 +368,7 @@ class PreSN(object):
             # 'evehyd.trf: idum,dum,Radius(j),RHOeve(j),TMPR(j),VELOC(j), dum,dum; '
             a = '#No. M  R  Rho T   V   M  dum '.split()
             f.write('  ' + '             '.join(a) + '\n')
+            #for _ in zip(zones, self.m / phys.M_sun, self.r, np.log10(self.rho), np.log10(self.T), self.V, self.m / phys.M_sun, dum):
             for _ in zip(zones, self.m / phys.M_sun, self.r, self.rho, self.T, self.V, self.m / phys.M_sun, dum):
                 f.write(' %4d %15.8e %15.8e %15.7e %15.7e %15.7e  %15.7e  %8.1e\n' % _)
                 # f.write(' %4d %15.5e %15.5e %15.5e %15.5e %15.5e  %15.5e  %8.1e\n' % _)
@@ -794,7 +809,7 @@ class PreSN(object):
         # newPreSN.copy_par(self, keys=['time_start', 'm_tot'])
         return newPreSN
 
-    def reshape(self, nz: int, name=None, start: int = 0, end=None, axis=sM, xmode='rlog', kind='np'):
+    def reshape(self, nz: int, name=None, start: int = 0, end=None, axis=sM, xmode='resize', kind='np'):
         """
         Reshape parameters of envelope from nstart to nend to nz-zones
         :param nz: new zones
@@ -802,7 +817,7 @@ class PreSN(object):
         :param start: zone number to start reshaping. Default: 0 (first zone)
         :param end: zone number to end reshaping. Default: None,  (equal last zone)
         :param axis: [M OR R OR V] - reshape along mass or radius or velocity coordinate. Default: M
-        :param xmode: [lin OR rlog OR resize] - linear OR reversed log10 OR add/remove points. Default: rlog
+        :param xmode: [lin OR rlog OR resize] - linear OR reversed log10 OR add/remove points. Default: resize
         :param kind: [np OR interp1d(..kind)], kind is  ('np=np.interp', 'linear', 'nearest', 'zero', 'slinear', 'quadratic, 'cubic'). Default: np
         :return: new preSN with reshaping zones
         """
@@ -831,7 +846,7 @@ class PreSN(object):
                 p = np.sqrt(x[idx] * x[idx + 1])
             else:
                 raise ValueError('Mode should be "lin" lor "geom"')
-            # print('To interval dx={:12.6e}[{}] added {} '.format(dif[idx]/phys.M_sun, idx, p/phys.M_sun))
+            print('         To interval {}[{:.6e} - {:.6e}] added {} '.format(idx, x[idx], x[idx+1], p))
             xn = np.insert(x, idx + 1, p)
             return xn
 
@@ -926,25 +941,34 @@ class PreSN(object):
         else:
             raise ValueError('Such axis "{}" is not supported.'.format(axis))
 
+        xx = xx / max(abs(xx))  # norm
         xxx = x_reshaped(xx, nz)
         if np.any(np.diff(xxx) < 0.):
             print('ERROR:', xxx)
             raise ValueError('Some of {} elements is < 0.'.format(len(xxx)))
 
-        from pprint import pprint
+        #from pprint import pprint
 
         for vv in PreSN.presn_hydro:
             old = self.hyd(vv)
-            new = interp(xxx, xx, old, s=start, e=end, kind=kind, is_log=True)
-            # if vv == PreSN.sRho:
-            #     new = interp(xxx, xx, old, s=start, e=end, kind=kind, is_log=True)
-            # else:
-            #     new = interp(xxx, xx, old, s=start, e=end, kind=kind)
+            new = interp(xxx, xx, old, s=start, e=end, kind=kind, is_log=False)
+            #if vv == PreSN.sRho:
+            #    rho_new = interp(xxx, xx, old, s=start, e=end, kind='next') #, is_log=True)
+            #else:
+            #    new = interp(xxx, xx, old, s=start, e=end, kind=kind)
             newPreSN.set_hyd(vv, new)
+            #print(f'{vv} before: old[{len(xx)}-1]= {old[len(xx)-2]:12.7e} new[{len(xxx)}-1]= {new[len(xxx)-2]:12.7e}')
+            print(f'{vv} before: old[{len(xx)}]= {old[len(xx)-1]:12.7e} new[{len(xxx)}]= {new[len(xxx)-1]:12.7e}')
             # print(f'\n{vv} before: {len(xx)}')
             # pprint(list(zip(range(1, len(xx)+1), xx, old)))
             # print(f'{vv} after:  {len(xxx)}')
             # pprint(list(zip(range(1, len(xxx)+1), xxx, new)))
+
+        # Density Normalization: m_tot(NEW) should be equal m_tot(OLD)
+        m_rho = newPreSN.mass_tot_rho() + newPreSN.m_core
+        rho = newPreSN.rho * newPreSN.m_tot / m_rho
+        newPreSN.set_hyd(PreSN.sRho, rho)
+
 
         # abn reshape
         for el in self.Elements:
@@ -1140,10 +1164,11 @@ def load_hyd_abn(name, path='.', abn_elements=PreSN.stl_elements, skiprows=0, co
         r = presn.r
         rho = presn.rho
         r = np.insert(r, 0, presn.r_cen)
-        rho = np.insert(rho, 0, presn.rho_cen)
+ #       rho = np.insert(rho, 0, presn.rho_cen)
         dm = np.zeros(nz)
         for i in range(nz):
-            dm[i] = (r[i + 1] ** 3 - r[i] ** 3) * rho[i + 1] * 4. * np.pi / 3.
+            dm[i] = (r[i+1]**3 - r[i]**3) * rho[i] * 4./3. * np.pi
+#            dm[i] = (r[i + 1] ** 3 - r[i] ** 3) * rho[i + 1] * 4. * np.pi / 3.
         m = np.cumsum(dm)
         m += presn.m_core
     else:
