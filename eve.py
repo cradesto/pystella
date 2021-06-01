@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import logging
+#import numpy as np
 
 import pystella.model.sn_eve as sneve
 import pystella.rf.light_curve_plot as lcp
@@ -55,7 +56,8 @@ def get_parser():
                         default=None,
                         dest='box',
                         help='Make boxcar average, for example: '
-                             'Delta_mass:Number:[True, if info], -b 0.5:4 ')
+                             'Delta_mass:Number:[True, if info], -b 0.5:4 . '
+                             'Use key -e _ELEM [-e _Ni56]to exclude elements')
 
     parser.add_argument('-r', '--rho', nargs="?",
                         required=False,
@@ -143,6 +145,18 @@ def get_parser():
     return parser
 
 
+def print_masses(presn):
+    m_el_tot = 0.
+    for ii, el in enumerate(presn.Elements):
+        m = presn.mass_tot_el(el) / phys.M_sun
+        m_el_tot += m
+        print(f'  {el:3}:  {m:.3e}')
+    print(f'  M_full(Elements) =  {m_el_tot:.3f}')
+    print(f'  M_total =  {presn.m_tot/phys.M_sun:.3f}')
+    # via density
+    print(f'  M_tot(Density) =  {presn.mass_tot_rho()/phys.M_sun:.3f}')
+
+    
 def main():
     import os
     import sys
@@ -230,7 +244,7 @@ def main():
 
         if args.reshape is not None:
             a = args.reshape.split(':')
-            nz, axis, xmode = get(a, 0, eve.nzon), get(a, 1, 'M'), get(a, 2, 'rlog')
+            nz, axis, xmode = get(a, 0, eve.nzon), get(a, 1, 'M'), get(a, 2, 'resize') # rlog
             start, end = get(a, 3, 0), get(a, 4, None)
             kind = get(a, 5, 'np')
             start = int(start)
@@ -240,9 +254,14 @@ def main():
             print(f'Resize: before Nzon={eve.nzon}')
             print(f'Resize parameters: nznew= {nz}  axis={axis}  xmode={xmode}  '
                   f'start= {start}  end= {end} kind= {kind}')
+            print("The element masses: before Resize")
+            print_masses(eve)
             eve = eve.reshape(nz=nz, axis=axis, xmode=xmode, start=start, end=end, kind=kind)
+            eve.chem_norm()
             # eve = eve_resize
             print(f'Resize: after Nzon={eve.nzon}')
+            print("The element masses: after Resize")
+            print_masses(eve)
 
         # Boxcar
         if args.box is not None:
@@ -252,19 +271,10 @@ def main():
             if len(s) == 3:
                 is_info = bool(s[2])
             print(f'Running boxcar average: dm= {dm} Msun  Repeats= {n}')
-            print("The element masses: Before")
-
-            def print_masses(presn):
-                m_tot = 0.
-                for ii, el in enumerate(presn.Elements):
-                    m = presn.mass_tot_el(el) / phys.M_sun
-                    m_tot += m
-                    print(f'  {el:3}:  {m:.3e}')
-                print(f'  M_total =  {m_tot:.3f}')
-
+            print("The element masses: Before boxcar")
             print_masses(eve)
             eve_box = eve.boxcar(box_dm=dm, n=n, el_included=elements, is_info=is_info)
-            print("The element masses: After")
+            print("The element masses: After boxcar")
             print_masses(eve_box)
             eve, eve_prev = eve_box, eve
 
@@ -309,7 +319,7 @@ def main():
                         ax2.set_ylabel(r'$\rho, [g/cm^3]$ ')
                 else:
                     ax2 = ax
-                ax = eve.plot_rho(x=args.x, ax=ax2, ls=ls, marker=marker)
+                ax2 = eve.plot_rho(x=args.x, ax=ax2, ls=ls, marker=marker)
                 if eve_prev is not None:
                     eve_prev.plot_rho(x=args.x, ax=ax2, ls=ls, markersize=max(1, markersize - 2), alpha=0.5)
             else:
