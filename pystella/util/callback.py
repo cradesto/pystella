@@ -184,7 +184,7 @@ class CallBack(object):
         # if len(args) > 0:
         #     dic..extend(args)
         # a.append(args)
-        self._func(ax, dic)
+        return self._func(ax, dic)
 
     def run(self, dic=None):
         if dic is None:
@@ -224,14 +224,18 @@ class CallBackArray(CallBack):
         if dic is None:
             dic = {}
 
+        res = []
         if self._args is not None:
             dic['args'] = self._args[:]
         if isinstance(ax, collections.Sequence):
             for i, c in enumerate(self._calls):
-                c.plot(ax[i], dic)
+                r = c.plot(ax[i], dic)
+                res.append(r)
         else:
             for c in self._calls:
-                c.plot(ax, dic)
+                r = c.plot(ax, dic)
+                res.append(r)
+        return res
 
     def run(self, dic=None):
         if dic is None:

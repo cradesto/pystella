@@ -71,6 +71,8 @@ def plot(ax, dic=None, mag_lim=30.):
         else:
             ax.plot(x, y, label='{0} {1}'.format(bname, fname), color=bcolors[bname], ls='',
                     marker=marker, markersize=markersize)
+    # d = {'curves': curves, 'fname': fname}
+    return curves
 
 
 def load(dic=None):
