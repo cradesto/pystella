@@ -71,7 +71,7 @@ def plot_grid(models_dic, bnames, call=None, **kwargs):
             ax.set_xscale('log')
 
     if title:
-        plt.title(title)
+        axs.ravel()[0].set_title(title)
 
     # fig.tight_layout()
     # plt.show()
@@ -457,7 +457,7 @@ def main(name=None, model_ext='.ph'):
                 sep = opt_grid[:-1]
                 if sep == 'd':
                     sep = 'l'  # line separator
-                fig = plot_grid(models_mags, bnames, call=callback, xlim=xlim, xtype=xtype, ylim=ylim,
+                fig = plot_grid(models_mags, bnames, call=callback, xlim=xlim, xtype=xtype, ylim=ylim, title=label,
                                 sep=sep, is_grid=False)
             else:
                 # linestyles = ['--', '-.', '-', ':']

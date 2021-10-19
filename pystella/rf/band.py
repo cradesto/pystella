@@ -522,6 +522,8 @@ def colors(bname=None, default='magenta'):
          'SwiftU': "blue", 'SwiftB': "cyan", 'SwiftV': "darkgreen",
          'KaitU': "blue", 'KaitB': "cyan", 'KaitV': "darkgreen", 'KaitR': "red", 'KaitI': "magenta",
          'massJ': "green", 'massH': "cyan", 'massK': "black",
+         'ABGrondJ': "darkolivegreen", 'ABGrondH': "teal", 'ABGrondK': "silver",
+         'GrondJ': "darkgreen", 'GrondH': "darkcyan", 'GrondK': "dimgray",
          'LcoJ': "green", 'LcoH': "cyan", 'LcoK': "black",
          'UVM2': "skyblue", 'UVW1': "orange", 'UVW2': "mediumpurple",
          'UVM2o': "deepskyblue", 'UVW1o': "darkviolet", 'UVW2o': "darkblue",

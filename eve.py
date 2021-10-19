@@ -185,7 +185,7 @@ def main():
         excluded = args.elements.split(':')
         for e in excluded:
             if not e.startswith('_'):
-                logger.error('For excluded mode all elements should be starts from -. Even element: ' + e)
+                logger.error('For excluded mode all elements should be starts from _. Even element: ' + e)
                 sys.exit(2)
             e = e[1:]
             if e not in sneve.eve_elements:
@@ -224,23 +224,25 @@ def main():
     ax2 = None
     handles_nm = []
     for nm in names:
-        print("Run eve-model %s" % nm)
-        path, name = os.path.split(nm)
+        # print("Run eve-model %s" % nm)
+        path, fullname = os.path.split(nm)
         if len(path) == 0:
             path = pathDef
-        name = name.replace('.rho', '')  # remove extension
         # print("Run eve-model %s in %s" % (name, path))
 
-        try:
-            rho_file = os.path.join(path, name + '.rho')
-            eve = sneve.load_rho(rho_file)
-        except ValueError:
+        if fullname.endswith('hyd') or fullname.endswith('abn'):
+            name = fullname.replace('.hyd', '')  # remove extension
+            name = name.replace('.abn', '')  # remove extension
             try:
                 # With header
                 eve = sneve.load_hyd_abn(name=name, path=path, is_dm=False, is_dum=args.is_dum)
             except ValueError:
                 # No header
                 eve = sneve.load_hyd_abn(name=name, path=path, is_dm=False, is_dum=args.is_dum, skiprows=0)
+        else:
+            name = fullname.replace('.rho', '')  # remove extension
+            rho_file = os.path.join(path, name + '.rho')
+            eve = sneve.load_rho(rho_file)
 
         if args.reshape is not None:
             a = args.reshape.split(':')
