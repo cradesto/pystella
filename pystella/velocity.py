@@ -12,9 +12,16 @@ __author__ = 'bakl'
 
 ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
 
+markers_vel = {u'x': u'x', u'o': u'circle', u'v': u'triangle_down', u'd': u'thin_diamond',
+               u'+': u'plus', u'*': u'star', u'<': u'triangle_left'}
+markers_style = list(markers_vel.keys())
+
+colors_vel = ("black", "magenta", "darkgreen", "cyan", "red", "skyblue", "orange", "mediumpurple")
+
 
 class SetVelocityCurve(SetTimeSeries):
     """Set of the Velocity Curves"""
+
     def __init__(self, name=''):
         """Creates a Set of Light Curves."""
         super().__init__(name)
@@ -108,13 +115,44 @@ def plot_vels_sn87a(ax, z=0):
         ax.plot(x, y, label='%s, SN 87A' % el, ls=".", color=elcolors[el], markersize=6, marker=elmarkers[el])
 
 
-def plot_vels_models(ax, models_dic, xlim=None, ylim=None, vnorm=1e8):
+def set_par_dict(mnames, par, styles):
+    from itertools import cycle
+    if par is None:
+        cycler = cycle(styles)
+        res = {mn: next(cycler) for mn, v in mnames.items()}
+    else:
+        if isinstance(par, dict):
+            res = par
+        else:
+            res = {mn: par for mn, v in mnames.items()}
+    return res
+
+
+def plot_vels_models(ax, models_dic, xlim=None, ylim=None, vnorm=1e8, **kwargs):
     is_x_lim = xlim is None
     is_y_lim = ylim is None
 
-    # t_points = [0.2, 1, 2, 3, 4, 5, 10, 20, 40, 80, 150]
+    marker = kwargs.get('marker', None)
+    markers = set_par_dict(models_dic, marker, markers_style)
+    # if marker is None:
+    #     markers_cycler = cycle(markers_style)
+    #     markers = {mn: next(markers_cycler) for mn, v in models_dic.items() }
+    # else:
+    #     if isinstance(marker, dict):
+    #         markers = marker
+    #     else:
+    #         markers = {mn: marker for mn, v in models_dic.items()}
 
-    lw = 1.
+    markersize = kwargs.get('markersize', 3)
+    lw = kwargs.get('linewidth', 1)
+    ls = kwargs.get('ls', '-')
+    color = kwargs.get('color', None)
+    colors = set_par_dict(models_dic, color, colors_vel)
+
+    # t_points = [0.2, 1, 2, 3, 4, 5, 10, 20, 40, 80, 150]
+    # if not isinstance(colors, dict):
+    #     colors = {mn: colors for mn, v in models_dic.items()}
+
     mi = 0
     x_max = []
     y_mid = []
@@ -122,7 +160,8 @@ def plot_vels_models(ax, models_dic, xlim=None, ylim=None, vnorm=1e8):
         mi += 1
         x = mdic['time']
         y = mdic['vel'] / vnorm
-        ax.plot(x, y, label='Vel  %s' % mname, color='blue', ls="-", marker='o', markersize=1, linewidth=lw)
+        ax.plot(x, y, label='Vel  %s' % mname, color=colors[mname], ls=ls,
+                marker=markers[mname], markersize=markersize, linewidth=lw)
         if is_x_lim:
             x_max.append(np.max(x))
         if is_y_lim:
@@ -137,7 +176,7 @@ def plot_vels_models(ax, models_dic, xlim=None, ylim=None, vnorm=1e8):
         # ylim = [np.min(y_mid) + 7., np.min(y_mid) - 2.]
     ax.set_ylim(ylim)
 
-    ax.set_ylabel('Velocity [{:.0e} km/s]'.format(vnorm/1e5))
+    ax.set_ylabel('Velocity [{:.0e} km/s]'.format(vnorm / 1e5))
     ax.set_xlabel('Time [days]')
 
 
@@ -165,7 +204,7 @@ def plot_vel(ax, vel, xlim=None, ylim=None, vnorm=1e8, color='blue', label='Velo
         # ylim = [np.min(y_mid) + 7., np.min(y_mid) - 2.]
     ax.set_ylim(ylim)
 
-    ax.set_ylabel('Velocity [{:.0e} km/s]'.format(vnorm/1e5))
+    ax.set_ylabel('Velocity [{:.0e} km/s]'.format(vnorm / 1e5))
     ax.set_xlabel('Time [days]')
     # ax.grid()
 
@@ -211,7 +250,8 @@ def compute_vel_res_tt(name, path, z=0., t_beg=0.1, t_end=None, line_header=80,
     for i, (t, start, end) in enumerate(res.blocks()):
         if t < min(tt['time']) or t > max(tt['time']):
             if is_info:
-                print('Error: nblock= {}: t_res[={:e}] not in range time_tt: {:e}, {:e}'.format(i, t, min(tt['time']), max(tt['time'])))
+                print('Error: nblock= {}: t_res[={:e}] not in range time_tt: {:e}, {:e}'.format(i, t, min(tt['time']),
+                                                                                                max(tt['time'])))
             continue
 
         r_ph = np.interp(t, tt['time'], tt['Rph'])  # One-dimensional linear interpolation.
@@ -219,14 +259,14 @@ def compute_vel_res_tt(name, path, z=0., t_beg=0.1, t_end=None, line_header=80,
         if block is None:
             break
         if True:
-            vel = np.interp(r_ph, block['R14']*1e14, block['V8']*1e8, 0, 0)  # One-dimensional linear interpolation.
+            vel = np.interp(r_ph, block['R14'] * 1e14, block['V8'] * 1e8, 0, 0)  # One-dimensional linear interpolation.
             if is_info:
                 # print('            blockR14= {}   blockV8= {}'.format(block['R14'], block['V8']))
                 print('nblock= {} [{}:{}]: t= {:e} r_ph= {:e}   vel= {:e}'.format(i, start, end, t, r_ph, vel))
             vels.append(vel)
         else:
-            idx = np.abs(block['R14'] - r_ph/1e14).argmin()
-            vels.append(block['V8'][idx]*1e8)
+            idx = np.abs(block['R14'] - r_ph / 1e14).argmin()
+            vels.append(block['V8'][idx] * 1e8)
 
         radii.append(r_ph)
         times.append(t * (1. + z))  # redshifted time
@@ -274,7 +314,7 @@ def bad_compute_vel_res_tt(name, path, z=0., t_beg=1., t_end=None, t_diff=1.05, 
         if block is None:
             break
         if True:
-            vel = np.interp(radius, block['R14']*1e14, block['V8'], 0, 0)  # One-dimensional linear interpolation.
+            vel = np.interp(radius, block['R14'] * 1e14, block['V8'], 0, 0)  # One-dimensional linear interpolation.
             vels.append(vel * 1e8)
         else:
             idx = np.abs(block['R14'] - radius / 1e14).argmin()
