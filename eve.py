@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import logging
-#import numpy as np
+# import numpy as np
 
 import pystella.model.sn_eve as sneve
 import pystella.rf.light_curve_plot as lcp
@@ -39,8 +39,8 @@ logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-markers = {u'x': u'x', u'd': u'thin_diamond',
-           u'+': u'plus', u'*': u'star', u'o': u'circle', u'v': u'triangle_down', u'<': u'triangle_left'}
+markers = {u'x': u'x', u'o': u'circle', u'v': u'triangle_down', u'd': u'thin_diamond',
+           u'+': u'plus', u'*': u'star', u'<': u'triangle_left'}
 markers_style = list(markers.keys())
 lines_style = lcp.linestyles
 
@@ -152,11 +152,11 @@ def print_masses(presn):
         m_el_tot += m
         print(f'  {el:3}:  {m:.3e}')
     print(f'  M_full(Elements) =  {m_el_tot:.3f}')
-    print(f'  M_total =  {presn.m_tot/phys.M_sun:.3f}')
+    print(f'  M_total =  {presn.m_tot / phys.M_sun:.3f}')
     # via density
-    print(f'  M_tot(Density) =  {presn.mass_tot_rho()/phys.M_sun:.3f}')
+    print(f'  M_tot(Density) =  {presn.mass_tot_rho() / phys.M_sun:.3f}')
 
-    
+
 def main():
     import os
     import sys
@@ -171,7 +171,7 @@ def main():
     parser = get_parser()
     args, unknownargs = parser.parse_known_args()
     eve_prev = None
-    markersize = 4
+    markersize = 6
     fig = None
 
     if args.path:
@@ -246,10 +246,12 @@ def main():
 
         if args.reshape is not None:
             a = args.reshape.split(':')
-            nz, axis, xmode = get(a, 0, eve.nzon), get(a, 1, 'M'), get(a, 2, 'resize') # rlog
+            nz, axis, xmode = get(a, 0, eve.nzon), get(a, 1, 'M'), get(a, 2, 'resize')  # rlog
             start, end = get(a, 3, 0), get(a, 4, None)
             kind = get(a, 5, 'np')
             start = int(start)
+            if end.upper() in 'NONE':
+                end = None
             if end is not None:
                 end = int(end)
             nz = int(nz)
@@ -308,10 +310,10 @@ def main():
             if args.is_chem:
                 # print "Plot eve-model %s" % name
                 ax = eve.plot_chem(elements=elements, ax=ax, x=args.x, ylim=(1e-8, 1.), marker=marker,
-                                   markersize=markersize)
+                                   markersize=markersize, leg_loc='lower center')
                 if eve_prev is not None:
                     eve_prev.plot_chem(elements=elements, ax=ax, x=args.x, ylim=(1e-8, 1.), marker=marker,
-                                       markersize=max(1, markersize - 2), alpha=0.5)
+                                       markersize=max(1, markersize - 2), alpha=0.5, leg_loc='lower center')
                     # ax.set_title('{}: before boxcar'.format(eve_prev.Name))
 
             if args.rho:
