@@ -25,6 +25,7 @@ def plot_grid(models_dic, bnames, call=None, **kwargs):
     title = kwargs.get('title', False)
     fontsize = kwargs.get('fontsize', 12)
     figsize = kwargs.get('figsize', (8, 8))
+    xtype = kwargs.get('xtype', 'lin')
     # setup figure
     # plt.matplotlib.rcParams.update({'font.size':})
     if len(bnames) == 1:
@@ -39,7 +40,7 @@ def plot_grid(models_dic, bnames, call=None, **kwargs):
         irow = int(i / 2)
         # print(i, irow, icol, axs.shape[0])
         # ax = axs[irow, icol]
-        ax = axs.ravel()[2*irow+icol]
+        ax = axs.ravel()[2 * irow + icol]
         ps.lcp.plot_models_band(ax, models_dic, bname, **kwargs)
 
         # plot callback
@@ -58,16 +59,19 @@ def plot_grid(models_dic, bnames, call=None, **kwargs):
         if kwargs.get('is_grid', False):
             ax.grid(linestyle=':')
 
-    # # Setup axes
-    # for i, bname in enumerate(bnames):
-    #     icol = i % 2
-    #     irow = int(i / 2)
-    #     ax = axs.ravel()[i * irow + icol]
-        if irow == math.ceil(len(bnames)/2)-1:
+        # # Setup axes
+        # for i, bname in enumerate(bnames):
+        #     icol = i % 2
+        #     irow = int(i / 2)
+        #     ax = axs.ravel()[i * irow + icol]
+        if irow == math.ceil(len(bnames) / 2) - 1:
             ax.set_xlabel('Time [days]')
 
+        if xtype == 'log':
+            ax.set_xscale('log')
+
     if title:
-        plt.title(title)
+        axs.ravel()[0].set_title(title)
 
     # fig.tight_layout()
     # plt.show()
@@ -86,6 +90,7 @@ def plot_all(models_vels, models_dic, bnames, d=10, call=None, **kwargs):
     legloc = kwargs.get('legloc', 4)
     fontsize = kwargs.get('fontsize', 12)
     bshift = kwargs.get('bshift', None)
+    xtype = kwargs.get('xtype', 'lin')
     # band_shift['UVW1'] = 3
     # band_shift['UVW2'] = 5
     # band_shift['i'] = -1
@@ -126,6 +131,9 @@ def plot_all(models_vels, models_dic, bnames, d=10, call=None, **kwargs):
     if legend == 'box':
         axUbv.legend(loc=legloc, frameon=False)
 
+    if xtype == 'log':
+        axUbv.set_xscale('log')
+
     # axUbv.legend(prop={'size': 8}, loc=legloc)
     if title:
         axUbv.set_title(title)
@@ -135,6 +143,8 @@ def plot_all(models_vels, models_dic, bnames, d=10, call=None, **kwargs):
         ps.vel.plot_vels_models(axVel, models_vels, xlim=axUbv.get_xlim())
         # vel.plot_vels_sn87a(axVel, z=1.49)
         axVel.legend(loc=legloc)
+        if xtype == 'log':
+            axVel.set_xscale('log')
         # axVel.legend(prop={'size': 8}, loc=legloc)
 
     # show right axes in absolute magnitudes
@@ -168,7 +178,9 @@ def usage():
     print("  -q  turn off quiet mode: print info and additional plots")
     print("  -t  plot time points")
     print("  -s  <file-name> without extension. Save plot to pdf-file. Default: ubv_<file-name>.pdf")
-    print("  -x  <xbeg:xend> - xlim, ex: 0:12. Default: None, used all days.")
+    print("  -x  <xbeg:xend[:xtype]> - xlim, ex: -x 0:12. xtype is optional and can be 'lin'(default value) or 'log'."
+          "if you use log scale for X you should set xbeg something like 0.1 or larger, e.g.  -x 0.1:200:log"
+          " Default: None, used all days.")
     print("  -y  <ybeg:yend> - ylim, ex: 26:21. Default: None, used top-magnitude+-5.")
     print("-v  <swd OR ttres[ttresold]> - plot model velocities computed from swd OR tt-res files[ttresold for old res "
           "format].")
@@ -217,6 +229,7 @@ def main(name=None, model_ext='.ph'):
     callback = None
     xlim = None
     ylim = None
+    xtype = 'lin'
     # bshift = None
     bshift = None
 
@@ -316,7 +329,14 @@ def main(name=None, model_ext='.ph'):
             label = str.strip(arg)
             continue
         if opt == '-x':
-            xlim = ps.str2interval(arg, llim=0, rlim=float('inf'))
+            if 'log' in arg:
+                xtype = 'log'
+                s12 = arg.replace(xtype, '')
+                s12 = s12.rstrip(':')
+            else:
+                s12 = arg
+            # print(f's12= {s12}')
+            xlim = ps.str2interval(s12, llim=0, rlim=float('inf'))
             continue
         if opt == '-y':
             ylim = ps.str2interval(arg, llim=-10, rlim=-22)
@@ -437,12 +457,12 @@ def main(name=None, model_ext='.ph'):
                 sep = opt_grid[:-1]
                 if sep == 'd':
                     sep = 'l'  # line separator
-                fig = plot_grid(models_mags, bnames, call=callback, xlim=xlim, ylim=ylim,
+                fig = plot_grid(models_mags, bnames, call=callback, xlim=xlim, xtype=xtype, ylim=ylim, title=label,
                                 sep=sep, is_grid=False)
             else:
                 # linestyles = ['--', '-.', '-', ':']
-                fig = plot_all(models_vels, models_mags, bnames, d=distance, call=callback, xlim=xlim, ylim=ylim,
-                               is_time_points=is_plot_time_points, title=label, bshift=bshift,
+                fig = plot_all(models_vels, models_mags, bnames, d=distance, call=callback, xlim=xlim, xtype=xtype,
+                               ylim=ylim, is_time_points=is_plot_time_points, title=label, bshift=bshift,
                                is_axes_right=is_axes_right, is_grid=is_grid, legloc=1, fontsize=14,
                                lines=linestyles)
                 # lcp.setFigMarkersBW(fig)
@@ -458,10 +478,10 @@ def main(name=None, model_ext='.ph'):
                 if is_extinction and e > 0:
                     fsave = "%s_e0%2d" % (fsave, int(e * 100))  # bad formula for name
 
-                d = os.path.expanduser('~/')
-                fsave = os.path.join(d, os.path.splitext(fsave)[0]) + '.pdf'
+                fsave = os.path.expanduser(fsave)
+                fsave = os.path.splitext(fsave)[0] + '.pdf'
 
-                print("Save plot to %s " % fsave)
+                print("Save plot to %s " % os.path.abspath(fsave))
                 fig.savefig(fsave, bbox_inches='tight', format='pdf')
             else:
                 import matplotlib.pyplot as plt

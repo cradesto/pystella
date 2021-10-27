@@ -254,6 +254,10 @@ class FitMPFit(FitLc):
         dm_limits = kwargs.get("dm_limits", [-5., 5])
         band_limits = kwargs.get("band_limits", [0.001, 4.])
         is_fit_sigmas = kwargs.get("is_fit_sigmas", False)
+        magerr_uplim = kwargs.get("magerr_uplim", 0.01)
+        magerr_downlim = kwargs.get("magerr_downlim", 0.01)
+        magerr_goodlim = kwargs.get("magerr_goodlim", 10.)
+
         # заменить модели их сплайном
         curves_m_spline = {}
         if is_spline:
@@ -284,11 +288,11 @@ class FitMPFit(FitLc):
                 diff = lc_o.Mag - m
                 sig = np.ones(lc_o.Length) * em
                 if lc_o.IsErr:
-                    sig = np.sqrt(em**2 + lc_o.MagErr**2)
+                    sig = np.sqrt(em ** 2 + lc_o.MagErr ** 2)
 
                     # err_m = np.sqrt(np.sum(diff ** 2) / len(m))
-                inv_sigma2 = 1. / sig**2
-                chi = np.sqrt(np.abs(diff**2 * inv_sigma2 - np.log(inv_sigma2) + np.log(2 * np.pi)))
+                inv_sigma2 = 1. / sig ** 2
+                chi = np.sqrt(np.abs(diff ** 2 * inv_sigma2 - np.log(inv_sigma2) + np.log(2 * np.pi)))
                 # chi = np.sum(diff**2 * inv_sigma2 - np.log(inv_sigma2)) + np.log(2 * np.pi) * len(diff)
                 # chi = np.sum(diff**2 * inv_sigma2 - np.log(inv_sigma2) + np.log(2 * np.pi))
                 # chi = diff / sig #+ np.log(sig*np.pi)/lc_o.Length
@@ -313,11 +317,26 @@ class FitMPFit(FitLc):
                     mm = np.interp(to, lc_m.Time, lc_m.Mag)  # One-dimensional linear interpolation.
                 #                w = np.ones(len(m))
                 # err_m = abs(min(m)-m) * err_mdl
-                w = np.abs(1. - At * (lc_o.Time - lc_o.TimeMin) / (lc_o.TimeMax - lc_o.TimeMin))  # weight
+                w = np.ones_like(lc_o.Time) # weight
+                if lc_o.TimeMax - lc_o.TimeMin > 0:
+                    w = np.abs(1. - At * (lc_o.Time - lc_o.TimeMin) / (lc_o.TimeMax - lc_o.TimeMin))
                 diff = mo - mm
                 chi = diff * w
                 if lc_o.IsErr:
-                    chi /= lc_o.MagErr
+                    eo = np.copy(lc_o.MagErr)
+                    for i, e in enumerate(lc_o.MagErr):
+                        # обработать вверхние и нижние пределы в наблюдениях
+                        if e == -1: # upper lim
+                            if diff[i] > 0:
+                                eo[i] = magerr_uplim  # сильно увеличить вес моделей превышающих верхний предел
+                            else:
+                                eo[i] = magerr_goodlim
+                        elif e == -2:   # down lim
+                            if diff[i] > 0:
+                                eo[i] = magerr_downlim  # сильно увеличить вес моделей, проходящих ниже предела
+                            else:
+                                eo[i] = magerr_goodlim
+                    chi /= eo
                 #                    res = diff**2 * w
                 total = np.append(total, chi)
                 # total = np.append(total, chi)
@@ -325,7 +344,7 @@ class FitMPFit(FitLc):
 
         parinfo = []  # [{'value': 0.0, 'limited': [1, 1], 'limits': [0., 3.]}]  # todo changeable parameters
         if dt0 is not None:
-            dt_limits = [x+dt0 for x in dt_limits]
+            dt_limits = [x + dt0 for x in dt_limits]
             parinfo.append({'value': dt0, 'limited': [1, 1], 'limits': dt_limits})
         else:
             parinfo.append({'value': 0., 'fixed': 1})
@@ -411,7 +430,7 @@ class FitMPFit(FitLc):
 
         dt, dm, sigs = FitMPFit.thetaDtDm2arr(result.params, len(bnames))
         if is_fit_sigmas:
-            fit_result.comm = 'result {}:dof: {} sigmas: {}'.\
+            fit_result.comm = 'result {}:dof: {} sigmas: {}'. \
                 format(self.Name, res['dof'], ' '.join([f'{bn}: {sigs[i]:.3f}' for i, bn in enumerate(bnames)]))
         else:
             fit_result.comm = 'result {}:dof: {}'.format(self.Name, res['dof'])

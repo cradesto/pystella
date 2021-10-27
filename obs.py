@@ -2,6 +2,7 @@
 # #!/usr/bin/python3
 
 import getopt
+# import matplotlib
 # matplotlib.use("Agg")
 # matplotlib.rcParams['backend'] = "TkAgg"
 # matplotlib.rcParams['backend'] = "Qt4Agg"
@@ -13,12 +14,25 @@ from os.path import dirname
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 
-import pystella.util.callback as cb
-from pystella.rf import band
+import pystella as ps
+# import pystella.util.callback as cb
+# from pystella.rf import band
 
 __author__ = 'bakl'
 
 ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
+
+
+def merge_obs(inp, type_el):
+    result = None
+    if isinstance(inp, (list, tuple)):
+        for o in inp:
+            if isinstance(o, type_el):
+                result = type_el.Merge(result, o)
+    else:
+        if isinstance(inp, type_el):
+            result = inp
+    return result
 
 
 def plot_grid(call, bnames, xlim=None, ylim=None, **kwargs):
@@ -35,6 +49,7 @@ def plot_grid(call, bnames, xlim=None, ylim=None, **kwargs):
     #     fig, axs = plt.subplots(1, 1, sharex='col', sharey='row', figsize=(8, 8))
     plt.subplots_adjust(wspace=0, hspace=0)
 
+    res = []
     for i, bname in enumerate(bnames):
         icol = i % ncols
         irow = int(i / ncols)
@@ -50,7 +65,8 @@ def plot_grid(call, bnames, xlim=None, ylim=None, **kwargs):
 
         # plot callback
         if call is not None:
-            call.plot(ax, {'bnames': [bname], 'bcolors': {bname: 'black'}, 'markersize': markersize})
+            r = call.plot(ax, {'bnames': [bname], 'bcolors': {bname: 'black'}, 'markersize': markersize})
+            res.append(r)
 
         # if icol == 0:
         ax.set_ylabel('Magnitude')
@@ -79,7 +95,7 @@ def plot_grid(call, bnames, xlim=None, ylim=None, **kwargs):
     if title:
         plt.title(title)
 
-    return fig
+    return fig, res
 
 
 def plot_all(call, bnames, xlim=None, ylim=None, **kwargs):
@@ -96,7 +112,7 @@ def plot_all(call, bnames, xlim=None, ylim=None, **kwargs):
     axUbv = fig.add_subplot(gs1[0, 0])
     gs1.update(wspace=0.3, hspace=0.3, left=0.1, right=0.95)
 
-    call.plot(axUbv, {'bnames': bnames, 'markersize': markersize})
+    res = call.plot(axUbv, {'bnames': bnames, 'markersize': markersize})
 
     # finish plot
     axUbv.set_ylabel('Magnitude')
@@ -116,7 +132,7 @@ def plot_all(call, bnames, xlim=None, ylim=None, **kwargs):
     if title:
         axUbv.set_title(title)
     axUbv.grid(linestyle=':')
-    return fig
+    return fig, res
 
 
 def usage():
@@ -129,11 +145,12 @@ def usage():
     print("  -g <single, grid, gridm, gridl> Select plot view.  single [default] = all models in one figure"
           ", grid = for each band separate figure.")
     print("  -s  without extension. Save plot to pdf-file. Default: if 1, fname =  'ubv_obs.pdf'")
+    print("  -w  write magnitudes to out-file.")
     print("  -x  <xbeg:xend> - xlim, ex: 0:12. Default: None, used all days.")
     print("  -l  write plot label")
     print("  -h  print usage")
     print("   --- ")
-    band.print_bands()
+    ps.band.print_bands()
 
 
 def old_lc_wrapper(param, p=None):
@@ -145,9 +162,9 @@ def old_lc_wrapper(param, p=None):
         elif os.path.isfile(os.path.join(os.getcwd(), fname + '.py')):
             p = os.getcwd()
         else:
-            p = cb.plugin_path
+            p = ps.cb.plugin_path
     print("Call: {} from {}".format(fname, p))
-    c = cb.CallBack(fname, path=p, args=a, load=1)
+    c = ps.cb.CallBack(fname, path=p, args=a, load=1)
     print("Call: %s from %s" % (c.Func, c.FuncFileFull))
     return c
 
@@ -158,14 +175,15 @@ def main():
 
     label = None
     fsave = None
+    is_save_mags = False
     callback = None
     xlim = None
     ylim = None
 
-    band.Band.load_settings()
+    ps.band.Band.load_settings()
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hqc:g:b:l:s:x:y:")
+        opts, args = getopt.getopt(sys.argv[1:], "hqc:g:b:l:s:w:x:y:")
     except getopt.GetoptError as err:
         print(str(err))  # will print something like "option -a not recognized"
         usage()
@@ -193,15 +211,15 @@ def main():
                         bshift[bname] = float(shift)
                 else:
                     bname = b
-                if not band.is_exist(bname):
+                if not ps.band.is_exist(bname):
                     print('No such band: ' + bname)
                     sys.exit(2)
                 bnames.append(bname)
             continue
         if opt == '-c':
-            c = cb.lc_wrapper(str(arg))
+            c = ps.cb.lc_wrapper(str(arg))
             if callback is not None:
-                c = cb.CallBackArray((callback, c))
+                c = ps.cb.CallBackArray((callback, c))
             callback = c
             continue
         if opt == '-g':
@@ -215,6 +233,10 @@ def main():
             continue
         if opt == '-s':
             fsave = str.strip(arg)
+            continue
+        if opt == '-w':
+            fsave = str.strip(arg)
+            is_save_mags = True
             continue
         if opt == '-x':
             xlim = list(float(x) for x in str(arg).split(':'))
@@ -235,18 +257,29 @@ def main():
         sep = opt_grid[:-1]
         if sep == 'd':
             sep = 'l'  # line separator
-        fig = plot_grid(callback, bnames, xlim=xlim, ylim=ylim, sep=sep, is_grid=False)
+        fig, res = plot_grid(callback, bnames, xlim=xlim, ylim=ylim, sep=sep, is_grid=False)
     else:
-        fig = plot_all(callback, bnames, xlim=xlim, ylim=ylim, title=label)
+        fig, res = plot_all(callback, bnames, xlim=xlim, ylim=ylim, title=label)
 
-    plt.show()
+    if is_save_mags:
+        if len(res) == 0:
+            print('No data to write.')
+        else:
+            curves = merge_obs(res, ps.SetLightCurve)
+            fsave = os.path.expanduser(fsave)
+            if ps.lcf.curves_save(curves, fsave):
+                print("Magnitudes of {} have been saved to {}".format(curves.Name, fsave))
+            else:
+                print("Error with Magnitudes saved to {}".format(curves.Name, fsave))
+
+    else:
+        plt.show()
     # plt.show(block=False)
 
-    if fsave is not None:
+    if not is_save_mags and fsave is not None:
         if fsave == 1:
             fsave = "ubv_obs"
-        d = os.path.expanduser('~/')
-        fsave = os.path.join(d, os.path.splitext(fsave)[0]) + '.pdf'
+        fsave = os.path.expanduser(os.path.splitext(fsave)[0] + '.pdf')
         print("Save plot to %s " % fsave)
         fig.savefig(fsave, bbox_inches='tight')
 

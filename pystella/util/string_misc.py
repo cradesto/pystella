@@ -10,15 +10,19 @@ def str2bool(v):
 
 
 def str2interval(arg, llim=0., rlim=float('inf'), sep=':'):
+    if arg is None or len(arg) == 0:
+        # xlim = (llim, rlim)
+        return None
+
     if sep in arg:
         if str.endswith(arg, sep):
-            xlim = [float(arg[:-1]), rlim]
+            xlim = (float(arg[:-1]), rlim)
         elif str.startswith(arg, sep):
-            xlim = [llim, float(arg[1:])]
+            xlim = (llim, float(arg[1:]))
         else:
-            xlim = list(map(float, arg.split(sep)))
+            xlim = tuple(map(float, arg.split(sep)))
     else:
-        xlim = [llim, float(arg)]
+        xlim = (llim, float(arg))
     return xlim
 
 
