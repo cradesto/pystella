@@ -21,6 +21,7 @@ class Band(object):
     FileSettings = 'settings.ini'
     NameBol = 'bol'
     NameUBVRI = 'ubvri'
+    NameBVRI = 'bvri'
     NameBolQuasi = 'bolq'
     NameZp = 'zp'
     NameJy = 'Jy'
@@ -505,6 +506,10 @@ class BandJoin(Band):
     def get_ubvri(cls, length=300):
         return BandJoin(name=Band.NameUBVRI, bnames=('U', 'B', 'V', 'R', 'I'), length=length,
                         is_norm=True, is_sum=False)
+    @classmethod
+    def get_bvri(cls, length=300):
+        return BandJoin(name=Band.NameBVRI, bnames=('B', 'V', 'R', 'I'), length=length,
+                        is_norm=True, is_sum=False)
 
 
 ROOT_DIRECTORY = dirname(dirname(dirname(os.path.abspath(__file__))))
@@ -538,7 +543,7 @@ def colors(bname=None, default='magenta'):
          'AtlasC': "cyan", 'AtlasO': "orange",
          'UBVRI': 'chocolate', 'GaiaG': 'g',
          'L_ubvri': 'sandybrown', 'L_bol': 'saddlebrown', 'XEUV<325': 'sienna', 'IR>890': 'peru',
-         Band.NameBol: 'black', Band.NameUBVRI: 'dimgrey', Band.NameBolQuasi: 'dimgray'}
+         Band.NameBol: 'black', Band.NameUBVRI: 'dimgrey', Band.NameBVRI: 'saddlebrown', Band.NameBolQuasi: 'dimgray'}
     # for Subaru HCS: colors
     for b in list('grizY'):
         c['HSC' + b] = c[b]
@@ -555,7 +560,7 @@ def lntypes(bname=None, default='-'):
     ln = {"U": "-", 'B': "-", 'V': "-", 'R': "-", 'I': "-", 'UVM2': "-.", 'UVW1': "-.", 'UVW2': "-.", 'F125W': ":",
           'F160W': "-.", 'F140W': "--", 'F105W': "-.", 'F435W': "--", 'F606W': "-.", 'F814W': "--", 'u': "--",
           'g': "--", 'r': "--", 'i': "--", 'z': "--", 'Y': '--', 'GaiaG': '--',
-          Band.NameBol: '-', Band.NameUBVRI: '-.', Band.NameBolQuasi: ':'}
+          Band.NameBol: '-', Band.NameUBVRI: '--',  Band.NameBVRI: '-.', Band.NameBolQuasi: ':'}
     # for Subaru HCS: colors
     for b in list('grizY'):
         ln['HSC' + b] = ln[b]
@@ -594,7 +599,8 @@ def band_load_names(path=Band.DirRoot):
     bol = BandUni.get_bol()
     qbol = BandUni.get_qbol()
     ubvri = BandJoin.get_ubvri()
-    bands = {Band.NameBol: bol, Band.NameUBVRI: ubvri, Band.NameBolQuasi: qbol}
+    bvri = BandJoin.get_bvri()
+    bands = {Band.NameBol: bol, Band.NameUBVRI: ubvri,Band.NameBVRI: bvri, Band.NameBolQuasi: qbol}
     for d, dir_names, file_names in os.walk(path):
         if Band.FileFilters in file_names:  # check that there are info-file in this directory
             fname = os.path.join(d, Band.FileFilters)

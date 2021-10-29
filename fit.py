@@ -179,10 +179,10 @@ def plot_curves(curves_o, res_models, res_sorted, **kwargs):
     num = len(res_sorted)
     # nrow = int(num / 2.1) + 1
     # ncol = 2 if num > 1 else 1
-    ncol = min(4, int(np.sqrt(num)))  # 2 if num > 1 else 1
+    ncol = min(3, int(np.sqrt(num)))  # 2 if num > 1 else 1
     nrow = math.ceil(num / ncol)
     # fig = plt.figure(figsize=(12, nrow * 4))
-    fig = plt.figure(figsize=(min(ncol, 2)*5, max(nrow, 2)*4))
+    fig = plt.figure(figsize=(min(ncol, 2)*5, max(nrow, 2)*5))
     plt.matplotlib.rcParams.update({'font.size': font_size})
 
     # tshift0 = ps.first(curves_o).tshift
@@ -201,7 +201,7 @@ def plot_curves(curves_o, res_models, res_sorted, **kwargs):
             ax.set_xlim(xlim)
         lt = {lc.Band.Name: 'o' for lc in curves_o}
         # curves_o.set_tshift(tshift0)
-        lcp.curves_plot(curves_o, ax, xlim=xlim, lt=lt, markersize=4, is_legend=False, is_line=False)
+        lcp.curves_plot(curves_o, ax, xlim=xlim, lt=lt, markersize=2, is_legend=False, is_line=False)
 
         ax.text(0.99, 0.94, k, horizontalalignment='right', transform=ax.transAxes)
         ax.text(0.98, 0.85, "{} dt={:.2f}".format(i, tshift_best), horizontalalignment='right', transform=ax.transAxes)
@@ -246,7 +246,7 @@ def plot_curves_vel(curves_o, vels_o, res_models, res_sorted, vels_m, **kwargs):
 
     font_size = kwargs.get('font_size', 10)
     linewidth = kwargs.get('linewidth', 2.0)
-    markersize = kwargs.get('markersize', 5)
+    markersize = kwargs.get('markersize', 3)
     xlim = kwargs.get('xlim', None)
 
     ylim = None
@@ -282,7 +282,7 @@ def plot_curves_vel(curves_o, vels_o, res_models, res_sorted, vels_m, **kwargs):
             curves_o.set_tshift(tshift_lc + tshift_best)
             if xlim is None:
                 xlim = axUbv.get_xlim()
-            lcp.curves_plot(curves_o, axUbv, xlim=xlim, lt=lt, markersize=2, is_legend=False, is_line=False)
+            lcp.curves_plot(curves_o, axUbv, xlim=xlim, lt=lt, markersize=3, is_legend=False, is_line=False)
             # legend
             axUbv.legend(curves.BandNames, loc='lower right', frameon=False, ncol=min(5, len(curves.BandNames)),
                          fontsize='small', borderpad=1)
