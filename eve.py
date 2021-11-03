@@ -47,8 +47,9 @@ lines_style = lcp.linestyles
 
 def get_parser():
     import argparse
+    from argparse import RawTextHelpFormatter
 
-    parser = argparse.ArgumentParser(description='Process PreSN configuration.')
+    parser = argparse.ArgumentParser(description='Process PreSN configuration.', formatter_class=RawTextHelpFormatter)
 
     parser.add_argument('-b', '--box',
                         required=False,
@@ -78,13 +79,6 @@ def get_parser():
                         default='m',
                         metavar="<m OR r OR lgR OR rsun OR m OR z>",
                         help="Setup abscissa: radius or lg(R) OR mass OR zone")
-
-    parser.add_argument('-s', '--save',
-                        required=False,
-                        type=bool,
-                        default=False,
-                        dest="is_save_plot",
-                        help="save plot to pdf-file, default: False")
 
     # parser.add_argument('-c', '--chem',
     #                     required=False,
@@ -131,6 +125,29 @@ def get_parser():
                              "'zero', 'slinear', 'quadratic, 'cubic', "
                              "'spline' = UnivariateSpline, 'gauss' = gaussian_filter1d). Default: np "
                         )
+    parser.add_argument('--smooth',
+                        required=False,
+                        type=str,
+                        default=None,
+                        dest="smooth",
+                        help="Smoothing density of envelope. "
+                             "The smoothing procedure is used Savitzky–Golay filter with parameters. "
+                             "See https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.savgol_filter.html "
+                             "\n Format: --smooth WINDOW_LENGTH:POLYORDER:MODE:IS_INFO."
+                             "\n WINDOW_LENGTH: The length of the filter window."
+                             "\n POLYORDER: The order of the polynomial used to fit the samples."
+                             "POLYORDER must be less than WINDOW_LENGTH."
+                             "\n MODE: Must be ‘mirror’, ‘constant’, ‘nearest’, ‘wrap’ or ‘interp’. Default: interp "
+                             "\n IS_INFO: is any to print additional info. Default: False "
+                             "\n Example: --smooth 5:2 OR  --smooth 5:2:nearest:1"
+                        )
+
+    parser.add_argument('-s', '--save',
+                        required=False,
+                        type=str,
+                        default=False,
+                        dest="save_plot",
+                        help="save plot to pdf-file, default: False")
     # parser.add_argument('-w', '--write',
     #                     action='store_const',
     #                     const=True,
@@ -145,12 +162,13 @@ def get_parser():
     return parser
 
 
-def print_masses(presn):
+def print_masses(presn, is_el=True):
     m_el_tot = 0.
     for ii, el in enumerate(presn.Elements):
         m = presn.mass_tot_el(el) / phys.M_sun
         m_el_tot += m
-        print(f'  {el:3}:  {m:.3e}')
+        if is_el:
+            print(f'  {el:3}:  {m:.3e}')
     print(f'  M_full(Elements) =  {m_el_tot:.3f}')
     print(f'  M_total =  {presn.m_tot / phys.M_sun:.3f}')
     # via density
@@ -282,6 +300,25 @@ def main():
             print_masses(eve_box)
             eve, eve_prev = eve_box, eve
 
+        # Smooth
+        if args.smooth is not None:
+            is_info = False
+            s = args.smooth.split(':')
+            window_length, polyorder = int(s[0]), int(s[1])
+            mode = 'interp'
+            if len(s) == 3:
+                mode = s[2]
+            if len(s) == 4:
+                is_info = True
+            print(f'Running Savitzky-Golay filter to Rho: '
+                  f'window_length= {window_length} Msun  polyorder= {polyorder} mode= {mode}')
+            print("The element masses: Before smoothing")
+            print_masses(eve, is_el=is_info)
+            eve_smooth = eve.smooth(window_length=window_length, polyorder=polyorder, mode=mode, is_info=is_info)
+            print("The element masses: After smoothing")
+            print_masses(eve_smooth, is_el=is_info)
+            eve, eve_prev = eve_smooth, eve
+
         if args.write_to:
             fname = os.path.expanduser(args.write_to)
             # fname = os.path.join(path, name)
@@ -338,11 +375,12 @@ def main():
                 ax2.legend(handles=handles_nm, loc=4, fancybox=False, frameon=False)
 
     if not args.write_to:
-        if args.is_save_plot:
-            if args.rho:
-                fsave = os.path.join(os.path.expanduser('~/'), 'rho_%s.pdf' % names[0])
-            else:
-                fsave = os.path.join(os.path.expanduser('~/'), 'chem_%s.pdf' % names[0])
+        if args.save_plot:
+            fsave = os.path.expanduser(args.save_plot)
+            # if args.rho:
+            #     fsave = os.path.join(os.path.expanduser('~/'), 'rho_%s.pdf' % names[0])
+            # else:
+            #     fsave = os.path.join(os.path.expanduser('~/'), 'chem_%s.pdf' % names[0])
             logger.info(" Save plot to %s " % fsave)
             if fig is None:
                 fig = ax.get_figure()

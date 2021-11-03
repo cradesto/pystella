@@ -1,7 +1,8 @@
 import logging
+import pprint
+
 import numpy as np
 import os
-
 
 try:
     import matplotlib.pyplot as plt
@@ -269,14 +270,12 @@ class PreSN(object):
         """
 
         dm = np.zeros(self.nzon)
-        dm[0] = 4.*np.pi/3. * (self.r[0]**3 - self.r_cen**3)*self.rho[0]
+        dm[0] = 4. * np.pi / 3. * (self.r[0] ** 3 - self.r_cen ** 3) * self.rho[0]
         for i in range(1, self.nzon):
-            dm[i] = 4./3.*np.pi*( self.r[i]**3 - self.r[i-1]**3 )*self.rho[i]
-        #print(f'  M_tot(Density) =  {np.sum(dm)/phys.M_sun:.3f}')
+            dm[i] = 4. / 3. * np.pi * (self.r[i] ** 3 - self.r[i - 1] ** 3) * self.rho[i]
+        # print(f'  M_tot(Density) =  {np.sum(dm)/phys.M_sun:.3f}')
         return np.sum(dm)
 
-
-        
     def abund(self, k=None):
         """
         Abundances in k-zone.  k in [1, Nzon]
@@ -368,7 +367,7 @@ class PreSN(object):
             # 'evehyd.trf: idum,dum,Radius(j),RHOeve(j),TMPR(j),VELOC(j), dum,dum; '
             a = '#No. M  R  Rho T   V   M  dum '.split()
             f.write('  ' + '             '.join(a) + '\n')
-            #for _ in zip(zones, self.m / phys.M_sun, self.r, np.log10(self.rho), np.log10(self.T), self.V, self.m / phys.M_sun, dum):
+            # for _ in zip(zones, self.m / phys.M_sun, self.r, np.log10(self.rho), np.log10(self.T), self.V, self.m / phys.M_sun, dum):
             for _ in zip(zones, self.m / phys.M_sun, self.r, self.rho, self.T, self.V, self.m / phys.M_sun, dum):
                 f.write(' %4d %15.8e %15.8e %15.7e %15.7e %15.7e  %15.7e  %8.1e\n' % _)
                 # f.write(' %4d %15.5e %15.5e %15.5e %15.5e %15.5e  %15.5e  %8.1e\n' % _)
@@ -846,7 +845,7 @@ class PreSN(object):
                 p = np.sqrt(x[idx] * x[idx + 1])
             else:
                 raise ValueError('Mode should be "lin" lor "geom"')
-            print('         To interval {}[{:.6e} - {:.6e}] added {} '.format(idx, x[idx], x[idx+1], p))
+            print('         To interval {}[{:.6e} - {:.6e}] added {} '.format(idx, x[idx], x[idx + 1], p))
             xn = np.insert(x, idx + 1, p)
             return xn
 
@@ -914,7 +913,7 @@ class PreSN(object):
                 yy = interp_linear(xn)
 
             if is_log:
-                yy = 10.**yy
+                yy = 10. ** yy
             res = np.append(res, yy)
             return res
 
@@ -947,18 +946,18 @@ class PreSN(object):
             print('ERROR:', xxx)
             raise ValueError('Some of {} elements is < 0.'.format(len(xxx)))
 
-        #from pprint import pprint
+        # from pprint import pprint
 
         for vv in PreSN.presn_hydro:
             old = self.hyd(vv)
             new = interp(xxx, xx, old, s=start, e=end, kind=kind, is_log=False)
-            #if vv == PreSN.sRho:
+            # if vv == PreSN.sRho:
             #    rho_new = interp(xxx, xx, old, s=start, e=end, kind='next') #, is_log=True)
-            #else:
+            # else:
             #    new = interp(xxx, xx, old, s=start, e=end, kind=kind)
             newPreSN.set_hyd(vv, new)
-            #print(f'{vv} before: old[{len(xx)}-1]= {old[len(xx)-2]:12.7e} new[{len(xxx)}-1]= {new[len(xxx)-2]:12.7e}')
-            print(f'{vv} before: old[{len(xx)}]= {old[len(xx)-1]:12.7e} new[{len(xxx)}]= {new[len(xxx)-1]:12.7e}')
+            # print(f'{vv} before: old[{len(xx)}-1]= {old[len(xx)-2]:12.7e} new[{len(xxx)}-1]= {new[len(xxx)-2]:12.7e}')
+            print(f'{vv} before: old[{len(xx)}]= {old[len(xx) - 1]:12.7e} new[{len(xxx)}]= {new[len(xxx) - 1]:12.7e}')
             # print(f'\n{vv} before: {len(xx)}')
             # pprint(list(zip(range(1, len(xx)+1), xx, old)))
             # print(f'{vv} after:  {len(xxx)}')
@@ -968,7 +967,6 @@ class PreSN(object):
         m_rho = newPreSN.mass_tot_rho() + newPreSN.m_core
         rho = newPreSN.rho * newPreSN.m_tot / m_rho
         newPreSN.set_hyd(PreSN.sRho, rho)
-
 
         # abn reshape
         for el in self.Elements:
@@ -1042,6 +1040,38 @@ class PreSN(object):
             if is_info:
                 print(clone.el(ename))
 
+        return clone
+
+    def smooth(self, window_length: int = 15, polyorder: int = 2, mode: str = 'interp', is_info=True):
+        from scipy.signal import savgol_filter
+        """
+        The function runs a Savitzky-Golay filter to smooth density distribution.
+        :param window_length: int. Default value is 5
+        :param polyorder: int. Default value is 2
+        # :param el_included: the tuple of included elements. If None = all elements are included. Default: None
+        :param is_info: bool. Prints some debug information. Default value is False
+        """
+        clone = self.clone()
+        rho_s = savgol_filter(np.log(clone.rho), window_length, polyorder, mode=mode)
+        rho_s = np.exp(rho_s)
+        r = clone.r
+        # np.set_printoptions(precision=2)
+        if is_info:
+            print('Rho')
+            pprint.pprint(list(zip(clone.rho, rho_s)))
+        m_s = np.zeros(clone.nzon)
+        # RHO(1) = DM(1) / (Ry(1) ** 3 - Rce ** 3);
+        m_s[0] = clone.m_core + 4. / 3. * np.pi * clone.rho_cen * (r[0] ** 3 - clone.r_cen ** 3)
+
+        for k in range(1, clone.nzon):
+            dm = 4. / 3. * np.pi * rho_s[k] * (r[k] ** 3 - r[k - 1] ** 3)
+            m_s[k] = m_s[k-1] + dm
+        if is_info:
+            print('Mass')
+            pprint.pprint(list(zip(clone.m, m_s)))
+        clone.set_hyd('Rho', rho_s)
+        clone.set_hyd('M', m_s)
+        # print(clone.rho)
         return clone
 
 
@@ -1164,11 +1194,11 @@ def load_hyd_abn(name, path='.', abn_elements=PreSN.stl_elements, skiprows=0, co
         r = presn.r
         rho = presn.rho
         r = np.insert(r, 0, presn.r_cen)
- #       rho = np.insert(rho, 0, presn.rho_cen)
+        #       rho = np.insert(rho, 0, presn.rho_cen)
         dm = np.zeros(nz)
         for i in range(nz):
-            dm[i] = (r[i+1]**3 - r[i]**3) * rho[i] * 4./3. * np.pi
-#            dm[i] = (r[i + 1] ** 3 - r[i] ** 3) * rho[i + 1] * 4. * np.pi / 3.
+            dm[i] = (r[i + 1] ** 3 - r[i] ** 3) * rho[i] * 4. / 3. * np.pi
+        #            dm[i] = (r[i + 1] ** 3 - r[i] ** 3) * rho[i + 1] * 4. * np.pi / 3.
         m = np.cumsum(dm)
         m += presn.m_core
     else:

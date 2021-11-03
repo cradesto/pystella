@@ -42,7 +42,9 @@ def m_mu(x):
 
 
 def get_parser():
-    parser = argparse.ArgumentParser(description='Process light curve fitting.')
+    from argparse import RawTextHelpFormatter
+
+    parser = argparse.ArgumentParser(description='Process light curve fitting.', formatter_class=RawTextHelpFormatter)
     print(" Observational data could be loaded with plugin, ex: -c lcobs:filedata:tshift:mshift")
 
     parser.add_argument('-A', '--tweight',
@@ -109,7 +111,7 @@ def get_parser():
                         default=False,
                         const=True,
                         dest="is_not_quiet",
-                        help="Result with additional information"),\
+                        help="Result with additional information"), \
     parser.add_argument('--sigma',
                         action='store_const',
                         default=False,
@@ -182,7 +184,7 @@ def plot_curves(curves_o, res_models, res_sorted, **kwargs):
     ncol = min(3, int(np.sqrt(num)))  # 2 if num > 1 else 1
     nrow = math.ceil(num / ncol)
     # fig = plt.figure(figsize=(12, nrow * 4))
-    fig = plt.figure(figsize=(min(ncol, 2)*5, max(nrow, 2)*5))
+    fig = plt.figure(figsize=(min(ncol, 2) * 5, max(nrow, 2) * 5))
     plt.matplotlib.rcParams.update({'font.size': font_size})
 
     # tshift0 = ps.first(curves_o).tshift
@@ -819,7 +821,7 @@ def arg2names(arg, path, ext):
             nm = os.path.splitext(os.path.basename(f))[0]
             if os.path.exists(os.path.join(path, nm + ext)):
                 names.append(nm)
-                print('input: {}'.format(nm+ext))
+                print('input: {}'.format(nm + ext))
     return names
 
 
@@ -989,7 +991,8 @@ def main():
                     sys.stdout.flush()
 
                 if vels_o is None:
-                    curves_m, res, res_full = fit_mfl(args, curves_o, bnames, fitter, name, path, t_diff, tlim, is_sigma)
+                    curves_m, res, res_full = fit_mfl(args, curves_o, bnames, fitter, name, path, t_diff, tlim,
+                                                      is_sigma)
                 else:
                     curves_m, res, vel_m = fit_mfl_vel(args, curves_o, vels_o, bnames, fitter, name, path,
                                                        t_diff, tlim, is_sigma, A=args.tweight)
