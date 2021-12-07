@@ -723,7 +723,7 @@ def fit_mfl(args, curves_o, bnames, fitter, name, path, t_diff, tlim, is_fit_sig
     return curves_m, fit_result, res
 
 
-def fit_mfl_vel(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, tlim, Vnorm=1e8, A=0.):
+def fit_mfl_vel(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, tlim, is_sigma, Vnorm=1e8, A=0.):
     distance = args.distance  # pc
     z = args.redshift
     # Set distance and redshift
@@ -762,6 +762,9 @@ def fit_mfl_vel(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, tlim
     # compute model velocities
     try:
         tbl = ps.vel.compute_vel_swd(name, path)
+        # print('tbl[time]= ', tbl['time'])
+        # print('tbl[vel]= ', tbl['vel'])
+        # print('Vnorm= ', Vnorm)
         # tbl = velocity.compute_vel_res_tt(name, path)
         vel_m = ps.vel.VelocityCurve('Vel', tbl['time'], tbl['vel'] / Vnorm)
         if vel_m is None:
@@ -945,7 +948,7 @@ def main():
                                                t_diff, tlim, is_sigma, A=args.tweight)
             vels_m[name] = vel_m
 
-        print("{}: time shift  = {:.2f}+/-{:.4f} Measure: {:.4f} {}".
+        print("{}: t    ime shift  = {:.2f}+/-{:.4f} Measure: {:.4f} {}".
               format(name, res.tshift, res.tsigma, res.measure, res.comm))
         # best_tshift = res.tshift
         res_models[name] = curves_m
@@ -980,9 +983,7 @@ def main():
                         res_chi[name] = res
                         print("[{}/{}] {:30s} -> {}".format(i, len(names), name, res.comm))
         else:
-            i = 0
-            for name in names:
-                i += 1
+            for i, name in enumerate(names, start=1):
                 txt = "Fitting [{}] for model {:30s}  [{}/{}]".format(fitter.Name, name, i, len(names))
                 if args.is_not_quiet:
                     print(txt)
@@ -1015,9 +1016,9 @@ def main():
 
     # print results
     print("\n Results (tshift in range:{:.2f} -- {:.2f}".format(dtshift[0], dtshift[1]))
-    print("{:40s} ||{:18s}|| {:10}".format('Model', 'dt+-t_err', 'Measure'))
-    for k, v in res_sorted.items():
-        print("{:40s} || {:7.2f}+/-{:7.4f} || {:.4f} || {}".format(k, v.tshift, v.tsigma, v.measure, v.comm))
+    print("N ||    {:40s} ||{:18s}|| {:10}".format('Model', 'dt+-t_err', 'Measure'))
+    for i, (k, v) in enumerate(res_sorted.items(), start=1):
+        print("{} || {:40s} || {:7.2f}+/-{:7.4f} || {:.4f} || {}".format(i, k, v.tshift, v.tsigma, v.measure, v.comm))
 
     if len(res_sorted) >= n_best:
         # plot chi squared

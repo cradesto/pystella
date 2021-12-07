@@ -82,6 +82,7 @@ class FitMPFit(FitLc):
         return fit_result
 
     def fit_tss(self, tss_m, tss_o, A=0.):
+        # print('result: ', result)
 
         result = self.best_time_series(tss_m, tss_o, At=A, is_debug=self.is_debug, is_info=self.is_info)
 
@@ -177,35 +178,67 @@ class FitMPFit(FitLc):
 
     @staticmethod
     def best_time_series(tss_m, tss_o, At=0., is_debug=False, is_info=True, xtol=1e-10, ftol=1e-10, gtol=1e-10):
+        # print('Input tss_o:')
+        # for ts in tss_o:
+        #     print(ts.Name, ts.Time, ts.V)
+        # print('Input tss_m:')
+        # for ts in tss_m:
+        #     print(ts.Name, ts.Time, ts.V)
+
         def least_sq(p, fjac):
+            dt, sigs = p
+            # print('dt, sigs = ',dt, sigs)
             E = 0.01
             total = []
             for ts_m in tss_m:
                 ts_o = tss_o[ts_m.Name]
-                ts_o.tshift = p[0]
-                sigma = p[1]
+                # ts_o.tshift = dt
+                sigma = sigs
                 # model interpolation
                 # check = np.where((ts_o.Time > min(ts_m.Time)) & (ts_o.Time < max(ts_m.Time)))
                 # check = range(1, len(ts_o.Time))
                 # time_o = ts_o.Time[check]
                 # V_o = ts_o.V[check]
-                time_o = ts_o.Time
+                time_o = ts_o.Time 
                 V_o = ts_o.V
 
-                m = np.interp(time_o, ts_m.Time, ts_m.V)  # One-dimensional linear interpolation.
+                m = np.interp(time_o, ts_m.Time+dt, ts_m.V)  # One-dimensional linear interpolation.
+                # if 'Vel' in ts_m.Name:
+                #     print(ts_o.Name, ts_o.tshift, ts_o.Time, ts_o.V)
+                #     print(ts_m.Name, ts_m.tshift, ts_m.Time, ts_m.V)
+                # print('time_o, m: ', time_o, m)
                 # sigma = sigma
-                w = np.abs(1. - At * (time_o - min(time_o)) / (max(time_o) - min(time_o)))  # weight
-                err_m = np.sqrt(np.sum((V_o - m) ** 2) / len(m))
-                # err_m = abs(V_o - m)
+                # w = 1.
+                # if At > 0:
+                #     w = np.abs(1. - At * (time_o - min(time_o)) / (max(time_o) - min(time_o)))  # weight
+                # err_m = np.sqrt(np.sum((V_o - m) ** 2) / len(m))
+                # # err_m = abs(V_o - m)
+                # if ts_o.IsErr:
+                #     # err_o = ts_o.Err[check]
+                #     # res = np.abs((V_o - m) / (abs(m)*E + err_o)) * w
+                #     res = np.abs((V_o - m) / (err_m + ts_o.Err)) * w
+                #     # res = np.abs((V_o - m) / (err_m + ts_o.Err+sigma)) * w
+                #     # res = np.abs(V_o - m) * w
+                # else:
+                #     res = np.abs(V_o - m) * w
+
+                em = sigs
+                diff = ts_o.V - m
+                sig = np.ones(ts_o.Length) * em
                 if ts_o.IsErr:
-                    # err_o = ts_o.Err[check]
-                    # res = np.abs((V_o - m) / (abs(m)*E + err_o)) * w
-                    res = np.abs((V_o - m) / (err_m + ts_o.Err)) * w
-                    # res = np.abs((V_o - m) / (err_m + ts_o.Err+sigma)) * w
-                    # res = np.abs(V_o - m) * w
-                else:
-                    res = np.abs(V_o - m) * w
-                total = np.append(total, res)
+                    sig = np.sqrt(em ** 2 + ts_o.Err ** 2)
+
+                    # err_m = np.sqrt(np.sum(diff ** 2) / len(m))
+                inv_sigma2 = 1. / sig ** 2
+                chi = np.sqrt(np.abs(diff ** 2 * inv_sigma2 - np.log(inv_sigma2) + np.log(2 * np.pi)))
+                # chi = np.sum(diff**2 * inv_sigma2 - np.log(inv_sigma2)) + np.log(2 * np.pi) * len(diff)
+                # chi = np.sum(diff**2 * inv_sigma2 - np.log(inv_sigma2) + np.log(2 * np.pi))
+                # chi = diff / sig #+ np.log(sig*np.pi)/lc_o.Length
+                # chi += fjac[0]
+                # chi = np.ones(lc_o.Length) * chi
+                total = np.append(total, chi)
+
+                # total = np.append(total, res)
             return 0, total
 
         # parinfo = [{'value': 0., 'limited': [1, 1], 'limits': [-250., 250.]}]
@@ -213,10 +246,14 @@ class FitMPFit(FitLc):
                    {'value': 0.001, 'limited': [1, 1], 'limits': [0.001, 3.]}]
         result = mpfit.mpfit(least_sq, parinfo=parinfo, quiet=not is_debug, maxiter=200,
                              ftol=ftol, gtol=gtol, xtol=xtol)
+               
         if is_info:
             print("status: ", result.status)
             if result.status <= 0:
+                print('status = ', result.status)
                 print('error message = ', result.errmsg)
+                print('parameters = ', result.params)
+                raise ValueError(result.errmsg)
             elif result.status == 5:
                 print('Maximum number of iterations exceeded in mangle_spectrum')
             else:

@@ -406,6 +406,7 @@ Perform Levenberg-Marquardt least-squares minimization, based on MINPACK-1.
    Converted from Numeric to numpy (Sergey Koposov, July 2008)
 """
 
+from os import walk
 import numpy
 import types
 import scipy.linalg.blas  # lib.blas
@@ -1315,6 +1316,10 @@ class mpfit:
                     errmsg = ('''ERROR: parameter or function value(s) have become
 						'infinite; check model function for over- 'and underflow''')
                     self.status = -16
+                    print('wa1= ', wa1)
+                    print('wa2= ', wa2)
+                    print('x= ', x)
+                    print('ratio= ', ratio)
                     break
                     # wh = where(finite(wa1) EQ 0 OR finite(wa2) EQ 0 OR finite(x) EQ 0, ct)
                     # if ct GT 0 OR finite(ratio) EQ 0 then begin
