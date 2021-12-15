@@ -426,32 +426,28 @@ class PreSN(object):
             gs1.update(wspace=0.1, hspace=0.1, top=0.97, left=0.12, right=0.87)
             ax = fig.add_subplot(gs1[0, 0])
 
-            if is_new_plot:
-                if x == 'rsun':
-                    ax.set_xlabel(r'R [$R_\odot$]')
-                elif x == 'm':
-                    ax.set_xlabel(r'M [$M_\odot$]')
-                elif x == 'v':
-                    ax.set_xlabel(r'V [$km\, s^{-1}$]')
-                elif x == 'z':
-                    ax.set_xlabel(r'Zone')
-                else:
-                    ax.set_xscale('log')
-                    ax.set_xlabel(r'R [cm]')
-
         is_x_lim = xlim is not None
         is_y_lim = ylim is not None
 
         if x == 'rsun':
             x = self.r / phys.R_sun
+            ax.set_xlabel(r'R [$\mathrm{R}_\odot$]')
+        elif x == 'lgr':
+            x = self.r
+            ax.set_xscale('log')
+            ax.set_xlabel(r'R [cm]')
         elif x == 'm':
             x = self.m / phys.M_sun
+            ax.set_xlabel(r'M [$\mathrm{M}_\odot$]')
         elif x == 'v':
             x = self.V / 1e5  # to km/s
+            ax.set_xlabel(r'V [$km\, s^{-1}$]')
         elif x == 'z':  # zones
             x = np.arange(0, stop=self.nzon, dtype=np.int) + 1
+            ax.set_xlabel(r'Zone')
         else:
             x = self.r
+            ax.set_xlabel(r'R [cm]')
 
         y_min = []
         y_max = []
@@ -553,29 +549,33 @@ class PreSN(object):
             ax = fig.add_subplot(gs1[0, 0])
             ax.set_ylabel(r'$\rho, [g/cm^3]$ ')
 
-            if x == 'r':
-                ax.set_xlabel(r'R [cm]')
-            elif x == 'm':
-                ax.set_xlabel(r'M [$M_\odot$]')
-            elif x == 'v':
-                ax.set_xlabel(r'V [$km\, s^{-1}$]')
-            elif x == 'z':
-                ax.set_xlabel(r'Zone')
-            else:
-                ax.set_xscale('log')
-                ax.set_xlabel(r'R [cm]')
+            # if x == 'r':
+            #     ax.set_xlabel(r'R [cm]')
+            # elif x == 'm':
+            #     ax.set_xlabel(r'M [$M_\odot$]')
+            # elif x == 'v':
+            #     ax.set_xlabel(r'V [$km\, s^{-1}$]')
+            # elif x == 'z':
+            #     ax.set_xlabel(r'Zone')
+            # else:
+            #     ax.set_xscale('log')
+            #     ax.set_xlabel(r'R [cm]')
 
         is_x_lim = xlim is not None
         is_y_lim = ylim is not None
 
         if x == 'm':
             xi = self.m / phys.M_sun * xnorm
+            ax.set_xlabel(r'M [$\mathrm{M}_\odot$]')
         elif x == 'v':
             xi = self.V * xnorm
+            ax.set_xlabel(r'V [$km\, s^{-1}$]')
         elif x == 'z':
             xi = np.arange(0, self.nzon, dtype=np.int) + 1
+            ax.set_xlabel(r'Zone')
         else:
             xi = self.r * xnorm
+            ax.set_xlabel(r'R [cm]')
 
         y = self.rho
         ax.semilogy(xi, y, color=color, ls=ls, linewidth=lw,
@@ -632,7 +632,7 @@ class PreSN(object):
         set_ylim(axR, ylimChem)
 
         self.plot_chem(ax=axM, x='m', elements=elements)
-        axM.set_xlabel(r'$M, M_\odot$')
+        # axM.set_xlabel(r'$M [M_\odot$')
         axM.set_ylabel(r'$X_i$')
         set_xlim(axM, xlimM)
         set_ylim(axM, ylimChem)
@@ -645,7 +645,7 @@ class PreSN(object):
         set_ylim(axRhoR, ylimRho)
 
         self.plot_rho(ax=axRhoM, x='m')
-        axRhoM.set_xlabel(r'$M, M_\odot$')
+        # axRhoM.set_xlabel(r'$M, M_\odot$')
         axRhoM.set_ylabel(r'$\rho, g/cm^3$')
         set_xlim(axRhoM, xlimM)
         set_ylim(axRhoM, ylimRho)
