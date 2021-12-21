@@ -42,7 +42,9 @@ def m_mu(x):
 
 
 def get_parser():
-    parser = argparse.ArgumentParser(description='Process light curve fitting.')
+    from argparse import RawTextHelpFormatter
+
+    parser = argparse.ArgumentParser(description='Process light curve fitting.', formatter_class=RawTextHelpFormatter)
     print(" Observational data could be loaded with plugin, ex: -c lcobs:filedata:tshift:mshift")
 
     parser.add_argument('-A', '--tweight',
@@ -109,7 +111,7 @@ def get_parser():
                         default=False,
                         const=True,
                         dest="is_not_quiet",
-                        help="Result with additional information"),\
+                        help="Result with additional information"), \
     parser.add_argument('--sigma',
                         action='store_const',
                         default=False,
@@ -179,10 +181,10 @@ def plot_curves(curves_o, res_models, res_sorted, **kwargs):
     num = len(res_sorted)
     # nrow = int(num / 2.1) + 1
     # ncol = 2 if num > 1 else 1
-    ncol = min(4, int(np.sqrt(num)))  # 2 if num > 1 else 1
+    ncol = min(3, int(np.sqrt(num)))  # 2 if num > 1 else 1
     nrow = math.ceil(num / ncol)
     # fig = plt.figure(figsize=(12, nrow * 4))
-    fig = plt.figure(figsize=(min(ncol, 2)*5, max(nrow, 2)*4))
+    fig = plt.figure(figsize=(min(ncol, 2) * 5, max(nrow, 2) * 5))
     plt.matplotlib.rcParams.update({'font.size': font_size})
 
     # tshift0 = ps.first(curves_o).tshift
@@ -201,7 +203,7 @@ def plot_curves(curves_o, res_models, res_sorted, **kwargs):
             ax.set_xlim(xlim)
         lt = {lc.Band.Name: 'o' for lc in curves_o}
         # curves_o.set_tshift(tshift0)
-        lcp.curves_plot(curves_o, ax, xlim=xlim, lt=lt, markersize=4, is_legend=False, is_line=False)
+        lcp.curves_plot(curves_o, ax, xlim=xlim, lt=lt, markersize=2, is_legend=False, is_line=False)
 
         ax.text(0.99, 0.94, k, horizontalalignment='right', transform=ax.transAxes)
         ax.text(0.98, 0.85, "{} dt={:.2f}".format(i, tshift_best), horizontalalignment='right', transform=ax.transAxes)
@@ -246,7 +248,7 @@ def plot_curves_vel(curves_o, vels_o, res_models, res_sorted, vels_m, **kwargs):
 
     font_size = kwargs.get('font_size', 10)
     linewidth = kwargs.get('linewidth', 2.0)
-    markersize = kwargs.get('markersize', 5)
+    markersize = kwargs.get('markersize', 3)
     xlim = kwargs.get('xlim', None)
 
     ylim = None
@@ -282,7 +284,7 @@ def plot_curves_vel(curves_o, vels_o, res_models, res_sorted, vels_m, **kwargs):
             curves_o.set_tshift(tshift_lc + tshift_best)
             if xlim is None:
                 xlim = axUbv.get_xlim()
-            lcp.curves_plot(curves_o, axUbv, xlim=xlim, lt=lt, markersize=2, is_legend=False, is_line=False)
+            lcp.curves_plot(curves_o, axUbv, xlim=xlim, lt=lt, markersize=3, is_legend=False, is_line=False)
             # legend
             axUbv.legend(curves.BandNames, loc='lower right', frameon=False, ncol=min(5, len(curves.BandNames)),
                          fontsize='small', borderpad=1)
@@ -721,7 +723,7 @@ def fit_mfl(args, curves_o, bnames, fitter, name, path, t_diff, tlim, is_fit_sig
     return curves_m, fit_result, res
 
 
-def fit_mfl_vel(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, tlim, Vnorm=1e8, A=0.):
+def fit_mfl_vel(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, tlim, is_sigma, Vnorm=1e8, A=0.):
     distance = args.distance  # pc
     z = args.redshift
     # Set distance and redshift
@@ -760,6 +762,9 @@ def fit_mfl_vel(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, tlim
     # compute model velocities
     try:
         tbl = ps.vel.compute_vel_swd(name, path)
+        # print('tbl[time]= ', tbl['time'])
+        # print('tbl[vel]= ', tbl['vel'])
+        # print('Vnorm= ', Vnorm)
         # tbl = velocity.compute_vel_res_tt(name, path)
         vel_m = ps.vel.VelocityCurve('Vel', tbl['time'], tbl['vel'] / Vnorm)
         if vel_m is None:
@@ -819,7 +824,7 @@ def arg2names(arg, path, ext):
             nm = os.path.splitext(os.path.basename(f))[0]
             if os.path.exists(os.path.join(path, nm + ext)):
                 names.append(nm)
-                print('input: {}'.format(nm+ext))
+                print('input: {}'.format(nm + ext))
     return names
 
 
@@ -943,7 +948,7 @@ def main():
                                                t_diff, tlim, is_sigma, A=args.tweight)
             vels_m[name] = vel_m
 
-        print("{}: time shift  = {:.2f}+/-{:.4f} Measure: {:.4f} {}".
+        print("{}: t    ime shift  = {:.2f}+/-{:.4f} Measure: {:.4f} {}".
               format(name, res.tshift, res.tsigma, res.measure, res.comm))
         # best_tshift = res.tshift
         res_models[name] = curves_m
@@ -978,9 +983,7 @@ def main():
                         res_chi[name] = res
                         print("[{}/{}] {:30s} -> {}".format(i, len(names), name, res.comm))
         else:
-            i = 0
-            for name in names:
-                i += 1
+            for i, name in enumerate(names, start=1):
                 txt = "Fitting [{}] for model {:30s}  [{}/{}]".format(fitter.Name, name, i, len(names))
                 if args.is_not_quiet:
                     print(txt)
@@ -989,7 +992,8 @@ def main():
                     sys.stdout.flush()
 
                 if vels_o is None:
-                    curves_m, res, res_full = fit_mfl(args, curves_o, bnames, fitter, name, path, t_diff, tlim, is_sigma)
+                    curves_m, res, res_full = fit_mfl(args, curves_o, bnames, fitter, name, path, t_diff, tlim,
+                                                      is_sigma)
                 else:
                     curves_m, res, vel_m = fit_mfl_vel(args, curves_o, vels_o, bnames, fitter, name, path,
                                                        t_diff, tlim, is_sigma, A=args.tweight)
@@ -1012,9 +1016,9 @@ def main():
 
     # print results
     print("\n Results (tshift in range:{:.2f} -- {:.2f}".format(dtshift[0], dtshift[1]))
-    print("{:40s} ||{:18s}|| {:10}".format('Model', 'dt+-t_err', 'Measure'))
-    for k, v in res_sorted.items():
-        print("{:40s} || {:7.2f}+/-{:7.4f} || {:.4f} || {}".format(k, v.tshift, v.tsigma, v.measure, v.comm))
+    print("N ||    {:40s} ||{:18s}|| {:10}".format('Model', 'dt+-t_err', 'Measure'))
+    for i, (k, v) in enumerate(res_sorted.items(), start=1):
+        print("{} || {:40s} || {:7.2f}+/-{:7.4f} || {:.4f} || {}".format(i, k, v.tshift, v.tsigma, v.measure, v.comm))
 
     if len(res_sorted) >= n_best:
         # plot chi squared

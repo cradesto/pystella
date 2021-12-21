@@ -79,8 +79,10 @@ def make_cartoon(swd, times, vnorm, rnorm, lumnorm, is_legend, fout=None):
 
 def get_parser(times='1:4:15:65', bnames='U:B:V:R', tau_ph=2. / 3):
     import argparse
+    from argparse import RawTextHelpFormatter
 
-    parser = argparse.ArgumentParser(description='Process Stella Shock Wave Details.')
+    parser = argparse.ArgumentParser(description='Process Stella Shock Wave Details.',
+                                     formatter_class=RawTextHelpFormatter)
     parser.add_argument('-b', '--band',
                         nargs='?',
                         required=False,

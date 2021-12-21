@@ -97,7 +97,7 @@ def load(dic=None, colt=('time', 'JD', 'MJD')):
     if len(arg) > 0:
         vshift = float(arg.pop(0))
 
-    print("Load {0} tshift={1}  mshift={2}".format(fname, tshift, vshift))
+    print("Load {0} tshift={1}  vshift={2}".format(fname, tshift, vshift))
 
     # read data
     # tbl = read_table_header_float(fname)

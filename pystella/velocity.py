@@ -89,6 +89,8 @@ class VelocityCurve(TimeSeries):
         new = VelocityCurve(name, t, v, errs)
         new.tshift = self.tshift
         new.vshift = self.vshift
+        # print('OLD V: ', self.Time, self.V, (self.tshift, self.vshift))
+        # print('NEW V: ', new.Time, new.V, (new.tshift, new.vshift))
         return new
 
 

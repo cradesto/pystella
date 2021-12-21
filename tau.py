@@ -147,7 +147,9 @@ def plot_tau_phot(tau_data, pars, tau_ph, xlim=None, title='', bnames=None):
 
 
 def get_parser(times='0.1:1:10:25:65', bnames='U:B:V:R'):
-    parser = argparse.ArgumentParser(description='Standard Candle Method.')
+    from argparse import RawTextHelpFormatter
+
+    parser = argparse.ArgumentParser(description='Standard Candle Method.', formatter_class=RawTextHelpFormatter)
     print(" Plot the tau-wave diagram for STELLA models")
     parser.add_argument('-b', '--band',
                         nargs='?',
