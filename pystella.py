@@ -4,10 +4,11 @@
 import os
 import readline
 import subprocess
-import shlex
+import multiprocessing as mp
+# import shlex
 from cmd import Cmd
 from os.path import dirname
-import argparse
+# import argparse
 
 import numpy as np
 
@@ -65,6 +66,18 @@ class MyPrompt(HistConsole):
                     res = res.replace(s, v)
         return res
 
+    @staticmethod
+    def is_set_proc():
+        """
+        Return True if set 'proc'
+        To detach the command process 
+        """
+        # if len(MyPrompt.options) > 0:
+        #     for k, v in MyPrompt.options.items():
+        #         if 'proc' in k:
+        #             return True
+        return 'proc' in MyPrompt.options
+
     def bad_insert_options(line):
         words = line.split()
         keys = [w[1:] for w in words if w.startswith('$')]
@@ -90,6 +103,8 @@ class MyPrompt(HistConsole):
         Run 'set' without arguments to see the current options: pystella>set
         You may set  many options separating them via semicolon ;
            pystella>set ebv=0.07; mdl= cR500M20Ni06_3eps
+        
+        Set 'proc' to run commands in seperated proccesses. Use Cntr+D to go next cmd.
         To remove name: pystella>set name= None
         """
         if not args:
@@ -119,22 +134,40 @@ class MyPrompt(HistConsole):
 
     @staticmethod
     def call_cmd(script, args, is_proc=False, is_shell=True):
+        import multiprocessing
+
+        def run_script():
+            print('process: id {}  parent {}'.format(os.getpid(), os.getppid()))
+            subprocess.call(command, shell=is_shell)
+            # with subprocess.Popen([command], bufsize=1, shell=True) as p:
+            #     stdout, stderr = p.communicate()
+            #     for line in stdout:
+            #         print(line, end='')
+            #     print("")
+
+        command = "{0} {1}".format(script, args).strip()
+        if '$' in command:
+            # print(command)
+            command = MyPrompt.insert_options(command)
+            print(f">>> {command}")
         # print(args, is_proc)
+        is_proc = is_proc or MyPrompt.is_set_proc()
+
         if is_proc:
-            print(f'Detach thread. script= {script}')
-            print(f'   args.strip()= {args.strip()}')
-            with subprocess.Popen([script, args.strip()], stdout=subprocess.PIPE, bufsize=1,
-                                  shell=True,
-                                  universal_newlines=True) as p:
-                stdout, stderr = p.communicate()
-                for line in stdout:
-                    print(line, end='')
+            # print(f'Detach thread')
+            # print('process id:', os.getpid())
+            # print(f'Detach thread. script= {command}')
+            # print(f'   args.strip()= {args.strip()}')
+            p = mp.Process(target=run_script)
+            p.start()
+
+            # with subprocess.Popen([script, args], stdout=subprocess.PIPE, bufsize=1,
+            #                       shell=True,
+            #                       universal_newlines=True) as p:
+            #     stdout, stderr = p.communicate()
+            #     for line in stdout:
+            #         print(line, end='')
         else:
-            command = "{0} {1}".format(script, args).strip()
-            if '$' in command:
-                # print(command)
-                command = MyPrompt.insert_options(command)
-                print(f">>> {command}")
             subprocess.call(command, shell=is_shell)
 
     @staticmethod
@@ -329,6 +362,8 @@ class MyPrompt(HistConsole):
 
 
 if __name__ == '__main__':
+    # mp.set_start_method('spawn')
+
     prompt = MyPrompt()
     prompt.prompt = '\x01\u001b[35m\x02' + 'pystella>' + '\x01\u001b[0m\x02'
     # prompt.prompt = '\x1b[1;35;47m' + 'pystella>' + '\x1b[0m'

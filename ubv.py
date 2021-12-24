@@ -11,7 +11,7 @@ import pystella as ps
 import logging
 
 mpl_logger = logging.getLogger('matplotlib')
-mpl_logger.setLevel(logging.WARNING)
+mpl_logger.setLevel(logging.ERROR)
 
 __author__ = 'bakl'
 

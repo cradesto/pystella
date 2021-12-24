@@ -12,7 +12,7 @@ try:
     import matplotlib.lines as mlines
 
     mpl_logger = logging.getLogger('matplotlib')
-    mpl_logger.setLevel(logging.WARNING)
+    mpl_logger.setLevel(logging.ERROR)
 except ImportError as ex:
     import os
     import sys
@@ -268,7 +268,7 @@ def main():
             start, end = get(a, 3, 0), get(a, 4, None)
             kind = get(a, 5, 'np')
             start = int(start)
-            if end.upper() in 'NONE':
+            if end is None or end.upper() in 'NONE':
                 end = None
             if end is not None:
                 end = int(end)
