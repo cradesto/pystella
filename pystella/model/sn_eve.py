@@ -300,7 +300,7 @@ class PreSN(object):
         if norm is None:
             norm = sum(self.abund(k))
         for e in self.Elements:
-            self._data_chem[e][k - 1] = self.el(e)[k - 1] / norm
+            self._data_chem[e][k-1] = self.el(e)[k-1] / norm
 
     def el(self, el):
         """
@@ -957,6 +957,7 @@ class PreSN(object):
             #    new = interp(xxx, xx, old, s=start, e=end, kind=kind)
             newPreSN.set_hyd(vv, new)
             # print(f'{vv} before: old[{len(xx)}-1]= {old[len(xx)-2]:12.7e} new[{len(xxx)}-1]= {new[len(xxx)-2]:12.7e}')
+            print(f'{vv} before: old[0]= {old[0]:12.7e} new[0]= {new[0]:12.7e}')
             print(f'{vv} before: old[{len(xx)}]= {old[len(xx) - 1]:12.7e} new[{len(xxx)}]= {new[len(xxx) - 1]:12.7e}')
             # print(f'\n{vv} before: {len(xx)}')
             # pprint(list(zip(range(1, len(xx)+1), xx, old)))

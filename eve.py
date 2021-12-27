@@ -118,7 +118,7 @@ def get_parser():
                              "\n NZON: value of zones between START and END. "
                              "If < 0 Nzon is the same as Nzon of the initial model "
                              "\n AXIS: [M* OR R OR V] - reshape along mass or radius or velocity coordinate."
-                             "\n XMODE: [lin OR rlog* OR resize] - linear OR reversed log10 OR add/remove points. "
+                             "\n XMODE: [lin OR rlog OR resize*] - linear OR reversed log10 OR add/remove points. "
                              "\n START: zone number to start reshaping. Default: 0 (first zone)"
                              "\n END: zone number to end reshaping. Default: None,  (equal last zone)"
                              "\n KIND: [np OR interp1d(..kind)], kind is  ('np=np.interp', 'linear', 'nearest', "
@@ -148,11 +148,11 @@ def get_parser():
                         default=False,
                         dest="save_plot",
                         help="save plot to pdf-file, default: False")
-    # parser.add_argument('-w', '--write',
-    #                     action='store_const',
-    #                     const=True,
-    #                     dest="is_write",
-    #                     help="To write the data to hyd-, abn-files")
+    parser.add_argument('--verb',
+                        action='store_const',
+                        const=True,
+                        dest="is_verb",
+                        help="To enable verbose output")
     parser.add_argument('-w', '--write',
                         required=False,
                         type=str,
@@ -373,6 +373,25 @@ def main():
                 if ax2 is None:
                     ax2 = ax.twinx()
                 ax2.legend(handles=handles_nm, loc=4, fancybox=False, frameon=False)
+
+            if args.is_verb:
+                m_tot = 0.
+                m_ni56 = 0.
+                print('{:22s}: '.format(eve.Name))   
+                for n, m in eve.mass_tot_el().items():
+                    m_tot += m
+                    print(f'{n} {m/phys.M_sun:.3e}')
+                print('  m_tot= {:6.3f}    m_tot(El)= {:6.3f} '.format(eve.m_tot/phys.M_sun, m_tot/phys.M_sun))   
+
+                # eve.chem_norm()
+
+                # print('{:22s} after Norm '.format(eve.Name))   
+                # for n, m in eve.mass_tot_el().items():
+                #     m_tot += m
+                #     print(f'{n} {m/phys.M_sun:.3e}')
+                # print('  m_tot= {:6.3f}    m_tot(El)= {:6.3f} '.format(eve.m_tot/phys.M_sun, m_tot/phys.M_sun))   
+
+                
 
     if not args.write_to:
         if args.save_plot:
