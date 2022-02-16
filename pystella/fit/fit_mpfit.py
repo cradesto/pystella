@@ -199,10 +199,10 @@ class FitMPFit(FitLc):
                 # check = range(1, len(ts_o.Time))
                 # time_o = ts_o.Time[check]
                 # V_o = ts_o.V[check]
-                time_o = ts_o.Time 
+                time_o = ts_o.Time
                 V_o = ts_o.V
 
-                m = np.interp(time_o, ts_m.Time+dt, ts_m.V)  # One-dimensional linear interpolation.
+                m = np.interp(time_o, ts_m.Time + dt, ts_m.V)  # One-dimensional linear interpolation.
                 # if 'Vel' in ts_m.Name:
                 #     print(ts_o.Name, ts_o.tshift, ts_o.Time, ts_o.V)
                 #     print(ts_m.Name, ts_m.tshift, ts_m.Time, ts_m.V)
@@ -246,7 +246,7 @@ class FitMPFit(FitLc):
                    {'value': 0.001, 'limited': [1, 1], 'limits': [0.001, 3.]}]
         result = mpfit.mpfit(least_sq, parinfo=parinfo, quiet=not is_debug, maxiter=200,
                              ftol=ftol, gtol=gtol, xtol=xtol)
-               
+
         if is_info:
             print("status: ", result.status)
             if result.status <= 0:
@@ -346,6 +346,10 @@ class FitMPFit(FitLc):
                 to, mo = lc_o.Time, lc_o.Mag
                 to -= dt
                 mo -= dm
+                # if to too large
+                cut = to <= np.max(lc_m.Time)
+                to = to[cut]
+                mo = mo[cut]
                 # model interpolation
                 if is_spline:
                     s = curves_m_spline[lc_m.Band.Name]
@@ -354,21 +358,32 @@ class FitMPFit(FitLc):
                     mm = np.interp(to, lc_m.Time, lc_m.Mag)  # One-dimensional linear interpolation.
                 #                w = np.ones(len(m))
                 # err_m = abs(min(m)-m) * err_mdl
-                w = np.ones_like(lc_o.Time) # weight
-                if lc_o.TimeMax - lc_o.TimeMin > 0:
-                    w = np.abs(1. - At * (lc_o.Time - lc_o.TimeMin) / (lc_o.TimeMax - lc_o.TimeMin))
+                w = np.ones_like(to)  # weight
+                # if max(to) - min(to) > 0:
+                #     w = np.abs(1. - At * (to -  min(to)) / (max(to) - min(to)))
                 diff = mo - mm
                 chi = diff * w
                 if lc_o.IsErr:
                     eo = np.copy(lc_o.MagErr)
-                    for i, e in enumerate(lc_o.MagErr):
+                    eo = eo[cut]
+                    # check
+                    if any(eo == 0):
+                        # one = np.array(range(len(eo)))
+                        one = np.arange(len(eo), dtype=int)
+                        check0 = eo == 0
+                        one = np.array(one[check0])
+                        msg = 'Error in band: {}. err_mag == 0 for lines: {}'.format(lc_m.Band.Name, ', '.join(map(str, one)))
+                        # print(msg)
+                        raise ValueError(msg)
+
+                    for i, e in enumerate(lc_o.MagErr[cut]):
                         # обработать вверхние и нижние пределы в наблюдениях
-                        if e == -1: # upper lim
+                        if e == -1:  # upper lim
                             if diff[i] > 0:
                                 eo[i] = magerr_uplim  # сильно увеличить вес моделей превышающих верхний предел
                             else:
                                 eo[i] = magerr_goodlim
-                        elif e == -2:   # down lim
+                        elif e == -2:  # down lim
                             if diff[i] > 0:
                                 eo[i] = magerr_downlim  # сильно увеличить вес моделей, проходящих ниже предела
                             else:
