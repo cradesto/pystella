@@ -112,6 +112,12 @@ def get_parser():
                         const=True,
                         dest="is_not_quiet",
                         help="Result with additional information"), \
+    parser.add_argument('--is_spline',
+                        action='store_const',
+                        default=False,
+                        const=True,
+                        dest="is_spline",
+                        help="Use spline to approximate obs. data. Default: np.interp"), \
     parser.add_argument('--sigma',
                         action='store_const',
                         default=False,
@@ -698,7 +704,7 @@ def plot_squared_3d(ax, res_sorted, path='./', p=('R', 'M', 'E'), is_rbf=True, *
         plt.show()
 
 
-def fit_mfl(args, curves_o, bnames, fitter, name, path, t_diff, tlim, is_fit_sigmas):
+def fit_mfl(args, curves_o, bnames, fitter, name, path, t_diff, tlim, is_fit_sigmas, is_spline=False):
     distance = args.distance  # pc
     z = args.redshift
     # Set distance and redshift
@@ -718,12 +724,13 @@ def fit_mfl(args, curves_o, bnames, fitter, name, path, t_diff, tlim, is_fit_sig
         curves_m = mdl.curves(bnames, z=z, distance=distance, ebv=args.color_excess,
                               t_beg=tlim[0], t_end=tlim[1], t_diff=t_diff)
 
-    fit_result, res, dum = fitter.best_curves(curves_m, curves_o, dt0=0., is_fit_sigmas=is_fit_sigmas)
+    fit_result, res, dum = fitter.best_curves(curves_m, curves_o, dt0=0.,
+                                              is_fit_sigmas=is_fit_sigmas, is_spline=is_spline)
 
     return curves_m, fit_result, res
 
 
-def fit_mfl_vel(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, tlim, is_sigma, Vnorm=1e8, A=0.):
+def fit_mfl_vel(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, tlim, is_sigma, is_spline=False, Vnorm=1e8, A=0.):
     distance = args.distance  # pc
     z = args.redshift
     # Set distance and redshift
@@ -960,13 +967,14 @@ def main():
             with futures.ProcessPoolExecutor(max_workers=args.nodes) as executor:
                 if vels_o is None:
                     future_to_name = {
-                        executor.submit(fit_mfl, args, curves_o, bnames, fitter, n, path, t_diff, tlim, is_sigma):
+                        executor.submit(fit_mfl, args, curves_o, bnames, fitter, n, path, t_diff, tlim,
+                                        is_sigma, is_spline=args.is_spline):
                             n for n in names
                     }
                 else:
                     future_to_name = {
                         executor.submit(fit_mfl_vel, args, curves_o, vels_o, bnames, fitter,
-                                        n, path, t_diff, tlim, is_sigma):
+                                        n, path, t_diff, tlim, is_sigma, is_spline=args.is_spline):
                             n for n in names
                     }
 
@@ -993,10 +1001,11 @@ def main():
 
                 if vels_o is None:
                     curves_m, res, res_full = fit_mfl(args, curves_o, bnames, fitter, name, path, t_diff, tlim,
-                                                      is_sigma)
+                                                      is_sigma, is_spline=args.is_spline)
                 else:
                     curves_m, res, vel_m = fit_mfl_vel(args, curves_o, vels_o, bnames, fitter, name, path,
-                                                       t_diff, tlim, is_sigma, A=args.tweight)
+                                                       t_diff, tlim, is_sigma,
+                                                       is_spline=args.is_spline, A=args.tweight)
                     vels_m[name] = vel_m
                 res_models[name] = curves_m
                 res_chi[name] = res
