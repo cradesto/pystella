@@ -256,7 +256,8 @@ class Spectrum(object):
         star.set_redshift(z)
         star.set_magnification(magnification)
         # mag = star.flux_to_mag(b)
-        if b.Name in [band.Band.NameBol, band.Band.NameBolQuasi, band.Band.NameUBVRI]:
+        if b.Name in [band.Band.NameBol, band.Band.NameBolQuasi, 
+                      band.Band.NameUBVRI, band.Band.NameBVRI]:
             mag = star.magBol(b)
         else:
             mag = star.magAB(b)
@@ -640,14 +641,22 @@ class SeriesSpectrum(object):
         lc.attrs('magnification', magnification)
         return lc
 
-    def flux_to_curves(self, bands, z=0., d=phys.pc2cm(10.), magnification=1.):
+    def flux_to_curves(self, bands, z: float=0., d: float=phys.pc2cm(10.),
+                       magnification: float=1.):
         """
+        Compute the light curves for bands using the spectral data.
 
-        :param bands:
-        :param z:
-        :param d:
-        :param magnification:
-        :return:
+        Parameters
+        ----------
+            - bands: broadbands 
+            - z: redshift. Default: 0
+            - d: distance [cm]. Default: 10 pc in cm
+            - magnification: lens magnification. Default: 1 
+        
+        Returns
+        -------
+
+            SetLightCurve
         """
         from pystella.rf.lc import SetLightCurve
         from pystella.rf import band
