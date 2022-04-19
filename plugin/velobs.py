@@ -8,6 +8,27 @@ import pystella.util.reader_table as rtbl
 from pystella import first
 from pystella.velocity import VelocityCurve, SetVelocityCurve
 
+def vels_plot(vels, ax, fname='', **kwargs):
+    marker = kwargs.get('marker', 'o')
+    markersize = kwargs.get('markersize', 9)
+    color = kwargs.get('color', None)
+    vnorm = kwargs.get('vnorm', 1e8)
+
+    if type(ax) is tuple:
+        ax = ax[1]
+
+    for vel_o in vels:
+        x = vel_o.Time
+        y = vel_o.Vel / vnorm
+        print('{0} {1}'.format(vel_o.Name, fname), y)
+        if vel_o.IsErr:
+            yyerr = abs(vel_o.Err) / vnorm
+            ax.errorbar(x, y, label='{0} {1}'.format(vel_o.Name, fname), yerr=yyerr, fmt=marker,
+                        color=color, ls='')
+        else:
+            ax.plot(x, y, label='{0} {1}'.format(vel_o.Name, fname), color=color, ls='',
+                    marker=marker, markersize=markersize)
+
 
 def plot(ax, dic=None, colt=('time', 'JD', 'MJD')):
     """
@@ -24,10 +45,9 @@ def plot(ax, dic=None, colt=('time', 'JD', 'MJD')):
     fname = dic.get('fname', None)
     tshift = dic.get('tshift', 0.)
     vshift = dic.get('vshift', 1e8)  # default in units of 1000 km/s
-    marker = dic.get('marker', 'o')
-    markersize = dic.get('markersize', 9)
-    color = dic.get('color', 'blue')
     is_load = dic.get('is_load', True)
+    marker = dic.get('marker', 'o')
+
 
     arg = dic.get('args', [])
     if len(arg) > 0:
@@ -45,22 +65,15 @@ def plot(ax, dic=None, colt=('time', 'JD', 'MJD')):
     # read data
     if is_load:
         vels = load({'args': [fname, tshift, vshift]}, colt=colt)
-        vel_o = first(vels)
+        # vel_o = first(vels)
     else:
         tbl, cols_data = rtbl.read_obs_table_header(fname, is_out=True)
         vel_o = tbl2vel(tbl, cname, colt, vshift)
         vel_o.tshift = tshift
+        vels_o = SetVelocityCurve("Vel-{}".format(fname))
+        vels_o.add(vel_o)
 
-    x = vel_o.Time
-    y = vel_o.Vel / 1e8
-
-    if vel_o.IsErr:
-        yyerr = abs(vel_o.Err)
-        ax.errorbar(x, y, label='{0} {1}'.format(vel_o.Name, fname), yerr=yyerr, fmt=marker,
-                    color=color, ls='')
-    else:
-        ax.plot(x, y, label='{0} {1}'.format(vel_o.Name, fname), color=color, ls='',
-                marker=marker, markersize=markersize)
+    vels_plot(vels, ax, fname=fname, **dic)
 
 
 def load(dic=None, colt=('time', 'JD', 'MJD')):
@@ -72,6 +85,7 @@ def load(dic=None, colt=('time', 'JD', 'MJD')):
         dic = {}
     is_debug = dic.get('is_debug', False)
     cnames = ('Vel', 'vHeI', 'vFeII', 'vHa', 'vHb', 'vHg')
+    cnames += ('vFe4924', 'vFe5018', 'vFe5169')
     # cnames = ('Vel', 'vHeI', 'vFeII', 'vHa', 'vHb', 'vHg', 'Vel*', 'vel*', )
     cpatterns = ('Vel*', 'vel*')
 
@@ -98,6 +112,7 @@ def load(dic=None, colt=('time', 'JD', 'MJD')):
         vshift = float(arg.pop(0))
 
     print("Load {0} tshift={1}  vshift={2}".format(fname, tshift, vshift))
+    # print("cnames: {0} }".format(cnames))
 
     # read data
     # tbl = read_table_header_float(fname)
