@@ -429,20 +429,20 @@ class PreSN(object):
         is_x_lim = xlim is not None
         is_y_lim = ylim is not None
 
-        if x == 'rsun':
+        if x.lower() == 'rsun':
             x = self.r / phys.R_sun
             ax.set_xlabel(r'R [$\mathrm{R}_\odot$]')
-        elif x == 'lgr':
+        elif x.lower() == 'lgr':
             x = self.r
             ax.set_xscale('log')
             ax.set_xlabel(r'R [cm]')
-        elif x == 'm':
+        elif x.lower() == 'm':
             x = self.m / phys.M_sun
             ax.set_xlabel(r'M [$\mathrm{M}_\odot$]')
-        elif x == 'v':
+        elif x.lower() == 'v':
             x = self.V / 1e5  # to km/s
             ax.set_xlabel(r'V [$km\, s^{-1}$]')
-        elif x == 'z':  # zones
+        elif x.lower() == 'z':  # zones
             x = np.arange(0, stop=self.nzon, dtype=np.int) + 1
             ax.set_xlabel(r'Zone')
         else:
