@@ -358,7 +358,7 @@ class PreSN(object):
         logger.info(' Write hyd-data to %s' % fname)
         zones = range(1, self._nzon + 1)
         with open(fname, 'w') as f:
-            f.write('{:12.3e} {:6d} {:13.5e} {:13.5e} {:13.5e}\n'
+            f.write('{:12.3e} {:6d} {:13.2e} {:13.5e} {:13.5e}\n'
                     .format(self.time_start, self.nzon, self.m_core / phys.M_sun, self.r_cen, self.rho_cen))
             # a = '#No. Mr  dM  R  dR  Rho PRE T   V'.split()
             # f.write('           '.join(a)+'\n')
@@ -808,7 +808,7 @@ class PreSN(object):
         # newPreSN.copy_par(self, keys=['time_start', 'm_tot'])
         return newPreSN
 
-    def reshape(self, nz: int, name=None, start: int = 0, end=None, axis=sM, xmode='resize', kind='np'):
+    def reshape(self, nz: int, name=None, start: int = 0, end: int = None, axis: str = sM, xmode: str = 'resize', kind='np'):
         """
         Reshape parameters of envelope from nstart to nend to nz-zones
         :param nz: new zones
@@ -856,6 +856,10 @@ class PreSN(object):
             dif = np.diff(x)
             idx = np.argmin(dif)
             xn = np.delete(x, idx + 1)
+            if idx+2 == len(x):
+                print('         Remove right point {} {:.8e} [dx= {:.8e}] '.format(idx+1, x[idx + 1], dif[idx]))
+            else:
+                print('         Remove point {} {:.8e} [dx= {:.8e}] next: {:.8e}'.format(idx+1, x[idx + 1], dif[idx], x[idx + 2]))  
             return xn
 
         def resize_points(x, n: int, mode: str = 'lin'):
@@ -925,6 +929,7 @@ class PreSN(object):
             name = self.Name
 
         newPreSN = PreSN(name, nznew, elements=self.Elements)
+
         if end is None:
             end = self.nzon
 
@@ -943,8 +948,10 @@ class PreSN(object):
         xx = xx / max(abs(xx))  # norm
         xxx = x_reshaped(xx, nz)
         if np.any(np.diff(xxx) < 0.):
-            print('ERROR:', xxx)
-            raise ValueError('Some of {} elements is < 0.'.format(len(xxx)))
+            for i, dx in enumerate(np.diff(xxx)):
+                if dx <= 0:
+                    print("ERROR reshaped: {} xxx= {}  dx= {} ".format(i, xxx[i], dx))
+            raise ValueError('The interval beetween some of {} elements is < 0.'.format(len(xxx)))
 
         # from pprint import pprint
 
@@ -978,9 +985,6 @@ class PreSN(object):
 
         # copy parameters
         newPreSN.copy_par(self)  # keys=['time_start', 'm_tot',  'm_core', 'r_cen'])
-        # for p in ['time_start', 'm_tot',  'm_core', 'r_cen']:
-        #     v = getattr(self, p)
-        #     newPreSN.set_par(p, v)
 
         return newPreSN
 
@@ -998,12 +1002,13 @@ class PreSN(object):
 
         return presn
 
-    def boxcar(self, box_dm: float = 0.5, n: int = 4, el_included=None, is_info: bool = False):
+    def boxcar(self, box_dm: float = 0.5, n: int = 4, el_included=None, m_uplim: float=np.inf, is_info: bool = False):
         """
         The function runs a boxcar average to emulate the mixing of chemical composition.
         :param box_dm: float. The boxcar width. Default value is 0.5 Msun.
         :param n: int. The number of repeats. Default value is 4
         :param el_included: the tuple of included elements. If None = all elements are included. Default: None
+        :param m_uplim: float. The mass limit from above. Default value is np.inf
         :param is_info: bool. Prints some debug information. Default value is False
         """
         clone = self.clone()
@@ -1011,6 +1016,8 @@ class PreSN(object):
         #     abun = np.zeros((clone.nzon, len(clone.Elements)))
         if el_included is None:
             el_included = clone.Elements
+        if m_uplim is None:
+            m_uplim = np.inf
         m = clone.m / phys.M_sun
         dmass = np.diff(m)
         dmass = np.insert(dmass, -1, dmass[-1])
@@ -1020,6 +1027,10 @@ class PreSN(object):
             if is_info:
                 print(f'Attempt # {l}')
             for k in range(clone.nzon):
+                if m[k] > m_uplim:
+                    if is_info:
+                        print(f'Exit from zone cycle m[k] > m_uplim: k= {k} m= {m[k]:.4f} m_uplim= {m_uplim:.4f}')
+                    break #  stop because mass is over the limit
                 kk = k + 1
                 dm = dmass[k]
                 while dm < box_dm and kk <= clone.nzon:

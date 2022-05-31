@@ -57,7 +57,7 @@ def get_parser():
                         default=None,
                         dest='box',
                         help='Make boxcar average, for example: '
-                             'Delta_mass:Number:[True, if info], -b 0.5:4 . '
+                             'Delta_mass:Number:[M_uplim]:[True, if info], -b 0.5:4 . '
                              'Use key -e _ELEM [-e _Ni56]to exclude elements')
 
     parser.add_argument('-r', '--rho', nargs="?",
@@ -262,6 +262,7 @@ def main():
             rho_file = os.path.join(path, name + '.rho')
             eve = sneve.load_rho(rho_file)
 
+        # Reshape
         if args.reshape is not None:
             a = args.reshape.split(':')
             nz, axis, xmode = get(a, 0, eve.nzon), get(a, 1, 'M'), get(a, 2, 'resize')  # rlog
@@ -288,14 +289,18 @@ def main():
         # Boxcar
         if args.box is not None:
             is_info = False
+            m_up = None
             s = args.box.split(':')
             dm, n = float(s[0]), int(s[1])
-            if len(s) == 3:
-                is_info = bool(s[2])
             print(f'Running boxcar average: dm= {dm} Msun  Repeats= {n}')
+            if len(s) > 2:
+                m_up = float(s[2])
+                print(f'The mass has up limit: m_up= {m_up}')
+            if len(s) > 3:
+                is_info = bool(s[3])
             print("The element masses: Before boxcar")
             print_masses(eve)
-            eve_box = eve.boxcar(box_dm=dm, n=n, el_included=elements, is_info=is_info)
+            eve_box = eve.boxcar(box_dm=dm, n=n, el_included=elements, m_uplim=m_up, is_info=is_info)
             print("The element masses: After boxcar")
             print_masses(eve_box)
             eve, eve_prev = eve_box, eve
