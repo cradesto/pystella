@@ -55,6 +55,11 @@ class Band(object):
 
     @property
     def zp(self):
+        """
+        It's correction to  AB mag:
+        See code: mag = Flux2MagAB(response / b.Norm) - b.zp
+        :return:
+        """
         if self._zp is None:
             return 0.
         return self._zp
