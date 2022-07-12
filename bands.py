@@ -26,123 +26,75 @@ __author__ = 'bakl'
 def plot_griuz():
     plt.title('griuz filter response')
     bands = dict(g='g', i='r+', r='r', u='o', z='*')
-    for k, v in bands.items():
-        b = band.band_by_name(k)
-        plt.plot(b.wl * phys.cm_to_angs, b.resp_wl, v, label=k)
-
-    plt.legend()
-    plt.ylabel('Amplitude Response')
-    plt.xlabel('Wave [A]')
-    plt.grid(linestyle=':')
-    plt.show()
+    plot_bands(bands.keys(), bands)
 
 
 def plot_UBVRI():
     plt.title('UBVRI filter response')
     bands = dict(U='b', B='c', V='g', R='r', I='p')
-    for k, v in bands.items():
-        b = band.band_by_name(k)
-        plt.plot(b.wl * phys.cm_to_angs, b.resp_wl, v, label=k)
-    plt.legend()
-    plt.ylabel('Amplitude Response')
-    plt.xlabel('Wave [A]')
-    plt.grid(linestyle=':')
-    plt.show()
+    plot_bands(bands.keys(), bands)
 
 
 def plot_JHK():
     plt.title('JHK filter response')
     bands = dict(J='b', H='c', K='r')
-    for k, v in bands.items():
-        b = band.band_by_name(k)
-        plt.plot(b.wl * phys.cm_to_angs, b.resp_wl, v, label=k)
-    plt.legend()
-    plt.ylabel('Amplitude Response')
-    plt.xlabel('Wave [A]')
-    plt.grid(linestyle=':')
-    plt.show()
+    plot_bands(bands.keys(), bands)
 
 
 def plot_SWIFT():
     plt.title('SWIFT filter response')
     bands = dict(UVM2='m', UVW1='r', UVW2='b', SwiftU='k', SwiftB='c', SwiftV='g')
-    for k, v in bands.items():
-        b = band.band_by_name(k)
-        plt.plot(b.wl * phys.cm_to_angs, b.resp_wl, v, label=k)
-    plt.legend()
-    plt.ylabel('Amplitude Response')
-    plt.xlabel('Wave [A]')
-    plt.grid(linestyle=':')
-    plt.show()
+    plot_bands(bands.keys(), bands)
 
 
 def plot_PS1():
     plt.title('The Pan-STARRS1 Photometric  filter responses')
     bands = dict(PS1g='m', PS1i='r', PS1r='b', PS1z='y', PS1y='g', PS1w='p')
-
-    for k, v in bands.items():
-        b = band.band_by_name(k)
-        plt.plot(b.wl * phys.cm_to_angs, b.resp_wl, v, label=k)
-    plt.legend()
-    plt.ylabel('Amplitude Response')
-    plt.xlabel('Wave [A]')
-    plt.grid(linestyle=':')
-    plt.show()
+    plot_bands(bands.keys(), bands)
 
 
 def plot_HSC():
     plt.title('The Hyper Suprime-Cam(HSC) Photometric  filter responses')
 
     bands = dict(HSCg='m', HSCr='b', HSCi='r', HSCz='y', HSCY='g')
-    for k, v in bands.items():
-        b = band.band_by_name(k)
-        plt.plot(b.wl * phys.cm_to_angs, b.resp_wl, v, label=k, linewidth=2)
-    plt.legend(loc=4)
-    plt.ylabel('Amplitude Response')
-    plt.xlabel('Wave [A]')
-    plt.grid(linestyle=':')
-    plt.show()
+    plot_bands(bands.keys(), bands)
 
 
 def plot_HST():
     plt.title('The Hubble Space Telescope  filter responses')
 
     bands = dict(F105W="blue", F125W="g", F435W="skyblue", F140W="orange", F160W="r", F606W="cyan", F814W="magenta")
-    for k, v in bands.items():
-        b = band.band_by_name(k)
-        plt.plot(b.wl * phys.cm_to_angs, b.resp_wl, v, label=k, linewidth=2)
-    plt.legend(loc=4)
-    plt.ylabel('Amplitude Response')
-    plt.xlabel('Wave [A]')
-    plt.grid(linestyle=':')
-    plt.show()
+    plot_bands(bands.keys(), bands)
 
 
 def plot_Misc():
     plt.title('The filter responses of the different sources')
     bands = dict(AtlasC="cyan", AtlasO="orange")
-    for k, v in bands.items():
-        b = band.band_by_name(k)
-        plt.plot(b.wl * phys.cm_to_angs, b.resp_wl, v, label=k, linewidth=2)
-    plt.legend(loc=4)
-    plt.ylabel('Amplitude Response')
-    plt.xlabel('Wave [A]')
-    plt.grid(linestyle=':')
-    plt.show()
+    plot_bands(bands.keys(), bands)
+
+    # for k, v in bands.items():
+    #     b = band.band_by_name(k)
+    #     plt.plot(b.wl * phys.cm_to_angs, b.resp_wl, v, label=k, linewidth=2)
+    # plt.legend(loc=4)
+    # plt.ylabel('Amplitude Response')
+    # plt.xlabel('Wave [A]')
+    # plt.grid(linestyle=':')
+    # plt.show()
 
 
 def plot_Kepler():
     plt.title('The Kepler Space Telescope  filter responses')
 
     bands = dict(Kepler="magenta")
-    for k, v in bands.items():
-        b = band.band_by_name(k)
-        plt.plot(b.wl * phys.cm_to_angs, b.resp_wl, v, label=k, linewidth=2)
-    plt.legend(loc=4)
-    plt.ylabel('Amplitude Response')
-    plt.xlabel('Wave [A]')
-    plt.grid(linestyle=':')
-    plt.show()
+    plot_bands(bands.keys(), bands)
+    # for k, v in bands.items():
+    #     b = band.band_by_name(k)
+    #     plt.plot(b.wl * phys.cm_to_angs, b.resp_wl, v, label=k, linewidth=2)
+    # plt.legend(loc=4)
+    # plt.ylabel('Amplitude Response')
+    # plt.xlabel('Wave [A]')
+    # plt.grid(linestyle=':')
+    # plt.show()
 
 
 def plot_bands(bands, color_dic=None):

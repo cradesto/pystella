@@ -536,6 +536,7 @@ def colors(bname=None, default='magenta'):
          'GrondJ': "darkgreen", 'GrondH': "darkcyan", 'GrondK': "dimgray",
          'LcoJ': "green", 'LcoH': "cyan", 'LcoK': "black",
          'UVM2': "skyblue", 'UVW1': "orange", 'UVW2': "mediumpurple",
+         'UVM2AB': "powderblue", 'UVW1AB': "moccasin", 'UVW2AB': "thistle",
          'UVM2o': "deepskyblue", 'UVW1o': "darkviolet", 'UVW2o': "darkblue",
          'USNO40i': "blue", 'USNO40g': "cyan", 'USNO40z': "darkgreen", 'USNO40r': "darkviolet", 'USNO40u': "magenta",
          'F105W': "magenta", 'F435W': "skyblue", 'F606W': "cyan", 'F125W': "g",
@@ -562,7 +563,10 @@ def colors(bname=None, default='magenta'):
 
 
 def lntypes(bname=None, default='-'):
-    ln = {"U": "-", 'B': "-", 'V': "-", 'R': "-", 'I': "-", 'UVM2': "-.", 'UVW1': "-.", 'UVW2': "-.", 'F125W': ":",
+    ln = {"U": "-", 'B': "-", 'V': "-", 'R': "-", 'I': "-",
+          'UVM2': "-.", 'UVW1': "-.", 'UVW2': "-.",
+          'UVM2AB': ".", 'UVW1AB': ".", 'UVW2AB': ".",
+          'F125W': ":",
           'F160W': "-.", 'F140W': "--", 'F105W': "-.", 'F435W': "--", 'F606W': "-.", 'F814W': "--", 'u': "--",
           'g': "--", 'r': "--", 'i': "--", 'z': "--", 'Y': '--', 'GaiaG': '--',
           Band.NameBol: '-', Band.NameUBVRI: '--',  Band.NameBVRI: '-.', Band.NameBolQuasi: ':'}
