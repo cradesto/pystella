@@ -26,6 +26,7 @@ class Band(object):
     NameZp = 'zp'
     NameJy = 'Jy'
     DirRoot = os.path.join(dirname(dirname(dirname(os.path.realpath(__file__)))), 'data/bands')
+    FileVega = os.path.join(DirRoot, 'vega.dat')
 
     def __init__(self, name=None, fname=None, zp=None, jy=None, is_load=False):
         """Creates a band instance.  Required parameters:  name and file."""
@@ -102,16 +103,34 @@ class Band(object):
     def wlrange(self):
         return np.min(self.wl), np.max(self.wl)
 
+    def zp_vega(self):
+        return Band.get_zp_vega(self)
+
+    def zp_vega_Jy(self):
+        return Band.get_zp_vega_Jy(self)
+
+    @property
+    def zp_AB_vega(self):
+        fl_A_zp = self.zp_vega_Jy()
+        return Flux2MagAB(fl_A_zp * 1e-23)
+
+    # @property
+    # def wl_eff(self):
+    #     """The effective wavelength"""
+    #     if self._wl_eff is None:
+    #         from scipy.integrate import simps
+    #         wl = self.wl
+    #         resp = np.array(self.resp_wl)
+    #         num = simps(resp * wl ** 2, wl)
+    #         den = simps(resp * wl, wl)
+    #         self._wl_eff = num / den
+    #     return self._wl_eff
+
     @property
     def wl_eff(self):
         """The effective wavelength"""
         if self._wl_eff is None:
-            from scipy.integrate import simps
-            wl = self.wl
-            resp = np.array(self.resp_wl)
-            num = simps(resp * wl, wl)
-            den = simps(resp, wl)
-            self._wl_eff = num / den
+            self._wl_eff = Band.get_wl_eff_vega(self)
         return self._wl_eff
 
     @property
@@ -251,6 +270,73 @@ class Band(object):
             Band.Alias = {k: v for k, v in parser.items('alias')}
         Band.IsLoad = True
         return True
+
+    @classmethod
+    def get_vega_data(cls):
+        """
+        Get wl and flux for Vega
+        @return: wl [cm], flux
+        """
+        d_vega = np.loadtxt(Band.FileVega, dtype={'names': ('wl', 'fl'), 'formats': (float, float)})
+        return d_vega['wl'] * phys.angs_to_cm, d_vega['fl']
+
+    @classmethod
+    def get_wl_eff_vega(cls, b):
+        """
+        Calculated as {\int lambda^2 * T * S * dLambda}  / {\int lambda * T * S * dLambda}
+        , where: T(lambda) ≡ filter transmission
+                 S(lambda) ≡ Vega spectrum
+        @param b:  band
+        @return: lambda_eff
+        """
+        from scipy import integrate
+        from pystella import util
+        # from scipy import interpolate
+        lmb_s, flux_s = Band.get_vega_data()
+
+        lmb_b = np.array(b.wl)
+        resp_b = np.array(b.resp_wl)
+
+        fn_interp = util.log_interp1d(lmb_s, flux_s)
+        # fn_interp = interpolate.interp1d(lmb_s, flux_s)
+        flux_interp = fn_interp(lmb_b)
+
+        num = integrate.simps(flux_interp * resp_b * lmb_b ** 2, lmb_b)
+        den = integrate.simps(flux_interp * resp_b * lmb_b, lmb_b)
+        zp = num / den
+        # print(f'{b.Name}: {num=} / {den=}  =  {zp=} ')
+        return zp
+
+    @classmethod
+    def get_zp_vega(cls, b):
+        """
+        Zero point in Vega system in [erg/cm2/s/A]
+        @param b:  band
+        @return: zero point
+        """
+        from scipy import integrate
+        from pystella import util
+
+        # from scipy import interpolate
+        lmb_s, flux_s = Band.get_vega_data()
+
+        lmb_b = np.array(b.wl)
+        # lmb_b = lmb_b / ps.phys.angs_to_cm
+        resp_b = np.array(b.resp_wl)
+
+        fn_interp = util.log_interp1d(lmb_s, flux_s)
+        # fn_interp = interpolate.interp1d(lmb_s, flux_s)
+        flux_interp = fn_interp(lmb_b)
+
+        num = integrate.simps(flux_interp * resp_b * lmb_b, lmb_b)
+        den = integrate.simps(resp_b * lmb_b, lmb_b)
+        return num / den
+
+    @classmethod
+    def get_zp_vega_Jy(cls, b):
+        fl_zp = cls.zp_vega(b)
+        res = fl_zp * phys.cm_to_angs * b.wl_eff ** 2 / phys.c / phys.jy_to_erg
+        return res
 
     @staticmethod
     def response_nu(nu, flux, b, is_freq_norm=True):
@@ -511,6 +597,7 @@ class BandJoin(Band):
     def get_ubvri(cls, length=300):
         return BandJoin(name=Band.NameUBVRI, bnames=('U', 'B', 'V', 'R', 'I'), length=length,
                         is_norm=True, is_sum=False)
+
     @classmethod
     def get_bvri(cls, length=300):
         return BandJoin(name=Band.NameBVRI, bnames=('B', 'V', 'R', 'I'), length=length,
@@ -569,7 +656,7 @@ def lntypes(bname=None, default='-'):
           'F125W': ":",
           'F160W': "-.", 'F140W': "--", 'F105W': "-.", 'F435W': "--", 'F606W': "-.", 'F814W': "--", 'u': "--",
           'g': "--", 'r': "--", 'i': "--", 'z': "--", 'Y': '--', 'GaiaG': '--',
-          Band.NameBol: '-', Band.NameUBVRI: '--',  Band.NameBVRI: '-.', Band.NameBolQuasi: ':'}
+          Band.NameBol: '-', Band.NameUBVRI: '--', Band.NameBVRI: '-.', Band.NameBolQuasi: ':'}
     # for Subaru HCS: colors
     for b in list('grizY'):
         ln['HSC' + b] = ln[b]
@@ -609,7 +696,7 @@ def band_load_names(path=Band.DirRoot):
     qbol = BandUni.get_qbol()
     ubvri = BandJoin.get_ubvri()
     bvri = BandJoin.get_bvri()
-    bands = {Band.NameBol: bol, Band.NameUBVRI: ubvri,Band.NameBVRI: bvri, Band.NameBolQuasi: qbol}
+    bands = {Band.NameBol: bol, Band.NameUBVRI: ubvri, Band.NameBVRI: bvri, Band.NameBolQuasi: qbol}
     for d, dir_names, file_names in os.walk(path):
         if Band.FileFilters in file_names:  # check that there are info-file in this directory
             fname = os.path.join(d, Band.FileFilters)
