@@ -50,6 +50,9 @@ class phys:
 
 
 def dist2MD(d):
+    """
+    Convert the distance [pc] to the Module Distance
+    """
     import math
     return 5*math.log10(d) - 5.
 
@@ -57,6 +60,12 @@ def dist2MD(d):
 def cosmology_D_by_z(z, H0=67.7, Omega_m=0.31, Omega_e=0.69):
     """Compute the photometric distance for Lambda-CDM model of cosmology
 
+        Parameters
+        ----------
+            - z: redshift
+            - H0: Hubble constant. Default: 67.7
+            - Omega_m: Omega_m  Default: 0.31
+            - Omega_e: Omega_e  Default: 0.69
     Returns
     -------
     D : float

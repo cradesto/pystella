@@ -105,12 +105,17 @@ def plot_all(models_vels, models_dic, bnames, d=10, call=None, **kwargs):
     if is_vel:
         gs1 = gridspec.GridSpec(4, 1)
         axUbv = fig.add_subplot(gs1[:-1, 0])
-        axVel = fig.add_subplot(gs1[3, 0])
+        # axVel = fig.add_subplot(gs1[3, 0])
+        axVel = fig.add_subplot(gs1[3, 0], sharex=axUbv)
+        # plt.setp(axUbv.get_xticklabels(), visible=False)
+        axUbv.xaxis.tick_top()
+        axUbv.tick_params(axis="x",direction="in", which='both')
+        # axUbv.tick_params(direction="in")
     else:
         gs1 = gridspec.GridSpec(1, 1)
         axUbv = fig.add_subplot(gs1[0, 0])
         axVel = None
-    gs1.update(wspace=0.3, hspace=0.3, left=0.1, right=0.95)
+    gs1.update(wspace=0.3, hspace=0., left=0.1, right=0.95)
 
     # plot the light curves
     ps.lcp.plot_ubv_models(axUbv, models_dic, bnames, **kwargs)
@@ -125,7 +130,7 @@ def plot_all(models_vels, models_dic, bnames, d=10, call=None, **kwargs):
             call.plot(axUbv, dic={'bnames': bnames, 'bshift': bshift})
     # finish plot
     axUbv.set_ylabel('Magnitude')  # Magnitude  Mag
-    axUbv.set_xlabel('Time since explosion [days]')
+    # axUbv.set_xlabel('Time since explosion [days]')
     axUbv.minorticks_on()
 
     if legend == 'box':
@@ -156,6 +161,9 @@ def plot_all(models_vels, models_dic, bnames, d=10, call=None, **kwargs):
     if is_grid:
         axUbv.grid(linestyle=':')
     #    plt.show(block=True)
+    if is_vel:
+        # gs1.tight_layout(fig, rect=[0, 0, 0, 0.])
+        fig.tight_layout()
     return fig
 
 
@@ -182,7 +190,7 @@ def usage():
           "if you use log scale for X you should set xbeg something like 0.1 or larger, e.g.  -x 0.1:200:log"
           " Default: None, used all days.")
     print("  -y  <ybeg:yend> - ylim, ex: 26:21. Default: None, used top-magnitude+-5.")
-    print("-v  <swd OR ttres[ttresold]> - plot model velocities computed from swd OR tt-res files[ttresold for old res "
+    print("  -v  <swd OR ttres[ttresold]> - plot model velocities computed from swd OR tt-res files[ttresold for old res "
           "format].")
     print("  -w  write magnitudes to out-file. Use '1' for the default name of out-file")
     print("  -z <redshift>.  Default: 0")
