@@ -541,7 +541,7 @@ def colors(bname=None, default='magenta'):
          'PS1g': "olive", 'PS1r': "red", 'PS1i': "magenta", 'PS1u': "blue", 'PS1z': "chocolate", 'PS1y': "cyan",
          'PS1w': "orange", 'y': 'y', 'Y': 'y', 'w': 'tomato',
          'AtlasC': "cyan", 'AtlasO': "orange",
-         'UBVRI': 'chocolate', 'GaiaG': 'g',
+         'UBVRI': 'chocolate', 'GaiaG': 'g', 'TESSRed': 'orchid',
          'L_ubvri': 'sandybrown', 'L_bol': 'saddlebrown', 'XEUV<325': 'sienna', 'IR>890': 'peru',
          Band.NameBol: 'black', Band.NameUBVRI: 'dimgrey', Band.NameBVRI: 'saddlebrown', Band.NameBolQuasi: 'dimgray'}
     # for Subaru HCS: colors
