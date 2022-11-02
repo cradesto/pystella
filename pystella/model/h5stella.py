@@ -82,6 +82,13 @@ class H5Stella(object):
             res = H5Hyd('Hyd').fill(h5f)
         return res
 
+    @property
+    def Yabun(self):
+        logging.debug('Yabun from {}'.format(self.Fname))
+        with h5py.File(self.Fname, "r") as h5f:
+            yabun = np.array(h5f.get('/presn/Yabun'))  
+        return yabun
+
     def ds_write(self, path, ds, attrs=None):
         """
         Write to h5-file dataset.
@@ -104,7 +111,7 @@ class H5Stella(object):
                 for k, v in attrs.items():
                     dset.attrs[k] = v
 
-
+            
 class H5TimeElement(object):
     def __init__(self, name, path):
         self._name = name
