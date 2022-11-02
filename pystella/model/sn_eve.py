@@ -15,7 +15,7 @@ except:
 from pystella.util.phys_var import phys
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+# logger.setLevel(logging.INFO)
 
 __author__ = 'bakl'
 
@@ -845,7 +845,7 @@ class PreSN(object):
                 p = np.sqrt(x[idx] * x[idx + 1])
             else:
                 raise ValueError('Mode should be "lin" lor "geom"')
-            print('         To interval {}[{:.6e} - {:.6e}] added {} '.format(idx, x[idx], x[idx + 1], p))
+            logger.info('         To interval {}[{:.6e} - {:.6e}] added {} '.format(idx, x[idx], x[idx + 1], p))
             xn = np.insert(x, idx + 1, p)
             return xn
 
@@ -857,9 +857,9 @@ class PreSN(object):
             idx = np.argmin(dif)
             xn = np.delete(x, idx + 1)
             if idx+2 == len(x):
-                print('         Remove right point {} {:.8e} [dx= {:.8e}] '.format(idx+1, x[idx + 1], dif[idx]))
+                logger.info('         Remove right point {} {:.8e} [dx= {:.8e}] '.format(idx+1, x[idx + 1], dif[idx]))
             else:
-                print('         Remove point {} {:.8e} [dx= {:.8e}] next: {:.8e}'.format(idx+1, x[idx + 1], dif[idx], x[idx + 2]))  
+                logger.info('         Remove point {} {:.8e} [dx= {:.8e}] next: {:.8e}'.format(idx+1, x[idx + 1], dif[idx], x[idx + 2]))  
             return xn
 
         def resize_points(x, n: int, mode: str = 'lin'):
@@ -950,7 +950,7 @@ class PreSN(object):
         if np.any(np.diff(xxx) < 0.):
             for i, dx in enumerate(np.diff(xxx)):
                 if dx <= 0:
-                    print("ERROR reshaped: {} xxx= {}  dx= {} ".format(i, xxx[i], dx))
+                    logger.error("ERROR reshaped: {} xxx= {}  dx= {} ".format(i, xxx[i], dx))
             raise ValueError('The interval beetween some of {} elements is < 0.'.format(len(xxx)))
 
         # from pprint import pprint
@@ -964,8 +964,8 @@ class PreSN(object):
             #    new = interp(xxx, xx, old, s=start, e=end, kind=kind)
             newPreSN.set_hyd(vv, new)
             # print(f'{vv} before: old[{len(xx)}-1]= {old[len(xx)-2]:12.7e} new[{len(xxx)}-1]= {new[len(xxx)-2]:12.7e}')
-            print(f'{vv} before: old[0]= {old[0]:12.7e} new[0]= {new[0]:12.7e}')
-            print(f'{vv} before: old[{len(xx)}]= {old[len(xx) - 1]:12.7e} new[{len(xxx)}]= {new[len(xxx) - 1]:12.7e}')
+            logger.info(f'{vv} before: old[0]= {old[0]:12.7e} new[0]= {new[0]:12.7e}')
+            logger.info(f'{vv} before: old[{len(xx)}]= {old[len(xx) - 1]:12.7e} new[{len(xxx)}]= {new[len(xxx) - 1]:12.7e}')
             # print(f'\n{vv} before: {len(xx)}')
             # pprint(list(zip(range(1, len(xx)+1), xx, old)))
             # print(f'{vv} after:  {len(xxx)}')
@@ -1024,12 +1024,10 @@ class PreSN(object):
 
         # todo Check left boundary condition fo Fe, Si
         for l in range(n):  # the iteration number
-            if is_info:
-                print(f'Attempt # {l}')
+            logger.debug(f'Attempt # {l}')
             for k in range(clone.nzon):
                 if m[k] > m_uplim:
-                    if is_info:
-                        print(f'Exit from zone cycle m[k] > m_uplim: k= {k} m= {m[k]:.4f} m_uplim= {m_uplim:.4f}')
+                    logger.warn(f'Exit from zone cycle m[k] > m_uplim: k= {k} m= {m[k]:.4f} m_uplim= {m_uplim:.4f}')
                     break #  stop because mass is over the limit
                 kk = k + 1
                 dm = dmass[k]
@@ -1037,8 +1035,7 @@ class PreSN(object):
                     kk += 1
                     dm = np.sum(dmass[k:kk])
 
-                if is_info:
-                    print(f'{k}: kk= {kk} dm= {dm:.4f} m= {m[k]:.4f}')
+                logger.debug(f'{k}: kk= {kk} dm= {dm:.4f} m= {m[k]:.4f}')
                 if dm > 1e-6:
                     for i, ename in enumerate(clone.Elements):
                         if ename in el_included:
@@ -1079,8 +1076,9 @@ class PreSN(object):
             dm = 4. / 3. * np.pi * rho_s[k] * (r[k] ** 3 - r[k - 1] ** 3)
             m_s[k] = m_s[k-1] + dm
         if is_info:
-            print('Mass')
-            pprint.pprint(list(zip(clone.m, m_s)))
+            logger.debug('Mass')
+            # pprint.pprint(list(zip(clone.m, m_s)))
+            logger.debug(list(zip(clone.m, m_s)))
         clone.set_hyd('Rho', rho_s)
         clone.set_hyd('M', m_s)
         # print(clone.rho)
