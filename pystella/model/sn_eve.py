@@ -1,5 +1,5 @@
 import logging
-import pprint
+# import pprint
 
 import numpy as np
 import os
@@ -15,6 +15,7 @@ except:
 from pystella.util.phys_var import phys
 
 logger = logging.getLogger(__name__)
+# logger = logging.getLogger(__name__)
 # logger.setLevel(logging.INFO)
 
 __author__ = 'bakl'
@@ -298,7 +299,7 @@ class PreSN(object):
             return
 
         if norm is None:
-            norm = sum(self.abund(k))
+            norm = np.sum(self.abund(k))
         for e in self.Elements:
             self._data_chem[e][k-1] = self.el(e)[k-1] / norm
 
@@ -857,9 +858,9 @@ class PreSN(object):
             idx = np.argmin(dif)
             xn = np.delete(x, idx + 1)
             if idx+2 == len(x):
-                logger.info('         Remove right point {} {:.8e} [dx= {:.8e}] '.format(idx+1, x[idx + 1], dif[idx]))
+                logger.debug('         Remove right point {} {:.8e} [dx= {:.8e}] '.format(idx+1, x[idx + 1], dif[idx]))
             else:
-                logger.info('         Remove point {} {:.8e} [dx= {:.8e}] next: {:.8e}'.format(idx+1, x[idx + 1], dif[idx], x[idx + 2]))  
+                logger.debug('         Remove point {} {:.8e} [dx= {:.8e}] next: {:.8e}'.format(idx+1, x[idx + 1], dif[idx], x[idx + 2]))  
             return xn
 
         def resize_points(x, n: int, mode: str = 'lin'):
@@ -933,7 +934,7 @@ class PreSN(object):
         if end is None:
             end = self.nzon
 
-        print(f'axis= {axis} nz= {nz} nznew= {nznew} start= {start} end= {end}')
+        logger.info(f'axis= {axis} nz= {nz} nznew= {nznew} start= {start} end= {end}')
 
         # hyd reshape
         if axis == PreSN.sM:
@@ -1042,16 +1043,13 @@ class PreSN(object):
                             dm_e = np.dot(abund[k:kk, i], dmass[k:kk])
                             abund[k, i] = dm_e / dm
             #             abun[k,i] = x[k]
-        #
         for i, ename in enumerate(clone.Elements):
-            #         print(ename, ': ', abun[:,i])
-            clone.set_chem(ename, abund[:, i])
-            if is_info:
-                print(clone.el(ename))
+            clone.set_chem(ename, abund[:, i])        
+            logger.debug(f"{ename}: {clone.el(ename)}")
 
         return clone
 
-    def smooth(self, window_length: int = 15, polyorder: int = 2, mode: str = 'interp', is_info=True):
+    def smooth(self, window_length: int = 15, polyorder: int = 2, mode: str = 'interp'):
         from scipy.signal import savgol_filter
         """
         The function runs a Savitzky-Golay filter to smooth density distribution.
@@ -1065,9 +1063,8 @@ class PreSN(object):
         rho_s = np.exp(rho_s)
         r = clone.r
         # np.set_printoptions(precision=2)
-        if is_info:
-            print('Rho')
-            pprint.pprint(list(zip(clone.rho, rho_s)))
+        logger.debug('Rho')
+        logger.debug(list(zip(clone.rho, rho_s)))
         m_s = np.zeros(clone.nzon)
         # RHO(1) = DM(1) / (Ry(1) ** 3 - Rce ** 3);
         m_s[0] = clone.m_core + 4. / 3. * np.pi * clone.rho_cen * (r[0] ** 3 - clone.r_cen ** 3)
@@ -1075,10 +1072,10 @@ class PreSN(object):
         for k in range(1, clone.nzon):
             dm = 4. / 3. * np.pi * rho_s[k] * (r[k] ** 3 - r[k - 1] ** 3)
             m_s[k] = m_s[k-1] + dm
-        if is_info:
-            logger.debug('Mass')
+        
+        logger.debug('Mass: ')
             # pprint.pprint(list(zip(clone.m, m_s)))
-            logger.debug(list(zip(clone.m, m_s)))
+        logger.debug(list(zip(clone.m, m_s)))
         clone.set_hyd('Rho', rho_s)
         clone.set_hyd('M', m_s)
         # print(clone.rho)

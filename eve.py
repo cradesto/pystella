@@ -34,10 +34,6 @@ except ImportError as ex:
 
 __author__ = 'bakl'
 
-logging.basicConfig()
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 markers = {u'x': u'x', u'o': u'circle', u'v': u'triangle_down', u'd': u'thin_diamond',
            u'+': u'plus', u'*': u'star', u'<': u'triangle_left'}
@@ -142,6 +138,15 @@ def get_parser():
                              "\n Example: --smooth 5:2 OR  --smooth 5:2:nearest:1"
                         )
 
+    parser.add_argument('--log',
+                        required=False,
+                        type=str,
+                        default='INFO',
+                        dest="log",
+                        help="Set logging level: "
+                             "CRITICAL, ERROR, WARNING, INFO, DEBUG, NOTSET"
+                        )
+
     parser.add_argument('-s', '--save',
                         required=False,
                         type=str,
@@ -179,6 +184,11 @@ def main():
     import os
     import sys
     from itertools import cycle
+    import logging
+
+    def is_level(lvl):
+        levels = ['CRITICAL', 'FATAL','ERROR','WARN','WARNING','INFO','DEBUG','NOTSET']
+        return lvl.upper() in levels
 
     def get(arr, i, default):
         if i < len(arr):
@@ -196,6 +206,20 @@ def main():
         pathDef = os.path.expanduser(args.path)
     else:
         pathDef = os.getcwd()
+
+    logger = logging.getLogger(__name__)
+    level = logging.INFO
+    if args.log is not None:
+        if is_level(args.log):
+            level = logging.getLevelName(args.log.upper())
+        else:
+            level = logging.INFO
+            print(f"ERROR: Bad value for log: {level}. See help.")
+    
+    logger.setLevel(level)
+    logging.basicConfig(level=level)
+    logSNEve = logging.getLogger('pystella.model.sn_eve').setLevel(level)
+
 
     # if args.elements:
     if '_' in args.elements:
@@ -231,7 +255,7 @@ def main():
         parser.print_help()
         sys.exit(2)
 
-    if len(names) > 1:  # special case
+    if len(names) > 1 or args.reshape is not None or args.box is not None:  # special case
         markers_cycler = cycle(markers_style)
         lines_cycler = cycle(lines_style)
     else:
@@ -242,7 +266,7 @@ def main():
     ax2 = None
     handles_nm = []
     for nm in names:
-        # print("Run eve-model %s" % nm)
+        logger.info("Run eve-model %s" % nm)
         path, fullname = os.path.split(nm)
         if len(path) == 0:
             path = pathDef
@@ -279,12 +303,18 @@ def main():
                   f'start= {start}  end= {end} kind= {kind}')
             print("The element masses: before Resize")
             print_masses(eve)
-            eve = eve.reshape(nz=nz, axis=axis, xmode=xmode, start=start, end=end, kind=kind)
-            eve.chem_norm()
+            eve_reshape = eve.reshape(nz=nz, axis=axis, xmode=xmode, start=start, end=end, kind=kind)
             # eve = eve_resize
-            print(f'Resize: after Nzon={eve.nzon}')
+            print(f'Resize: after Nzon={eve_reshape.nzon}')
             print("The element masses: after Resize")
-            print_masses(eve)
+            print_masses(eve_reshape)
+            if False:
+                eve_reshape.chem_norm()
+                # eve = eve_resize
+                print(f'After chem_norm: Nzon={eve_reshape.nzon}')
+                print("The element masses: after chem_norm")
+                print_masses(eve_reshape)
+            eve, eve_prev = eve_reshape, eve
 
         # Boxcar
         if args.box is not None:
@@ -319,7 +349,7 @@ def main():
                   f'window_length= {window_length} Msun  polyorder= {polyorder} mode= {mode}')
             print("The element masses: Before smoothing")
             print_masses(eve, is_el=is_info)
-            eve_smooth = eve.smooth(window_length=window_length, polyorder=polyorder, mode=mode, is_info=is_info)
+            eve_smooth = eve.smooth(window_length=window_length, polyorder=polyorder, mode=mode)
             print("The element masses: After smoothing")
             print_masses(eve_smooth, is_el=is_info)
             eve, eve_prev = eve_smooth, eve
