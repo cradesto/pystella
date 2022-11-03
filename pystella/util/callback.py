@@ -220,14 +220,18 @@ class CallBackArray(CallBack):
         super(CallBackArray, self).put_args(args)
 
     def plot(self, ax, dic=None):
-        import collections
+        try:
+            from collections.abc import Sequence
+        except ImportError:
+            from collections import Sequence
+
         if dic is None:
             dic = {}
 
         res = []
         if self._args is not None:
             dic['args'] = self._args[:]
-        if isinstance(ax, collections.Sequence):
+        if isinstance(ax, Sequence):
             for i, c in enumerate(self._calls):
                 r = c.plot(ax[i], dic)
                 res.append(r)
