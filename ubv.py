@@ -175,7 +175,7 @@ def usage():
     print("  -i <model-name OR pattern, like '*R450*'>.  Example: cat_R450_M15_Ni007_E7")
     print("  -p <model directory>, default: ./")
     print("  -e <extinction, E(B-V)> is used to define A_nu, default: 0 ")
-    print("  -c <callback> [lcobs:fname:marker:dt:dm, velobs:fname:marker:dt:vnorm(1e8), "
+    print("  -c <callback> [lcobs:fname:marker:dt:dm, velobs:fname:marker:dt:vnorm(to cm/s), "
           "popov[:R:M:E[FOE]:Mni], lcobssm as lcobs, but for sm-format data-files]. "
           "You can add parameters in format func:params")
     print("  -d <distance> [pc].  Default: 10 pc")
@@ -240,7 +240,8 @@ def main(name=None, model_ext='.ph'):
     xtype = 'lin'
     # bshift = None
     bshift = None
-
+    level = logging.INFO
+    
     ps.band.Band.load_settings()
 
     try:

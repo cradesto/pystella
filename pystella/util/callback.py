@@ -1,11 +1,13 @@
 import os
-
 import sys
+import logging
 
 __author__ = 'bakl'
 
 ROOT_DIRECTORY = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 plugin_path = os.path.join(ROOT_DIRECTORY, 'plugin')
+logger = logging.getLogger(__name__)
+# logger.setLevel(logging.INFO)
 
 
 def lc_wrapper(param, p=None, method='plot'):
@@ -20,7 +22,7 @@ def lc_wrapper(param, p=None, method='plot'):
             p = plugin_path
     # print("Call: {} from {}".format(fname, p))
     c = CallBack(fname, path=p, args=a, method=method, load=1)
-    print("Call: %s from %s" % (c.Func, c.FuncFileFull))
+    logger.debug("Call: %s from %s" % (c.Func, c.FuncFileFull))
     return c
 
 

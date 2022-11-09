@@ -26,6 +26,9 @@ except ImportError as ex:
     plt = None
     mlines = None
 
+logger = logging.getLogger(__name__)
+level = logging.INFO
+
 # matplotlib.use("Agg")
 # import matplotlib
 # matplotlib.rcParams['backend'] = "TkAgg"
@@ -184,7 +187,6 @@ def main():
     import os
     import sys
     from itertools import cycle
-    import logging
 
     def is_level(lvl):
         levels = ['CRITICAL', 'FATAL','ERROR','WARN','WARNING','INFO','DEBUG','NOTSET']
@@ -207,18 +209,16 @@ def main():
     else:
         pathDef = os.getcwd()
 
-    logger = logging.getLogger(__name__)
     level = logging.INFO
-    if args.log is not None:
-        if is_level(args.log):
-            level = logging.getLevelName(args.log.upper())
-        else:
-            level = logging.INFO
-            print(f"ERROR: Bad value for log: {level}. See help.")
+    if args.log is not None and is_level(args.log):
+        level = logging.getLevelName(args.log.upper())
+    else:
+        logger.error(f"ERROR: Bad value for log: {level}. See help.")
+        sys.exit(2)
     
     logger.setLevel(level)
     logging.basicConfig(level=level)
-    logSNEve = logging.getLogger('pystella.model.sn_eve').setLevel(level)
+    logging.getLogger('pystella.model.sn_eve').setLevel(level)
 
 
     # if args.elements:

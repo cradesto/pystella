@@ -3,10 +3,15 @@
 ##
 
 import os
+import logging
 
 import pystella.util.reader_table as rtbl
 from pystella import first
-from pystella.velocity import VelocityCurve, SetVelocityCurve
+from pystella.velocity import VelocityCurve, SetVelocityCurve, VelocityException
+
+logger = logging.getLogger(__name__)
+# logger.setLevel(logging.INFO)
+
 
 def vels_plot(vels, ax, fname='', **kwargs):
     marker = kwargs.get('marker', 'o')
@@ -28,6 +33,8 @@ def vels_plot(vels, ax, fname='', **kwargs):
         else:
             ax.plot(x, y, label='{0} {1}'.format(vel_o.Name, fname), color=color, ls='',
                     marker=marker, markersize=markersize)
+    ax.set_ylabel('Velocity [{:.0e} km/s]'.format(vnorm / 1e5))
+    ax.legend(loc=0)
 
 
 def plot(ax, dic=None, colt=('time', 'JD', 'MJD')):
@@ -59,8 +66,11 @@ def plot(ax, dic=None, colt=('time', 'JD', 'MJD')):
         tshift = float(arg.pop(0))
     if len(arg) > 0:
         vshift = float(arg.pop(0))
+    dic['marker'] = marker
+    dic['tshift'] = tshift
+    dic['vshift'] = vshift
 
-    print("Plot {0} [{1}]  jd_shift={2}  mshift={3}".format(fname, marker, tshift, vshift))
+    logger.info("Plot {0} [{1}]  jd_shift={2}  mshift={3}".format(fname, marker, tshift, vshift))
 
     # read data
     if is_load:
@@ -73,7 +83,8 @@ def plot(ax, dic=None, colt=('time', 'JD', 'MJD')):
         vels_o = SetVelocityCurve("Vel-{}".format(fname))
         vels_o.add(vel_o)
 
-    vels_plot(vels, ax, fname=fname, **dic)
+    ax2 = ax.twinx()
+    vels_plot(vels, ax2, fname=fname, **dic)
 
 
 def load(dic=None, colt=('time', 'JD', 'MJD')):
@@ -111,7 +122,7 @@ def load(dic=None, colt=('time', 'JD', 'MJD')):
     if len(arg) > 0:
         vshift = float(arg.pop(0))
 
-    print("Load {0} tshift={1}  vshift={2}".format(fname, tshift, vshift))
+    logger.info("Load {0} tshift={1}  vshift={2}".format(fname, tshift, vshift))
     # print("cnames: {0} }".format(cnames))
 
     # read data
@@ -134,7 +145,8 @@ def tbl2vel(tbl, cname, colt, vshift):
             time = tbl[nm]
             break
     else:
-        raise ValueError("The table should contain a column with name in [{0}]".format(', '.join(colt)))
+        raise VelocityException("The table should contain a column with name in [{0}]".
+                                format(', '.join(colt)))
     values = tbl[cname] * vshift
     # filter
     mask = values > 0
