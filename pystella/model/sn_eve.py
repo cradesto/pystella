@@ -838,7 +838,7 @@ class PreSN(object):
             :param mode:
             :return:
             """
-            dif = np.diff(x)
+            dif = np.diff(x) / x[1:]
             idx = np.argmax(dif)
             if mode == 'lin':
                 p = (x[idx] + x[idx + 1]) / 2.
@@ -854,7 +854,7 @@ class PreSN(object):
             """
             Find min delta and remove the right point
             """
-            dif = np.diff(x)
+            dif = np.diff(x) / x[1:]
             idx = np.argmin(dif)
             xn = np.delete(x, idx + 1)
             if idx+2 == len(x):
