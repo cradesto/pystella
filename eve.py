@@ -21,7 +21,6 @@ except ImportError as ex:
     fn = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
     logging.info(exc_type, fn, exc_tb.tb_lineno, ex)
     logging.info('  Probably, you should install module: {}'.format('matplotlib'))
-    print()
     #    print(ex)
     plt = None
     mlines = None
@@ -71,6 +70,13 @@ def get_parser():
                         const=True,
                         dest="is_dum",
                         help="Set is_dum = TRUE to parse abn-file with dum columns")
+
+    parser.add_argument('--no-norm', nargs="?",
+                        required=False,
+                        const=False,
+                        dest="is_no_norm",
+                        help="Use --no-norm skip element normalization after reshape.")
+
 
     parser.add_argument('-x',
                         required=False,
@@ -308,7 +314,7 @@ def main():
             print(f'Resize: after Nzon={eve_reshape.nzon}')
             print("The element masses: after Resize")
             print_masses(eve_reshape)
-            if False:
+            if  not args.is_no_norm:
                 eve_reshape.chem_norm()
                 # eve = eve_resize
                 print(f'After chem_norm: Nzon={eve_reshape.nzon}')
