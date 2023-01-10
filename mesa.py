@@ -63,12 +63,19 @@ def get_parser():
                         default='./',
                         dest="path",
                         help="Model directory")
-    parser.add_argument('-e', '--elements',
+    parser.add_argument('-es', '--elements_stella',
+                        required=False,
+                        type=str,
+                        default='H:He:C:O:Si:Fe:Ni56',
+                        dest="elements_stella",
+                        help="Elements in STELLA. \n   Available: {0}"
+                             .format(':'.join(ps.eve.eve_elements)))
+    parser.add_argument('-em', '--elements_mesa',
                         required=False,
                         type=str,
                         default='h1:he4:c12:o16:si28:fe56:ni56',
-                        dest="elements",
-                        help="Elements directory. \n   Available: {0}"
+                        dest="elements_mesa",
+                        help="Elements in MESA. \n   Available: {0}"
                              .format(':'.join(ps.model.mesa.mesa_elements)))
     parser.add_argument('--log',
                         required=False,
@@ -124,6 +131,27 @@ def main():
         levels = ['CRITICAL', 'FATAL','ERROR','WARN','WARNING','INFO','DEBUG','NOTSET']
         return lvl.upper() in levels
 
+    def get_elements(elements_in, elements_default):
+        if '_' in elements_in:
+            elements = list(elements_default)
+            excluded = elements_in.split(':')
+            for e in excluded:
+                if not e.startswith('_'):
+                    logger.error('For excluded mode all elements should be starts from _. Even element: ' + e)
+                    sys.exit(2)
+                e = e[1:]
+                if e not in elements_default:
+                    logger.error('No such element: ' + e)
+                    sys.exit(2)
+                elements.remove(e)
+        else:
+            elements = elements_in.split(':')
+            for e in elements:
+                if e not in elements_default:
+                    logger.error('No such element: ' + e)
+                    sys.exit(2)
+        return elements
+
     file_profile = None
     markersize = 6
 
@@ -142,24 +170,14 @@ def main():
         logger.error(f"ERROR: Bad value for log: {level}. See help.")
         sys.exit(2)
 
-    if '_' in args.elements:
-        elements = list(ps.model.mesa.mesa_elements)
-        excluded = args.elements.split(':')
-        for e in excluded:
-            if not e.startswith('_'):
-                logger.error('For excluded mode all elements should be starts from _. Even element: ' + e)
-                sys.exit(2)
-            e = e[1:]
-            if e not in ps.model.mesa.mesa_elements:
-                logger.error('No such element: ' + e)
-                sys.exit(2)
-            elements.remove(e)
+    if args.is_stella:
+        elements = get_elements(args.elements_stella, ps.eve.eve_elements)
+        lntypes = ps.model.sn_eve.eve_lntypes
+        colors = ps.model.sn_eve.eve_colors
     else:
-        elements = args.elements.split(':')
-        for e in elements:
-            if e not in ps.model.mesa.mesa_elements:
-                logger.error('No such element: ' + e)
-                sys.exit(2)
+        elements = get_elements(args.elements_mesa, ps.model.mesa.mesa_elements)
+        lntypes = ps.model.mesa.mesa_el_lntypes 
+        colors = ps.model.mesa.mesa_el_colors
 
     # Set model names
     names = []
@@ -184,6 +202,7 @@ def main():
 
     ax = None
     ax2 = None
+
     handles_nm = []
     for nm in names:
         # logger.info("Run mesa-model %s" % nm)
@@ -202,6 +221,15 @@ def main():
         else:
             presn = prb_mesa.to_presn(is_mcut=args.is_mcut)
 
+        if args.is_verb:
+            m_tot = 0.
+            m_ni56 = 0.
+            print('{:22s}: '.format(presn.Name))   
+            for n, m in presn.mass_tot_el().items():
+                m_tot += m
+                print(f'{n} {m/ps.phys.M_sun:.3e}')
+            print('  m_tot= {:6.3f}    m_tot(El)= {:6.3f} '.format(presn.m_tot/ps.phys.M_sun, m_tot/ps.phys.M_sun))   
+        
         if args.write_to:
             fname = presn.Name + '.hyd'
             # fname = os.path.join(os.path.dirname(file_profile), presn.name + '.hyd')
@@ -221,24 +249,22 @@ def main():
 
             continue
 
+        # Plot
+        # print "Plot eve-model %s" % name
         marker = next(markers_cycler)
         ls = next(lines_cycler)
-        # print "Plot eve-model %s" % name
-        if args.is_stella:
-            ax = presn.plot_chem(ax=ax, x=args.x, ylim=(1e-8, 1.), marker=marker,
-                                   markersize=markersize, leg_loc='lower center')
-        else:
-            ax = ps.Mesa.plot_chem(presn, elements=elements, ax=ax, x=args.x, ylim=(1e-8, 1.), marker=marker,
-                                markersize=markersize, leg_loc='lower center')
-        # ax.set_title('{}: before boxcar'.format(eve_prev.Name))
+
+        ax = presn.plot_chem(ax=ax, elements=elements, x=args.x, ylim=(1e-8, 1.)
+                            , marker=marker, colors=colors, ls=lntypes
+                            , markersize=markersize, leg_loc='lower center')
+        # else:
+        #     ax = ps.Mesa.plot_chem(presn, elements=elements, ax=ax, x=args.x, ylim=(1e-8, 1.), marker=marker,
+        #                         markersize=markersize, leg_loc='lower center')
 
         if args.rho:
-            if args.is_chem:
-                if ax2 is None:
-                    ax2 = ax.twinx()
-                    ax2.set_ylabel(r'$\rho, [g/cm^3]$ ')
-            else:
-                ax2 = ax
+            if ax2 is None:
+                ax2 = ax.twinx()
+                ax2.set_ylabel(r'$\rho, [g/cm^3]$ ')
             ax2 = presn.plot_rho(x=args.x, ax=ax2, ls=ls, marker=marker)
         else:
             ls = 'None'
@@ -251,22 +277,16 @@ def main():
                 ax2 = ax.twinx()
             ax2.legend(handles=handles_nm, loc=4, fancybox=False, frameon=False)
 
-        if args.is_verb:
-            m_tot = 0.
-            m_ni56 = 0.
-            print('{:22s}: '.format(presn.Name))   
-            for n, m in presn.mass_tot_el().items():
-                m_tot += m
-                print(f'{n} {m/ps.phys.M_sun:.3e}')
-            print('  m_tot= {:6.3f}    m_tot(El)= {:6.3f} '.format(presn.m_tot/ps.phys.M_sun, m_tot/ps.phys.M_sun))   
 
     if not args.write_to:
         if args.save_plot:
             fsave = os.path.expanduser(args.save_plot)
+            if not fsave.endswith('.pdf'):
+                fsave += '.pdf'
             logger.info(" Save plot to %s " % fsave)
-            if fig is None:
-                fig = ax.get_figure()
+            fig = ax.get_figure()
             fig.savefig(fsave, bbox_inches='tight')
+            print(f'The plot has been saved to {fsave}')
         else:
             plt.show()
 

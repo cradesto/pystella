@@ -38,7 +38,7 @@ mesa_elements = ("h1", "he3", 'he4', "c12", "n14", "o16", "ne20", "mg24", "si28"
 mesa_el_colors = dict(h1="blue", he4="cyan", c12="darkorange", n14="yellow", 
                       o16="violet", ne20="green", mg24="skyblue", si28="olive",
                       s32="indigo", ar36="brown", ca40="purple", ti44="hotpink",
-                      cr48="m", fe56='maroon', ni56='magenta')
+                      cr48="m", fe56='maroon', ni56='red')
 for k in mesa_elements:
     if k not in mesa_el_colors:
         mesa_el_colors[k] = 'grey'
@@ -290,15 +290,17 @@ class Mesa:
         lw = kwargs.get('lw', 2)
         is_save = kwargs.get('is_save', False)
         alpha = kwargs.get('alpha', 1.)
+        figsize = kwargs.get('figsize', (8, 8))
+
 
         is_new_plot = ax is None
         # setup figure
         if is_new_plot:
             plt.matplotlib.rcParams.update({'font.size': font_size})
-            fig = plt.figure(num=None, figsize=(12, 12), dpi=100, facecolor='w', edgecolor='k')
+            fig = plt.figure(num=None, figsize=figsize, dpi=100, facecolor='w', edgecolor='k')
 
             gs1 = gridspec.GridSpec(1, 1)
-            gs1.update(wspace=0.1, hspace=0.1, top=None, left=0.1, right=0.98)
+            gs1.update(wspace=0.1, hspace=0.1, top=0.97, left=0.12, right=0.87)
             ax = fig.add_subplot(gs1[0, 0])
 
             if x == 'r':
