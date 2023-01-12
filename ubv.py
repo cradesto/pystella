@@ -26,6 +26,8 @@ def plot_grid(models_dic, bnames, call=None, **kwargs):
     fontsize = kwargs.get('fontsize', 12)
     figsize = kwargs.get('figsize', (8, 8))
     xtype = kwargs.get('xtype', 'lin')
+    legloc = kwargs.get('legloc', 4)
+
     # setup figure
     # plt.matplotlib.rcParams.update({'font.size':})
     if len(bnames) == 1:
@@ -50,7 +52,7 @@ def plot_grid(models_dic, bnames, call=None, **kwargs):
         if icol == 0:
             ax.set_ylabel('Magnitude')
 
-        ax.legend(prop={'size': 8}, loc=4)
+        ax.legend(prop={'size': 8}, loc=legloc)
         props = dict(facecolor='wheat')
         # props = dict(boxstyle='round', facecolor='white')
         # props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
@@ -240,13 +242,14 @@ def main(name=None, model_ext='.ph'):
     xtype = 'lin'
     # bshift = None
     bshift = None
+    legloc = 1
     level = logging.INFO
     
     ps.band.Band.load_settings()
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hqtb:c:d:e:g:i:l:o:m:p:v:s:w:x:y:z:",
-                                   ['dt=', 'curve-old', 'curve-tt'])
+                                   ['dt=', 'curve-old', 'curve-tt', 'legloc='])
     except getopt.GetoptError as err:
         print(str(err))  # will print something like "option -a not recognized"
         usage()
@@ -294,6 +297,9 @@ def main(name=None, model_ext='.ph'):
             continue
         if opt == '--dt':
             t_diff = float(arg)
+            continue
+        if opt == '--legloc':
+            legloc = int(arg)
             continue
         if opt == '-q':
             is_quiet = True
@@ -466,13 +472,13 @@ def main(name=None, model_ext='.ph'):
                 sep = opt_grid[:-1]
                 if sep == 'd':
                     sep = 'l'  # line separator
-                fig = plot_grid(models_mags, bnames, call=callback, xlim=xlim, xtype=xtype, ylim=ylim, title=label,
+                fig = plot_grid(models_mags, bnames, call=callback, xlim=xlim, xtype=xtype, legloc=legloc, ylim=ylim, title=label,
                                 sep=sep, is_grid=False)
             else:
                 # linestyles = ['--', '-.', '-', ':']
                 fig = plot_all(models_vels, models_mags, bnames, d=distance, call=callback, xlim=xlim, xtype=xtype,
                                ylim=ylim, is_time_points=is_plot_time_points, title=label, bshift=bshift,
-                               is_axes_right=is_axes_right, is_grid=is_grid, legloc=1, fontsize=14,
+                               is_axes_right=is_axes_right, is_grid=is_grid, legloc=legloc, fontsize=14,
                                lines=linestyles)
                 # lcp.setFigMarkersBW(fig)
                 # lcp.setFigLinesBW(fig)
