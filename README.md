@@ -59,35 +59,44 @@ Keep this in mind if you want to use it on your research.
 
 ### Run
 
-```shell
->>>./ubv.py  -i cat_R1000_M15_Ni007_E15  -p stella/res/tt  -b U:2-B-V-R:_1 -z 2 -d 16e9
-```
-
 Run script for all *.ph-files in the DIR:
 ```shell
->>> find DIR  -name "*.ph" | sed -r 's/\.ph$//' | while read fn; do ./ubv.py -i $(basename  $fn)  -d $(dirname $fn) -s; done
+ find DIR  -name "*.ph" | sed -r 's/\.ph$//' | while read fn; do ./ubv.py -i $(basename  $fn)  -d $(dirname $fn) -s; done
 ```
 also the same could be done with key '-p' without model's name. 
 
 
 #### Install:
+
+Create conda environment:
+```shell
+conda env create -f environment.yml
+conda activate nb
+```
+
 ```bash
->>> git clone https://github.com/baklanovp/pystella.git
->>> cd pystella
+ git clone https://github.com/baklanovp/pystella.git
+ cd pystella
+```
+
+
+```bash
+ git clone https://github.com/baklanovp/pystella.git
+ cd pystella
 ```
 and work
 
 ```shell
->>> ./pystella.py
+ ./pystella.py
 ```
 OR
 ```shell
->>> ./ubv.py [params]
+ ./ubv.py [params]
 ```
 OR
 
 ```shell
->>> ipython
+ ipython
 ipython> import sys
 ipython> sys.path.append('path-to-root-pystella')
 ipython> import pystella as ps
@@ -96,32 +105,32 @@ ipython> import pystella as ps
 ### Requirements
 
 ```shell
->>> pip3 install -r requirements.txt
+ pip3 install -r requirements.txt
 ```
 
 OR manually
 
 To plot light curves [ubv] and shock wave details [swd]
 ```shell
->>> apt-get install python3
->>> apt-get install python3-numpy python3-scipy
->>> apt-get install python3-matplotlib
+ apt-get install python3
+ apt-get install python3-numpy python3-scipy
+ apt-get install python3-matplotlib
 ??? apt-get install python3-tk
 ```
 
 To fit observations  
 ```shell
->>> apt-get install -y python3-pip
->>> pip3 install emcee
->>> pip3 install cython
->>> pip3 install gptools
->>> pip3 install corner
+ apt-get install -y python3-pip
+ pip3 install emcee
+ pip3 install cython
+ pip3 install gptools
+ pip3 install corner
 ```
 
 ## Tests
 
 ```shell
->>> python3 -m unittest discover ./tests/
+ python3 -m unittest discover ./tests/
 ```
 
 Testing can take a long time.
