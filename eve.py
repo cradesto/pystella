@@ -94,7 +94,7 @@ def get_parser():
     parser.add_argument('--structure', dest='is_structure', action='store_true',
                         help="Show the chemical composition and rho with R/M coordinates.")
     parser.add_argument('--chem', dest='is_chem', action='store_true', help="Show chemical composition [default].")
-    parser.add_argument('--no-chem', dest='is_chem', action='store_false', help="Not show chemical composition")
+    # parser.add_argument('--no-chem', dest='is_nochem', action='store_false', help="Not show chemical composition")
     parser.set_defaults(is_chem=True)
 
     parser.add_argument('-i', '--input', action='append', nargs=1,

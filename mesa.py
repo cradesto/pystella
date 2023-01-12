@@ -191,7 +191,7 @@ def main():
     if len(names) == 0:
         # logger.error(" No data. Use key '-i' ")
         parser.print_help()
-        sys.exit(2)
+        sys.exit()
     
     if len(names) > 1:  # special case
         markers_cycler = cycle(markers_style)

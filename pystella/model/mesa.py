@@ -159,7 +159,7 @@ class Mesa:
         if len(self.profile) <= 0:
             raise ValueError("There are no data i. ")
         nzonDvd = self.profile.shape[0]
-        print(f'{nzonDvd=}')
+        print(f'nzonDvd= {nzonDvd}')
         # Hyd
         #     print(f'ADD m_core= {m_core}')
         # Set cut inner core
@@ -225,7 +225,7 @@ class Mesa:
         if len(self.profile) <= 0:
             raise ValueError("There are no data i. ")
         nzonDvd = self.profile.shape[0]
-        print(f'{nzonDvd=}')
+        print(f'nzonDvd= {nzonDvd}')
         # Hyd
         #     print(f'ADD m_core= {m_core}')
         # Set cut inner core
