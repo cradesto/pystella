@@ -197,12 +197,16 @@ def usage():
     print("  -w  write magnitudes to out-file. Use '1' for the default name of out-file")
     print("  -z <redshift>.  Default: 0")
     print("  --dt=<t_diff>  time difference between two spectra")
+    print("  --legloc=<legloc>  legend position. It could be integer 0-10. Default: 0 "
+            'Maybe: best 0, upper right 1, upper left 2, lower left 3, lower right 4, right 5, center left 6, center right 7, lower center 8, upper center 9, center 10')
     print("  --curve-old  - use old procedure")
     print("  --curve-tt  - take curves from tt-file: UBVRI+bol")
     print("  -l  write plot label")
     print("  -h  print usage")
     print("   --- ")
     ps.band.print_bands()
+
+
 
 
 def main(name=None, model_ext='.ph'):
@@ -242,7 +246,7 @@ def main(name=None, model_ext='.ph'):
     xtype = 'lin'
     # bshift = None
     bshift = None
-    legloc = 1
+    legloc = 0
     level = logging.INFO
     
     ps.band.Band.load_settings()
