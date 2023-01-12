@@ -68,22 +68,17 @@ also the same could be done with key '-p' without model's name.
 
 #### Install:
 
+```bash
+ git clone https://github.com/baklanovp/pystella.git
+ cd pystella
+```
+
 Create conda environment:
 ```shell
 conda env create -f environment.yml
 conda activate nb
 ```
 
-```bash
- git clone https://github.com/baklanovp/pystella.git
- cd pystella
-```
-
-
-```bash
- git clone https://github.com/baklanovp/pystella.git
- cd pystella
-```
 and work
 
 ```shell
