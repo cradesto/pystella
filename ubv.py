@@ -494,7 +494,7 @@ def main(name=None, model_ext='.ph'):
                 # linestyles = ['--', '-.', '-', ':']
                 fig = plot_all(models_vels, models_mags, bnames, d=distance, call=callback, xlim=xlim, xtype=xtype,
                                ylim=ylim, is_time_points=is_plot_time_points, title=label, bshift=bshift,
-                               is_axes_right=is_axes_right, is_grid=is_grid, legloc=legloc, fontsize=14,
+                               is_axes_right=is_axes_right, is_grid=is_grid, legloc=legloc, fontsize=18,
                                lines=linestyles, is_lum=is_lum)
                 # lcp.setFigMarkersBW(fig)
                 # lcp.setFigLinesBW(fig)
