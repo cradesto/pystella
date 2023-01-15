@@ -134,7 +134,7 @@ def plot_all(models_vels, models_dic, bnames, d=10, call=None, **kwargs):
             call.plot(axUbv, dic={'bnames': bnames, 'bshift': bshift})
     # finish plot
     if is_lum:
-        axUbv.set_ylabel('Luminosity')  # Magnitude  Mag
+        axUbv.set_ylabel('Luminosity [erg/s]')  # Magnitude  Mag
         axUbv.set_yscale('log')
     else:
         axUbv.set_ylabel('Magnitude')  # Magnitude  Mag
