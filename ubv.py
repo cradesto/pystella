@@ -93,6 +93,7 @@ def plot_all(models_vels, models_dic, bnames, d=10, call=None, **kwargs):
     fontsize = kwargs.get('fontsize', 12)
     bshift = kwargs.get('bshift', None)
     xtype = kwargs.get('xtype', 'lin')
+    is_lum = kwargs.get('is_lum', False)
     # band_shift['UVW1'] = 3
     # band_shift['UVW2'] = 5
     # band_shift['i'] = -1
@@ -120,9 +121,10 @@ def plot_all(models_vels, models_dic, bnames, d=10, call=None, **kwargs):
     gs1.update(wspace=0.3, hspace=0., left=0.1, right=0.95)
 
     # plot the light curves
-    ps.lcp.plot_ubv_models(axUbv, models_dic, bnames, **kwargs)
-    # lcp.plot_ubv_models(axUbv, models_dic, bands, band_shift=band_shift, xlim=xlim, ylim=ylim,
-    #                     is_time_points=is_time_points)
+    if is_lum:
+        ps.lcp.plot_lum_models(axUbv, models_dic, bnames, **kwargs)
+    else:
+        ps.lcp.plot_ubv_models(axUbv, models_dic, bnames, **kwargs)
 
     # plot callback
     if call is not None:
@@ -131,8 +133,13 @@ def plot_all(models_vels, models_dic, bnames, d=10, call=None, **kwargs):
         else:
             call.plot(axUbv, dic={'bnames': bnames, 'bshift': bshift})
     # finish plot
-    axUbv.set_ylabel('Magnitude')  # Magnitude  Mag
-    # axUbv.set_xlabel('Time since explosion [days]')
+    if is_lum:
+        axUbv.set_ylabel('Luminosity')  # Magnitude  Mag
+        axUbv.set_yscale('log')
+    else:
+        axUbv.set_ylabel('Magnitude')  # Magnitude  Mag
+    
+    axUbv.set_xlabel('Time since explosion [days]')
     axUbv.minorticks_on()
 
     if legend == 'box':
@@ -197,10 +204,11 @@ def usage():
     print("  -w  write magnitudes to out-file. Use '1' for the default name of out-file")
     print("  -z <redshift>.  Default: 0")
     print("  --dt=<t_diff>  time difference between two spectra")
-    print("  --legloc=<legloc>  legend position. It could be integer 0-10. Default: 0 "
-            'Maybe: best 0, upper right 1, upper left 2, lower left 3, lower right 4, right 5, center left 6, center right 7, lower center 8, upper center 9, center 10')
     print("  --curve-old  - use old procedure")
     print("  --curve-tt  - take curves from tt-file: UBVRI+bol")
+    print("  --legloc=<legloc>  legend position. It could be integer 0-10. Default: 0 "
+            'Maybe: best 0, upper right 1, upper left 2, lower left 3, lower right 4, right 5, center left 6, center right 7, lower center 8, upper center 9, center 10')
+    print("  --lum  plot luminosity at y-axe")
     print("  -l  write plot label")
     print("  -h  print usage")
     print("   --- ")
@@ -224,6 +232,7 @@ def main(name=None, model_ext='.ph'):
     is_curve_tt = False
     is_axes_right = False
     is_grid = False
+    is_lum = False
 
     vel_mode = None
     view_opts = ('single', 'grid', 'gridl', 'gridm')
@@ -253,7 +262,7 @@ def main(name=None, model_ext='.ph'):
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hqtb:c:d:e:g:i:l:o:m:p:v:s:w:x:y:z:",
-                                   ['dt=', 'curve-old', 'curve-tt', 'legloc='])
+                                   ['dt=', 'curve-old', 'curve-tt', 'legloc=', 'lum'])
     except getopt.GetoptError as err:
         print(str(err))  # will print something like "option -a not recognized"
         usage()
@@ -323,6 +332,9 @@ def main(name=None, model_ext='.ph'):
             continue
         if opt == '--curve-tt':
             is_curve_tt = True
+            continue
+        if opt == '--lum':
+            is_lum = True
             continue
         if opt == '-w':
             is_save_mags = True
@@ -483,7 +495,7 @@ def main(name=None, model_ext='.ph'):
                 fig = plot_all(models_vels, models_mags, bnames, d=distance, call=callback, xlim=xlim, xtype=xtype,
                                ylim=ylim, is_time_points=is_plot_time_points, title=label, bshift=bshift,
                                is_axes_right=is_axes_right, is_grid=is_grid, legloc=legloc, fontsize=14,
-                               lines=linestyles)
+                               lines=linestyles, is_lum=is_lum)
                 # lcp.setFigMarkersBW(fig)
                 # lcp.setFigLinesBW(fig)
 

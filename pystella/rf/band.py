@@ -3,7 +3,7 @@ from os.path import dirname
 
 import numpy as np
 
-from pystella.rf.rad_func import MagAB2Flux, Flux2MagAB
+from pystella.rf.rad_func import MagAB2Flux, Flux2MagAB, MagBol2Lum
 from pystella.util.phys_var import phys
 
 __author__ = 'bakl'
@@ -17,6 +17,7 @@ class Band(object):
     IsLoad = False
     Cache = dict()
     Alias = None
+    MagSunAlias = None
     FileFilters = 'filters.ini'
     FileSettings = 'settings.ini'
     NameBol = 'bol'
@@ -27,6 +28,9 @@ class Band(object):
     NameJy = 'Jy'
     DirRoot = os.path.join(dirname(dirname(dirname(os.path.realpath(__file__)))), 'data/bands')
     FileVega = os.path.join(DirRoot, 'vega.dat')
+    # FileMagSun = os.path.join(DirRoot, 'adb_mag_sun_apjsaabfdft3_ascii.txt')
+    # MagSunData = None
+
 
     def __init__(self, name=None, fname=None, zp=None, jy=None, is_load=False):
         """Creates a band instance.  Required parameters:  name and file."""
@@ -268,8 +272,22 @@ class Band(object):
         parser.read(fini)
         if 'alias' in parser.sections():
             Band.Alias = {k: v for k, v in parser.items('alias')}
+        # if 'magsun' in parser.sections():
+        #     Band.MagSunAlias = {v: k for k, v in parser.items('magsun')}
         Band.IsLoad = True
         return True
+
+    # @classmethod
+    # def get_MagSun_data(cls):
+    #     """
+    #     Magnitudes of the Sun
+    #     see https://iopscience.iop.org/article/10.3847/1538-4365/aabfdf#apjsaabfdft3
+
+    #     @return: np.array(filter, Vega, AB ... 
+    #     """
+    #     colnames = 'filter 	absVega	absAB absST	visVega	 visAB	visST	offAB	offST	pivot  src'.split()
+    #     dtype={'names': colnames, 'formats': ['filter'] + [np.float64] * (len(colnames)-1)}
+    #     return np.loadtxt(Band.FileMagSun, dtype=dtype, comments='#')
 
     @classmethod
     def get_vega_data(cls):
@@ -477,6 +495,24 @@ class Band(object):
 
         return res
 
+    def mag2lum(self, mags):
+        return MagBol2Lum(mags)
+
+    # def mag2lum(self, mag):
+    #     if self.MagSunData is None:
+    #         self.MagSunData = Band.get_MagSun_data()
+        
+    #     if self.Name not in self.MagSunAlias:
+    #         raise ValueError('Can not convert to Luminosity band: {}'.format(self.Name))
+
+    #     filter = self.MagSunAlias[self.Name]
+    #     idx = self.MagSunData["filter" == filter]
+    #     abs_mag_sun, vis_mag_sun = self.MagSunData['absVega'][idx],  self.MagSunData['visVega'][idx]
+    #     lum = 10. ** (0.4 * (abs_mag_sun - mag)) * phys.L_sun
+
+    #     return lum
+
+
 
 class BandUni(Band):
     def __init__(self, name='bol', wlrange=(1e1, 5e4), length=300):
@@ -506,7 +542,9 @@ class BandUni(Band):
 
         return res
 
-        # return 1.
+    def mag2lum(self, mags):
+        return MagBol2Lum(mags)
+
 
     @classmethod
     def get_bol(cls):

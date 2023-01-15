@@ -5,6 +5,7 @@ from collections import OrderedDict
 
 import numpy as np
 from pystella.rf import band
+from pystella.rf import MagBol2Lum
 
 try:
     import matplotlib.pyplot as plt
@@ -85,6 +86,90 @@ def lbl(b, band_shift, length=0):
 
 def lbl_length(bshifts):
     return max((len(lbl(b, bshifts)) for b in bshifts.keys()))
+
+
+def plot_lum_models(ax, models_dic, bands, **kwargs):
+    # bshift=None, xlim=None, ylim=None, colors=lc_colors, is_time_points=False):
+    global linestyles
+    xlim = kwargs.get('xlim', None)
+    ylim = kwargs.get('ylim', None)
+    bshift = kwargs.get('bshift', None)
+    ls1 = kwargs.get('ls1', "-")
+    ls_multi = kwargs.get('ls_multi', ":")
+    lw = kwargs.get('lw', 2)
+    markersize = kwargs.get('markersize', 6)
+    is_time_points = kwargs.get('is_time_points', False)
+    is_dashes = kwargs.get('is_dashes', False)
+    line_styles = kwargs.get('linestyles', linestyles)
+    #    linestyles = kwargs.get('linestyles', ['-'])
+
+    is_compute_x_lim = xlim is None
+    is_compute_y_lim = ylim is None
+
+    t_points = [0.2, 1, 2, 3, 4, 5, 10, 20, 40, 80, 150]
+    colors = band.colors()
+    band_shift = dict((k, 0) for k, v in colors.items())  # no y-shift
+    if bshift is not None:
+        for k, v in bshift.items():
+            band_shift[k] = v
+
+    lbl_len = lbl_length(band_shift)
+
+    mi = 0
+    x_max = []
+    y_mid = []
+    lc_min = {}
+    line_cycle = cycle(line_styles)
+    dashes = get_dashes(len(bands) + 1, scale=2)
+
+    for mname, mdic in models_dic.items():
+        mi += 1
+        ls = next(line_cycle)
+        for ib, bname in enumerate(bands):
+            b = band.band_by_name(bname)
+            lc = mdic[bname]
+            x = lc.Time
+            y = b.mag2lum(lc.Mag)
+            bcolor = colors[bname]
+            dash = dashes[ib]
+            if len(models_dic) == 1:
+                if is_dashes:
+                    ax.plot(x, y, label='%s  %s' % (lbl(bname, band_shift, lbl_len), mname), color=bcolor, ls=ls1,
+                            linewidth=lw, dashes=dash)
+                else:
+                    ax.plot(x, y, label='%s  %s' % (lbl(bname, band_shift, lbl_len), mname), color=bcolor, ls=ls,
+                            linewidth=lw)
+            # ax.plot(x, y, label='%s  %s' % (lbl(bname, band_shift), mname), color=bcolor, ls=ls1, linewidth=lw)
+            elif len(models_dic) <= len(line_styles):
+                ax.plot(x, y, label='%s  %s' % (lbl(bname, band_shift, lbl_len), mname), color=bcolor, ls=ls,
+                        linewidth=lw)
+            else:
+                ax.plot(x, y, marker=markers[mi % (len(markers) - 1)],
+                        label='%s  %s' % (lbl(bname, band_shift, lbl_len), mname),
+                        markersize=markersize, color=bcolor, ls=ls_multi, linewidth=lw)
+
+            if is_time_points:
+                integers = [np.abs(x - t).argmin() for t in t_points]  # set time points
+                for (X, Y) in zip(x[integers], y[integers]):
+                    ax.annotate('{:.0f}'.format(X), xy=(X, Y), xytext=(-10, 20), ha='right',
+                                textcoords='offset points', color=bcolor,
+                                arrowprops=dict(arrowstyle='->', shrinkA=0))
+            idx = np.argmin(y)
+            lc_min[bname] = (x[idx], y[idx])
+            if is_compute_x_lim:
+                x_max.append(np.max(x))
+            if is_compute_y_lim:
+                y_mid.append(np.max(y))
+
+    if is_compute_x_lim:
+        xlim = [-10, np.max(x_max) + 10.]
+    if is_compute_y_lim:
+        ylim = [np.max(y_mid)*1e-5, np.max(y_mid) * 5.]
+
+    ax.set_xlim(xlim)
+    ax.set_ylim(ylim)
+
+    return lc_min
 
 
 def plot_ubv_models(ax, models_dic, bands, **kwargs):
