@@ -3,7 +3,7 @@ from os.path import dirname
 
 import numpy as np
 
-from pystella.rf.rad_func import MagAB2Flux, Flux2MagAB
+from pystella.rf.rad_func import MagAB2Flux, Flux2MagAB, MagBol2Lum
 from pystella.util.phys_var import phys
 
 __author__ = 'bakl'
@@ -17,6 +17,7 @@ class Band(object):
     IsLoad = False
     Cache = dict()
     Alias = None
+    MagSunAlias = None
     FileFilters = 'filters.ini'
     FileSettings = 'settings.ini'
     NameBol = 'bol'
@@ -26,6 +27,10 @@ class Band(object):
     NameZp = 'zp'
     NameJy = 'Jy'
     DirRoot = os.path.join(dirname(dirname(dirname(os.path.realpath(__file__)))), 'data/bands')
+    FileVega = os.path.join(DirRoot, 'vega.dat')
+    # FileMagSun = os.path.join(DirRoot, 'adb_mag_sun_apjsaabfdft3_ascii.txt')
+    # MagSunData = None
+
 
     def __init__(self, name=None, fname=None, zp=None, jy=None, is_load=False):
         """Creates a band instance.  Required parameters:  name and file."""
@@ -55,6 +60,11 @@ class Band(object):
 
     @property
     def zp(self):
+        """
+        It's correction to  AB mag:
+        See code: mag = Flux2MagAB(response / b.Norm) - b.zp
+        :return:
+        """
         if self._zp is None:
             return 0.
         return self._zp
@@ -97,16 +107,34 @@ class Band(object):
     def wlrange(self):
         return np.min(self.wl), np.max(self.wl)
 
+    def zp_vega(self):
+        return Band.get_zp_vega(self)
+
+    def zp_vega_Jy(self):
+        return Band.get_zp_vega_Jy(self)
+
+    @property
+    def zp_AB_vega(self):
+        fl_A_zp = self.zp_vega_Jy()
+        return Flux2MagAB(fl_A_zp * 1e-23)
+
+    # @property
+    # def wl_eff(self):
+    #     """The effective wavelength"""
+    #     if self._wl_eff is None:
+    #         from scipy.integrate import simps
+    #         wl = self.wl
+    #         resp = np.array(self.resp_wl)
+    #         num = simps(resp * wl ** 2, wl)
+    #         den = simps(resp * wl, wl)
+    #         self._wl_eff = num / den
+    #     return self._wl_eff
+
     @property
     def wl_eff(self):
         """The effective wavelength"""
         if self._wl_eff is None:
-            from scipy.integrate import simps
-            wl = self.wl
-            resp = np.array(self.resp_wl)
-            num = simps(resp * wl, wl)
-            den = simps(resp, wl)
-            self._wl_eff = num / den
+            self._wl_eff = Band.get_wl_eff_vega(self)
         return self._wl_eff
 
     @property
@@ -244,8 +272,89 @@ class Band(object):
         parser.read(fini)
         if 'alias' in parser.sections():
             Band.Alias = {k: v for k, v in parser.items('alias')}
+        # if 'magsun' in parser.sections():
+        #     Band.MagSunAlias = {v: k for k, v in parser.items('magsun')}
         Band.IsLoad = True
         return True
+
+    # @classmethod
+    # def get_MagSun_data(cls):
+    #     """
+    #     Magnitudes of the Sun
+    #     see https://iopscience.iop.org/article/10.3847/1538-4365/aabfdf#apjsaabfdft3
+
+    #     @return: np.array(filter, Vega, AB ... 
+    #     """
+    #     colnames = 'filter 	absVega	absAB absST	visVega	 visAB	visST	offAB	offST	pivot  src'.split()
+    #     dtype={'names': colnames, 'formats': ['filter'] + [np.float64] * (len(colnames)-1)}
+    #     return np.loadtxt(Band.FileMagSun, dtype=dtype, comments='#')
+
+    @classmethod
+    def get_vega_data(cls):
+        """
+        Get wl and flux for Vega
+        @return: wl [cm], flux
+        """
+        d_vega = np.loadtxt(Band.FileVega, dtype={'names': ('wl', 'fl'), 'formats': (float, float)})
+        return d_vega['wl'] * phys.angs_to_cm, d_vega['fl']
+
+    @classmethod
+    def get_wl_eff_vega(cls, b):
+        """
+        Calculated as {\int lambda^2 * T * S * dLambda}  / {\int lambda * T * S * dLambda}
+        , where: T(lambda) ≡ filter transmission
+                 S(lambda) ≡ Vega spectrum
+        @param b:  band
+        @return: lambda_eff
+        """
+        from scipy import integrate
+        from pystella import util
+        # from scipy import interpolate
+        lmb_s, flux_s = Band.get_vega_data()
+
+        lmb_b = np.array(b.wl)
+        resp_b = np.array(b.resp_wl)
+
+        fn_interp = util.log_interp1d(lmb_s, flux_s)
+        # fn_interp = interpolate.interp1d(lmb_s, flux_s)
+        flux_interp = fn_interp(lmb_b)
+
+        num = integrate.simps(flux_interp * resp_b * lmb_b ** 2, lmb_b)
+        den = integrate.simps(flux_interp * resp_b * lmb_b, lmb_b)
+        zp = num / den
+        # print(f'{b.Name}: {num=} / {den=}  =  {zp=} ')
+        return zp
+
+    @classmethod
+    def get_zp_vega(cls, b):
+        """
+        Zero point in Vega system in [erg/cm2/s/A]
+        @param b:  band
+        @return: zero point
+        """
+        from scipy import integrate
+        from pystella import util
+
+        # from scipy import interpolate
+        lmb_s, flux_s = Band.get_vega_data()
+
+        lmb_b = np.array(b.wl)
+        # lmb_b = lmb_b / ps.phys.angs_to_cm
+        resp_b = np.array(b.resp_wl)
+
+        fn_interp = util.log_interp1d(lmb_s, flux_s)
+        # fn_interp = interpolate.interp1d(lmb_s, flux_s)
+        flux_interp = fn_interp(lmb_b)
+
+        num = integrate.simps(flux_interp * resp_b * lmb_b, lmb_b)
+        den = integrate.simps(resp_b * lmb_b, lmb_b)
+        return num / den
+
+    @classmethod
+    def get_zp_vega_Jy(cls, b):
+        fl_zp = cls.zp_vega(b)
+        res = fl_zp * phys.cm_to_angs * b.wl_eff ** 2 / phys.c / phys.jy_to_erg
+        return res
 
     @staticmethod
     def response_nu(nu, flux, b, is_freq_norm=True):
@@ -386,6 +495,24 @@ class Band(object):
 
         return res
 
+    def mag2lum(self, mags):
+        return MagBol2Lum(mags)
+
+    # def mag2lum(self, mag):
+    #     if self.MagSunData is None:
+    #         self.MagSunData = Band.get_MagSun_data()
+        
+    #     if self.Name not in self.MagSunAlias:
+    #         raise ValueError('Can not convert to Luminosity band: {}'.format(self.Name))
+
+    #     filter = self.MagSunAlias[self.Name]
+    #     idx = self.MagSunData["filter" == filter]
+    #     abs_mag_sun, vis_mag_sun = self.MagSunData['absVega'][idx],  self.MagSunData['visVega'][idx]
+    #     lum = 10. ** (0.4 * (abs_mag_sun - mag)) * phys.L_sun
+
+    #     return lum
+
+
 
 class BandUni(Band):
     def __init__(self, name='bol', wlrange=(1e1, 5e4), length=300):
@@ -415,7 +542,9 @@ class BandUni(Band):
 
         return res
 
-        # return 1.
+    def mag2lum(self, mags):
+        return MagBol2Lum(mags)
+
 
     @classmethod
     def get_bol(cls):
@@ -506,6 +635,7 @@ class BandJoin(Band):
     def get_ubvri(cls, length=300):
         return BandJoin(name=Band.NameUBVRI, bnames=('U', 'B', 'V', 'R', 'I'), length=length,
                         is_norm=True, is_sum=False)
+
     @classmethod
     def get_bvri(cls, length=300):
         return BandJoin(name=Band.NameBVRI, bnames=('B', 'V', 'R', 'I'), length=length,
@@ -531,6 +661,7 @@ def colors(bname=None, default='magenta'):
          'GrondJ': "darkgreen", 'GrondH': "darkcyan", 'GrondK': "dimgray",
          'LcoJ': "green", 'LcoH': "cyan", 'LcoK': "black",
          'UVM2': "skyblue", 'UVW1': "orange", 'UVW2': "mediumpurple",
+         'UVM2AB': "powderblue", 'UVW1AB': "moccasin", 'UVW2AB': "thistle",
          'UVM2o': "deepskyblue", 'UVW1o': "darkviolet", 'UVW2o': "darkblue",
          'USNO40i': "blue", 'USNO40g': "cyan", 'USNO40z': "darkgreen", 'USNO40r': "darkviolet", 'USNO40u': "magenta",
          'F105W': "magenta", 'F435W': "skyblue", 'F606W': "cyan", 'F125W': "g",
@@ -541,7 +672,7 @@ def colors(bname=None, default='magenta'):
          'PS1g': "olive", 'PS1r': "red", 'PS1i': "magenta", 'PS1u': "blue", 'PS1z': "chocolate", 'PS1y': "cyan",
          'PS1w': "orange", 'y': 'y', 'Y': 'y', 'w': 'tomato',
          'AtlasC': "cyan", 'AtlasO': "orange",
-         'UBVRI': 'chocolate', 'GaiaG': 'g',
+         'UBVRI': 'chocolate', 'GaiaG': 'g', 'TESSRed': 'orchid',
          'L_ubvri': 'sandybrown', 'L_bol': 'saddlebrown', 'XEUV<325': 'sienna', 'IR>890': 'peru',
          Band.NameBol: 'black', Band.NameUBVRI: 'dimgrey', Band.NameBVRI: 'saddlebrown', Band.NameBolQuasi: 'dimgray'}
     # for Subaru HCS: colors
@@ -557,10 +688,13 @@ def colors(bname=None, default='magenta'):
 
 
 def lntypes(bname=None, default='-'):
-    ln = {"U": "-", 'B': "-", 'V': "-", 'R': "-", 'I': "-", 'UVM2': "-.", 'UVW1': "-.", 'UVW2': "-.", 'F125W': ":",
+    ln = {"U": "-", 'B': "-", 'V': "-", 'R': "-", 'I': "-",
+          'UVM2': "-.", 'UVW1': "-.", 'UVW2': "-.",
+          'UVM2AB': ".", 'UVW1AB': ".", 'UVW2AB': ".",
+          'F125W': ":",
           'F160W': "-.", 'F140W': "--", 'F105W': "-.", 'F435W': "--", 'F606W': "-.", 'F814W': "--", 'u': "--",
           'g': "--", 'r': "--", 'i': "--", 'z': "--", 'Y': '--', 'GaiaG': '--',
-          Band.NameBol: '-', Band.NameUBVRI: '--',  Band.NameBVRI: '-.', Band.NameBolQuasi: ':'}
+          Band.NameBol: '-', Band.NameUBVRI: '--', Band.NameBVRI: '-.', Band.NameBolQuasi: ':'}
     # for Subaru HCS: colors
     for b in list('grizY'):
         ln['HSC' + b] = ln[b]
@@ -600,7 +734,7 @@ def band_load_names(path=Band.DirRoot):
     qbol = BandUni.get_qbol()
     ubvri = BandJoin.get_ubvri()
     bvri = BandJoin.get_bvri()
-    bands = {Band.NameBol: bol, Band.NameUBVRI: ubvri,Band.NameBVRI: bvri, Band.NameBolQuasi: qbol}
+    bands = {Band.NameBol: bol, Band.NameUBVRI: ubvri, Band.NameBVRI: bvri, Band.NameBolQuasi: qbol}
     for d, dir_names, file_names in os.walk(path):
         if Band.FileFilters in file_names:  # check that there are info-file in this directory
             fname = os.path.join(d, Band.FileFilters)

@@ -10,6 +10,7 @@ import math
 import os
 import sys
 from os.path import dirname
+import logging
 
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
@@ -22,6 +23,8 @@ __author__ = 'bakl'
 
 ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
 
+logger = logging.getLogger(__name__)
+level = logging.INFO
 
 def merge_obs(inp, type_el):
     result = None
@@ -140,7 +143,8 @@ def usage():
     print("  obs.py [params]")
     print("  -b <bands:shift>: string, default: U-B-V-R-I.\n"
           "     shift: to move lc along y-axe (minus is '_', for example -b R:2-V-I:_4-B:5 ")
-    print("  -c <callback> [lcobs:fname:marker:dt:dm, popov[:R:M:E[FOE]:Mni]]. "
+    print("  -c <callback> [lcobs:fname:marker:dt:dm, velobs:fname:marker:dt:vnorm(to cm/s), "
+          "popov[:R:M:E[FOE]:Mni], lcobssm as lcobs, but for sm-format data-files]. "
           "You can add parameters in format func:params")
     print("  -g <single, grid, gridm, gridl> Select plot view.  single [default] = all models in one figure"
           ", grid = for each band separate figure.")
@@ -163,13 +167,17 @@ def old_lc_wrapper(param, p=None):
             p = os.getcwd()
         else:
             p = ps.cb.plugin_path
-    print("Call: {} from {}".format(fname, p))
+    logger.info("Call: {} from {}".format(fname, p))
     c = ps.cb.CallBack(fname, path=p, args=a, load=1)
-    print("Call: %s from %s" % (c.Func, c.FuncFileFull))
+    logger.info("Call: %s from %s" % (c.Func, c.FuncFileFull))
     return c
 
 
 def main():
+    def is_level(lvl):
+        levels = ['CRITICAL', 'FATAL','ERROR','WARN','WARNING','INFO','DEBUG','NOTSET']
+        return lvl.upper() in levels
+        
     view_opts = ('single', 'grid', 'gridl', 'gridm')
     opt_grid = view_opts[0]
 
@@ -179,11 +187,12 @@ def main():
     callback = None
     xlim = None
     ylim = None
-
+    level = logging.INFO
+    
     ps.band.Band.load_settings()
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hqc:g:b:l:s:w:x:y:")
+        opts, args = getopt.getopt(sys.argv[1:], "hqc:g:b:l:s:w:x:y:", '--log')
     except getopt.GetoptError as err:
         print(str(err))  # will print something like "option -a not recognized"
         usage()
@@ -212,7 +221,7 @@ def main():
                 else:
                     bname = b
                 if not ps.band.is_exist(bname):
-                    print('No such band: ' + bname)
+                    logger.error('No such band: ' + bname)
                     sys.exit(2)
                 bnames.append(bname)
             continue
@@ -225,11 +234,18 @@ def main():
         if opt == '-g':
             opt_grid = str.strip(arg).lower()
             if opt_grid not in view_opts:
-                print('No such view option: {0}. Can be '.format(opt_grid, '|'.join(view_opts)))
+                logger.error('No such view option: {0}. Can be '.format(opt_grid, '|'.join(view_opts)))
                 sys.exit(2)
             continue
         if opt == '-l':
             label = str.strip(arg)
+            continue
+        if opt == '--log':
+            if is_level(args.log):
+                level = logging.getLevelName(args.log.upper())
+            else:
+                level = logging.INFO
+                print(f"ERROR: Bad value for log: {level}. See help.")
             continue
         if opt == '-s':
             fsave = str.strip(arg)
@@ -247,9 +263,14 @@ def main():
         elif opt == '-h':
             usage()
             sys.exit(2)
+    
+    logger.setLevel(level)
+    logging.basicConfig(level=level)
+    for nm in ['velobs', 'lcobs']:
+        log = logging.getLogger(nm).setLevel(level)
 
     if callback is None:
-        print('No  obs data. You my use lcobs or other callbacks.')
+        logger.error('No  obs data. You my use lcobs or other callbacks.')
         usage()
         sys.exit(2)
 
@@ -263,14 +284,14 @@ def main():
 
     if is_save_mags:
         if len(res) == 0:
-            print('No data to write.')
+            logger.error('No data to write.')
         else:
             curves = merge_obs(res, ps.SetLightCurve)
             fsave = os.path.expanduser(fsave)
             if ps.lcf.curves_save(curves, fsave):
                 print("Magnitudes of {} have been saved to {}".format(curves.Name, fsave))
             else:
-                print("Error with Magnitudes saved to {}".format(curves.Name, fsave))
+                logger.error("Error with Magnitudes saved to {}".format(curves.Name, fsave))
 
     else:
         plt.show()

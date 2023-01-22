@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 mpl_logger = logging.getLogger('matplotlib')
-mpl_logger.setLevel(logging.WARNING)
+mpl_logger.setLevel(logging.ERROR)
 
 markers = {u'x': u'x', u'd': u'thin_diamond',
            u'+': u'plus', u'*': u'star', u'o': u'circle', u'v': u'triangle_down', u'<': u'triangle_left'}
@@ -47,12 +47,12 @@ def get_parser():
     parser = argparse.ArgumentParser(description='Process light curve fitting.', formatter_class=RawTextHelpFormatter)
     print(" Observational data could be loaded with plugin, ex: -c lcobs:filedata:tshift:mshift")
 
-    parser.add_argument('-A', '--tweight',
+    parser.add_argument('--dt0',
                         required=False,
                         type=float,
                         default=0.,
-                        dest="tweight",
-                        help="-A <fit weight time>, default: 0, set importance of first observational points")
+                        dest="dt0",
+                        help="--dt0, default: 0, set start point for fitting procedure")
     parser.add_argument('-b', '--band',
                         required=False,
                         dest="bnames",
@@ -112,6 +112,14 @@ def get_parser():
                         const=True,
                         dest="is_not_quiet",
                         help="Result with additional information"), \
+    parser.add_argument('--log',
+                        required=False,
+                        type=str,
+                        default='INFO',
+                        dest="log",
+                        help="Set logging level: "
+                             "CRITICAL, ERROR, WARNING, INFO, DEBUG, NOTSET"
+                        )
     parser.add_argument('--is_spline',
                         action='store_const',
                         default=False,
@@ -255,6 +263,7 @@ def plot_curves_vel(curves_o, vels_o, res_models, res_sorted, vels_m, **kwargs):
     font_size = kwargs.get('font_size', 10)
     linewidth = kwargs.get('linewidth', 2.0)
     markersize = kwargs.get('markersize', 3)
+    vnorm = kwargs.get('vnorm', 1e8)
     xlim = kwargs.get('xlim', None)
 
     ylim = None
@@ -306,7 +315,7 @@ def plot_curves_vel(curves_o, vels_o, res_models, res_sorted, vels_m, **kwargs):
         #  Plot Vel
         axVel = axUbv.twinx()
         axVel.set_ylim((0., 29))
-        axVel.set_ylabel('Velocity [1000 km/s]')
+        axVel.set_ylabel('Velocity [{:.0f} km/s]'.format(vnorm/1e5))
 
         ts_vel = vels_m[k]
         x = ts_vel.Time
@@ -319,15 +328,15 @@ def plot_curves_vel(curves_o, vels_o, res_models, res_sorted, vels_m, **kwargs):
             vel_o.tshift = tshift_vel + tshift_best
             marker = next(markers_cycler)
             if vel_o.IsErr:
-                yyerr = abs(vel_o.Err)
-                axVel.errorbar(vel_o.Time, vel_o.V, yerr=yyerr, label='{0}'.format(vel_o.Name),
+                yyerr = np.abs(vel_o.Err)/vnorm
+                axVel.errorbar(vel_o.Time, vel_o.V/vnorm, yerr=yyerr, label='{0}'.format(vel_o.Name),
                                color="blue", ls='',
                                markersize=markersize, fmt=marker, markeredgewidth=2,
                                markerfacecolor='none', markeredgecolor='blue')
             else:
-                axVel.plot(vel_o.Time, vel_o.V, label=vel_o.Name, color='blue', ls='',
+                axVel.plot(vel_o.Time, vel_o.V/vnorm, label=vel_o.Name, color='blue', ls='',
                            marker=marker, markersize=markersize)
-
+        axVel.legend()
     fig.subplots_adjust(wspace=0, hspace=0)
     return fig
 
@@ -730,7 +739,7 @@ def fit_mfl(args, curves_o, bnames, fitter, name, path, t_diff, tlim, is_fit_sig
     return curves_m, fit_result, res
 
 
-def fit_mfl_vel(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, tlim, is_sigma, is_spline=False, Vnorm=1e8, A=0.):
+def fit_mfl_vel(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, tlim, is_sigma, is_spline=False, Vnorm=1e8, dt0=0):
     distance = args.distance  # pc
     z = args.redshift
     # Set distance and redshift
@@ -745,7 +754,7 @@ def fit_mfl_vel(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, tlim
     if curves_o is not None:
         mdl = ps.Stella(name, path=path)
         if args.is_curve_tt:  # tt
-            print("The curves [UBVRI+bol] was taken from tt-file {}. ".format(name) +
+            logger.info("The curves [UBVRI+bol] was taken from tt-file {}. ".format(name) +
                   "IMPORTANT: distance: 10 pc, z=0, E(B-V) = 0")
             curves_m = mdl.get_tt().read_curves()
             excluded = [bn for bn in curves_m.BandNames if bn not in bnames]
@@ -768,39 +777,33 @@ def fit_mfl_vel(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, tlim
     vel_m = None
     # compute model velocities
     try:
-        tbl = ps.vel.compute_vel_swd(name, path)
-        # print('tbl[time]= ', tbl['time'])
-        # print('tbl[vel]= ', tbl['vel'])
-        # print('Vnorm= ', Vnorm)
-        # tbl = velocity.compute_vel_res_tt(name, path)
+        tbl = ps.vel.compute_vel_res_tt(name, path)
         vel_m = ps.vel.VelocityCurve('Vel', tbl['time'], tbl['vel'] / Vnorm)
-        if vel_m is None:
-            raise ValueError('Problem with vel_m.')
-    except ValueError as ext:
-        print(ext)
+    except ps.vel.VelocityException as ex:
+        tbl = ps.vel.compute_vel_swd(name, path)
+        vel_m = ps.vel.VelocityCurve('Vel', tbl['time'], tbl['vel'] / Vnorm)
+    if vel_m is None:
+        raise ValueError('Problem with vel_m via swd.')
+    logger.debug('{}'.format(np.array2string(vel_m.T)))
+    logger.debug('{}'.format(np.array2string(vel_m.V)))
+    # except ValueError as ex:
+    #     print(ex)
 
     # velocity
+    Nweight = 1
     if curves_m is not None:
         # To increase the weight of Velocities with fitting
-        for i in range(curves_m.Length):
-            for vel_o in vels_o:
-                key = 'Vel{:d}{}'.format(i, vel_o.Name)
-                tss_m.add(vel_m.copy(name=key))
-                tss_o.add(vel_o.copy(name=key))
-                # tss_o[key] = vel_o
-                # tss_m[key] = vel_m
-    else:
-        # tss_m.add(vel_m.copy(name='Vel'))
-        for i, vel_o in enumerate(vels_o):
+        Nweight = curves_m.Length
+
+    for i in range(Nweight):
+        for vel_o in vels_o:
             key = 'Vel{:d}{}'.format(i, vel_o.Name)
             tss_m.add(vel_m.copy(name=key))
             tss_o.add(vel_o.copy(name=key))
-        # tss_o.add(vels_o.copy(name='Vel'))
-        # tss_m['Vel'] = vel_m
-        # tss_o['Vel'] = vels_o
-
+            logger.debug(f'Nweight= {Nweight}: {key} | {vel_m.Length=} | {vel_o.Length=}')
+    
     # fit
-    res = fitter.fit_tss(tss_m, tss_o, A=A)
+    res = fitter.fit_tss(tss_m, tss_o, dt0=dt0)
 
     return curves_m, res, vel_m
 
@@ -839,6 +842,10 @@ def main():
     import os
     import sys
 
+    def is_level(lvl):
+        levels = ['CRITICAL', 'FATAL','ERROR','WARN','WARNING','INFO','DEBUG','NOTSET']
+        return lvl.upper() in levels
+
     model_ext = '.ph'
     n_best = 15
     ps.Band.load_settings()
@@ -850,6 +857,19 @@ def main():
     if args.path:
         path = os.path.expanduser(args.path)
         # print(f'-p: {path}')
+
+    level = logging.INFO
+    if args.log is not None and is_level(args.log):
+        level = logging.getLevelName(args.log.upper())
+    else:
+        logger.error(f"ERROR: Bad value for log: {level}. See help.")
+        parser.print_help()
+        sys.exit(2)
+    
+    logger.setLevel(level)
+    logging.basicConfig(level=level)
+    for nm in ['velobs', 'lcobs','pystella.fit.fit_mpfit', 'pystella.velocity']:
+        logging.getLogger(nm).setLevel(level)
 
     # Set model names
     names = []
@@ -874,7 +894,7 @@ def main():
     if args.bnames:
         for bname in args.bnames.split('-'):
             if not ps.band.is_exist(bname):
-                print('No such band: ' + bname)
+                logger.error('No such band: ' + bname)
                 parser.print_help()
                 sys.exit(2)
             bnames.append(bname)
@@ -882,7 +902,7 @@ def main():
     # Get observations
     observations = ps.cb.observations(args)
     if observations is None:
-        print('No obs data. Use key: -c: ')
+        logger.error('No obs data. Use key: -c: ')
         parser.print_help()
         sys.exit(2)
 
@@ -899,26 +919,26 @@ def main():
     z = args.redshift
     t_diff = args.t_diff
     if args.distance is not None:
-        print("Fit magnitudes on z={0:F} at distance={1:E}".format(z, args.distance))
+        logger.info("Fit magnitudes on z={0:F} at distance={1:E}".format(z, args.distance))
         if z > 0:
-            print("  Cosmology D(z)={0:E} Mpc".format(ps.cosmology_D_by_z(z)))
+            logger.info("  Cosmology D(z)={0:E} Mpc".format(ps.cosmology_D_by_z(z)))
     else:
         distance = 10  # pc
         if z > 0:
             distance = ps.cosmology_D_by_z(z) * 1e6
-            print("Fit magnitudes on z={0:F} with cosmology D(z)={1:E} pc".format(z, distance))
+            logger.info("Fit magnitudes on z={0:F} with cosmology D(z)={1:E} pc".format(z, distance))
         args.distance = distance
     if is_sigma:
-        print("Fit magnitudes with model uncertainties.")
+        logger.info("Fit magnitudes with model uncertainties.")
 
-    print("Color excess E(B-V) ={:f}".format(args.color_excess))
+    logger.info("Color excess E(B-V) ={:f}".format(args.color_excess))
 
     # Time limits for models
     tlim = (0, float('inf'))
 
     if args.tlim:
         tlim = list(map(float, args.tlim.replace('\\', '').split(':')))
-    print('Time limits for models: {}'.format(':'.join(map(str, tlim))))
+    logger.info('Time limits for models: {}'.format(':'.join(map(str, tlim))))
 
     # The fit engine
     fitter = engines(args.engine)
@@ -942,9 +962,9 @@ def main():
         name = names[0]
         if args.is_not_quiet:
             if tlim is not None:
-                print("Fitting for model %s %s for %s moments" % (path, name, tlim))
+                logger.info("Fitting for model %s %s for %s moments" % (path, name, tlim))
             else:
-                print("Fitting for model %s %s, tweight= %f" % (path, name, args.tweight))
+                logger.info("Fitting for model %s %s, dt0= %f" % (path, name, args.dt0))
         # curves_m = lcf.curves_compute(name, path, bnames, z=args.redshift, distance=args.distance,
         #                               t_beg=tlim[0], t_end=tlim[1], t_diff=t_diff)
         # res = fitter.fit_curves(curves_o, curves_m)
@@ -952,10 +972,10 @@ def main():
             curves_m, res, res_full = fit_mfl(args, curves_o, bnames, fitter, name, path, t_diff, tlim, is_sigma)
         else:
             curves_m, res, vel_m = fit_mfl_vel(args, curves_o, vels_o, bnames, fitter, name, path,
-                                               t_diff, tlim, is_sigma, A=args.tweight)
+                                               t_diff, tlim, is_sigma, dt0=args.dt0)
             vels_m[name] = vel_m
 
-        print("{}: t    ime shift  = {:.2f}+/-{:.4f} Measure: {:.4f} {}".
+        logger.info("{}: time shift  = {:.2f}+/-{:.4f} Measure: {:.4f} {}".
               format(name, res.tshift, res.tsigma, res.measure, res.comm))
         # best_tshift = res.tshift
         res_models[name] = curves_m
@@ -963,7 +983,7 @@ def main():
         res_sorted = res_chi
     elif len(names) > 1:
         if args.nodes > 1:
-            print("Run parallel fitting: nodes={}, models  {}".format(args.nodes, len(names)))
+            logger.info("Run parallel fitting: nodes={}, models  {}".format(args.nodes, len(names)))
             with futures.ProcessPoolExecutor(max_workers=args.nodes) as executor:
                 if vels_o is None:
                     future_to_name = {
@@ -985,11 +1005,11 @@ def main():
                     try:
                         data = future.result()
                     except Exception as exc:
-                        print('%r generated an exception: %s' % (name, exc))
+                        logger.error('%r generated an exception: %s' % (name, exc))
                     else:
                         res_models[name], res, vels_m[name] = data
                         res_chi[name] = res
-                        print("[{}/{}] {:30s} -> {}".format(i, len(names), name, res.comm))
+                        logger.info("[{}/{}] {:30s} -> {}".format(i, len(names), name, res.comm))
         else:
             for i, name in enumerate(names, start=1):
                 txt = "Fitting [{}] for model {:30s}  [{}/{}]".format(fitter.Name, name, i, len(names))
@@ -1003,9 +1023,14 @@ def main():
                     curves_m, res, res_full = fit_mfl(args, curves_o, bnames, fitter, name, path, t_diff, tlim,
                                                       is_sigma, is_spline=args.is_spline)
                 else:
-                    curves_m, res, vel_m = fit_mfl_vel(args, curves_o, vels_o, bnames, fitter, name, path,
-                                                       t_diff, tlim, is_sigma,
-                                                       is_spline=args.is_spline, A=args.tweight)
+                    try:
+                        curves_m, res, vel_m = fit_mfl_vel(args, curves_o, vels_o, bnames, fitter, name, path,
+                                                        t_diff, tlim, is_sigma,
+                                                        is_spline=args.is_spline, dt0=args.dt0)
+                    except ps.vel.VelocityException as ex:
+                        logger.warning(f'Failed for {name} Ex: ')
+                        logger.debug(ex)
+                        continue
                     vels_m[name] = vel_m
                 res_models[name] = curves_m
                 res_chi[name] = res
@@ -1019,7 +1044,7 @@ def main():
         # sort with measure
         res_sorted = OrderedDict(sorted(res_chi.items(), key=lambda kv: kv[1].measure))
     else:
-        print("No any data about models. Path: {}".format(path))
+        logger.error("No any data about models. Path: {}".format(path))
         parser.print_help()
         sys.exit(2)
 
@@ -1065,7 +1090,7 @@ def main():
             fsave = os.path.expanduser("~/{}".format(fsave))
         if not fsave.endswith('.pdf'):
             fsave += '.pdf'
-        print("Save plot to {0}".format(fsave))
+        logger.info("Save plot to {0}".format(fsave))
         fig.savefig(fsave, bbox_inches='tight')
     else:
         from matplotlib import pyplot as plt

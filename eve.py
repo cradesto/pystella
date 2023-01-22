@@ -21,10 +21,12 @@ except ImportError as ex:
     fn = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
     logging.info(exc_type, fn, exc_tb.tb_lineno, ex)
     logging.info('  Probably, you should install module: {}'.format('matplotlib'))
-    print()
     #    print(ex)
     plt = None
     mlines = None
+
+logger = logging.getLogger(__name__)
+level = logging.INFO
 
 # matplotlib.use("Agg")
 # import matplotlib
@@ -34,10 +36,6 @@ except ImportError as ex:
 
 __author__ = 'bakl'
 
-logging.basicConfig()
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 markers = {u'x': u'x', u'o': u'circle', u'v': u'triangle_down', u'd': u'thin_diamond',
            u'+': u'plus', u'*': u'star', u'<': u'triangle_left'}
@@ -57,7 +55,7 @@ def get_parser():
                         default=None,
                         dest='box',
                         help='Make boxcar average, for example: '
-                             'Delta_mass:Number:[True, if info], -b 0.5:4 . '
+                             'Delta_mass:Number:[M_uplim]:[True, if info], -b 0.5:4 . '
                              'Use key -e _ELEM [-e _Ni56]to exclude elements')
 
     parser.add_argument('-r', '--rho', nargs="?",
@@ -72,6 +70,13 @@ def get_parser():
                         const=True,
                         dest="is_dum",
                         help="Set is_dum = TRUE to parse abn-file with dum columns")
+
+    parser.add_argument('--no-norm', nargs="?",
+                        required=False,
+                        const=False,
+                        dest="is_no_norm",
+                        help="Use --no-norm skip element normalization after reshape.")
+
 
     parser.add_argument('-x',
                         required=False,
@@ -89,7 +94,7 @@ def get_parser():
     parser.add_argument('--structure', dest='is_structure', action='store_true',
                         help="Show the chemical composition and rho with R/M coordinates.")
     parser.add_argument('--chem', dest='is_chem', action='store_true', help="Show chemical composition [default].")
-    parser.add_argument('--no-chem', dest='is_chem', action='store_false', help="Not show chemical composition")
+    # parser.add_argument('--no-chem', dest='is_nochem', action='store_false', help="Not show chemical composition")
     parser.set_defaults(is_chem=True)
 
     parser.add_argument('-i', '--input', action='append', nargs=1,
@@ -142,6 +147,15 @@ def get_parser():
                              "\n Example: --smooth 5:2 OR  --smooth 5:2:nearest:1"
                         )
 
+    parser.add_argument('--log',
+                        required=False,
+                        type=str,
+                        default='INFO',
+                        dest="log",
+                        help="Set logging level: "
+                             "CRITICAL, ERROR, WARNING, INFO, DEBUG, NOTSET"
+                        )
+
     parser.add_argument('-s', '--save',
                         required=False,
                         type=str,
@@ -180,6 +194,10 @@ def main():
     import sys
     from itertools import cycle
 
+    def is_level(lvl):
+        levels = ['CRITICAL', 'FATAL','ERROR','WARN','WARNING','INFO','DEBUG','NOTSET']
+        return lvl.upper() in levels
+
     def get(arr, i, default):
         if i < len(arr):
             if a[i] != '*':
@@ -196,6 +214,18 @@ def main():
         pathDef = os.path.expanduser(args.path)
     else:
         pathDef = os.getcwd()
+
+    level = logging.INFO
+    if args.log is not None and is_level(args.log):
+        level = logging.getLevelName(args.log.upper())
+    else:
+        logger.error(f"ERROR: Bad value for log: {level}. See help.")
+        sys.exit(2)
+    
+    logger.setLevel(level)
+    logging.basicConfig(level=level)
+    logging.getLogger('pystella.model.sn_eve').setLevel(level)
+
 
     # if args.elements:
     if '_' in args.elements:
@@ -231,7 +261,7 @@ def main():
         parser.print_help()
         sys.exit(2)
 
-    if len(names) > 1:  # special case
+    if len(names) > 1 or args.reshape is not None or args.box is not None:  # special case
         markers_cycler = cycle(markers_style)
         lines_cycler = cycle(lines_style)
     else:
@@ -242,7 +272,7 @@ def main():
     ax2 = None
     handles_nm = []
     for nm in names:
-        # print("Run eve-model %s" % nm)
+        logger.info("Run eve-model %s" % nm)
         path, fullname = os.path.split(nm)
         if len(path) == 0:
             path = pathDef
@@ -262,6 +292,7 @@ def main():
             rho_file = os.path.join(path, name + '.rho')
             eve = sneve.load_rho(rho_file)
 
+        # Reshape
         if args.reshape is not None:
             a = args.reshape.split(':')
             nz, axis, xmode = get(a, 0, eve.nzon), get(a, 1, 'M'), get(a, 2, 'resize')  # rlog
@@ -278,24 +309,34 @@ def main():
                   f'start= {start}  end= {end} kind= {kind}')
             print("The element masses: before Resize")
             print_masses(eve)
-            eve = eve.reshape(nz=nz, axis=axis, xmode=xmode, start=start, end=end, kind=kind)
-            eve.chem_norm()
+            eve_reshape = eve.reshape(nz=nz, axis=axis, xmode=xmode, start=start, end=end, kind=kind)
             # eve = eve_resize
-            print(f'Resize: after Nzon={eve.nzon}')
+            print(f'Resize: after Nzon={eve_reshape.nzon}')
             print("The element masses: after Resize")
-            print_masses(eve)
+            print_masses(eve_reshape)
+            if  not args.is_no_norm:
+                eve_reshape.chem_norm()
+                # eve = eve_resize
+                print(f'After chem_norm: Nzon={eve_reshape.nzon}')
+                print("The element masses: after chem_norm")
+                print_masses(eve_reshape)
+            eve, eve_prev = eve_reshape, eve
 
         # Boxcar
         if args.box is not None:
             is_info = False
+            m_up = None
             s = args.box.split(':')
             dm, n = float(s[0]), int(s[1])
-            if len(s) == 3:
-                is_info = bool(s[2])
             print(f'Running boxcar average: dm= {dm} Msun  Repeats= {n}')
+            if len(s) > 2:
+                m_up = float(s[2])
+                print(f'The mass has up limit: m_up= {m_up}')
+            if len(s) > 3:
+                is_info = bool(s[3])
             print("The element masses: Before boxcar")
             print_masses(eve)
-            eve_box = eve.boxcar(box_dm=dm, n=n, el_included=elements, is_info=is_info)
+            eve_box = eve.boxcar(box_dm=dm, n=n, el_included=elements, m_uplim=m_up, is_info=is_info)
             print("The element masses: After boxcar")
             print_masses(eve_box)
             eve, eve_prev = eve_box, eve
@@ -314,7 +355,7 @@ def main():
                   f'window_length= {window_length} Msun  polyorder= {polyorder} mode= {mode}')
             print("The element masses: Before smoothing")
             print_masses(eve, is_el=is_info)
-            eve_smooth = eve.smooth(window_length=window_length, polyorder=polyorder, mode=mode, is_info=is_info)
+            eve_smooth = eve.smooth(window_length=window_length, polyorder=polyorder, mode=mode)
             print("The element masses: After smoothing")
             print_masses(eve_smooth, is_el=is_info)
             eve, eve_prev = eve_smooth, eve

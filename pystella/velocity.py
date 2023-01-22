@@ -4,6 +4,8 @@
 import numpy as np
 import os
 from os.path import dirname
+import logging
+
 
 from pystella.model.stella import Stella
 from pystella.rf.ts import TimeSeries, SetTimeSeries
@@ -11,6 +13,7 @@ from pystella.rf.ts import TimeSeries, SetTimeSeries
 __author__ = 'bakl'
 
 ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
+logger = logging.getLogger(__name__)
 
 markers_vel = {u'x': u'x', u'o': u'circle', u'v': u'triangle_down', u'd': u'thin_diamond',
                u'+': u'plus', u'*': u'star', u'<': u'triangle_left'}
@@ -18,6 +21,9 @@ markers_style = list(markers_vel.keys())
 
 colors_vel = ("black", "magenta", "darkgreen", "cyan", "red", "skyblue", "orange", "mediumpurple")
 
+
+class VelocityException(Exception):
+    pass
 
 class SetVelocityCurve(SetTimeSeries):
     """Set of the Velocity Curves"""
@@ -217,7 +223,7 @@ def compute_vel_swd(name, path, z=0., is_info=False):
     model = Stella(name, path=path)
     # check data
     if not model.is_swd:
-        raise ValueError("There are no swd-file for %s in the directory: %s " % (name, path))
+        raise VelocityException("There are no swd-file for %s in the directory: %s " % (name, path))
 
     swd = model.get_swd().load()
     data = swd.params_ph(cols=['V'])
@@ -226,7 +232,12 @@ def compute_vel_swd(name, path, z=0., is_info=False):
                    dtype=np.dtype({'names': ['time', 'vel'], 'formats': [np.float] * 2}))
     res['time'] = data['time'] * (1. + z)  # redshifted time
     res['vel'] = data['V']
-
+    if any(np.isnan(res['time'])) :
+        logger.debug(f"swd: {res['time']=}")
+        raise VelocityException("There is nan in res['time']: {}".format(res['time']))
+    if any(np.isnan(res['vel'])) :
+        logger.debug(f"swd: {res['vel']=}")
+        raise VelocityException("There is nan in res['vel']: {}".format(res['vel']))
     return res
 
 
@@ -237,9 +248,9 @@ def compute_vel_res_tt(name, path, z=0., t_beg=0.1, t_end=None, line_header=80,
     model = Stella(name, path=path)
     # check data
     if not model.is_res:
-        raise ValueError("There are no res-file for %s in the directory: %s " % (name, path))
+        raise VelocityException("There are no res-file for %s in the directory: %s " % (name, path))
     if not model.is_tt:
-        raise ValueError(("There are no tt-file for %s in the directory: %s " % (name, path)))
+        raise VelocityException(("There are no tt-file for %s in the directory: %s " % (name, path)))
 
     if t_end is None:
         t_end = float('inf')
@@ -279,6 +290,10 @@ def compute_vel_res_tt(name, path, z=0., t_beg=0.1, t_end=None, line_header=80,
     res['time'] = times
     res['vel'] = vels
     res['r'] = radii
+    if any(np.isnan(res['time'])) :
+        raise VelocityException("There is nan in res['time']: {}".format(np.array2string(res['time'])))
+    if any(np.isnan(res['vel'])) :
+        raise VelocityException("There is nan in res['vel']:  {}".format(np.array2string(res['vel'])))
     return res
 
 
@@ -288,9 +303,9 @@ def bad_compute_vel_res_tt(name, path, z=0., t_beg=1., t_end=None, t_diff=1.05, 
     model = Stella(name, path=path)
     # check data
     if not model.is_res:
-        raise ValueError("There are no res-file for %s in the directory: %s " % (name, path))
+        raise VelocityException("There are no res-file for %s in the directory: %s " % (name, path))
     if not model.is_tt:
-        raise ValueError(("There are no tt-file for %s in the directory: %s " % (name, path)))
+        raise VelocityException(("There are no tt-file for %s in the directory: %s " % (name, path)))
 
     if t_end is None:
         t_end = float('inf')

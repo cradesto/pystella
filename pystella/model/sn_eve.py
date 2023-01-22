@@ -1,5 +1,5 @@
 import logging
-import pprint
+# import pprint
 
 import numpy as np
 import os
@@ -15,7 +15,8 @@ except:
 from pystella.util.phys_var import phys
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+# logger = logging.getLogger(__name__)
+# logger.setLevel(logging.INFO)
 
 __author__ = 'bakl'
 
@@ -298,7 +299,7 @@ class PreSN(object):
             return
 
         if norm is None:
-            norm = sum(self.abund(k))
+            norm = np.sum(self.abund(k))
         for e in self.Elements:
             self._data_chem[e][k-1] = self.el(e)[k-1] / norm
 
@@ -358,7 +359,7 @@ class PreSN(object):
         logger.info(' Write hyd-data to %s' % fname)
         zones = range(1, self._nzon + 1)
         with open(fname, 'w') as f:
-            f.write('{:12.3e} {:6d} {:13.5e} {:13.5e} {:13.5e}\n'
+            f.write('{:12.3e} {:6d} {:13.2e} {:13.5e} {:13.5e}\n'
                     .format(self.time_start, self.nzon, self.m_core / phys.M_sun, self.r_cen, self.rho_cen))
             # a = '#No. Mr  dM  R  dR  Rho PRE T   V'.split()
             # f.write('           '.join(a)+'\n')
@@ -429,20 +430,20 @@ class PreSN(object):
         is_x_lim = xlim is not None
         is_y_lim = ylim is not None
 
-        if x == 'rsun':
+        if x.lower() == 'rsun':
             x = self.r / phys.R_sun
             ax.set_xlabel(r'R [$\mathrm{R}_\odot$]')
-        elif x == 'lgr':
+        elif x.lower() == 'lgr':
             x = self.r
             ax.set_xscale('log')
             ax.set_xlabel(r'R [cm]')
-        elif x == 'm':
+        elif x.lower() == 'm':
             x = self.m / phys.M_sun
             ax.set_xlabel(r'M [$\mathrm{M}_\odot$]')
-        elif x == 'v':
+        elif x.lower() == 'v':
             x = self.V / 1e5  # to km/s
             ax.set_xlabel(r'V [$km\, s^{-1}$]')
-        elif x == 'z':  # zones
+        elif x.lower() == 'z':  # zones
             x = np.arange(0, stop=self.nzon, dtype=np.int) + 1
             ax.set_xlabel(r'Zone')
         else:
@@ -808,7 +809,7 @@ class PreSN(object):
         # newPreSN.copy_par(self, keys=['time_start', 'm_tot'])
         return newPreSN
 
-    def reshape(self, nz: int, name=None, start: int = 0, end=None, axis=sM, xmode='resize', kind='np'):
+    def reshape(self, nz: int, name=None, start: int = 0, end: int = None, axis: str = sM, xmode: str = 'resize', kind='np'):
         """
         Reshape parameters of envelope from nstart to nend to nz-zones
         :param nz: new zones
@@ -837,7 +838,7 @@ class PreSN(object):
             :param mode:
             :return:
             """
-            dif = np.diff(x)
+            dif = np.diff(x) / x[1:]
             idx = np.argmax(dif)
             if mode == 'lin':
                 p = (x[idx] + x[idx + 1]) / 2.
@@ -845,7 +846,7 @@ class PreSN(object):
                 p = np.sqrt(x[idx] * x[idx + 1])
             else:
                 raise ValueError('Mode should be "lin" lor "geom"')
-            print('         To interval {}[{:.6e} - {:.6e}] added {} '.format(idx, x[idx], x[idx + 1], p))
+            logger.info('         To interval {}[{:.6e} - {:.6e}] added {} '.format(idx, x[idx], x[idx + 1], p))
             xn = np.insert(x, idx + 1, p)
             return xn
 
@@ -853,9 +854,13 @@ class PreSN(object):
             """
             Find min delta and remove the right point
             """
-            dif = np.diff(x)
+            dif = np.diff(x) / x[1:]
             idx = np.argmin(dif)
             xn = np.delete(x, idx + 1)
+            if idx+2 == len(x):
+                logger.debug('         Remove right point {} {:.8e} [dx= {:.8e}] '.format(idx+1, x[idx + 1], dif[idx]))
+            else:
+                logger.debug('         Remove point {} {:.8e} [dx= {:.8e}] next: {:.8e}'.format(idx+1, x[idx + 1], dif[idx], x[idx + 2]))  
             return xn
 
         def resize_points(x, n: int, mode: str = 'lin'):
@@ -925,10 +930,11 @@ class PreSN(object):
             name = self.Name
 
         newPreSN = PreSN(name, nznew, elements=self.Elements)
+
         if end is None:
             end = self.nzon
 
-        print(f'axis= {axis} nz= {nz} nznew= {nznew} start= {start} end= {end}')
+        logger.info(f'axis= {axis} nz= {nz} nznew= {nznew} start= {start} end= {end}')
 
         # hyd reshape
         if axis == PreSN.sM:
@@ -943,8 +949,10 @@ class PreSN(object):
         xx = xx / max(abs(xx))  # norm
         xxx = x_reshaped(xx, nz)
         if np.any(np.diff(xxx) < 0.):
-            print('ERROR:', xxx)
-            raise ValueError('Some of {} elements is < 0.'.format(len(xxx)))
+            for i, dx in enumerate(np.diff(xxx)):
+                if dx <= 0:
+                    logger.error("ERROR reshaped: {} xxx= {}  dx= {} ".format(i, xxx[i], dx))
+            raise ValueError('The interval beetween some of {} elements is < 0.'.format(len(xxx)))
 
         # from pprint import pprint
 
@@ -957,8 +965,8 @@ class PreSN(object):
             #    new = interp(xxx, xx, old, s=start, e=end, kind=kind)
             newPreSN.set_hyd(vv, new)
             # print(f'{vv} before: old[{len(xx)}-1]= {old[len(xx)-2]:12.7e} new[{len(xxx)}-1]= {new[len(xxx)-2]:12.7e}')
-            print(f'{vv} before: old[0]= {old[0]:12.7e} new[0]= {new[0]:12.7e}')
-            print(f'{vv} before: old[{len(xx)}]= {old[len(xx) - 1]:12.7e} new[{len(xxx)}]= {new[len(xxx) - 1]:12.7e}')
+            logger.info(f'{vv} before: old[0]= {old[0]:12.7e} new[0]= {new[0]:12.7e}')
+            logger.info(f'{vv} before: old[{len(xx)}]= {old[len(xx) - 1]:12.7e} new[{len(xxx)}]= {new[len(xxx) - 1]:12.7e}')
             # print(f'\n{vv} before: {len(xx)}')
             # pprint(list(zip(range(1, len(xx)+1), xx, old)))
             # print(f'{vv} after:  {len(xxx)}')
@@ -978,9 +986,6 @@ class PreSN(object):
 
         # copy parameters
         newPreSN.copy_par(self)  # keys=['time_start', 'm_tot',  'm_core', 'r_cen'])
-        # for p in ['time_start', 'm_tot',  'm_core', 'r_cen']:
-        #     v = getattr(self, p)
-        #     newPreSN.set_par(p, v)
 
         return newPreSN
 
@@ -998,12 +1003,13 @@ class PreSN(object):
 
         return presn
 
-    def boxcar(self, box_dm: float = 0.5, n: int = 4, el_included=None, is_info: bool = False):
+    def boxcar(self, box_dm: float = 0.5, n: int = 4, el_included=None, m_uplim: float=np.inf, is_info: bool = False):
         """
         The function runs a boxcar average to emulate the mixing of chemical composition.
         :param box_dm: float. The boxcar width. Default value is 0.5 Msun.
         :param n: int. The number of repeats. Default value is 4
         :param el_included: the tuple of included elements. If None = all elements are included. Default: None
+        :param m_uplim: float. The mass limit from above. Default value is np.inf
         :param is_info: bool. Prints some debug information. Default value is False
         """
         clone = self.clone()
@@ -1011,39 +1017,39 @@ class PreSN(object):
         #     abun = np.zeros((clone.nzon, len(clone.Elements)))
         if el_included is None:
             el_included = clone.Elements
+        if m_uplim is None:
+            m_uplim = np.inf
         m = clone.m / phys.M_sun
         dmass = np.diff(m)
         dmass = np.insert(dmass, -1, dmass[-1])
 
         # todo Check left boundary condition fo Fe, Si
         for l in range(n):  # the iteration number
-            if is_info:
-                print(f'Attempt # {l}')
+            logger.debug(f'Attempt # {l}')
             for k in range(clone.nzon):
+                if m[k] > m_uplim:
+                    logger.warn(f'Exit from zone cycle m[k] > m_uplim: k= {k} m= {m[k]:.4f} m_uplim= {m_uplim:.4f}')
+                    break #  stop because mass is over the limit
                 kk = k + 1
                 dm = dmass[k]
                 while dm < box_dm and kk <= clone.nzon:
                     kk += 1
                     dm = np.sum(dmass[k:kk])
 
-                if is_info:
-                    print(f'{k}: kk= {kk} dm= {dm:.4f} m= {m[k]:.4f}')
+                logger.debug(f'{k}: kk= {kk} dm= {dm:.4f} m= {m[k]:.4f}')
                 if dm > 1e-6:
                     for i, ename in enumerate(clone.Elements):
                         if ename in el_included:
                             dm_e = np.dot(abund[k:kk, i], dmass[k:kk])
                             abund[k, i] = dm_e / dm
             #             abun[k,i] = x[k]
-        #
         for i, ename in enumerate(clone.Elements):
-            #         print(ename, ': ', abun[:,i])
-            clone.set_chem(ename, abund[:, i])
-            if is_info:
-                print(clone.el(ename))
+            clone.set_chem(ename, abund[:, i])        
+            logger.debug(f"{ename}: {clone.el(ename)}")
 
         return clone
 
-    def smooth(self, window_length: int = 15, polyorder: int = 2, mode: str = 'interp', is_info=True):
+    def smooth(self, window_length: int = 15, polyorder: int = 2, mode: str = 'interp'):
         from scipy.signal import savgol_filter
         """
         The function runs a Savitzky-Golay filter to smooth density distribution.
@@ -1057,9 +1063,8 @@ class PreSN(object):
         rho_s = np.exp(rho_s)
         r = clone.r
         # np.set_printoptions(precision=2)
-        if is_info:
-            print('Rho')
-            pprint.pprint(list(zip(clone.rho, rho_s)))
+        logger.debug('Rho')
+        logger.debug(list(zip(clone.rho, rho_s)))
         m_s = np.zeros(clone.nzon)
         # RHO(1) = DM(1) / (Ry(1) ** 3 - Rce ** 3);
         m_s[0] = clone.m_core + 4. / 3. * np.pi * clone.rho_cen * (r[0] ** 3 - clone.r_cen ** 3)
@@ -1067,9 +1072,10 @@ class PreSN(object):
         for k in range(1, clone.nzon):
             dm = 4. / 3. * np.pi * rho_s[k] * (r[k] ** 3 - r[k - 1] ** 3)
             m_s[k] = m_s[k-1] + dm
-        if is_info:
-            print('Mass')
-            pprint.pprint(list(zip(clone.m, m_s)))
+        
+        logger.debug('Mass: ')
+            # pprint.pprint(list(zip(clone.m, m_s)))
+        logger.debug(list(zip(clone.m, m_s)))
         clone.set_hyd('Rho', rho_s)
         clone.set_hyd('M', m_s)
         # print(clone.rho)

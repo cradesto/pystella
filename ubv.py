@@ -26,6 +26,8 @@ def plot_grid(models_dic, bnames, call=None, **kwargs):
     fontsize = kwargs.get('fontsize', 12)
     figsize = kwargs.get('figsize', (8, 8))
     xtype = kwargs.get('xtype', 'lin')
+    legloc = kwargs.get('legloc', 4)
+
     # setup figure
     # plt.matplotlib.rcParams.update({'font.size':})
     if len(bnames) == 1:
@@ -50,7 +52,7 @@ def plot_grid(models_dic, bnames, call=None, **kwargs):
         if icol == 0:
             ax.set_ylabel('Magnitude')
 
-        ax.legend(prop={'size': 8}, loc=4)
+        ax.legend(prop={'size': 8}, loc=legloc)
         props = dict(facecolor='wheat')
         # props = dict(boxstyle='round', facecolor='white')
         # props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
@@ -91,6 +93,7 @@ def plot_all(models_vels, models_dic, bnames, d=10, call=None, **kwargs):
     fontsize = kwargs.get('fontsize', 12)
     bshift = kwargs.get('bshift', None)
     xtype = kwargs.get('xtype', 'lin')
+    is_lum = kwargs.get('is_lum', False)
     # band_shift['UVW1'] = 3
     # band_shift['UVW2'] = 5
     # band_shift['i'] = -1
@@ -118,9 +121,10 @@ def plot_all(models_vels, models_dic, bnames, d=10, call=None, **kwargs):
     gs1.update(wspace=0.3, hspace=0., left=0.1, right=0.95)
 
     # plot the light curves
-    ps.lcp.plot_ubv_models(axUbv, models_dic, bnames, **kwargs)
-    # lcp.plot_ubv_models(axUbv, models_dic, bands, band_shift=band_shift, xlim=xlim, ylim=ylim,
-    #                     is_time_points=is_time_points)
+    if is_lum:
+        ps.lcp.plot_lum_models(axUbv, models_dic, bnames, **kwargs)
+    else:
+        ps.lcp.plot_ubv_models(axUbv, models_dic, bnames, **kwargs)
 
     # plot callback
     if call is not None:
@@ -129,8 +133,13 @@ def plot_all(models_vels, models_dic, bnames, d=10, call=None, **kwargs):
         else:
             call.plot(axUbv, dic={'bnames': bnames, 'bshift': bshift})
     # finish plot
-    axUbv.set_ylabel('Magnitude')  # Magnitude  Mag
-    # axUbv.set_xlabel('Time since explosion [days]')
+    if is_lum:
+        axUbv.set_ylabel('Luminosity [erg/s]')  # Magnitude  Mag
+        axUbv.set_yscale('log')
+    else:
+        axUbv.set_ylabel('Magnitude')  # Magnitude  Mag
+    
+    axUbv.set_xlabel('Time since explosion [days]')
     axUbv.minorticks_on()
 
     if legend == 'box':
@@ -175,7 +184,7 @@ def usage():
     print("  -i <model-name OR pattern, like '*R450*'>.  Example: cat_R450_M15_Ni007_E7")
     print("  -p <model directory>, default: ./")
     print("  -e <extinction, E(B-V)> is used to define A_nu, default: 0 ")
-    print("  -c <callback> [lcobs:fname:marker:dt:dm, velobs:fname:marker:dt:vnorm(1e8), "
+    print("  -c <callback> [lcobs:fname:marker:dt:dm, velobs:fname:marker:dt:vnorm(to cm/s), "
           "popov[:R:M:E[FOE]:Mni], lcobssm as lcobs, but for sm-format data-files]. "
           "You can add parameters in format func:params")
     print("  -d <distance> [pc].  Default: 10 pc")
@@ -197,10 +206,15 @@ def usage():
     print("  --dt=<t_diff>  time difference between two spectra")
     print("  --curve-old  - use old procedure")
     print("  --curve-tt  - take curves from tt-file: UBVRI+bol")
+    print("  --legloc=<legloc>  legend position. It could be integer 0-10. Default: 0 "
+            'Maybe: best 0, upper right 1, upper left 2, lower left 3, lower right 4, right 5, center left 6, center right 7, lower center 8, upper center 9, center 10')
+    print("  --lum  plot luminosity at y-axe")
     print("  -l  write plot label")
     print("  -h  print usage")
     print("   --- ")
     ps.band.print_bands()
+
+
 
 
 def main(name=None, model_ext='.ph'):
@@ -218,6 +232,7 @@ def main(name=None, model_ext='.ph'):
     is_curve_tt = False
     is_axes_right = False
     is_grid = False
+    is_lum = False
 
     vel_mode = None
     view_opts = ('single', 'grid', 'gridl', 'gridm')
@@ -240,12 +255,14 @@ def main(name=None, model_ext='.ph'):
     xtype = 'lin'
     # bshift = None
     bshift = None
-
+    legloc = 0
+    level = logging.INFO
+    
     ps.band.Band.load_settings()
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hqtb:c:d:e:g:i:l:o:m:p:v:s:w:x:y:z:",
-                                   ['dt=', 'curve-old', 'curve-tt'])
+                                   ['dt=', 'curve-old', 'curve-tt', 'legloc=', 'lum'])
     except getopt.GetoptError as err:
         print(str(err))  # will print something like "option -a not recognized"
         usage()
@@ -294,6 +311,9 @@ def main(name=None, model_ext='.ph'):
         if opt == '--dt':
             t_diff = float(arg)
             continue
+        if opt == '--legloc':
+            legloc = int(arg)
+            continue
         if opt == '-q':
             is_quiet = True
             continue
@@ -312,6 +332,9 @@ def main(name=None, model_ext='.ph'):
             continue
         if opt == '--curve-tt':
             is_curve_tt = True
+            continue
+        if opt == '--lum':
+            is_lum = True
             continue
         if opt == '-w':
             is_save_mags = True
@@ -465,14 +488,14 @@ def main(name=None, model_ext='.ph'):
                 sep = opt_grid[:-1]
                 if sep == 'd':
                     sep = 'l'  # line separator
-                fig = plot_grid(models_mags, bnames, call=callback, xlim=xlim, xtype=xtype, ylim=ylim, title=label,
+                fig = plot_grid(models_mags, bnames, call=callback, xlim=xlim, xtype=xtype, legloc=legloc, ylim=ylim, title=label,
                                 sep=sep, is_grid=False)
             else:
                 # linestyles = ['--', '-.', '-', ':']
                 fig = plot_all(models_vels, models_mags, bnames, d=distance, call=callback, xlim=xlim, xtype=xtype,
                                ylim=ylim, is_time_points=is_plot_time_points, title=label, bshift=bshift,
-                               is_axes_right=is_axes_right, is_grid=is_grid, legloc=1, fontsize=14,
-                               lines=linestyles)
+                               is_axes_right=is_axes_right, is_grid=is_grid, legloc=legloc, fontsize=18,
+                               lines=linestyles, is_lum=is_lum)
                 # lcp.setFigMarkersBW(fig)
                 # lcp.setFigLinesBW(fig)
 

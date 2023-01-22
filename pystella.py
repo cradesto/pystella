@@ -185,6 +185,13 @@ class MyPrompt(HistConsole):
         MyPrompt.call_cmd(script, args)
 
     @staticmethod
+    def do_mesa(args):
+        """Convert MESA models to Stella models. For detailed help type 'mesa -h'.
+        """
+        script = os.path.join(ROOT_DIRECTORY, 'mesa.py')
+        MyPrompt.call_cmd(script, args)
+
+    @staticmethod
     def do_ls(args):
         """Show Stella models. For detailed help type 'ls -h'.
         """

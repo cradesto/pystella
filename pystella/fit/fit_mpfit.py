@@ -1,9 +1,13 @@
 import numpy as np
+import logging
 
 from pystella.fit import mpfit
 from pystella.fit.fit_lc import FitLc, FitLcResult
 from scipy.interpolate import InterpolatedUnivariateSpline
 
+
+logger = logging.getLogger(__name__)
+# logger.setLevel(logging.INFO)
 
 class FitMPFit(FitLc):
     def __init__(self):
@@ -67,8 +71,6 @@ class FitMPFit(FitLc):
         # pcerror = result.perror * np.sqrt(result.fnorm / result.dof)
         tsigma = result['dtsig']  # pcerror[0]
 
-        if self.is_info:
-            print("The final params are: tshift=%f tsigma=%f mshift=%f" % (tshift, tsigma, mshift))
 
         fit_result = FitLcResult()
         fit_result.tshift = tshift
@@ -79,12 +81,14 @@ class FitMPFit(FitLc):
         # fit_result.comm = 'mpfit: status={:2d} niter={:3d} fnorm={:.2f}'.format(result.status, result.niter,
         #                                                                         result.fnorm)
         #        fit_result.comm = 'The value of the summed squared residuals for the returned parameter values.'
+        logger.debug("The final params are: tshift=%f tsigma=%f mshift=%f" % (tshift, tsigma, mshift))
+        logger.debug(f'   {fit_result.comm}')
         return fit_result
 
-    def fit_tss(self, tss_m, tss_o, A=0.):
+    def fit_tss(self, tss_m, tss_o, dt0=0.):
         # print('result: ', result)
 
-        result = self.best_time_series(tss_m, tss_o, At=A, is_debug=self.is_debug, is_info=self.is_info)
+        result = self.best_time_series(tss_m, tss_o, dt0=dt0)
 
         tshift = result.params[0]
         pcerror = result.perror
@@ -94,8 +98,6 @@ class FitMPFit(FitLc):
 
         err, errsig = result.params[1], pcerror[0]
 
-        if self.is_info:
-            print("The final params are: tshift=%f tsigma=%f" % (tshift, tsigma))
 
         fit_result = FitLcResult()
         fit_result.tshift = tshift
@@ -104,6 +106,8 @@ class FitMPFit(FitLc):
         fit_result.comm = 'mpfit: status={:2d} niter={:3d} fnorm={:.2f} err= {:.3f}+-{:.4f}'. \
             format(result.status, result.niter, result.fnorm, err, errsig)
         #        fit_result.comm = 'The value of the summed squared residuals for the returned parameter values.'
+        logger.debug("The final params are: tshift=%f tsigma=%f" % (tshift, tsigma))
+        logger.debug(f'   {fit_result.comm}')
         return fit_result
 
     def best_lc(self, lc_m, lc_o, dt0=None, dm0=None, At=0., is_spline=True):
@@ -177,7 +181,20 @@ class FitMPFit(FitLc):
         return res
 
     @staticmethod
-    def best_time_series(tss_m, tss_o, At=0., is_debug=False, is_info=True, xtol=1e-10, ftol=1e-10, gtol=1e-10):
+    def best_time_series(tss_m, tss_o, dt0=None,  **kwargs):
+
+        dt_limits = kwargs.get("dt_limits", [-250., 250.])
+        tss_limits = kwargs.get("tss_limits", [0.001, 40.])
+
+        is_debug = kwargs.get("is_debug", False)
+        is_info = kwargs.get("is_info", True)
+        xtol = kwargs.get("xtol", 1e-10)
+        ftol = kwargs.get("ftol", 1e-10)
+        gtol = kwargs.get("gtol", 1e-10)
+        maxiter = kwargs.get("maxiter", 200)
+        magerr_uplim = kwargs.get("magerr_uplim", 0.01)
+        magerr_downlim = kwargs.get("magerr_downlim", 0.01)
+        magerr_goodlim = kwargs.get("magerr_goodlim", 10.)
         # print('Input tss_o:')
         # for ts in tss_o:
         #     print(ts.Name, ts.Time, ts.V)
@@ -186,51 +203,68 @@ class FitMPFit(FitLc):
         #     print(ts.Name, ts.Time, ts.V)
 
         def least_sq(p, fjac):
-            dt, sigs = p
+            # logger.debug(p)
+            dt, *sigs = p
             # print('dt, sigs = ',dt, sigs)
             E = 0.01
             total = []
-            for ts_m in tss_m:
+            for i, ts_m in enumerate(tss_m):
                 ts_o = tss_o[ts_m.Name]
-                # ts_o.tshift = dt
-                sigma = sigs
-                # model interpolation
-                # check = np.where((ts_o.Time > min(ts_m.Time)) & (ts_o.Time < max(ts_m.Time)))
-                # check = range(1, len(ts_o.Time))
-                # time_o = ts_o.Time[check]
-                # V_o = ts_o.V[check]
-                time_o = ts_o.Time
-                V_o = ts_o.V
+                to, mo = ts_o.Time, ts_o.V
+                to += dt
+                # if to too large
+                cut = to <= np.max(ts_m.Time)
+                to = to[cut]
+                mo = mo[cut]
 
-                m = np.interp(time_o, ts_m.Time + dt, ts_m.V)  # One-dimensional linear interpolation.
-                # if 'Vel' in ts_m.Name:
-                #     print(ts_o.Name, ts_o.tshift, ts_o.Time, ts_o.V)
-                #     print(ts_m.Name, ts_m.tshift, ts_m.Time, ts_m.V)
-                # print('time_o, m: ', time_o, m)
-                # sigma = sigma
-                # w = 1.
-                # if At > 0:
-                #     w = np.abs(1. - At * (time_o - min(time_o)) / (max(time_o) - min(time_o)))  # weight
-                # err_m = np.sqrt(np.sum((V_o - m) ** 2) / len(m))
-                # # err_m = abs(V_o - m)
-                # if ts_o.IsErr:
-                #     # err_o = ts_o.Err[check]
-                #     # res = np.abs((V_o - m) / (abs(m)*E + err_o)) * w
-                #     res = np.abs((V_o - m) / (err_m + ts_o.Err)) * w
-                #     # res = np.abs((V_o - m) / (err_m + ts_o.Err+sigma)) * w
-                #     # res = np.abs(V_o - m) * w
-                # else:
-                #     res = np.abs(V_o - m) * w
+                mm = np.interp(to, ts_m.Time, ts_m.V) 
 
-                em = sigs
-                diff = ts_o.V - m
-                sig = np.ones(ts_o.Length) * em
+                em = sigs[i]
+                diff = mo - mm
+                # sig = np.ones_like(to) * em
+                chi = diff
+                # if any(np.isnan(chi)):
+                #     logger.debug(f'{to=}')        
+                #     logger.debug(f'{mo=}')        
+                #     logger.debug(f'{ts_m.Time=}')        
+                #     logger.debug(f'{ts_m.V=}')        
+                #     logger.debug(f'{mm=}')        
                 if ts_o.IsErr:
-                    sig = np.sqrt(em ** 2 + ts_o.Err ** 2)
+                    eo = np.copy(ts_o.Err)
+                    eo = eo[cut]
+                    # check
+                    if any(eo == 0):
+                        # one = np.array(range(len(eo)))
+                        one = np.arange(len(eo), dtype=int)
+                        check0 = eo == 0
+                        one = np.array(one[check0])
+                        msg = 'Error in ts_o: {}. err_mag == 0 for lines: {}'.format(ts_o.Name, ', '.join(map(str, one)))
+                        # print(msg)
+                        raise ValueError(msg)
 
-                    # err_m = np.sqrt(np.sum(diff ** 2) / len(m))
-                inv_sigma2 = 1. / sig ** 2
-                chi = np.sqrt(np.abs(diff ** 2 * inv_sigma2 - np.log(inv_sigma2) + np.log(2 * np.pi)))
+                    for i, e in enumerate(eo):
+                        # обработать вверхние и нижние пределы в наблюдениях
+                        if e == -1:  # upper lim
+                            if diff[i] > 0:
+                                eo[i] = magerr_uplim  # сильно увеличить вес моделей превышающих верхний предел
+                            else:
+                                eo[i] = magerr_goodlim
+                        elif e == -2:  # down lim
+                            if diff[i] > 0:
+                                eo[i] = magerr_downlim  # сильно увеличить вес моделей, проходящих ниже предела
+                            else:
+                                eo[i] = magerr_goodlim
+                else:
+                    eo = np.zeros_like(cut)
+                sig = np.sqrt(em**2 + eo**2)     
+                # logger.debug(f'{em=}  {eo=}  {sig=}')
+              
+                # logger.debug(f'A: {chi=}')
+                chi /= sig
+                # logger.debug(f'B: {chi=}')
+                #     sig = np.sqrt(em**2 + eo**2)
+                # inv_sigma2 = 1. / sig ** 2
+                # chi = np.sqrt(np.abs(diff ** 2 * inv_sigma2 - np.log(inv_sigma2) + np.log(2 * np.pi)))
                 # chi = np.sum(diff**2 * inv_sigma2 - np.log(inv_sigma2)) + np.log(2 * np.pi) * len(diff)
                 # chi = np.sum(diff**2 * inv_sigma2 - np.log(inv_sigma2) + np.log(2 * np.pi))
                 # chi = diff / sig #+ np.log(sig*np.pi)/lc_o.Length
@@ -239,13 +273,33 @@ class FitMPFit(FitLc):
                 total = np.append(total, chi)
 
                 # total = np.append(total, res)
+            # logger.debug(f'{total=}')                
             return 0, total
 
         # parinfo = [{'value': 0., 'limited': [1, 1], 'limits': [-250., 250.]}]
-        parinfo = [{'value': 0., 'limited': [1, 1], 'limits': [-250., 250.]},
-                   {'value': 0.001, 'limited': [1, 1], 'limits': [0.001, 3.]}]
-        result = mpfit.mpfit(least_sq, parinfo=parinfo, quiet=not is_debug, maxiter=200,
-                             ftol=ftol, gtol=gtol, xtol=xtol)
+        # parinfo = [{'value': 0., 'limited': [1, 1], 'limits': [-250., 250.]},
+        #            {'value': 0.001, 'limited': [1, 1], 'limits': [0.001, 3.]}]
+        parinfo = [] 
+        if dt0 is not None:
+            dt_limits = [x + dt0 for x in dt_limits]
+            parinfo.append({'value': dt0, 'limited': [1, 1], 'limits': dt_limits})
+        else:
+            parinfo.append({'value': 0., 'fixed': 1})
+        for i, tn in enumerate(tss_m):
+            parinfo.append({'value': 0.1, 'limited': [1, 1], 'limits': tss_limits})  # todo changeable parameters
+
+        if dt0 is not None:
+            result = mpfit.mpfit(least_sq, parinfo=parinfo, quiet=not is_debug, maxiter=maxiter,
+                                ftol=ftol, gtol=gtol, xtol=xtol)
+        else:
+            dum, r = least_sq([x['value'] for x in parinfo], None)  # just return the weight diff
+            r = np.array(r)
+            chi2 = np.sum(r ** 2)
+            logger.warn("No fit: only run least_sq: len(r)={}  chi2={}".format(len(r), chi2))
+
+            res = {'dt': None, 'dtsig': None, 'dm': None, 'dmsig': None, 'chi2': chi2, 'dof': len(r)}
+            return res
+
 
         if is_info:
             print("status: ", result.status)
@@ -341,7 +395,7 @@ class FitMPFit(FitLc):
         def least_sq(p, fjac):
             dt, dm, sigs = FitMPFit.thetaDtDm2arr(p, len(bnames))
             total = []
-            for lc_m in curves_m:
+            for ic, lc_m in enumerate(curves_m):
                 lc_o = curves_o.get(lc_m.Band.Name)
                 to, mo = lc_o.Time, lc_o.Mag
                 to -= dt
@@ -359,10 +413,12 @@ class FitMPFit(FitLc):
                 #                w = np.ones(len(m))
                 # err_m = abs(min(m)-m) * err_mdl
                 w = np.ones_like(to)  # weight
+                em = 0. # sigs[ic]
                 # if max(to) - min(to) > 0:
                 #     w = np.abs(1. - At * (to -  min(to)) / (max(to) - min(to)))
-                diff = mo - mm
+                diff = (mo - mm) #/ mm
                 chi = diff * w
+                eo = np.zeros_like(chi)
                 if lc_o.IsErr:
                     eo = np.copy(lc_o.MagErr)
                     eo = eo[cut]
@@ -376,7 +432,7 @@ class FitMPFit(FitLc):
                         # print(msg)
                         raise ValueError(msg)
 
-                    for i, e in enumerate(lc_o.MagErr[cut]):
+                    for i, e in enumerate(eo):
                         # обработать вверхние и нижние пределы в наблюдениях
                         if e == -1:  # upper lim
                             if diff[i] > 0:
@@ -388,7 +444,8 @@ class FitMPFit(FitLc):
                                 eo[i] = magerr_downlim  # сильно увеличить вес моделей, проходящих ниже предела
                             else:
                                 eo[i] = magerr_goodlim
-                    chi /= eo
+                sig = np.sqrt(em**2 + eo**2) 
+                chi /= sig
                 #                    res = diff**2 * w
                 total = np.append(total, chi)
                 # total = np.append(total, chi)
@@ -420,8 +477,7 @@ class FitMPFit(FitLc):
             dum, r = least_sq([x['value'] for x in parinfo], None)  # just return the weight diff
             r = np.array(r)
             chi2 = np.sum(r ** 2)
-            if self.is_info:
-                print("No fit: only run least_sq: len(r)={}  chi2={}".format(len(r), chi2))
+            logger.warn("No fit: only run least_sq: len(r)={}  chi2={}".format(len(r), chi2))
 
             res = {'dt': None, 'dtsig': None, 'dm': None, 'dmsig': None, 'chi2': chi2, 'dof': len(r)}
             return res
@@ -432,19 +488,19 @@ class FitMPFit(FitLc):
             lc.mshift = dm_init[lc.Band.Name]
 
         if result.status <= 0:
-            print('status = ', result.status)
-            print('error message = ', result.errmsg)
-            print('parameters = ', result.params)
+            logger.error('status = ', result.status)
+            logger.error('error message = ', result.errmsg)
+            logger.error('parameters = ', result.params)
             raise ValueError(result.errmsg)
 
         if self.is_info:
-            print("status: ", result.status)
+            logger.info("status: ", result.status)
             if result.status == 5:
-                print('Maximum number of iterations exceeded in mangle_spectrum')
+                logger.error('Maximum number of iterations exceeded in mangle_spectrum')
             else:
-                print("Iterations: ", result.niter)
-                print("Fitted pars: ", result.params)
-                print("Uncertainties: ", result.perror)
+                logger.info("Iterations: ", result.niter)
+                logger.info("Fitted pars: ", result.params)
+                logger.info("Uncertainties: ", result.perror)
 
         dof = np.sum([lc.Length for lc in curves_o])
         if dt0 is not None:
@@ -460,7 +516,7 @@ class FitMPFit(FitLc):
         dm, dmsig = result.params[1], result.perror[1]
 
         if self.is_info:
-            print("The final params are: tshift=%f+-%f mshift=%f+-%f  chi2: %e" % (
+            logger.info("The final params are: tshift=%f+-%f mshift=%f+-%f  chi2: %e" % (
                 dt, dtsig, dm, dmsig, result.fnorm))
 
         res = {'dt': dt, 'dtsig': dtsig, 'dm': dm, 'dmsig': dmsig, 'chi2': result.fnorm, 'dof': result.dof}
@@ -486,7 +542,7 @@ class FitMPFit(FitLc):
                 format(self.Name, res['dof'], ' '.join([f'{bn}: {sigs[i]:.3f}' for i, bn in enumerate(bnames)]))
         else:
             fit_result.comm = 'result {}:dof: {}'.format(self.Name, res['dof'])
-
+        logger.debug(f'  {fit_result.comm}')
         return fit_result, res, None  # as Fit_MCMC
 
     #        return result

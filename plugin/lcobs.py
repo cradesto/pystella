@@ -3,11 +3,14 @@
 ##
 
 import os
+import logging
 
 from pystella.rf import band
 from pystella.rf.lc import SetLightCurve, LightCurve
 from pystella.util.reader_table import table2curves, read_obs_table_header
 
+logger = logging.getLogger(__name__)
+# logger.setLevel(logging.INFO)
 
 def lbl(b, band_shift, length=0):
     shift = band_shift[b]
@@ -68,7 +71,7 @@ def plot(ax, dic=None, mag_lim=30.):
     if len(arg) > 0:
         mshift = float(arg.pop(0))
 
-    print("Plot {0} [{1}]  jd_shift={2}  mshift={3}".format(fname, marker, jd_shift, mshift))
+    logger.info("Plot {0} [{1}]  jd_shift={2}  mshift={3}".format(fname, marker, jd_shift, mshift))
 
     # read data
     tbl, cols_data = read_obs_table_header(fname, include_names=band.band_get_names_alias(),
@@ -142,7 +145,7 @@ def load(dic=None):
     if len(arg) > 0:
         mshift = float(arg.pop(0))
 
-    print("Load {0} tshift={1}  mshift={2}".format(fname, tshift, mshift))
+    logger.info("Load {0} tshift={1}  mshift={2}".format(fname, tshift, mshift))
 
     # read data
     # tbl = read_table_header_float(fname)
