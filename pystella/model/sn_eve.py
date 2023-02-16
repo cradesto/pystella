@@ -1095,9 +1095,10 @@ def load_rho(fname, path: str = None):
 
     # try to get column names from header
     header = linecache.getline(fname, 1).split()
-    if len(header) < 22 or len(header) > 25:  # default header
+    logger.info('header(len= {}): {} '.format(len(header), ' '.join(header)))
+
+    if len(header) < 22 or len(header) >= 25:  # default header
         header = "zone mass lgR lgTp lgRho u Ni56 H He C N O Ne Na  Mg  Al  Si  S  Ar  Ca  Fe  Ni".split()
-    # logger.info(' header=  %s' % ' '.join(header))
 
     usecols, col_names = [], []
     for i, e in enumerate(header):
