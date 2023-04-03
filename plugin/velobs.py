@@ -46,6 +46,10 @@ def plot(ax, dic=None, colt=('time', 'JD', 'MJD')):
     :param colt:
     :return:
     """
+
+    if isinstance(ax, (list, tuple)):
+        ax = ax[1]
+    
     if dic is None:
         dic = {}
     cname = dic.get('cname', 'Vel')
@@ -83,9 +87,10 @@ def plot(ax, dic=None, colt=('time', 'JD', 'MJD')):
         vels_o = SetVelocityCurve("Vel-{}".format(fname))
         vels_o.add(vel_o)
 
-    ax2 = ax.twinx()
-    vels_plot(vels, ax2, fname=fname, **dic)
-
+    # print(ax)
+    # ax2 = ax.twinx()
+    vels_plot(vels, ax, fname=fname, **dic)
+    # ax2.set_ylim(ax.get_ylim())
 
 def load(dic=None, colt=('time', 'JD', 'MJD')):
     """
