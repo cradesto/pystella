@@ -184,7 +184,7 @@ def plot_vels_models(ax, models_dic, xlim=None, ylim=None, vnorm=1e8, **kwargs):
         # ylim = [np.min(y_mid) + 7., np.min(y_mid) - 2.]
     ax.set_ylim(ylim)
 
-    ax.set_ylabel('Velocity [{:.0e} km/s]'.format(vnorm / 1e5))
+    ax.set_ylabel('Velocity \n [{:.0e} km/s]'.format(vnorm / 1e5))
     ax.set_xlabel('Time [days]')
 
 
