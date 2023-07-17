@@ -220,7 +220,7 @@ class Band(object):
         if self._fname is not None:
             f = open(self._fname)
             try:
-                lines = [str.strip(line) for line in f.readlines() if not line.startswith('#')]
+                lines = [str.strip(line) for line in f.readlines() if not str.strip(line).startswith('#')]
                 wl = np.array([float(line.split()[0]) for line in lines if len(line) > 0])
 
                 self._resp = np.array([float(line.split()[1]) for line in lines if len(line) > 0])
@@ -657,6 +657,7 @@ def colors(bname=None, default='magenta'):
          'SwiftU': "blue", 'SwiftB': "cyan", 'SwiftV': "darkgreen",
          'KaitU': "blue", 'KaitB': "cyan", 'KaitV': "darkgreen", 'KaitR': "red", 'KaitI': "magenta",
          'massJ': "green", 'massH': "cyan", 'massK': "black",
+         'KgoJ': "darkolivegreen", 
          'ABGrondJ': "darkolivegreen", 'ABGrondH': "teal", 'ABGrondK': "silver",
          'GrondJ': "darkgreen", 'GrondH': "darkcyan", 'GrondK': "dimgray",
          'LcoJ': "green", 'LcoH': "cyan", 'LcoK': "black",

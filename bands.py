@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # #!/usr/bin/python3
 
+import numpy as np
 
 from pystella.util.phys_var import phys
 import pystella.rf.band as band
@@ -97,19 +98,23 @@ def plot_Kepler():
     # plt.show()
 
 
-def plot_bands(bands, color_dic=None):
+def plot_bands(bands, color_dic=None, is_norm=False):   
     if color_dic is None:
         color_dic = band.colors()
 
     for bname in bands:
         b = band.band_by_name(bname)
-        plt.plot(b.wl * phys.cm_to_angs, b.resp_wl, color_dic[bname], label=bname, linewidth=2)
+        resp = b.resp_wl 
+        if is_norm:
+            resp = (resp-np.min(resp))/(np.max(resp)-np.min(resp))
+        plt.plot(b.wl * phys.cm_to_angs, resp, color_dic[bname], label=bname, linewidth=2)
+        # np.savetxt(bname+'.dat', np.c_[b.wl * phys.cm_to_angs, resp], fmt='%12.0f %12.8f')
+
     plt.legend(loc=4)
     plt.ylabel('Amplitude Response')
     plt.xlabel('Wave [A]')
     plt.grid(linestyle=':')
     plt.show()
-
 
 def usage():
     print("Usage:")
