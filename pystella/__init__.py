@@ -18,7 +18,7 @@ from .model import sn_eve as eve
 from .model.stella import Stella
 from .model.SneSpace import SneSpace
 from .model.h5stella import H5Stella, H5Fh
-from .model import PreSN
+from .model import PreSN, AZ
 from .model import Snec, Mesa
 
 from .rf.band import Band, BandUni

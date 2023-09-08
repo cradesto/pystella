@@ -178,6 +178,13 @@ class MyPrompt(HistConsole):
         MyPrompt.call_cmd(script, args)
 
     @staticmethod
+    def do_h5(args):
+        """Work with Stella models via h5-file. For detailed help type 'h5 -h'.
+        """
+        script = os.path.join(ROOT_DIRECTORY, 'h5.py')
+        MyPrompt.call_cmd(script, args)
+
+    @staticmethod
     def do_snec(args):
         """Convert SNEC models to  Stella models. For detailed help type 'snec -h'.
         """

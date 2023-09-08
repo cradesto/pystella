@@ -34,7 +34,7 @@ class H5Stella(object):
 
     @property
     def Name(self):
-        return os.path.basename(self.Fname)[0]
+        return os.path.splitext(os.path.basename(self.Fname))[0]
 
     @property
     def Fname(self):
@@ -87,6 +87,20 @@ class H5Stella(object):
         logging.debug('Yabun from {}'.format(self.Fname))
         with h5py.File(self.Fname, "r") as h5f:
             yabun = np.array(h5f.get('/presn/Yabun'))  
+        return yabun
+    
+    @property
+    def Xisotopes(self):
+        logging.debug('Xisotopes from {}'.format(self.Fname))
+        with h5py.File(self.Fname, "r") as h5f:
+            yabun = np.array(h5f.get('/presn/Xisotopes'))  
+        return yabun    
+    
+    @property
+    def M(self):
+        logging.debug('Mass from {}'.format(self.Fname))
+        with h5py.File(self.Fname, "r") as h5f:
+            yabun = np.array(h5f.get('/presn/M'))  
         return yabun
 
     def ds_write(self, path, ds, attrs=None):
@@ -142,7 +156,7 @@ class H5TimeElement(object):
         return self._s
 
     @property
-    def T(self):
+    def Time(self):
         """
         Time
         :return:
@@ -179,7 +193,7 @@ class H5TimeElement(object):
         return self
 
     def IdxByTime(self, time):
-        for idx, t in enumerate(self.T):
+        for idx, t in enumerate(self.Time):
             if t >= time:
                 return idx
         return -1
@@ -314,7 +328,7 @@ def main():
             plt.subplot(2, 2, i + 1)
             x = hyd.Val[num, :, 0]
             y = hyd.Val[num, :, i]
-            plt.plot(x, y, '-', label='{} t={:.3f}'.format(str(var, 'utf-8'), hyd.T[num]))
+            plt.plot(x, y, '-', label='{} t={:.3f}'.format(str(var, 'utf-8'), hyd.Time[num]))
             plt.xscale('log')
             plt.yscale('log')
         plt.legend()
