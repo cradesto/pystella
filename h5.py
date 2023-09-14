@@ -71,7 +71,10 @@ Default: {} = last saved moment".format(time))
 """)
     return parser
 
-def hdf2presn(fnameh5, idx_time=None):
+def hdf2presn(fnameh5, idx_time):
+    if idx_time is None:
+        raise ValueError("Bad value for time. Try key -t -1 ")
+    
     abn_elements = ps.PreSN.stl_elements
     # Load 
     snh5 = ps.H5Stella(fnameh5)         # 
@@ -223,13 +226,16 @@ def main():
     if args.time.replace('-','').isdigit():
         idx_time = int(args.time)
         time = times[idx_time]
+    elif args.time.lower() == 'none':
+        idx_time = None
+        time = -1
     else:
         try:
             time = float(args.time)
             idx_time = (np.abs(times - time)).argmin()
             time = times[idx_time]
         except:
-            idx_time = None
+            idx_time = -1
             time = -1
 
     # if time < 0:
