@@ -367,10 +367,10 @@ class PreSN(object):
             #     f.write(' %4d %12.4e %12.4e %12.4e %12.4e %12.4e %12.4e %12.4e %12.4e \n' % _)
             # 'evehyd.trf: idum,dum,Radius(j),RHOeve(j),TMPR(j),VELOC(j), dum,dum; '
             a = '#No. M  R  Rho T   V   M  dum '.split()
-            f.write('  ' + '             '.join(a) + '\n')
+            f.write('  ' + (' '*18).join(a) + '\n')
             # for _ in zip(zones, self.m / phys.M_sun, self.r, np.log10(self.rho), np.log10(self.T), self.V, self.m / phys.M_sun, dum):
             for _ in zip(zones, self.m / phys.M_sun, self.r, self.rho, self.T, self.V, self.m / phys.M_sun, dum):
-                f.write(' %4d %15.8e %15.8e %15.7e %15.7e %15.7e  %15.7e  %8.1e\n' % _)
+                f.write(' %4d %24.16e %24.16e %24.16e %15.7e %15.7e  %24.16e  %8.1e\n' % _)
                 # f.write(' %4d %15.5e %15.5e %15.5e %15.5e %15.5e  %15.5e  %8.1e\n' % _)
         return os.path.isfile(fname)
 
