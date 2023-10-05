@@ -302,6 +302,13 @@ class MyPrompt(HistConsole):
         MyPrompt.call_cmd(script, args)
 
     @staticmethod
+    def do_rswd(args):
+        """Plot  Supremna Shock Wave Details. For detailed help type 'rswd -h'.
+        """
+        script = os.path.join(ROOT_DIRECTORY, 'rsn_swd.py')
+        MyPrompt.call_cmd(script, args)
+
+    @staticmethod
     def do_bands(args):
         """Plot passbands. For detailed help type 'bands -h'.
         """
