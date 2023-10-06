@@ -269,7 +269,7 @@ def plot_swd(axs, b, **kwargs):
         axpar = axrho.twinx()
         axpar.set_ylim(ylim_par)
         if is_yrlabel:
-            axpar.set_ylabel(r'T_e, T_i, Vel, Lum$')
+            axpar.set_ylabel(r'$T_e, T_i, Vel, Lum$')
         else:
             axpar.set_yticklabels([])
 

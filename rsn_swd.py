@@ -2,11 +2,22 @@
 
 import logging
 import os
+import sys
 from itertools import cycle
 
 import numpy as np
 import pystella as ps
 
+
+
+
+if True:
+    try:
+        sys.path.append(os.path.expanduser('~/Sn/Release/python/smplotlib/src'))
+        import smplotlib
+    except ImportError as ex:
+        print('  Probably, you should install module: {}'.format('smplotlib'))
+        
 try:
     import matplotlib.pyplot as plt
     from matplotlib import gridspec
@@ -20,6 +31,9 @@ except ImportError as ex:
     plt = None
     gridspec = None
     pass
+
+
+
 __author__ = 'bakl'
 
 # ROOT_DIRECTORY = dirname(dirname(os.path.abspath(__file__)))
