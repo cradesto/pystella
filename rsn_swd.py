@@ -7,20 +7,9 @@ from itertools import cycle
 
 import numpy as np
 import pystella as ps
-
-
-
-
-if True:
-    try:
-        sys.path.append(os.path.expanduser('~/Sn/Release/python/smplotlib/src'))
-        import smplotlib
-    except ImportError as ex:
-        print('  Probably, you should install module: {}'.format('smplotlib'))
         
 try:
     import matplotlib.pyplot as plt
-    from matplotlib import gridspec
 except ImportError as ex:
     # import traceback
     exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -29,10 +18,7 @@ except ImportError as ex:
     print('  Probably, you should install module: {}'.format('matplotlib'))
     #    print(ex)
     plt = None
-    gridspec = None
-    pass
-
-
+    pass   
 
 __author__ = 'bakl'
 
@@ -313,11 +299,19 @@ def plot_shock_details(swd, times, **kwargs):
 
 
 def main():
-    import sys
-    try:
-        import matplotlib.pyplot as plt
-    except ImportError:
-        plt = None
+    # import sys
+    # try:
+    #     import matplotlib.pyplot as plt
+    # except ImportError:
+    #     plt = None
+
+    # if True:
+    #     try:
+    #         sys.path.append(os.path.expanduser('~/Sn/Release/python/smplotlib/src'))
+    #         import smplotlib
+    #     except ImportError as ex:
+    #         print('  Probably, you should install module: {}'.format('smplotlib'))
+     
     # try:
     #     import seaborn as sns
     #     # sns.set()
