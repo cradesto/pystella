@@ -68,7 +68,7 @@ class StellaShockWaveDetail:
         # PLLOG,PLOG,QVLOG,log10(max(eng,1.d-50)),Flum*1.d-40,WRKX(Km);
         colstr = "tday km lgM lgR14 V8 lgT lgTrad lgDm6 lgP7  lgQv lgEng Flum40 cap"
         cols = [s.strip() for s in colstr.split()]
-        dt = np.dtype({'names': cols, 'formats': [np.float] * len(cols)})
+        dt = np.dtype({'names': cols, 'formats': [float] * len(cols)})
         data = np.loadtxt(fname, dtype=dt)
 
         self._nzon = int(np.max(data['km']))

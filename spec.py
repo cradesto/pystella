@@ -198,7 +198,7 @@ def plot_spec_poly(series, moments=None, fcut=1.e-20, is_info=False):
 
     # init graph
     fig = plt.figure()
-    ax = fig.gca(projection='3d')
+    ax = fig.add_subplot(projection='3d')
 
     pos = 0
     t_data = []
@@ -240,10 +240,11 @@ def plot_spec_poly(series, moments=None, fcut=1.e-20, is_info=False):
     ax.add_collection3d(poly, zs=t_data, zdir='y')
 
     # Create a color bar with 11 ticks
-    cbar = plt.colorbar(m, shrink=0.85)
+    cbar = fig.colorbar(m, shrink=0.85, ax=ax)
     ticks = np.linspace(min(Tmap), max(Tmap), 10)
     ticks_lbl = np.round(np.exp(ticks) * np.min(T_cols), -2)
-    cbar.ax.set_yticklabels(ticks_lbl)
+    # ax.set_yticks(ticks)
+    # cbar.ax.set_yticklabels(ticks_lbl)
     cbar.ax.yaxis.set_label_text("Color temperature [K]")
 
     ax.set_xlim3d(x_lim)
@@ -299,7 +300,7 @@ def save_fit_wl(fsave, mname, time, Tdil, Wdil, wl_ab=None):
         import h5py
         with h5py.File(fsave, "w") as f:
             # data = np.array([time, Tdil, Wdil])
-            data = np.zeros(len(time), dtype={'names': ['time', 'Tcolor', 'W'], 'formats': [np.float] * 3})
+            data = np.zeros(len(time), dtype={'names': ['time', 'Tcolor', 'W'], 'formats': [float] * 3})
             data['time'] = time
             data['Tcolor'] = Tdil
             data['W'] = Wdil
@@ -583,7 +584,7 @@ def interval2float(v):
     elif len(a) == 2 and len(a[1]) == 0:
         return float(a[0]), float("inf")
     elif len(a) == 2:
-        return list(map(np.float, str(v).split(':')))
+        return list(map(float, str(v).split(':')))
     elif len(a) == 1:
         return float(v[0])
     else:
@@ -711,7 +712,7 @@ def main():
             continue
         if opt == '-x':
             wl_ab = interval2float(arg)
-            # wl_ab = [np.float(s) for s in (str(arg).split(':'))]
+            # wl_ab = [float(s) for s in (str(arg).split(':'))]
             continue
         if opt == '-t':
             t_ab = list(map(float, arg.split(':')))  # interval2float(arg)

@@ -27,7 +27,7 @@ def read_data():
         data = np.loadtxt(fh, comments='#', skiprows=1,
                           converters={0: lambda s: s.decode("utf-8")},
                           dtype={'names': ('band', 'lambdaeff', 'Rv2.1', 'Rv3.1', 'Rv4.1', 'Rv5.1'),
-                                 'formats': ('U12', np.float, np.float, np.float, np.float, np.float)}, )
+                                 'formats': ('U12', float, float, float, float, float)}, )
 
         # data['band'] = [s.decode("utf-8") for s in data['band']]
     return data, laws

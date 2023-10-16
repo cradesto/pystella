@@ -229,7 +229,7 @@ def compute_vel_swd(name, path, z=0., is_info=False):
     data = swd.params_ph(cols=['V'])
 
     res = np.array(np.zeros(len(data['V'])),
-                   dtype=np.dtype({'names': ['time', 'vel'], 'formats': [np.float] * 2}))
+                   dtype=np.dtype({'names': ['time', 'vel'], 'formats': [float] * 2}))
     res['time'] = data['time'] * (1. + z)  # redshifted time
     res['vel'] = data['V']
     if any(np.isnan(res['time'])) :
@@ -286,7 +286,7 @@ def compute_vel_res_tt(name, path, z=0., t_beg=0.1, t_end=None, line_header=80,
 
     # show results
     res = np.array(np.zeros(len(vels)),
-                   dtype=np.dtype({'names': ['time', 'vel', 'r'], 'formats': [np.float] * 3}))
+                   dtype=np.dtype({'names': ['time', 'vel', 'r'], 'formats': [float] * 3}))
     res['time'] = times
     res['vel'] = vels
     res['r'] = radii
@@ -342,7 +342,7 @@ def bad_compute_vel_res_tt(name, path, z=0., t_beg=1., t_end=None, t_diff=1.05, 
 
     # show results
     res = np.array(np.zeros(len(vels)),
-                   dtype=np.dtype({'names': ['time', 'vel', 'r'], 'formats': [np.float] * 3}))
+                   dtype=np.dtype({'names': ['time', 'vel', 'r'], 'formats': [float] * 3}))
     res['time'] = times
     res['vel'] = vels
     res['r'] = radii

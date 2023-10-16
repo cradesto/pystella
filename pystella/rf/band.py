@@ -23,6 +23,8 @@ class Band(object):
     NameBol = 'bol'
     NameUBVRI = 'ubvri'
     NameBVRI = 'bvri'
+    NameF1150 = 'F1150'
+    NameF1500 = 'F1500'
     NameBolQuasi = 'bolq'
     NameZp = 'zp'
     NameJy = 'Jy'
@@ -30,7 +32,59 @@ class Band(object):
     FileVega = os.path.join(DirRoot, 'vega.dat')
     # FileMagSun = os.path.join(DirRoot, 'adb_mag_sun_apjsaabfdft3_ascii.txt')
     # MagSunData = None
+    dic_colors = {'U': "blue", 'B': "cyan", 'V': "darkgreen", 'R': "red", 'I': "magenta",
+        'J': "blueviolet", 'H': "plum", 'K': "saddlebrown",
+        'BesU': "blue", 'BesB': "cyan", 'BesV': "darkgreen", 'BesR': "red", 'BesI': "magenta",
+        'SwiftU': "blue", 'SwiftB': "cyan", 'SwiftV': "darkgreen",
+        'KaitU': "blue", 'KaitB': "cyan", 'KaitV': "darkgreen", 'KaitR': "red", 'KaitI': "magenta",
+        'massJ': "green", 'massH': "cyan", 'massK': "black",
+        'KgoJ': "darkolivegreen", 
+        'ABGrondJ': "darkolivegreen", 'ABGrondH': "teal", 'ABGrondK': "silver",
+        'GrondJ': "darkgreen", 'GrondH': "darkcyan", 'GrondK': "dimgray",
+        'LcoJ': "green", 'LcoH': "cyan", 'LcoK': "black",
+        'UVM2': "skyblue", 'UVW1': "orange", 'UVW2': "mediumpurple",
+        'UVM2AB': "powderblue", 'UVW1AB': "moccasin", 'UVW2AB': "thistle",
+        'UVM2o': "deepskyblue", 'UVW1o': "darkviolet", 'UVW2o': "darkblue",
+        'USNO40i': "blue", 'USNO40g': "cyan", 'USNO40z': "darkgreen", 'USNO40r': "darkviolet", 'USNO40u': "magenta",
+        'F115LP': "blueviolet", 'F255W': "saddlebrown",
+        'F105W': "magenta", 'F435W': "skyblue", 'F606W': "cyan", 'F125W': "g",
+        'F140W': "orange", 'F160W': "r", 'F814W': "blue",
+        'Kepler': "magenta", 'Lum': "orchid",
+        'g': "olive", 'r': "red", 'i': "plum", 'u': "darkslateblue", 'z': "chocolate",
+        'Sdssg': "olive", 'Sdssr': "pink", 'Sdssi': "magenta", 'Sdssu': "blue", 'Sdssz': "chocolate",
+        'PS1g': "olive", 'PS1r': "red", 'PS1i': "magenta", 'PS1u': "blue", 'PS1z': "chocolate", 'PS1y': "cyan",
+        'PS1w': "orange", 'y': 'y', 'Y': 'y', 'w': 'tomato',
+        'AtlasC': "cyan", 'AtlasO': "orange",
+        'UBVRI': 'chocolate', 'GaiaG': 'g', 'TESSRed': 'orchid',
+        'L_ubvri': 'sandybrown', 'L_bol': 'saddlebrown', 'XEUV<325': 'sienna', 'IR>890': 'peru',
+        NameBol: 'black', NameUBVRI: 'dimgrey', NameBVRI: 'saddlebrown', NameBolQuasi: 'dimgray',
+        NameF1150: 'sandybrown', NameF1500: 'tomato',
+        }
+    
+    dic_lntype = {"U": "-", 'B': "-", 'V': "-", 'R': "-", 'I': "-",
+          'UVM2': "-.", 'UVW1': "-.", 'UVW2': "-.",
+          'UVM2AB': ".", 'UVW1AB': ".", 'UVW2AB': ".",
+          'F125W': ":",
+          'F160W': "-.", 'F140W': "--", 'F105W': "-.", 'F435W': "--", 'F606W': "-.", 'F814W': "--", 'u': "--",
+          'g': "--", 'r': "--", 'i': "--", 'z': "--", 'Y': '--', 'GaiaG': '--',
+          NameBol: '-', NameUBVRI: '--', NameBVRI: '-.', NameBolQuasi: ':'}
 
+    @staticmethod
+    def add_band(name, b):
+        if not name in Band.Cache:
+            Band.Cache[name] = b
+            return True
+        return False
+
+    @staticmethod
+    def add_color(name, c):
+        if not name in Band.dic_colors:
+            Band.dic_colors[name] = c
+
+    @staticmethod
+    def add_lntype(name, ln):
+        if not name in Band.dic_lntype:
+            Band.dic_lntype[name] = ln
 
     def __init__(self, name=None, fname=None, zp=None, jy=None, is_load=False):
         """Creates a band instance.  Required parameters:  name and file."""
@@ -275,7 +329,8 @@ class Band(object):
         # if 'magsun' in parser.sections():
         #     Band.MagSunAlias = {v: k for k, v in parser.items('magsun')}
         Band.IsLoad = True
-        return True
+        names =  get_names();
+        return len(names) > 0
 
     # @classmethod
     # def get_MagSun_data(cls):
@@ -651,59 +706,27 @@ ROOT_DIRECTORY = dirname(dirname(dirname(os.path.abspath(__file__))))
 
 # @lru_cache
 def colors(bname=None, default='magenta'):
-    c = {'U': "blue", 'B': "cyan", 'V': "darkgreen", 'R': "red", 'I': "magenta",
-         'J': "blueviolet", 'H': "plum", 'K': "saddlebrown",
-         'BesU': "blue", 'BesB': "cyan", 'BesV': "darkgreen", 'BesR': "red", 'BesI': "magenta",
-         'SwiftU': "blue", 'SwiftB': "cyan", 'SwiftV': "darkgreen",
-         'KaitU': "blue", 'KaitB': "cyan", 'KaitV': "darkgreen", 'KaitR': "red", 'KaitI': "magenta",
-         'massJ': "green", 'massH': "cyan", 'massK': "black",
-         'KgoJ': "darkolivegreen", 
-         'ABGrondJ': "darkolivegreen", 'ABGrondH': "teal", 'ABGrondK': "silver",
-         'GrondJ': "darkgreen", 'GrondH': "darkcyan", 'GrondK': "dimgray",
-         'LcoJ': "green", 'LcoH': "cyan", 'LcoK': "black",
-         'UVM2': "skyblue", 'UVW1': "orange", 'UVW2': "mediumpurple",
-         'UVM2AB': "powderblue", 'UVW1AB': "moccasin", 'UVW2AB': "thistle",
-         'UVM2o': "deepskyblue", 'UVW1o': "darkviolet", 'UVW2o': "darkblue",
-         'USNO40i': "blue", 'USNO40g': "cyan", 'USNO40z': "darkgreen", 'USNO40r': "darkviolet", 'USNO40u': "magenta",
-         'F105W': "magenta", 'F435W': "skyblue", 'F606W': "cyan", 'F125W': "g",
-         'F140W': "orange", 'F160W': "r", 'F814W': "blue",
-         'Kepler': "magenta", 'Lum': "orchid",
-         'g': "olive", 'r': "red", 'i': "plum", 'u': "darkslateblue", 'z': "chocolate",
-         'Sdssg': "olive", 'Sdssr': "pink", 'Sdssi': "magenta", 'Sdssu': "blue", 'Sdssz': "chocolate",
-         'PS1g': "olive", 'PS1r': "red", 'PS1i': "magenta", 'PS1u': "blue", 'PS1z': "chocolate", 'PS1y': "cyan",
-         'PS1w': "orange", 'y': 'y', 'Y': 'y', 'w': 'tomato',
-         'AtlasC': "cyan", 'AtlasO': "orange",
-         'UBVRI': 'chocolate', 'GaiaG': 'g', 'TESSRed': 'orchid',
-         'L_ubvri': 'sandybrown', 'L_bol': 'saddlebrown', 'XEUV<325': 'sienna', 'IR>890': 'peru',
-         Band.NameBol: 'black', Band.NameUBVRI: 'dimgrey', Band.NameBVRI: 'saddlebrown', Band.NameBolQuasi: 'dimgray'}
     # for Subaru HCS: colors
     for b in list('grizY'):
-        c['HSC' + b] = c[b]
+        Band.dic_colors['HSC' + b] = Band.dic_colors[b]
 
     if bname is None:
-        return c
+        return Band.dic_colors
     else:
-        if bname in c:
-            return c[bname]
+        if bname in Band.dic_colors:
+            return Band.dic_colors[bname]
         return default
 
 
 def lntypes(bname=None, default='-'):
-    ln = {"U": "-", 'B': "-", 'V': "-", 'R': "-", 'I': "-",
-          'UVM2': "-.", 'UVW1': "-.", 'UVW2': "-.",
-          'UVM2AB': ".", 'UVW1AB': ".", 'UVW2AB': ".",
-          'F125W': ":",
-          'F160W': "-.", 'F140W': "--", 'F105W': "-.", 'F435W': "--", 'F606W': "-.", 'F814W': "--", 'u': "--",
-          'g': "--", 'r': "--", 'i': "--", 'z': "--", 'Y': '--', 'GaiaG': '--',
-          Band.NameBol: '-', Band.NameUBVRI: '--', Band.NameBVRI: '-.', Band.NameBolQuasi: ':'}
     # for Subaru HCS: colors
     for b in list('grizY'):
-        ln['HSC' + b] = ln[b]
+        Band.dic_lntype['HSC' + b] = Band.dic_lntype[b]
 
     if bname is None:
-        return ln
+        return Band.dic_lntype
     else:
-        return ln[bname]
+        return Band.dic_lntype[bname]
         # if bname in lntypes:
         #     return lntypes[bname]
         # return default
@@ -731,11 +754,14 @@ def band_load_names(path=Band.DirRoot):
             res[bname] = b
         return res
 
-    bol = BandUni.get_bol()
-    qbol = BandUni.get_qbol()
-    ubvri = BandJoin.get_ubvri()
-    bvri = BandJoin.get_bvri()
-    bands = {Band.NameBol: bol, Band.NameUBVRI: ubvri, Band.NameBVRI: bvri, Band.NameBolQuasi: qbol}
+    bands = {Band.NameBol: BandUni.get_bol(), 
+             Band.NameUBVRI: BandJoin.get_ubvri(), 
+             Band.NameBVRI: BandJoin.get_bvri(), 
+             Band.NameBolQuasi: BandUni.get_qbol(), 
+             Band.NameF1150: BandUni(name=Band.NameF1150, wlrange=(1150, 1900)), 
+             Band.NameF1500: BandUni(name=Band.NameF1500, wlrange=(1500, 2800))
+             }
+    
     for d, dir_names, file_names in os.walk(path):
         if Band.FileFilters in file_names:  # check that there are info-file in this directory
             fname = os.path.join(d, Band.FileFilters)
@@ -744,6 +770,20 @@ def band_load_names(path=Band.DirRoot):
                 bands.update(bs)
 
     return bands
+
+
+def band_add_new_bol(name, Ushort, Rlong, c=None, ln=None, length=300):
+    b = BandUni(name=name, wlrange=(Ushort, Rlong), length=length)  
+    if (not Band.add_band(name, b)):
+        print(f'The band {name} have been added before.')
+        return False
+    # if c is not None and not name in Band.dic_colors:
+    #     Band.add_color(name, c)
+    # if ln is not None and not name in Band.dic_lntype:
+    #     Band.add_lntype(name, ln)
+    return True
+
+
 
 
 def get_names():
@@ -819,27 +859,28 @@ def band_by_name(name):
         return None
 
 
-def print_bands(ncol=5):
+def print_bands(ncol=5, is_print=True):
+    res = ''
     bands = sorted(get_names())
-    print("Available bands:")
+    res += "\nAvailable bands: \n"
     # print "   Available bands: \n   %s" % '-'.join(sorted(bands))
     if bands is not None and len(bands) > 0:
         s = '  '
         c = bands[0][0]
         for b in bands:
             if b[0] != c:
-                print(s)
+                res += s
                 c = b[0]
-                s = "   %-7s " % b
+                s = "\n   %-7s " % b
             else:
                 s += " %-7s " % b
         if s != '':
-            print(s)
+            res += s
     else:
-        print("You have not load them yet. Try: band.Band.load_settings() ")
+        res += "\nYou have not load them yet. Try: band.Band.load_settings() "
 
     alias = band_get_aliases()
-    print("\nAvailable aliases of bands: ")
+    res += "\n\n Available aliases of bands: \n"
     if alias is not None and len(alias) > 0:
         col = 0
         s = ''
@@ -847,10 +888,15 @@ def print_bands(ncol=5):
             col += 1
             s += " %3s => %-7s " % (k, v)
             if col == ncol:
-                print(s)
+                res += s
                 col = 0
                 s = ''
         if s != '':
-            print(s)
+            res += "\n"+s
     else:
-        print("     No aliases or you have not load them yet. Try: band.Band.load_settings() ")
+        res += "\n     No aliases or you have not load them yet. Try: band.Band.load_settings() "
+
+    if is_print:
+        print(res)
+    
+    return res

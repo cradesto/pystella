@@ -391,6 +391,9 @@ def main(name=None, model_ext='.ph'):
                 nm = os.path.splitext(os.path.basename(str(arg)))[0]
                 if os.path.exists(os.path.join(path, nm + model_ext)):
                     names.append(nm)
+                elif is_curve_tt:
+                    if os.path.exists(os.path.join(path, nm + '.tt')):
+                        names.append(nm)
                 else:
                     files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))
                              and fnmatch.fnmatch(f, arg)]
