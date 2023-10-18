@@ -279,7 +279,7 @@ class MyPrompt(HistConsole):
 
     @staticmethod
     def do_eve(args):
-        """Plot Stella Light Curves. For detailed help type 'eve -h'.
+        """Plot Stella Chemical structure. For detailed help type 'reve -h'.
         """
         if len(args) == 0:
             name = 'No data. Please provide a rho-file.'
@@ -288,6 +288,19 @@ class MyPrompt(HistConsole):
         print("eve %s" % name)
         script = os.path.join(ROOT_DIRECTORY, 'eve.py')
         MyPrompt.call_cmd(script, args)
+
+    @staticmethod
+    def do_reve(args):
+        """Plot Supremna Light Curves. For detailed help type 'reve -h'.
+        """
+        if len(args) == 0:
+            name = 'No data. Please provide a rho-file.'
+        else:
+            name = args
+        print("reve %s" % name)
+        script = os.path.join(ROOT_DIRECTORY, 'rsn_eve.py')
+        MyPrompt.call_cmd(script, args)
+
 
     @staticmethod
     def do_swd(args):
