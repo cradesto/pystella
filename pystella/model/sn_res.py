@@ -63,7 +63,7 @@ class StellaRes:
         # delimiter = (4, 9, 12, 8, 10, 8, 7, 7, 7, 7, 10, 10, 10, 10, 5, 10, 10, 10, 10, 10)
         delimiter = (int(re.sub(r'\D', '', w)) for w in map(str.strip, col_w.split()))
         # dt = np.dtype({'names': cols, 'formats': map(str.strip, col_w.split())})
-        dt = np.dtype({'names': cols, 'formats': [int]+[np.float] * (len(cols)-1)})
+        dt = np.dtype({'names': cols, 'formats': [int]+[float] * (len(cols)-1)})
         # tmp = [x for x in map(str.strip, col_w.split())]
         # dt = np.dtype(','.join(tmp))
         # dt = np.dtype({'names': cols, 'formats': [np.float64] * len(cols)})

@@ -69,7 +69,7 @@ class SupremnaShockWaveDetail:
         # Clum*FL1unsat*1.d-40,Clum*Fsat*1.d-40,WRKX(Km),XEswd;
         colstr = "tyear km lgM lgRpc V8 lgTe lgTi lgPl lgPe lgPi  lgQv lgCR lgEng Flum40 FL1unsat40 Fsat40 rhoke XEswd"
         cols = [s.strip() for s in colstr.split()]
-        dt = np.dtype({'names': cols, 'formats': [np.float] * len(cols)})
+        dt = np.dtype({'names': cols, 'formats': [float] * len(cols)})
         data = np.loadtxt(fname, dtype=dt)
 
         self._nzon = int(np.max(data['km']))

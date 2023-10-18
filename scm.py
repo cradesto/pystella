@@ -202,7 +202,7 @@ def extract_time(t, times, mags):
 def run_scm(bands, distance, names, path, t50, t_beg, t_end, z, method='tt'):
     res = np.array(np.zeros(len(names)),
                    dtype=np.dtype({'names': ['v'] + bands,
-                                   'formats': [np.float] * (1 + len(bands))}))
+                                   'formats': [float] * (1 + len(bands))}))
     for im, name in enumerate(names):
         vels = None
         if method=='tt':
