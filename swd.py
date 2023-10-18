@@ -146,7 +146,7 @@ def get_parser(times='1:4:15:65', bnames='U:B:V:R', tau_ph=2. / 3):
                         help='Store a constant value')
     parser.add_argument('--uph', action='store_const', dest='is_uph',
                         const=True,
-                        help='To compute the photospheric velocity')
+                        help='To compute the photospheric velocity. If one uses -w, then the velocities is saved in a file.')
     parser.add_argument('--mult', action='store_const', dest='is_mult',
                         const=True,
                         help='To make cartoon for evolution. Use: '

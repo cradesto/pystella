@@ -37,11 +37,10 @@ class SupremnaIonHistory:
         self.load()
 
     def __str__(self):
-        return "%s, path: %s" % (self._name, self._path)
+        return "{}, path: {}. Nzon: {}, Ntimes: {}".format(self.Name, self._path, self.Nzon, self.Ntimes)
 
     def __repr__(self):
-        return "%s, path: %s" % (self._name, self._path)
-        # return "%s" % self.name
+        return "{}, path: {}. Nzon: {}, Ntimes: {}".format(self.Name, self._path, self.Nzon, self.Ntimes)
 
     @property
     def Nzon(self):

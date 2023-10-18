@@ -162,7 +162,7 @@ class BlockSwd:
 
     @property
     def Rho(self):
-        return 10. ** (self._block['lgPl'] - 6.)  # [g*cm-3]
+        return 10. ** self._block['lgPl']  # [g*cm-3]
 
     @property
     def Lum(self):

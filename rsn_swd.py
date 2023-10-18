@@ -149,9 +149,9 @@ def get_parser(times='41:75:150:300'):
     parser.add_argument('-c', action='store_const', dest='constant_value',
                         const='value-to-store',
                         help='Store a constant value')
-    parser.add_argument('--uph', action='store_const', dest='is_uph',
+    parser.add_argument('--ion', action='store_const', dest='is_ion',
                         const=True,
-                        help='To compute the photospheric velocity')
+                        help='Show ion structure.')
     parser.add_argument('--mult', action='store_const', dest='is_mult',
                         const=True,
                         help='To make cartoon for evolution. Use: '
@@ -362,22 +362,11 @@ def main():
         supr = ps.Supremna(name, path=path)
         swd = supr.get_swd().load()
 
-        if args.is_uph:
-            logger.info(' Compute and print uph')
-            duph = swd.params_ph()
+        if args.is_ion:
+            logger.info(' Show ion structure')
+            ion = supr.get_ion()
             # print uph
-            print(duph.keys())
-            for row in zip(*duph.values()):
-                print(['{:12f}'.format(x) for x in row])
-            # save uph
-            if args.is_write:
-                fsave = os.path.join(path, "{0}.uph".format(name))
-                print("Save uph to {0}".format(fsave))
-                uph_write(duph, fsave)
-            else:
-                fig = plot_uph(duph, vnorm=args.vnorm, label=name)
-                if args.is_save:
-                    fsave = os.path.expanduser("~/uph_{0}.pdf".format(name))
+            print(ion)
         elif args.is_mult:
             make_cartoon(swd, times, vnorm=args.vnorm, rnorm=args.rnorm,
                          lumnorm=args.lumnorm, is_legend=is_legend)

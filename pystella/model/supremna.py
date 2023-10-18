@@ -77,6 +77,10 @@ class Supremna:
         swd = SupremnaShockWaveDetail(self.name, self.path)
         return swd
 
+    def get_ion(self):
+        from pystella.model import SupremnaIonHistory
+        return SupremnaIonHistory(self.name, self.path)
+
     # def get_ioh(self):
     #     from pystella.model.sn_tau import SupremnaIonHistoryDetail
     #     ioh = SupremnaIonHistoryDetail(self.name, self.path)
