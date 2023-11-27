@@ -772,8 +772,8 @@ def plot_shock_details(swd, times, **kwargs):
             ticks_on(axpar)
             dic_axes['r'].append({'itime': i, 't': t, 'rho': axrho, 'par': axpar})
 
-    if 'rnorm' in kwargs:
-        kwargs.pop('rnorm')
+    if 'axeX' in kwargs:
+        kwargs.pop('axeX')
     axes2 = []
     # Plot mass column
     for i, t in enumerate(times):
@@ -791,7 +791,7 @@ def plot_shock_details(swd, times, **kwargs):
             legmask = sn_swd.LEGEND_MASK_Vars
         b = swd.block_nearest(t)
         axrho, axpar = sn_swd.plot_swd((axrho, axpar), b, name=swd.Name, is_xlabel=(i == len(times) - 1),
-                                       rnorm='m', legmask=legmask, is_yllabel=False, text_posy=0.88,
+                                       axeX='m', legmask=legmask, is_yllabel=False, text_posy=0.88,
                                        **kwargs)
         if not is_ax_old:
             dic_axes['m'].append({'itime': i, 't': t, 'rho': axrho, 'par': axpar})

@@ -55,14 +55,14 @@ def plot_uph(uph, vnorm=1.e8, label='', lw=2, fontsize=18, ls="-", color='blue')
     return fig
 
 
-def make_cartoon(swd, times, vnorm, rnorm, lumnorm, is_legend, fout=None):
+def make_cartoon(swd, times, vnorm, axeX, lumnorm, is_legend, fout=None):
     import subprocess
     import matplotlib.pyplot as plt
 
     time = np.ma.masked_outside(swd.Times, times[0], times[-1])
     # time = np.exp(np.linspace(np.log(times[0]), np.log(times[-1]), 50))
     for i, t in enumerate(time.compressed()):
-        fig = ps.lcp.plot_shock_details(swd, times=[t], vnorm=vnorm, rnorm=rnorm,
+        fig = ps.lcp.plot_shock_details(swd, times=[t], vnorm=vnorm, axeX=axeX,
                                         lumnorm=lumnorm, is_legend=is_legend)
         fsave = os.path.expanduser("img{0}{1:04d}.png".format(swd.Name, i))
         print("Save plot to {0} at t={1}".format(fsave, t))
@@ -110,11 +110,11 @@ def get_parser(times='1:4:15:65', bnames='U:B:V:R', tau_ph=2. / 3):
                         default=1e40,
                         dest="lumnorm",
                         help="Luminously normalization, example: 1e40")
-    parser.add_argument('--rnorm',
+    parser.add_argument('--x',
                         required=False,
                         default='lgr',  # 1e14,
-                        dest="rnorm",
-                        help="Radius normalization, example: 'm' or 'sun' or 1e13")
+                        dest="axeX",
+                        help="Radius normalization, example: 'lgr, 'm', 'z' or 'sun' or 1e13")
     parser.add_argument('--tnorm',
                         nargs='?',
                         required=False,
@@ -262,12 +262,12 @@ def main():
                 if args.is_save:
                     fsave = os.path.expanduser("~/uph_{0}.pdf".format(name))
         elif args.is_mult:
-            make_cartoon(swd, times, vnorm=args.vnorm, rnorm=args.rnorm,
+            make_cartoon(swd, times, vnorm=args.vnorm, axeX=args.axeX,
                          lumnorm=args.lumnorm, is_legend=is_legend)
         else:
             # ls = next(ls_cycle) # skip solid
             fig, dic_axes = ps.lcp.plot_shock_details(swd, times=times,
-                                                      vnorm=args.vnorm, rnorm=args.rnorm, tnorm=args.tnorm,
+                                                      vnorm=args.vnorm, axeX=args.axeX, tnorm=args.tnorm,
                                                       lumnorm=args.lumnorm, is_legend=is_legend, is_axes=True,
                                                       ylim_par=ylim_par,
                                                       dic_axes=dic_axes, ls=next(ls_cycle))

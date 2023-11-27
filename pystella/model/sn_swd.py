@@ -261,7 +261,7 @@ def plot_swd(axs, b, **kwargs):
     is_grid = kwargs.get('is_grid', False)
     text_posy = kwargs.get('text_posy', 1.01)
 
-    rnorm = kwargs.get('rnorm', 'm')
+    axeX = kwargs.get('axeX', 'm')
     tnorm = kwargs.get('tnorm', None)
     # tnorm = kwargs.get('tnorm', 1e3)
     vnorm = kwargs.get('vnorm', 1e8)
@@ -270,22 +270,24 @@ def plot_swd(axs, b, **kwargs):
     ls = kwargs.get('ls', '-')
     lw = kwargs.get('lw', 1.)
 
-    if rnorm == 'sun':
-        rnorm = phys.R_sun
-        x, xlabel = b.R / rnorm, r'Ejecta Radius, [$\mathtt{R}_\odot$]'
-    elif rnorm == 'lgr':
+    if axeX == 'sun':
+        axeX = phys.R_sun
+        x, xlabel = b.R / axeX, r'Ejecta Radius, [$\mathtt{R}_\odot$]'
+    elif axeX == 'lgr':
         x, xlabel = b.R, r'Ejecta Radius, [cm]'
-    elif rnorm == 'm':
+    elif axeX == 'z':
+        x, xlabel = b.Zon, r'Zone'
+    elif axeX == 'm':
         x, xlabel = b.M, r'Ejecta Mass [$\mathtt{M}_\odot$]'
-    elif isfloat(rnorm):
-        x, xlabel = b.R / float(rnorm), r'Ejecta Radius, [$\times 10^{%d}$ cm]' % int(np.log10(float(rnorm)))
+    elif isfloat(axeX):
+        x, xlabel = b.R / float(axeX), r'Ejecta Radius, [$\times 10^{%d}$ cm]' % int(np.log10(float(axeX)))
     else:
         x, xlabel = b.M, r'Ejecta Mass [$\mathtt{M}_\odot$]'
 
     y = np.log10(b.Rho)
     axrho, axpar = axs
     is_axpar_none = axpar is None
-    if rnorm == 'lgr':
+    if axeX == 'lgr':
         axrho.semilogx(x, y, label=rf'$\rho$ {name}', color='black', ls=ls, linewidth=lw)
     else:
         axrho.plot(x, y, label=rf'$\rho$ {name}', color='black', ls=ls, linewidth=lw)

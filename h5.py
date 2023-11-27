@@ -81,10 +81,12 @@ def hdf2presn(fnameh5, idx_time):
     print(snh5.Name)
     hyd = snh5.Hyd
     print(hyd.Attrs)
+    times = hyd.Time
+    t_idx = times[idx_time] * 86400 # tday to seconds
 
     presn = ps.PreSN(snh5.Name, hyd.Nzon, elements=abn_elements)
     # time_start, nzon, m_core, r_cen, rho_cen = a
-    # presn.set_par('time_start', time_start)
+    presn.set_par('time_start', t_idx)
     # presn.set_par('m_core', m_core * phys.M_sun)
     # presn.set_par('r_cen', r_cen)
     # presn.set_par('rho_cen', rho_cen)

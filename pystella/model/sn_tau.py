@@ -365,7 +365,7 @@ def plot_tau(ax, b, **kwargs):
     is_yrlabel = kwargs.get('is_yrlabel', True)
     is_day = kwargs.get('is_day', True)
     is_grid = kwargs.get('is_grid', False)
-    rnorm = kwargs.get('rnorm', 'm')
+    axeX = kwargs.get('axeX', 'm')
     text_posy = kwargs.get('text_posy', 1.01)
 
     vnorm = kwargs.get('vnorm', 1.e8)
@@ -373,20 +373,20 @@ def plot_tau(ax, b, **kwargs):
 
     lw = 1.
 
-    if rnorm == 'sun':
-        rnorm = phys.R_sun
-        x, xlabel = b.R / rnorm, r'Ejecta Radius, [$\mathtt{R}_\odot$]'
-    elif rnorm == 'lgr':
+    if axeX == 'sun':
+        axeX = phys.R_sun
+        x, xlabel = b.R / axeX, r'Ejecta Radius, [$\mathtt{R}_\odot$]'
+    elif axeX == 'lgr':
         x, xlabel = b.R, r'Ejecta Radius, [cm]'
-    elif rnorm == 'm':
+    elif axeX == 'm':
         x, xlabel = b.M, r'Ejecta Mass [$\mathtt{M}_\odot$]'
-    elif isfloat(rnorm):
-        x, xlabel = b.R / float(rnorm), r'Ejecta Radius, [$\times 10^{%d}$ cm]' % int(np.log10(float(rnorm)))
+    elif isfloat(axeX):
+        x, xlabel = b.R / float(axeX), r'Ejecta Radius, [$\times 10^{%d}$ cm]' % int(np.log10(float(axeX)))
     else:
         x, xlabel = b.M, r'Ejecta Mass [$\mathtt{M}_\odot$]'
 
     y = np.log10(b.Rho)
-    if rnorm == 'lgr':
+    if axeX == 'lgr':
         ax.semilogx(x, y, label='Rho', color='black', ls="-", linewidth=lw)
     else:
         ax.plot(x, y, label='Rho', color='black', ls="-", linewidth=lw)
