@@ -118,7 +118,7 @@ class SupremnaShockWaveDetail:
 class BlockSwd:
     """
         Block swd-data for given time
-        line: "tyear km lgM lgRpc V8 lgT lgTrad lgDm6 lgP7  lgQv lgEng Flum40 cap"
+        line: "tyear km lgM lgRpc lgTe lgTi lgPl lgPe lgPi  lgQv lgEng Flum40 cap"
     """
 
     def __init__(self, time, block):
@@ -175,10 +175,16 @@ class BlockSwd:
     @property
     def lgPe(self):
         return self._block['lgPe']  
+    @property
+    def Pe(self):
+        return 10.**self.lgPe
     
     @property
     def lgPi(self):
         return self._block['lgPi']  
+    @property
+    def Pi(self):
+        return 10.**self.lgPi
     
     @property
     def lgEng(self):
@@ -221,7 +227,8 @@ def plot_swd(axs, b, **kwargs):
     tnorm = kwargs.get('tnorm', None)
     # tnorm = kwargs.get('tnorm', 1e3)
     vnorm = kwargs.get('vnorm', 1e8)
-    lumnorm = kwargs.get('lumnorm', 1e40)
+    pressnorm = kwargs.get('pressnorm', 1e-20)
+    # lumnorm = kwargs.get('lumnorm', 1e40)
 
     ls = kwargs.get('ls', '-')
     lw = kwargs.get('lw', 1.)
@@ -229,7 +236,7 @@ def plot_swd(axs, b, **kwargs):
     if axeX == 'sun':
         rnorm = phys.R_sun
         x, xlabel = b.R / rnorm, r'Ejecta Radius, [$\mathtt{R}_\odot$]'
-    elif axeX == 'lgr':
+    elif axeX in ['r', 'lgr']:
         x, xlabel = b.R, r'Ejecta Radius, [cm]'
     elif axeX == 'z':
         x, xlabel = b.Zon, r'Zone'
@@ -292,10 +299,12 @@ def plot_swd(axs, b, **kwargs):
         y2 = b.Ti / tnorm
         axpar.plot(x, y2, color='red', ls=ls, label='Ti{0:d}'.format(int(np.log10(tnorm))))
 
-    y2 = np.ma.log10(b.Lum) - np.log10(lumnorm)
-    y22 = np.ma.log10(-b.Lum) - np.log10(lumnorm)
-    axpar.plot(x, y2, color='orange', ls=ls, label=r'$Lum_{{{0:d}}}$'.format(int(np.log10(lumnorm))))
-    axpar.plot(x, y22, color='brown', ls="--", label=r'$-Lum_{{{0:d}}}$'.format(int(np.log10(lumnorm))))
+    y2 = np.ma.log10(b.Pe) - np.log10(pressnorm)
+    y22 = np.ma.log10(b.Pi) - np.log10(pressnorm)
+    # print('Pe: ', y2)
+    # print('Pi: ', y22)
+    axpar.plot(x, y2, color='orange', ls=ls, label=r'$Pe_{{{0:d}}}$'.format(int(np.log10(pressnorm))))
+    axpar.plot(x, y22, color='brown', ls="--", label=r'$Pi_{{{0:d}}}$'.format(int(np.log10(pressnorm))))
 
     y2 = b.V / vnorm
     axpar.plot(x, y2, color='blue', ls=ls, label=r'$V_{{{0:d}}}$'.format(int(np.log10(vnorm))))

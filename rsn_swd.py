@@ -197,8 +197,15 @@ def plot_shock_details(swd, times, **kwargs):
     dic_axes = kwargs.get('dic_axes', None)
     
     axeX = kwargs.get('axeX', 'lgr')
+    kwargs.pop('axeX')
+
+    axeXL = 'lgr'
+    axeXR = 'm'
+    
     if axeX in ['m', 'z']:
-        kwargs['axeX'] =  'lgr'
+        axeXR = axeX
+    else:
+        axeXL = axeX
 
     is_ax_old = False
     xlim = None
@@ -235,7 +242,7 @@ def plot_shock_details(swd, times, **kwargs):
         # plot swd(radius)
         b = swd.block_nearest(t)
         axrho, axpar = supr_swd.plot_swd((axrho, axpar), b, name=swd.Name, is_xlabel=(i == len(times) - 1),
-                                       legmask=legmask, is_yrlabel=False, text_posy=0.88, 
+                                       legmask=legmask, is_yrlabel=False, text_posy=0.88, axeX=axeXL,
                                        **kwargs)
         if not is_ax_old:
             x = axrho.get_xlim()
@@ -255,9 +262,6 @@ def plot_shock_details(swd, times, **kwargs):
 
    
     axes2 = []
-    kwargs['axeX'] =  'm'
-    if axeX in ['m', 'z']:
-        kwargs['axeX'] =  axeX
     # Plot mass column
     for i, t in enumerate(times):
         if is_ax_old:
@@ -274,7 +278,7 @@ def plot_shock_details(swd, times, **kwargs):
             legmask = supr_swd.LEGEND_MASK_Vars
         b = swd.block_nearest(t)
         axrho, axpar = supr_swd.plot_swd((axrho, axpar), b, name=swd.Name, is_xlabel=(i == len(times) - 1),
-                                       legmask=legmask, is_yllabel=False, text_posy=0.88, **kwargs)
+                                       legmask=legmask, is_yllabel=False, text_posy=0.88, axeX=axeXR, **kwargs)
         if not is_ax_old:
             dic_axes['m'].append({'itime': i, 't': t, 'rho': axrho, 'par': axpar})
             ticks_on(axrho)
