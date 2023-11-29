@@ -303,8 +303,8 @@ def plot_swd(axs, b, **kwargs):
     y22 = np.ma.log10(b.Pi) - np.log10(pressnorm)
     # print('Pe: ', y2)
     # print('Pi: ', y22)
-    axpar.plot(x, y2, color='orange', ls=ls, label=r'$Pe_{{{0:d}}}$'.format(int(np.log10(pressnorm))))
-    axpar.plot(x, y22, color='brown', ls="--", label=r'$Pi_{{{0:d}}}$'.format(int(np.log10(pressnorm))))
+    axpar.plot(x, y2, color='brown', ls=':', label=r'$Pe_{{{0:d}}}$'.format(int(np.log10(pressnorm))))
+    axpar.plot(x, y22, color='orange', ls=ls, label=r'$Pi_{{{0:d}}}$'.format(int(np.log10(pressnorm))))
 
     y2 = b.V / vnorm
     axpar.plot(x, y2, color='blue', ls=ls, label=r'$V_{{{0:d}}}$'.format(int(np.log10(vnorm))))
