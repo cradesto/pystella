@@ -68,15 +68,15 @@ def plot_uph(uph, vnorm=1.e8, label='', lw=2, fontsize=18, ls="-", color='blue')
     return fig
 
 
-def make_cartoon(swd, times, vnorm, axeX, lumnorm, is_legend, fout=None):
+def make_cartoon(swd, times, vnorm, lumnorm, is_legend, fout=None, **kwargs):
     import subprocess
     import matplotlib.pyplot as plt
 
     time = np.ma.masked_outside(swd.Times, times[0], times[-1])
     # time = np.exp(np.linspace(np.log(times[0]), np.log(times[-1]), 50))
     for i, t in enumerate(time.compressed()):
-        fig = plot_shock_details(swd, times=[t], vnorm=vnorm, axeX=axeX,
-                                        lumnorm=lumnorm, is_legend=is_legend)
+        fig = plot_shock_details(swd, times=[t], vnorm=vnorm, 
+                                        lumnorm=lumnorm, is_legend=is_legend, **kwargs)
         fsave = os.path.expanduser("img{0}{1:04d}.png".format(swd.Name, i))
         print("Save plot to {0} at t={1}".format(fsave, t))
         fig.savefig(fsave, bbox_inches='tight')
@@ -115,11 +115,16 @@ def get_parser(times='41:75:150:300'):
                         default=1e40,
                         dest="lumnorm",
                         help="Luminously normalization, example: 1e40")
-    parser.add_argument('--x',
+    parser.add_argument('--xl',
                         required=False,
-                        default='lgr',  # 1e14,
-                        dest="axeX",
-                        help="Radius normalization, example: 'lgr, 'm', 'z' or 'sun' or 1e13")
+                        default='lgr',  
+                        dest="axeXL",
+                        help="Radius normalization for the left column, example: 'lgr[*], 'm', 'z' or 'sun' or 1e13")
+    parser.add_argument('--xr',
+                        required=False,
+                        default='m',  
+                        dest="axeXR",
+                        help="Radius normalization for the right column, example: 'lgr, 'm[*]', 'z' or 'sun' or 1e13")
     parser.add_argument('--tnorm',
                         nargs='?',
                         required=False,
@@ -196,16 +201,8 @@ def plot_shock_details(swd, times, **kwargs):
     is_axes = kwargs.get('is_axes', False)
     dic_axes = kwargs.get('dic_axes', None)
     
-    axeX = kwargs.get('axeX', 'lgr')
-    kwargs.pop('axeX')
-
-    axeXL = 'lgr'
-    axeXR = 'm'
-    
-    if axeX in ['m', 'z']:
-        axeXR = axeX
-    else:
-        axeXL = axeX
+    axeXL = kwargs.get('axeXL', 'lgr')
+    axeXR = kwargs.get('axeXR', 'm')
 
     is_ax_old = False
     xlim = None
@@ -242,7 +239,7 @@ def plot_shock_details(swd, times, **kwargs):
         # plot swd(radius)
         b = swd.block_nearest(t)
         axrho, axpar = supr_swd.plot_swd((axrho, axpar), b, name=swd.Name, is_xlabel=(i == len(times) - 1),
-                                       legmask=legmask, is_yrlabel=False, text_posy=0.88, axeX=axeXL,
+                                       legmask=legmask, is_yrlabel=False, text_posy=0.88,  axeX=axeXL,
                                        **kwargs)
         if not is_ax_old:
             x = axrho.get_xlim()
@@ -278,7 +275,8 @@ def plot_shock_details(swd, times, **kwargs):
             legmask = supr_swd.LEGEND_MASK_Vars
         b = swd.block_nearest(t)
         axrho, axpar = supr_swd.plot_swd((axrho, axpar), b, name=swd.Name, is_xlabel=(i == len(times) - 1),
-                                       legmask=legmask, is_yllabel=False, text_posy=0.88, axeX=axeXR, **kwargs)
+                                       legmask=legmask, is_yllabel=False, text_posy=0.88, axeX=axeXR,
+                                       **kwargs)
         if not is_ax_old:
             dic_axes['m'].append({'itime': i, 't': t, 'rho': axrho, 'par': axpar})
             ticks_on(axrho)
@@ -378,12 +376,12 @@ def main():
             # print uph
             print(ion)
         elif args.is_mult:
-            make_cartoon(swd, times, vnorm=args.vnorm, axeX=args.axeX,
+            make_cartoon(swd, times, vnorm=args.vnorm, axeXL=args.axeXL,  axeXR=args.axeXR,
                          lumnorm=args.lumnorm, is_legend=is_legend)
         else:
             # ls = next(ls_cycle) # skip solid
             fig, dic_axes = plot_shock_details(swd, times=times,
-                                                      vnorm=args.vnorm, axeX=args.axeX, tnorm=args.tnorm,
+                                                      vnorm=args.vnorm, axeXL=args.axeXL,  axeXR=args.axeXR, tnorm=args.tnorm,
                                                       lumnorm=args.lumnorm, is_legend=is_legend, is_axes=True,
                                                       ylim_par=ylim_par,
                                                       dic_axes=dic_axes, ls=next(ls_cycle))

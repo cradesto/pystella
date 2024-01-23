@@ -248,6 +248,8 @@ def plot_swd(axs, b, **kwargs):
     else:
         x, xlabel = b.M, r'Ejecta Mass [$\mathtt{M}_\odot$]'
 
+    # print(f'plot_swd: {axeX=}  max(x)= {np.max(x)}')
+
     y = np.log10(b.Rho)
     axrho, axpar = axs
     is_axpar_none = axpar is None
