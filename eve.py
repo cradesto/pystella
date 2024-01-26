@@ -73,7 +73,7 @@ def get_parser():
 
     parser.add_argument('--no-norm', nargs="?",
                         required=False,
-                        const=False,
+                        const=True,
                         dest="is_no_norm",
                         help="Use --no-norm skip element normalization after reshape.")
 

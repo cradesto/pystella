@@ -15,7 +15,6 @@ except:
 from pystella.util.phys_var import phys
 
 logger = logging.getLogger(__name__)
-# logger = logging.getLogger(__name__)
 # logger.setLevel(logging.INFO)
 
 __author__ = 'bakl'
