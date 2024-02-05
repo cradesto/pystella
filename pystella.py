@@ -322,6 +322,13 @@ class MyPrompt(HistConsole):
         MyPrompt.call_cmd(script, args)
 
     @staticmethod
+    def do_reng(args):
+        """Plot  Supremna Energy Details. For detailed help type 'reng -h'.
+        """
+        script = os.path.join(ROOT_DIRECTORY, 'rsn_eng.py')
+        MyPrompt.call_cmd(script, args)        
+
+    @staticmethod
     def do_bands(args):
         """Plot passbands. For detailed help type 'bands -h'.
         """

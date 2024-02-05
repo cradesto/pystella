@@ -4,7 +4,7 @@ from pystella.rf.reddening import ReddeningLaw, LawFitz
 
 __author__ = 'bakl'
 
-supremna_extensions = ('swd', 'res', 'dat', 'ioh')
+supremna_extensions = ('swd', 'res', 'dat', 'ioh', 'eng')
 
 
 class Supremna:
@@ -52,6 +52,11 @@ class Supremna:
         return os.path.isfile(fname)
 
     @property
+    def is_eng(self):
+        fname = os.path.join(self.path, self.name + '.eng')
+        return os.path.isfile(fname)        
+
+    @property
     def is_res(self):
         fname = os.path.join(self.path, self.name + '.res')
         return os.path.isfile(fname)
@@ -76,6 +81,11 @@ class Supremna:
         from pystella.model.supr_swd import SupremnaShockWaveDetail
         swd = SupremnaShockWaveDetail(self.name, self.path)
         return swd
+
+    def get_eng(self):
+        from pystella.model.supr_eng import SupremnaEngDetail
+        eng = SupremnaEngDetail(self.name, self.path)
+        return eng        
 
     def get_ion(self):
         from pystella.model import SupremnaIonHistory
