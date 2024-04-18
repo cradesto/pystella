@@ -12,11 +12,9 @@ def distance_modulus(distance):
     return 5 * np.log(distance / 10.0) / np.log(10.)
 
 
-def distance_from_modulus(mag, abs_mag):
-    """Given the distance modulus, return the distance to the source, in parsecs.
-    Uses Carroll and Ostlie's formula,
-    .. math:: d = 10^{(m - M + 5)/5}"""
-    return 10.0 ** (mag - abs_mag + 5) / 5
+def distance_from_modulus(md):
+    """Given the distance modulus, return the distance to the source, in parsecs."""
+    return 10.0 ** (md + 5) / 5
 
 
 def val_to_hz(val, inp="Hz"):
