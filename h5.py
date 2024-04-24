@@ -62,10 +62,10 @@ def get_parser(time="-1"):
                         type=str,
                         default=time,
                         dest="time",
-                        help="""The selected time moment for the shock wave snapshot. 
-If value is integer (like 10), it used like index for times.
+                        help="""Selected time points for shock wave snapshots.
+If value is integer (like 10), it used as an index for points in time.
 It can be negative, like -2.
-If value is float (like 10.), it used like time in days.
+If value is float (like 10.), it used as time [days].
 if value is string, like None, all times used for plot.
 Default: {} = last saved moment".format(time))    
 """)
@@ -93,11 +93,12 @@ def hdf2presn(fnameh5, idx_time):
     
     # Hyd
     print("hyd.Columns: ", hyd.Columns)
+    print("snh5.M : ", snh5.M )
     presn.set_hyd(ps.PreSN.sM, snh5.M * ps.phys.M_sun)
     presn.set_hyd(ps.PreSN.sR, hyd.R[idx_time])
     presn.set_hyd(ps.PreSN.sT, hyd.T[idx_time])
     presn.set_hyd(ps.PreSN.sRho, hyd.Rho[idx_time])
-    presn.set_hyd(ps.PreSN.sV, hyd.V[idx_time])
+    presn.set_hyd(ps.PreSN.sV, hyd.V[idx_time]*1e8)
 
     # # Set Mass
     # if is_rho:

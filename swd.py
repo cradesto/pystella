@@ -60,19 +60,29 @@ def make_cartoon(swd, times, vnorm, axeX, lumnorm, is_legend, fout=None):
     import matplotlib.pyplot as plt
 
     time = np.ma.masked_outside(swd.Times, times[0], times[-1])
+    print("Create images from {}  to {} days. Use -t to set other time ranges ".format(times[0], times[-1]))
+
     # time = np.exp(np.linspace(np.log(times[0]), np.log(times[-1]), 50))
     for i, t in enumerate(time.compressed()):
         fig = ps.lcp.plot_shock_details(swd, times=[t], vnorm=vnorm, axeX=axeX,
                                         lumnorm=lumnorm, is_legend=is_legend)
-        fsave = os.path.expanduser("img{0}{1:04d}.png".format(swd.Name, i))
+        fsave = os.path.expanduser("img{0}.{1:04d}.png".format(swd.Name, i))
         print("Save plot to {0} at t={1}".format(fsave, t))
         fig.savefig(fsave, bbox_inches='tight')
         plt.close(fig)
         plt.clf()
     if fout is None:
         fout = 'video_{0}.mp4'.format(swd.Name)
+    fout = os.path.abspath(os.path.expanduser(fout))
     print("Convert images to movie: {0}".format(fout))
-    subprocess.call("convert -delay 1x2 -quality 100 img*.png {0}".format(fout), shell=True)
+    # subprocess.call("convert -delay 1x2 -quality 100 img*.png {0}".format(fout), shell=True)
+    cmd = " ".join( ("ffmpeg -y -framerate 1  -i img{0}.%04d.png ".format(swd.Name),
+           '-r 30 ',
+        #    '-vf -c:v libx264 -r 30 -pix_fmt yuv420p ',
+           " {}".format(fout))
+           )
+    print("cmd:  {}".format(cmd))
+    subprocess.call(cmd, shell=True)
     print("Done")
     # os.subprocess.call("ffmpeg -f image2 -r 1/5 -i img%04d.png -vcodec mpeg4 -y {}".format(fout), shell=False)
 
@@ -264,6 +274,7 @@ def main():
         elif args.is_mult:
             make_cartoon(swd, times, vnorm=args.vnorm, axeX=args.axeX,
                          lumnorm=args.lumnorm, is_legend=is_legend)
+            return
         else:
             # ls = next(ls_cycle) # skip solid
             fig, dic_axes = ps.lcp.plot_shock_details(swd, times=times,
