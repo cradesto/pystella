@@ -81,6 +81,13 @@ class H5Stella(object):
         with h5py.File(self.Fname, "r") as h5f:
             res = H5Hyd('Hyd').fill(h5f)
         return res
+    
+    @property
+    def Abun(self):
+        logging.debug('Abun from {}'.format(self.Fname))
+        with h5py.File(self.Fname, "r") as h5f:
+            res = H5Abun('AbunIso').fill(h5f)
+        return res
 
     @property
     def Yabun(self):
@@ -278,6 +285,46 @@ class H5Hyd(H5TimeElement):
         return self.Val[:, :, ncol]
 
     def __getattr__(self, name):
+        """
+        Extract variable as property with name from the "column" attribute.
+        :param name: name of  variable
+        :return: array of variable
+        """
+        if self.Attrs is None:
+            raise ValueError('There are no any Attributes.')
+        s = 'columns'
+        if s not in self.Attrs:
+            raise ValueError('There is no "{}" in  Attrs.'.format(s))
+        columns = self.Attrs['columns'].decode()
+        # return columns
+        #
+        # columns = columns
+        if name not in columns:
+            raise ValueError('There is no key: "{}" in  columns: {}.'.format(name, s))
+
+        cols = columns.split()
+        for k, c in enumerate(cols):
+            if c == name:
+                return self.Val[:, :, k]
+        return None
+
+class H5Abun(H5TimeElement):
+    def __init__(self, name):
+        self._name = name
+        super(H5Abun, self).__init__(name, path='/timing/AbunIso')
+
+    @property
+    def Nvars(self):
+        return self.Shape[-1]
+
+    @property
+    def Columns(self):
+        return self.Attrs['columns'].decode()
+
+    def Var(self, ncol):
+        return self.Val[:, :, ncol]
+
+    def el(self, name):
         """
         Extract variable as property with name from the "column" attribute.
         :param name: name of  variable

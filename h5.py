@@ -117,18 +117,29 @@ def hdf2presn(fnameh5, idx_time):
 
     # presn.set_hyd(PreSN.sM, m)
 
-    # Set chemical composition
-    logger.info(' Load abn-data from  /presn/Yabun')
-    data_chem = snh5.Yabun
-    x_isotopes = snh5.Xisotopes
-    for i, ename in enumerate(abn_elements):
-        if ename == 'Ni56':
-            print(i, ename, x_isotopes[:,0])
-            presn.set_chem(ename, x_isotopes[:,0])
-        else:
-            print(i, ename)
-            presn.set_chem(ename, data_chem[:,i]*ps.AZ[ename])
-
+    # Set chemical composition 
+    if idx_time == 0:
+        logger.info(' Load abn-data from  /presn/Yabun')
+        data_chem = snh5.Yabun
+        x_isotopes = snh5.Xisotopes
+        for i, ename in enumerate(abn_elements):
+            if ename == 'Ni56':
+                print(i, ename, x_isotopes[:,0])
+                presn.set_chem(ename, x_isotopes[:,0])
+            else:
+                print(i, ename)
+                presn.set_chem(ename, data_chem[:,i]*ps.AZ[ename])
+    else:
+        logger.info(' Load abn-data from  /timing/AbunIso')
+        abun = snh5.Abun
+        elements = abun.Columns.split()
+        # print("Colunms: ", abun.Columns)
+        for i, ename in enumerate(elements):
+            el = abun.el(ename)
+            print(i, ename, el.shape)
+            presn.set_chem(ename.strip(), el[idx_time,:]*ps.AZ[ename])
+    # print("dbg stop")
+    # exit(1)
     return presn
 
 
