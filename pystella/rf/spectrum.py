@@ -189,12 +189,12 @@ class Spectrum(object):
 
     def compute_flux_nu_bol(self):
         from scipy import integrate
-        Hnu = integrate.simps(self._flux * self._freq, self._freq)
+        Hnu = integrate.simpson(self._flux * self._freq, self._freq)
         return abs(Hnu)  # due to order freq
 
     def compute_flux_bol(self):
         from scipy import integrate
-        H = integrate.simps(self.Flux, self.Freq)
+        H = integrate.simpson(self.Flux, self.Freq)
         return abs(H)  # due to order freq
 
     def cut_flux(self, bottom):

@@ -92,7 +92,7 @@ class TestLightCurve(unittest.TestCase):
 
     def test_lc_bol(self):
         import matplotlib.pyplot as plt
-        from scipy.integrate import simps
+        from scipy.integrate import simpson
 
         m1 = ps.Stella('cat_R500_M15_Ni006_E12', path='data/stella')
         curves = m1.curves(bands=['bol'], t_diff=1.0000001)
@@ -107,7 +107,7 @@ class TestLightCurve(unittest.TestCase):
             ph = m1.get_ph()
             m_bol = []
             for t, spec in ph:
-                lum = simps(spec.Flux[::-1], spec.Freq[::-1])
+                lum = simpson(spec.Flux[::-1], spec.Freq[::-1])
                 bol = 4.75 - 2.5 * np.log10(np.abs(lum) / 3.86e33)
                 m_bol.append(bol)
             ax.plot(ph.Time, m_bol, label='ph-bolometric LC ', color='green', lw=2, ls='-.')

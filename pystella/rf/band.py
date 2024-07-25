@@ -177,11 +177,11 @@ class Band(object):
     # def wl_eff(self):
     #     """The effective wavelength"""
     #     if self._wl_eff is None:
-    #         from scipy.integrate import simps
+    #         from scipy.integrate import simpson
     #         wl = self.wl
     #         resp = np.array(self.resp_wl)
-    #         num = simps(resp * wl ** 2, wl)
-    #         den = simps(resp * wl, wl)
+    #         num = simpson(resp * wl ** 2, wl)
+    #         den = simpson(resp * wl, wl)
     #         self._wl_eff = num / den
     #     return self._wl_eff
 
@@ -230,19 +230,19 @@ class Band(object):
     @property
     def Norm(self):
         if self._norm is None:
-            from scipy.integrate import simps
+            from scipy.integrate import simpson
             nu_b = np.array(self.freq)
             resp_b = np.array(self.resp_fr)
-            self._norm = simps(resp_b / nu_b, nu_b)
+            self._norm = simpson(resp_b / nu_b, x=nu_b)
         return self._norm
 
     @property
     def NormWl(self):
         if self._normWl is None:
-            # from scipy.integrate import simps
+            # from scipy.integrate import simpson
             # x = np.array(self.wl)
             # y = np.array(self.resp_wl) / (phys.c * phys.cm_to_angs * phys.h)
-            # res = simps(y*x, x, even='avg')
+            # res = simpson(y*x, x, even='avg')
             self._normWl = self.response(self.wl, np.ones(len(self.wl)), kind='spline')
         return self._normWl
 
@@ -357,7 +357,7 @@ class Band(object):
     @classmethod
     def get_wl_eff_vega(cls, b):
         """
-        Calculated as {\int lambda^2 * T * S * dLambda}  / {\int lambda * T * S * dLambda}
+        Calculated as {\\int lambda^2 * T * S * dLambda}  / {\\int lambda * T * S * dLambda}
         , where: T(lambda) ≡ filter transmission
                  S(lambda) ≡ Vega spectrum
         @param b:  band
@@ -375,8 +375,8 @@ class Band(object):
         # fn_interp = interpolate.interp1d(lmb_s, flux_s)
         flux_interp = fn_interp(lmb_b)
 
-        num = integrate.simps(flux_interp * resp_b * lmb_b ** 2, lmb_b)
-        den = integrate.simps(flux_interp * resp_b * lmb_b, lmb_b)
+        num = integrate.simpson(flux_interp * resp_b * lmb_b ** 2, x=lmb_b)
+        den = integrate.simpson(flux_interp * resp_b * lmb_b, x=lmb_b)
         zp = num / den
         # print(f'{b.Name}: {num=} / {den=}  =  {zp=} ')
         return zp
@@ -402,8 +402,8 @@ class Band(object):
         # fn_interp = interpolate.interp1d(lmb_s, flux_s)
         flux_interp = fn_interp(lmb_b)
 
-        num = integrate.simps(flux_interp * resp_b * lmb_b, lmb_b)
-        den = integrate.simps(resp_b * lmb_b, lmb_b)
+        num = integrate.simpson(flux_interp * resp_b * lmb_b, x=lmb_b)
+        den = integrate.simpson(resp_b * lmb_b, x=lmb_b)
         return num / den
 
     @classmethod
@@ -450,15 +450,15 @@ class Band(object):
         flux_interp = log_interp(nu_b)
 
         if is_freq_norm:
-            a = integrate.simps(flux_interp * resp_b / nu_b, nu_b)
+            a = integrate.simpson(flux_interp * resp_b / nu_b, x=nu_b)
         else:
-            a = integrate.simps(flux_interp * resp_b, nu_b)
+            a = integrate.simpson(flux_interp * resp_b, x=nu_b)
         return a
 
     def response_freq(self, nu, flux):
         return Band.response_nu(nu, flux, self)
 
-    def response(self, wl, flux, z=0., kind='spline', mode_int='simps', is_out2zero=True, is_photons=True):
+    def response(self, wl, flux, z=0., kind='spline', mode_int='simpson', is_out2zero=True, is_photons=True):
         """Compute the response of this filter over the flux(wl)
 
         kind : str or int, optional (see scipy.interpolate)
@@ -542,8 +542,8 @@ class Band(object):
         if is_photons:
             integrand = integrand * trim_wl / (phys.c * phys.cm_to_angs * phys.h)
 
-        if mode_int == 'simps':
-            res = scipy.integrate.simps(integrand, x=trim_wl, even='avg')
+        if mode_int == 'simpson':
+            res = scipy.integrate.simpson(integrand, x=trim_wl, even='avg')
         elif mode_int == 'trapz':
             res = scipy.integrate.trapz(integrand, x=trim_wl)
         else:
@@ -584,13 +584,13 @@ class BandUni(Band):
         self.resp_wl = np.ones(len(wl))  # response
 
     @property
-    def Norm(self, mode_int='simps'):
-        import scipy.integrate  # import simps as integralfunc
+    def Norm(self, mode_int='simpson'):
+        import scipy.integrate  # import simpson as integralfunc
         x = np.array(self.wl)
         y = np.array(self.resp_wl)
         # resp_b = np.ones(len(nu_b))
-        if mode_int == 'simps':
-            res = scipy.integrate.simps(y, x=x, even='avg')
+        if mode_int == 'simpson':
+            res = scipy.integrate.simpson(y, x=x, even='avg')
         elif mode_int == 'trapz':
             res = scipy.integrate.trapz(y, x=x)
         else:
@@ -673,13 +673,13 @@ class BandJoin(Band):
         self.resp_wl = resp_int  # response
 
     # @property
-    # def Norm(self, mode_int='simps'):
-    #     import scipy.integrate  # import simps as integralfunc
+    # def Norm(self, mode_int='simpson'):
+    #     import scipy.integrate  # import simpson as integralfunc
     #     x = np.array(self.wl)
     #     y = np.array(self.resp_wl)
     #     # resp_b = np.ones(len(nu_b))
-    #     if mode_int == 'simps':
-    #         res = scipy.integrate.simps(y, x=x, even='avg')
+    #     if mode_int == 'simpson':
+    #         res = scipy.integrate.simpson(y, x=x, even='avg')
     #     elif mode_int == 'trapz':
     #         res = scipy.integrate.trapz(y, x=x)
     #     else:

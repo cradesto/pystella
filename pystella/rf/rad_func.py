@@ -223,8 +223,8 @@ def kcorrection_spec_2band(spec, z, br, bo, is_photons=True, is_vega=False):
         bo_resp_wl = bo_resp_wl * bo.wl
         br_resp_wl = br_resp_wl * br_wl
 
-    a_obs = integrate.simps(flo * bo_resp_wl, bo.wl)
-    a_rest = integrate.simps(flr * br_resp_wl, br.wl)
+    a_obs = integrate.simpson(flo * bo_resp_wl, bo.wl)
+    a_rest = integrate.simpson(flr * br_resp_wl, br.wl)
 
     if is_vega:
         from pystella import Spectrum
@@ -233,11 +233,11 @@ def kcorrection_spec_2band(spec, z, br, bo, is_photons=True, is_vega=False):
         vg_flo = vg_interp(bo.wl)  # band grid of frequencies
         vg_flr = vg_interp(br.wl)  # band grid of frequencies
 
-        b_obs = integrate.simps(bo_resp_wl * vg_flo / bo.wl ** 2, bo.wl)
-        b_rest = integrate.simps(br_resp_wl * vg_flr / br_wl ** 2, br_wl)
+        b_obs = integrate.simpson(bo_resp_wl * vg_flo / bo.wl ** 2, bo.wl)
+        b_rest = integrate.simpson(br_resp_wl * vg_flr / br_wl ** 2, br_wl)
     else:
-        b_obs = integrate.simps(bo_resp_wl, bo.wl)
-        b_rest = integrate.simps(br_resp_wl, br.wl)
+        b_obs = integrate.simpson(bo_resp_wl, bo.wl)
+        b_rest = integrate.simpson(br_resp_wl, br.wl)
 
     # k = b_rest/b_obs * a_rest/a_obs  # todo check
     k = b_rest / b_obs * a_obs / a_rest  # todo check
@@ -276,8 +276,8 @@ def kcorrection_spec(spec, z, b, is_photons=True, is_vega=False):
         bo_resp_wl = bo_resp_wl * b.wl
         br_resp_wl = br_resp_wl * br_wl
 
-    a_obs = integrate.simps(flo * bo_resp_wl, b.wl)
-    a_rest = integrate.simps(flr * br_resp_wl, b.wl)
+    a_obs = integrate.simpson(flo * bo_resp_wl, b.wl)
+    a_rest = integrate.simpson(flr * br_resp_wl, b.wl)
 
     # k = b_rest/b_obs * a_rest/a_obs  # todo check
     k = a_obs / a_rest  # todo check
