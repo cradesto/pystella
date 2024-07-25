@@ -1105,7 +1105,7 @@ def load_rho(fname, path: str = None):
             col_names.append(e)
             usecols.append(i)
 
-    logger.info(' col_names=  %s' % ' '.join(col_names))
+    logger.info(' col_names=  {}'.format(' '.join(col_names)))
     # logger.info(' usecols=  {}'.format(usecols))
     dt = np.dtype({'names': col_names, 'formats': np.repeat('f8', len(col_names))})
 
@@ -1116,9 +1116,14 @@ def load_rho(fname, path: str = None):
     name = os.path.basename(os.path.splitext(fname)[0])
     col_map = {PreSN.sR: 'lgR', PreSN.sM: 'mass', PreSN.sT: 'lgTp', PreSN.sRho: 'lgRho', PreSN.sV: 'u'}
     presn = PreSN(name, nz)
-    presn.set_hyd('V', np.zeros(nz))
+    presn.set_hyd(PreSN.sV, np.zeros(nz))
     for k, v in col_map.items():
-        presn.set_hyd(k, data[v], is_exp=v.startswith('lg'))
+        try:
+            presn.set_hyd(k, data[v], is_exp=v.startswith('lg'))
+        except ValueError as ex:
+                logger.warn('No col: {} (set {} = 0.) in data from: {}. '.format(v, k, fname))
+                presn.set_hyd(k, np.zeros(nz))
+
 
     # CGS
     presn.set_hyd('M', presn.m * phys.M_sun)
