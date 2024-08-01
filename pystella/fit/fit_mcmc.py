@@ -354,10 +354,7 @@ class FitMCMC(FitLc):
         :param dm_lim: limits for  magnitude shift for prior probability
         :param is_sampler: if True also return samples
         :return: the dictionary with fitting results
-        """
-        dt_init = {lc.Band.Name: lc.tshift for lc in curves_o}
-        dm_init = {lc.Band.Name: lc.mshift for lc in curves_o}
-
+        """        
         bnames = curves_o.BandNames
         ndim = len(FitMCMC.thetaDtDmNames(bnames))  # number of parameters in the model
 
@@ -403,29 +400,6 @@ class FitMCMC(FitLc):
                 FitMCMC.print_thetaDtDm(theta_fit_e1, bnames)
                 FitMCMC.print_thetaDtDm(theta_fit_e2, bnames)
 
-            # Results
-            # # # we'll start at random locations between 0 and 2000
-            # # starting_guesses = np.zeros(self.nwalkers, ndim)  #
-            # # starting_guesses[:, 0] = dt0 + np.random.rand(self.nwalkers) * dt_lim  # for time delay in [-100,100]
-            # # starting_guesses[:, 1] = np.random.rand(self.nwalkers)
-            #
-            # sampler = emcee.EnsembleSampler(self.nwalkers, ndim, FitMCMC.log_posteriorDt,
-            #                                 args=(curves_m, curves_o, bnames, {'dt_lim': dt_lim}),
-            #                                 threads=threads, a=3)
-            # sampler.run_mcmc(starting_guesses, self.nsteps)
-            #
-            # #     sample = sampler.chain  # shape = (nwalkers, nsteps, ndim)
-            # sample_dt = sampler.flatchain[self.nburn:, 0].ravel()  # discard burn-in points
-            # sample_lnf = sampler.flatchain[self.nburn:, 1].ravel()  # discard burn-in points
-            #
-            # # dt, dtsigma = np.mean(sample_dt), np.std(sample_dt)
-            # # dm, dmsigma = np.mean(sample_mu), np.std(sample_mu)
-            # samples = np.array([sample_dt, sample_lnf]).T
-            # quartiles = list(
-            #     map(lambda v: (v[1], v[2] - v[1], v[1] - v[0]), zip(*np.percentile(samples, (16, 50, 84), axis=0))))
-            # dt, dtsig1, dtsig2 = quartiles[0][0], quartiles[0][1], quartiles[0][2]
-            # lnf, lnfsig1, lnfsig2 = quartiles[1][0], quartiles[1][1], quartiles[1][2]
-
             THETA = namedtuple('THETA', FitMCMC.thetaDtDmNames(bnames))
             th, e1, e2 = THETA(*theta_fit), THETA(*theta_fit_e1), THETA(*theta_fit_e2)
 
@@ -446,16 +420,6 @@ class FitMCMC(FitLc):
             res['dof'] = dof
             res['measure'] = measure
             res['acceptance_fraction'] = np.mean(sampler.acceptance_fraction)
-
-            # res = {'dt': dt, 'dtsig1': dtsig1, 'dtsig2': dtsig2, 'dtsig': (dtsig1 + dtsig2) / 2.,
-            #        'lnf': lnf, 'lnfsig1': lnfsig1, 'lnfsig2': lnfsig2, 'lnfsig': (lnfsig1 + lnfsig2) / 2.,
-            #        'chi2': chi2, 'bic': bic, 'aic': aic, 'dof': dof, 'measure': measure,
-            #        'acceptance_fraction': np.mean(sampler.acceptance_fraction)}
-
-            # return initial states
-            for lc in curves_o:
-                lc.tshift = dt_init[lc.Band.Name]
-                lc.mshift = dm_init[lc.Band.Name]
 
             # plot a histogram of the sample
             if self.is_info:

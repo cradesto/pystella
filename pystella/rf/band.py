@@ -32,8 +32,11 @@ class Band(object):
     FileVega = os.path.join(DirRoot, 'vega.dat')
     # FileMagSun = os.path.join(DirRoot, 'adb_mag_sun_apjsaabfdft3_ascii.txt')
     # MagSunData = None
-    dic_colors = {'U': "blue", 'B': "cyan", 'V': "darkgreen", 'R': "red", 'I': "magenta",
+    dic_colors = {
+        'U': "blue", 'B': "cyan", 'V': "darkgreen", 'R': "red", 'I': "magenta",
+        'Uab': "blue", 'Bab': "cyan", 'Vab': "darkgreen", 'Rab': "red", 'Iab': "magenta",
         'J': "blueviolet", 'H': "plum", 'K': "saddlebrown",
+        'Jab': "blueviolet", 'Hab': "plum", 'Kab': "saddlebrown",
         'BesU': "blue", 'BesB': "cyan", 'BesV': "darkgreen", 'BesR': "red", 'BesI': "magenta",
         'SwiftU': "blue", 'SwiftB': "cyan", 'SwiftV': "darkgreen",
         'KaitU': "blue", 'KaitB': "cyan", 'KaitV': "darkgreen", 'KaitR': "red", 'KaitI': "magenta",
@@ -62,13 +65,17 @@ class Band(object):
         NameF1150: 'sandybrown', NameF1500: 'tomato',
         }
     
-    dic_lntype = {"U": "-", 'B': "-", 'V': "-", 'R': "-", 'I': "-",
-          'UVM2': "-.", 'UVW1': "-.", 'UVW2': "-.",
-          'UVM2AB': ".", 'UVW1AB': ".", 'UVW2AB': ".",
-          'F125W': ":",
-          'F160W': "-.", 'F140W': "--", 'F105W': "-.", 'F435W': "--", 'F606W': "-.", 'F814W': "--", 'u': "--",
-          'g': "--", 'r': "--", 'i': "--", 'z': "--", 'Y': '--', 'GaiaG': '--',
-          NameBol: '-', NameUBVRI: '--', NameBVRI: '-.', NameBolQuasi: ':'}
+    dic_lntype = {
+        "U": "-", 'B': "-", 'V': "-", 'R': "-", 'I': "-",
+        "Uab": ".", 'Bab': ".", 'Vab': ".", 'Rab': ".", 'Iab': ".",
+        "Jab": ".", 'Hab': ".", 'Kab': ".",
+        'UVM2': "-.", 'UVW1': "-.", 'UVW2': "-.",
+        'UVM2AB': ".", 'UVW1AB': ".", 'UVW2AB': ".",
+        'F125W': ":",
+        'F160W': "-.", 'F140W': "--", 'F105W': "-.", 'F435W': "--", 'F606W': "-.", 'F814W': "--", 'u': "--",
+        'g': "--", 'r': "--", 'i': "--", 'z': "--", 'Y': '--', 'GaiaG': '--',
+        NameBol: '-', NameUBVRI: '--', NameBVRI: '-.', NameBolQuasi: ':'
+        }
 
     @staticmethod
     def add_band(name, b):
