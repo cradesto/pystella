@@ -92,13 +92,13 @@ class SupremnaShockWaveDetail:
         b = idx
         e = b + self._nzon
         block = self._data[:][b:e]
-        return BlockSwd(self._data['tyear'][idx], block)
+        return BlockSwd(self._data['tyear'][idx], block, (b,e))
 
     def __getitem__(self, idx):
         b = idx * self._nzon
         e = b + self._nzon
         block = self._data[:][b:e]
-        return BlockSwd(self._data['tyear'][idx], block)
+        return BlockSwd(self._data['tyear'][idx], block, (b,e))
 
     def evolution(self, var, nz):
         """Return the time evolution VAR in zone NZ"""
@@ -121,9 +121,10 @@ class BlockSwd:
         line: "tyear km lgM lgRpc lgTe lgTi lgPl lgPe lgPi  lgQv lgEng Flum40 cap"
     """
 
-    def __init__(self, time, block):
+    def __init__(self, time, block, pos):
         self._time = time
         self._block = block
+        self._position = pos
 
     @property
     def Time(self):

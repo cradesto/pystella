@@ -27,8 +27,10 @@ class StellaShockWaveDetail:
         self._name = name
         self._path = path  # path to model files
         self._times = None
-        self._nzon = None
+        self._nzon_min = None
+        self._nzon_max = None
         self._data = None
+        self._nzon = []
 
     def __str__(self):
         return "%s, path: %s" % (self._name, self._path)
@@ -38,9 +40,12 @@ class StellaShockWaveDetail:
         # return "%s" % self.name
 
     @property
-    def Nzon(self):
-        return self._nzon
-
+    def NzonMin(self):
+        return self._nzon_min
+    
+    @property
+    def NzonMax(self):
+        return self._nzon_max
     @property
     def Times(self):
         return self._times
@@ -71,11 +76,16 @@ class StellaShockWaveDetail:
         dt = np.dtype({'names': cols, 'formats': [float] * len(cols)})
         data = np.loadtxt(fname, dtype=dt)
 
-        self._nzon = int(np.max(data['km']))
         times = np.unique(data['tday'])
         if data['tday'][0] != 0.:
             times = np.delete(times, np.where(times == 0.))
         self._times = times
+        self._nzon = np.zeros(len(times), dtype=int)
+        # find nzon for each saved moment
+        for i, t in enumerate(times):
+            b, e = np.where(data['tday'] == t)[0]
+            self._nzon[i] = e - b + 1
+            # print(f"{i=} {t=} {b= }  {e=}  nzon= {self._nzon[i]}")
 
         # self.ntimes = len(self.times)   # len(data['tday']) // self.nzon
         self._data = data
@@ -87,22 +97,32 @@ class StellaShockWaveDetail:
         return idx, self.Times[idx]
 
     def block_nearest(self, time):
-        idx = (np.abs(self._data['tday'] - time)).argmin()
-        b = idx
-        e = b + self._nzon
-        block = self._data[:][b:e]
-        return BlockSwd(self._data['tday'][idx], block)
+        # idx = (np.abs(self._data['tday'] - time)).argmin()
+        idx, t = self.time_nearest(time)
+        if idx < 0:
+            print('Error: no the nearest time for t= {}'.format(time))
+            return None
+        return self[idx]
+        # b = self.lines2idx(idx)
+        # e = b + self._nzon[idx]
+        # block = self._data[:][b:e]
+        # return BlockSwd(self._data['tday'][idx], block,(b,e))
+
+    def lines2idx(self, idx):
+        return int(np.sum(self._nzon[:idx]))
 
     def __getitem__(self, idx):
-        b = idx * self._nzon
-        e = b + self._nzon
+        b = self.lines2idx(idx)
+        e = b + self._nzon[idx]
+        # print(f"{idx=} {b= }  {e=}  nzon= {self._nzon[idx]}")
         block = self._data[:][b:e]
-        return BlockSwd(self._data['tday'][idx], block)
+
+        return BlockSwd(self.Times[idx], block, (b,e))
 
     def evolution(self, var, nz):
         """Return the time evolution VAR in zone NZ"""
-        if nz < 1 or nz > self.Nzon:
-            raise ValueError('NZ should be in range: 0 - {}'.format(self.Nzon))
+        if nz < 1 or nz > self.NzonMin:
+            raise ValueError('NZ should be in range: 0 - {}'.format(self.NzonMin))
 
         if var not in vars(BlockSwd):
             raise ValueError('var should be property of BlockSwd, like Zon, M, R, Vel, T, Trad, Rho, Lum, Cappa, M')
@@ -169,9 +189,19 @@ class BlockSwd:
         line: "tday km lgM lgR14 V8 lgT lgTrad lgDm6 lgP7  lgQv lgEng Flum40 cap"
     """
 
-    def __init__(self, time, block):
+    def __init__(self, time, block, pos):
         self._time = time
         self._block = block
+        self._position = pos
+
+    @property
+    def Pos(self):
+        """
+        The function returns the block position in swd-file: [b,e],
+        where b -- the number of the first line and
+        e -- the number of the last line 
+        """
+        return self._position
 
     @property
     def Time(self):
