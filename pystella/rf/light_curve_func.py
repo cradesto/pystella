@@ -244,7 +244,7 @@ def curves2nparray(curves):
 
     res = np.column_stack(data)
     # res = np.dstack(data)
-    dtype['formats'] = [np.float64] * len(dtype['names'])
+    dtype['formats'] = [float] * len(dtype['names'])
     res.dtype = dtype
     return res.ravel()
 
@@ -285,7 +285,7 @@ def curves2nparraymix(curves):
 
     # res = np.column_stack(data)
     # res = np.dstack(data)
-    # dtype['formats'] = [np.float64] * len(dtype['names'])
+    # dtype['formats'] = [float] * len(dtype['names'])
     # res.dtype = dtype
     return data
     # return res.ravel()

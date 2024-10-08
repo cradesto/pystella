@@ -443,7 +443,7 @@ class PreSN(object):
             x = self.V / 1e5  # to km/s
             ax.set_xlabel(r'V [$km\, s^{-1}$]')
         elif x.lower() == 'z':  # zones
-            x = np.arange(0, stop=self.nzon, dtype=np.int) + 1
+            x = np.arange(0, stop=self.nzon, dtype=int) + 1
             ax.set_xlabel(r'Zone')
         else:
             x = self.r
@@ -571,7 +571,7 @@ class PreSN(object):
             xi = self.V * xnorm
             ax.set_xlabel(r'V [$km\, s^{-1}$]')
         elif x == 'z':
-            xi = np.arange(0, self.nzon, dtype=np.int) + 1
+            xi = np.arange(0, self.nzon, dtype=int) + 1
             ax.set_xlabel(r'Zone')
         else:
             xi = self.r * xnorm

@@ -66,7 +66,7 @@ class FitGP:
     # def fit_lc(lc, Ntime=None):
     #     t = lc.Time
     #     y = lc.Mag
-    #     y = np.asarray(y, dtype=np.float64)
+    #     y = np.asarray(y, dtype=float)
     #     yerr = lc.MagErr
     #
     #     kernel = ConstantKernel() + Matern(length_scale=2, nu=3 / 2) + WhiteKernel(noise_level=1)
@@ -90,7 +90,7 @@ class FitGP:
     def lc2gp(lc):
         t = lc.Time
         y = lc.Mag
-        y = np.asarray(y, dtype=np.float64)
+        y = np.asarray(y, dtype=float)
         yerr = lc.MagErr
 
         time_scale = t[-1] - t[0]
@@ -117,7 +117,7 @@ class FitGP:
 
         t = lc.Time
         y = lc.Mag
-        y = np.asarray(y, dtype=np.float64)
+        y = np.asarray(y, dtype=float)
         yerr = lc.MagErr
 
         # data = self.data[['mjd', 'mag', 'err']]

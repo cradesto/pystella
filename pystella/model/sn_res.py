@@ -66,7 +66,7 @@ class StellaRes:
         dt = np.dtype({'names': cols, 'formats': [int]+[float] * (len(cols)-1)})
         # tmp = [x for x in map(str.strip, col_w.split())]
         # dt = np.dtype(','.join(tmp))
-        # dt = np.dtype({'names': cols, 'formats': [np.float64] * len(cols)})
+        # dt = np.dtype({'names': cols, 'formats': [float] * len(cols)})
         # with open(fname, 'r') as f_in:
         #     b = np.genfromtxt(itertools.islice(f_in, start - 1, end),
         #                       names=cols, dtype=dt, delimiter=delimiter)
@@ -78,7 +78,7 @@ class StellaRes:
                               names=cols, dtype=dt, delimiter=delimiter)
 
         # cols = ["z", "m", "r", "rho", "v", "T", "Trad"]
-        # dt = np.dtype({'names': cols, 'formats': [np.float64] * len(cols)})
+        # dt = np.dtype({'names': cols, 'formats': [float] * len(cols)})
         # c = np.vstack((block['ZON'],  # z
         #               block['M'],  # m
         #               block['R14'] * 1e14,  # r

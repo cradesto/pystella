@@ -159,7 +159,7 @@ class Snec:
         logger.info('Load profile data from  %s' % self.profile_file)
 
         use_cols = list(range(0, len(snec_profile_cols)))
-        dtype = np.dtype({'names': snec_profile_cols, 'formats': [np.float64] * len(snec_profile_cols)})
+        dtype = np.dtype({'names': snec_profile_cols, 'formats': [float] * len(snec_profile_cols)})
         self._profile = np.loadtxt(self.profile_file, skiprows=1, dtype=dtype, usecols=use_cols)
         return self
 
@@ -205,7 +205,7 @@ class Snec:
 
         names = [PreSN.sM, PreSN.sR] + snec_elements
         print("Names: %s" % ' '.join(names))
-        dtype = np.dtype({'names': names, 'formats': [np.float64] * len(names)})
+        dtype = np.dtype({'names': names, 'formats': [float] * len(names)})
         self._chem = np.loadtxt(fname, skiprows=3, dtype=dtype, comments='#')
         return self
 

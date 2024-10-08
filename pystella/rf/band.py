@@ -349,7 +349,7 @@ class Band(object):
     #     @return: np.array(filter, Vega, AB ... 
     #     """
     #     colnames = 'filter 	absVega	absAB absST	visVega	 visAB	visST	offAB	offST	pivot  src'.split()
-    #     dtype={'names': colnames, 'formats': ['filter'] + [np.float64] * (len(colnames)-1)}
+    #     dtype={'names': colnames, 'formats': ['filter'] + [float] * (len(colnames)-1)}
     #     return np.loadtxt(Band.FileMagSun, dtype=dtype, comments='#')
 
     @classmethod

@@ -40,7 +40,7 @@ def cache_load(fname):
         header = f.readline()
     # header = 'time Tcol zeta Tnu Teff W'
     names = map(str.strip, header.split())
-    dtype = np.dtype({'names': names, 'formats': [np.float64] * len(names)})
+    dtype = np.dtype({'names': names, 'formats': [float] * len(names)})
     tbl = np.loadtxt(fname, skiprows=1, dtype=dtype)
     return tbl
 

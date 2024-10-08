@@ -635,7 +635,7 @@ def compute_tcolor(name, path, bands, d=ps.phys.pc2cm(10.), z=0., t_cut=(1., np.
 
     # show results
     res = np.zeros(len(Tcolors), dtype=np.dtype({'names': ['time', 'Tcol', 'zeta', 'Tnu', 'Teff', 'W'],
-                                                 'formats': [np.float64] * 6}))
+                                                 'formats': [float] * 6}))
     res['time'] = times
     res['Tcol'] = Tcolors
     res['zeta'] = zetaR
