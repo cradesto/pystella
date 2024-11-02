@@ -1084,6 +1084,7 @@ class PreSN(object):
 
 # ==============================================
 def load_rho(fname, path: str = None):
+    import linecache
     if path is not None:
         fname = os.path.join(path, fname)
     if not os.path.isfile(fname):
@@ -1091,10 +1092,25 @@ def load_rho(fname, path: str = None):
         raise ValueError(' No rho-data for %s' % fname)
         # return None
     logger.info(' Load rho-data from  %s' % fname)
-    col_names = "zone mass lgR lgTp lgRho u Ni56 H He C N O Ne Na  Mg  Al  Si  S  Ar  Ca  Fe  Ni"
-    dt = np.dtype({'names': col_names.split(), 'formats': np.repeat('f8', len(col_names))})
 
-    data = np.loadtxt(fname, comments='#', skiprows=2, dtype=dt)
+    # try to get column names from header
+    header = linecache.getline(fname, 1).split()
+    logger.info('header(len= {}): {} '.format(len(header), ' '.join(header)))
+
+    if len(header) < 22 or len(header) >= 25:  # default header
+        header = "zone mass lgR lgTp lgRho u Ni56 H He C N O Ne Na  Mg  Al  Si  S  Ar  Ca  Fe  Ni".split()
+
+    usecols, col_names = [], []
+    for i, e in enumerate(header):
+        if not e in col_names:
+            col_names.append(e)
+            usecols.append(i)
+
+    logger.info(' col_names=  %s' % ' '.join(col_names))
+    # logger.info(' usecols=  {}'.format(usecols))
+    dt = np.dtype({'names': col_names, 'formats': np.repeat('f8', len(col_names))})
+
+    data = np.loadtxt(fname, comments='#', skiprows=2, dtype=dt, usecols=usecols)
 
     nz = len(data['lgR'])
     ###

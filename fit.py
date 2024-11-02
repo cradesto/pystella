@@ -28,6 +28,11 @@ markers = {u'x': u'x', u'd': u'thin_diamond',
 markers_style = list(markers.keys())
 
 
+def chi_norm(chi):
+    return 1. - chi/np.max(chi)
+    # return 1.-1./chi
+
+
 def rel_errors(mu, sig, func, num=10000):
     x_norm = []
     for x, s in zip(mu, sig):
@@ -493,19 +498,23 @@ def plot_squared(ax, res_sorted, path='./', p=('R', 'M'), **kwargs):
     chi = np.array(chi)
 
     if is_surface:
+        # chi = -np.ma.masked_where(chi < 0, chi)
+        chi = chi_norm(chi)
+        # chi = 1 / (1+np.exp(-chi))
         # Set up a regular grid of interpolation points
-        xi, yi = np.linspace(x.min(), x.max(), 100), np.linspace(y.min(), y.max(), 100)
+        xi, yi = np.linspace(x.min()*0.9, x.max()*1.1, 100), np.linspace(y.min()*.9, y.max()*1.1, 100)
         xi, yi = np.meshgrid(xi, yi)
 
         # Interpolate
         if is_rbf:
-            rbf = sci.interpolate.Rbf(x, y, chi, function='linear')
+            rbf = sci.interpolate.Rbf(x, y, chi, function='linear', smooth=1e-2)
+            # rbf = sci.interpolate.Rbf(x, y, chi, function='linear', smooth=1e-2)
             zi = rbf(xi, yi)
         else:
             zi = sci.interpolate.griddata((x, y), chi, (xi, yi), method="linear")
 
         # cmap: bone viridis  RdBu
-        im = ax.imshow(zi, cmap=plt.cm.viridis, vmin=chi.min(), vmax=chi.max(), origin='lower',
+        im = ax.imshow(zi, cmap=plt.cm.jet, vmin=chi.min(), vmax=chi.max(), origin='lower',
                        extent=[x.min(), x.max(), y.min(), y.max()], interpolation='none',
                        aspect='auto', alpha=0.5)
         # try:
@@ -528,14 +537,14 @@ def plot_squared(ax, res_sorted, path='./', p=('R', 'M'), **kwargs):
         #
         #     # ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.15), ncol=4, fancybox=True)
         # except ImportError:
-        cset = ax.contour(xi, yi, zi, linewidths=1., cmap=plt.cm.bone)
+        cset = ax.contour(xi, yi, zi, linewidths=1., cmap=plt.cm.jet)
         # cset = ax.contour(xi, yi, zi, linewidths=2, cmap=plt.cm.Set2)
         ax.clabel(cset, inline=True, fmt='%1.1f', fontsize=9)
         cbar = plt.colorbar(im)
         cbar.ax.set_ylabel(r'$\chi^2$')
         # plt.setp(cb.ax.get_yticklabels(), visible=False)
 
-        ax.scatter(x, y, c=chi / np.max(chi), cmap=plt.cm.bone, picker=True)
+        ax.scatter(x, y, c=chi, cmap=plt.cm.jet, picker=True)
 
         # ax.set_picker(True)
 
@@ -680,8 +689,8 @@ def plot_squared_3d(ax, res_sorted, path='./', p=('R', 'M', 'E'), is_rbf=True, *
         # Use custom colors and opacity
         labels = z
         for z, bar, l in zip(z / np.max(z), bars, labels):
-            # bar.set_facecolor(plt.cm.jet(r))  # E
-            bar.set_facecolor(plt.cm.viridis(z))
+            bar.set_facecolor(plt.cm.jet(z))  # E
+            # bar.set_facecolor(plt.cm.viridis(z))
             # bar.set_facecolor(plt.cm.plasma(z))
             bar.set_alpha(0.5)
             bar.set_label(l)
@@ -698,8 +707,8 @@ def plot_squared_3d(ax, res_sorted, path='./', p=('R', 'M', 'E'), is_rbf=True, *
         ax.set_ylabel(p[1])
         ax.set_zlabel(p[2])
 
-        N = chi / np.max(chi)
-        surf = ax.scatter(x, y, z, c=N, cmap=plt.cm.viridis)
+        N = chi_norm(chi)
+        surf = ax.scatter(x, y, z, c=N, cmap=plt.cm.jet)
         # surf = ax.scatter(x, y, z, c=N, cmap="gray")
         from matplotlib.ticker import LinearLocator
         from matplotlib.ticker import FormatStrFormatter
@@ -1055,8 +1064,9 @@ def main():
         print("{} || {:40s} || {:7.2f}+/-{:7.4f} || {:.4f} || {}".format(i, k, v.tshift, v.tsigma, v.measure, v.comm))
 
     if len(res_sorted) >= n_best:
+        print("len(res_sorted) >= n_best ", len(res_sorted), n_best)
         # plot chi squared
-        plot_squared_grid(res_sorted, path, is_not_quiet=args.is_not_quiet)
+        plot_squared_grid(res_sorted, path, is_not_quiet=args.is_not_quiet, is_show=True)
         plot_chi_par(res_sorted, path)
 
         # plot only Nbest modeles

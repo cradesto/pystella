@@ -541,7 +541,7 @@ class FitMPFit(FitLc):
             fit_result.comm = 'result {}:dof: {} sigmas: {}'. \
                 format(self.Name, res['dof'], ' '.join([f'{bn}: {sigs[i]:.3f}' for i, bn in enumerate(bnames)]))
         else:
-            fit_result.comm = 'result {}:dof: {}'.format(self.Name, res['dof'])
+            fit_result.comm = 'result {}:dt= {:.2f}+-{:.4f} : dof: {}:chi2: {:12.4e}'.format(self.Name, res['dt'], res['dtsig'], res['dof'],  res['chi2'])
         logger.debug(f'  {fit_result.comm}')
         return fit_result, res, None  # as Fit_MCMC
 
