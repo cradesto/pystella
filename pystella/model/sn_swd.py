@@ -88,8 +88,10 @@ class StellaShockWaveDetail:
             # print(f"{i=} {t=} {b= }  {e=}  nzon= {self._nzon[i]}")
 
         # self.ntimes = len(self.times)   # len(data['tday']) // self.nzon
+        self._nzon_min = np.min(self._nzon)
+        self._nzon_max = np.max(self._nzon)
         self._data = data
-        logger.debug("Read data from  %s " % fname)
+        logger.debug(f"Read data from  {fname}. NzonMin= {self.NzonMin} NzonMax= {self.NzonMax}")
         return self
 
     def time_nearest(self, time):
@@ -142,7 +144,7 @@ class StellaShockWaveDetail:
         """Compute tau for each moment of time
         Return: 2d-array[i,k], where i - time index, k - zone index.
         """
-        taus = np.zeros((self.Ntimes, self.Nzon))
+        taus = np.zeros((self.Ntimes, self.NzonMax))
         for i, time in enumerate(self.Times):
             s = self[i]
             # tau = s.Tau
@@ -161,7 +163,7 @@ class StellaShockWaveDetail:
         for i, time in enumerate(self.Times):
             s = self[i]
             kph = 1  # todo check the default value
-            for k in range(self.Nzon - 1, 1, -1):
+            for k in range(self.NzonMax - 1, 1, -1):
                 if taus[i][k] >= tau_ph:
                     kph = k
                     break

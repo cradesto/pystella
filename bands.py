@@ -138,6 +138,13 @@ def get_parser(times='1:4:15:65', bnames='U:B:V:R', tau_ph=2. / 3):
                             ", where nm - the name of new band, leftWv and rightWv are left and right wave range in AA. "
                             "Ex: f1150:1150:1900 . Default color is black, ln is solid line. "
                             "See colors https://matplotlib.org/stable/gallery/color/named_colors.html")
+    
+    parser.add_argument('--norm', nargs="?",
+                            required=False,
+                            const=True,
+                            dest="is_norm",
+                            metavar="normalize bands",
+                            help="Normalize bands to max-min values")
     return parser
 
 # def usage():
@@ -210,7 +217,7 @@ def main():
 
     if len(bands) > 0:
         try:
-            plot_bands(bands)
+            plot_bands(bands, is_norm=args.is_norm)
         except AttributeError:
             parser.print_help()
             sys.exit(2)
