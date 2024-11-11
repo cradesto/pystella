@@ -583,9 +583,9 @@ def interval2float(v):
     elif len(a) == 2 and len(a[1]) == 0:
         return float(a[0]), float("inf")
     elif len(a) == 2:
-        return list(map(np.float, str(v).split(':')))
+        return list(map(float, a))  # Используем float вместо np.float
     elif len(a) == 1:
-        return float(v[0])
+        return float(a[0])  # Изменено на a[0]
     else:
         return None
 
