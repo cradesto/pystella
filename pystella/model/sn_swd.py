@@ -87,6 +87,8 @@ class StellaShockWaveDetail:
             self._nzon[i] = e - b + 1
             # print(f"{i=} {t=} {b= }  {e=}  nzon= {self._nzon[i]}")
 
+        self._nzon_min = np.min(self._nzon)
+        self._nzon_max = np.max(self._nzon)
         # self.ntimes = len(self.times)   # len(data['tday']) // self.nzon
         self._nzon_min = np.min(self._nzon)
         self._nzon_max = np.max(self._nzon)
