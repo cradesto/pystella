@@ -90,8 +90,10 @@ class StellaShockWaveDetail:
         self._nzon_min = np.min(self._nzon)
         self._nzon_max = np.max(self._nzon)
         # self.ntimes = len(self.times)   # len(data['tday']) // self.nzon
+        self._nzon_min = np.min(self._nzon)
+        self._nzon_max = np.max(self._nzon)
         self._data = data
-        logger.debug("Read data from  %s " % fname)
+        logger.debug(f"Read data from  {fname}. NzonMin= {self.NzonMin} NzonMax= {self.NzonMax}")
         return self
 
     def time_nearest(self, time):

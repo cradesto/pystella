@@ -39,22 +39,22 @@ Keep this in mind if you want to use it on your research.
     
 #### Available bands:
   - AtlasC   AtlasO  
-  - BesB     BesI     BesR     BesU     BesV    
+  - Bbes     Ibes     Rbes     Ubes     Vbes    
   - F105W    F125W    F140W    F160W    F435W    F606W    F814W   
   - GaiaG   
   - HSCY     HSCg     HSCi     HSCr     HSCz    
   - KaitB    KaitI    KaitR    KaitU    KaitV    Kepler  
   - LcoH     LcoJ     LcoK     Lum     
   - PS1g     PS1i     PS1r     PS1w     PS1y     PS1z    
-  - Sdssg    Sdssi    Sdssr    Sdssu    Sdssz    SwiftB   SwiftU   SwiftV  
+  - gSdss    iSdss    rSdss    uSdss    zSdss    SwiftB   SwiftU   SwiftV  
   - USNO40g  USNO40i  USNO40r  USNO40u  USNO40z  UVM2     UVW1     UVW2    
   - bol      bolq    
   - massH    massJ    massK   
   - ubvri   
 
 #### Available aliases of bands: 
-  - U => BesU       B => BesB       V => BesV       R => BesR       I => BesI    
-  - g => Sdssg      r => Sdssr      i => Sdssi      u => Sdssu      z => Sdssz   
+  - U => Ubes       B => Bbes       V => Vbes       R => Rbes       I => Ibes    
+  - g => gSdss      r => rSdss      i => iSdss      u => uSdss      z => zSdss   
   - J => massJ      H => massH      K => massK  
 
 ### Run
