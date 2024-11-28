@@ -58,7 +58,7 @@ class StellaTt:
         if header != '':
             names = map(str.strip, header.split())
             names = [w.replace('R(tau2/3)', 'Rph') for w in names]
-            dtype = np.dtype({'names': names, 'formats': [np.float64] * len(names)})
+            dtype = np.dtype({'names': names, 'formats': [float] * len(names)})
             block = np.loadtxt(fname, skiprows=line_header + 1, dtype=dtype)
             return block
         else:

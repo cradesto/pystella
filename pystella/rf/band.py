@@ -23,6 +23,8 @@ class Band(object):
     NameBol = 'bol'
     NameUBVRI = 'ubvri'
     NameBVRI = 'bvri'
+    NameF1150 = 'F1150'
+    NameF1500 = 'F1500'
     NameBolQuasi = 'bolq'
     NameZp = 'zp'
     NameJy = 'Jy'
@@ -30,7 +32,67 @@ class Band(object):
     FileVega = os.path.join(DirRoot, 'vega.dat')
     # FileMagSun = os.path.join(DirRoot, 'adb_mag_sun_apjsaabfdft3_ascii.txt')
     # MagSunData = None
+    dic_colors = {
+        'U': "blue", 'B': "cyan", 'V': "darkgreen", 'R': "red", 'I': "magenta",
+        'Uab': "blue", 'Bab': "cyan", 'Vab': "darkgreen", 'Rab': "red", 'Iab': "magenta",
+        'J': "blueviolet", 'H': "plum", 'K': "saddlebrown",
+        'Jab': "blueviolet", 'Hab': "plum", 'Kab': "saddlebrown",
+        'Ubes': "blue", 'Bbes': "cyan", 'Vbes': "darkgreen", 'Rbes': "red", 'Ibes': "magenta",
+        'SwiftU': "blue", 'SwiftB': "cyan", 'SwiftV': "darkgreen",
+        'KaitU': "blue", 'KaitB': "cyan", 'KaitV': "darkgreen", 'KaitR': "red", 'KaitI': "magenta",
+        'massJ': "green", 'massH': "cyan", 'massK': "black",
+        'massJAB': "darkgreen", 'massHAB': "darkcyan", 'massKAB': "dimgray",
+        'KgoJ': "darkolivegreen", 
+        'GrondJAB': "darkolivegreen", 'GrondHAB': "teal", 'GrondKAB': "silver",
+        'GrondJ': "darkgreen", 'GrondH': "darkcyan", 'GrondK': "dimgray",
+        'LcoJ': "green", 'LcoH': "cyan", 'LcoK': "black",
+        'UVM2': "skyblue", 'UVW1': "orange", 'UVW2': "mediumpurple",
+        'UVM2AB': "powderblue", 'UVW1AB': "moccasin", 'UVW2AB': "thistle",
+        'UVM2o': "deepskyblue", 'UVW1o': "darkviolet", 'UVW2o': "darkblue",
+        'USNO40i': "blue", 'USNO40g': "cyan", 'USNO40z': "darkgreen", 'USNO40r': "darkviolet", 'USNO40u': "magenta",
+        'F115LP': "blueviolet", 'F255W': "saddlebrown",
+        'F105W': "magenta", 'F435W': "skyblue", 'F606W': "cyan", 'F125W': "g",
+        'F140W': "orange", 'F160W': "r", 'F814W': "blue",
+        'Kepler': "magenta", 'Lum': "orchid",
+        'g': "olive", 'r': "red", 'i': "plum", 'u': "darkslateblue", 'z': "chocolate",
+        'gSdss': "olive", 'rSdss': "pink", 'iSdss': "magenta", 'uSdss': "blue", 'zSdss': "chocolate",
+        'PS1g': "olive", 'PS1r': "red", 'PS1i': "magenta", 'PS1u': "blue", 'PS1z': "chocolate", 'PS1y': "cyan",
+        'PS1w': "orange", 'y': 'y', 'Y': 'y', 'w': 'tomato',
+        'AtlasC': "cyan", 'AtlasO': "orange",
+        'UBVRI': 'chocolate', 'GaiaG': 'g', 'TESSRed': 'orchid',
+        'L_ubvri': 'sandybrown', 'L_bol': 'saddlebrown', 'XEUV<325': 'sienna', 'IR>890': 'peru',
+        NameBol: 'black', NameUBVRI: 'dimgrey', NameBVRI: 'saddlebrown', NameBolQuasi: 'dimgray',
+        NameF1150: 'sandybrown', NameF1500: 'tomato',
+        }
+    
+    dic_lntype = {
+        "U": "-", 'B': "-", 'V': "-", 'R': "-", 'I': "-",
+        "Uab": ".", 'Bab': ".", 'Vab': ".", 'Rab': ".", 'Iab': ".",
+        "Jab": ".", 'Hab': ".", 'Kab': ".",
+        'UVM2': "-.", 'UVW1': "-.", 'UVW2': "-.",
+        'UVM2AB': ".", 'UVW1AB': ".", 'UVW2AB': ".",
+        'F125W': ":",
+        'F160W': "-.", 'F140W': "--", 'F105W': "-.", 'F435W': "--", 'F606W': "-.", 'F814W': "--", 'u': "--",
+        'g': "--", 'r': "--", 'i': "--", 'z': "--", 'Y': '--', 'GaiaG': '--',
+        NameBol: '-', NameUBVRI: '--', NameBVRI: '-.', NameBolQuasi: ':'
+        }
 
+    @staticmethod
+    def add_band(name, b):
+        if not name in Band.Cache:
+            Band.Cache[name] = b
+            return True
+        return False
+
+    @staticmethod
+    def add_color(name, c):
+        if not name in Band.dic_colors:
+            Band.dic_colors[name] = c
+
+    @staticmethod
+    def add_lntype(name, ln):
+        if not name in Band.dic_lntype:
+            Band.dic_lntype[name] = ln
 
     def __init__(self, name=None, fname=None, zp=None, jy=None, is_load=False):
         """Creates a band instance.  Required parameters:  name and file."""
@@ -122,11 +184,11 @@ class Band(object):
     # def wl_eff(self):
     #     """The effective wavelength"""
     #     if self._wl_eff is None:
-    #         from scipy.integrate import simps
+    #         from scipy.integrate import simpson
     #         wl = self.wl
     #         resp = np.array(self.resp_wl)
-    #         num = simps(resp * wl ** 2, wl)
-    #         den = simps(resp * wl, wl)
+    #         num = simpson(resp * wl ** 2, wl)
+    #         den = simpson(resp * wl, wl)
     #         self._wl_eff = num / den
     #     return self._wl_eff
 
@@ -175,19 +237,19 @@ class Band(object):
     @property
     def Norm(self):
         if self._norm is None:
-            from scipy.integrate import simps
+            from scipy.integrate import simpson
             nu_b = np.array(self.freq)
             resp_b = np.array(self.resp_fr)
-            self._norm = simps(resp_b / nu_b, nu_b)
+            self._norm = simpson(resp_b / nu_b, x=nu_b)
         return self._norm
 
     @property
     def NormWl(self):
         if self._normWl is None:
-            # from scipy.integrate import simps
+            # from scipy.integrate import simpson
             # x = np.array(self.wl)
             # y = np.array(self.resp_wl) / (phys.c * phys.cm_to_angs * phys.h)
-            # res = simps(y*x, x, even='avg')
+            # res = simpson(y*x, x, even='avg')
             self._normWl = self.response(self.wl, np.ones(len(self.wl)), kind='spline')
         return self._normWl
 
@@ -220,7 +282,7 @@ class Band(object):
         if self._fname is not None:
             f = open(self._fname)
             try:
-                lines = [str.strip(line) for line in f.readlines() if not line.startswith('#')]
+                lines = [str.strip(line) for line in f.readlines() if not str.strip(line).startswith('#')]
                 wl = np.array([float(line.split()[0]) for line in lines if len(line) > 0])
 
                 self._resp = np.array([float(line.split()[1]) for line in lines if len(line) > 0])
@@ -275,7 +337,8 @@ class Band(object):
         # if 'magsun' in parser.sections():
         #     Band.MagSunAlias = {v: k for k, v in parser.items('magsun')}
         Band.IsLoad = True
-        return True
+        names =  get_names();
+        return len(names) > 0
 
     # @classmethod
     # def get_MagSun_data(cls):
@@ -286,7 +349,7 @@ class Band(object):
     #     @return: np.array(filter, Vega, AB ... 
     #     """
     #     colnames = 'filter 	absVega	absAB absST	visVega	 visAB	visST	offAB	offST	pivot  src'.split()
-    #     dtype={'names': colnames, 'formats': ['filter'] + [np.float64] * (len(colnames)-1)}
+    #     dtype={'names': colnames, 'formats': ['filter'] + [float] * (len(colnames)-1)}
     #     return np.loadtxt(Band.FileMagSun, dtype=dtype, comments='#')
 
     @classmethod
@@ -301,7 +364,7 @@ class Band(object):
     @classmethod
     def get_wl_eff_vega(cls, b):
         """
-        Calculated as {\int lambda^2 * T * S * dLambda}  / {\int lambda * T * S * dLambda}
+        Calculated as {\\int lambda^2 * T * S * dLambda}  / {\\int lambda * T * S * dLambda}
         , where: T(lambda) ≡ filter transmission
                  S(lambda) ≡ Vega spectrum
         @param b:  band
@@ -319,8 +382,8 @@ class Band(object):
         # fn_interp = interpolate.interp1d(lmb_s, flux_s)
         flux_interp = fn_interp(lmb_b)
 
-        num = integrate.simps(flux_interp * resp_b * lmb_b ** 2, lmb_b)
-        den = integrate.simps(flux_interp * resp_b * lmb_b, lmb_b)
+        num = integrate.simpson(flux_interp * resp_b * lmb_b ** 2, x=lmb_b)
+        den = integrate.simpson(flux_interp * resp_b * lmb_b, x=lmb_b)
         zp = num / den
         # print(f'{b.Name}: {num=} / {den=}  =  {zp=} ')
         return zp
@@ -346,8 +409,8 @@ class Band(object):
         # fn_interp = interpolate.interp1d(lmb_s, flux_s)
         flux_interp = fn_interp(lmb_b)
 
-        num = integrate.simps(flux_interp * resp_b * lmb_b, lmb_b)
-        den = integrate.simps(resp_b * lmb_b, lmb_b)
+        num = integrate.simpson(flux_interp * resp_b * lmb_b, x=lmb_b)
+        den = integrate.simpson(resp_b * lmb_b, x=lmb_b)
         return num / den
 
     @classmethod
@@ -394,15 +457,15 @@ class Band(object):
         flux_interp = log_interp(nu_b)
 
         if is_freq_norm:
-            a = integrate.simps(flux_interp * resp_b / nu_b, nu_b)
+            a = integrate.simpson(flux_interp * resp_b / nu_b, x=nu_b)
         else:
-            a = integrate.simps(flux_interp * resp_b, nu_b)
+            a = integrate.simpson(flux_interp * resp_b, x=nu_b)
         return a
 
     def response_freq(self, nu, flux):
         return Band.response_nu(nu, flux, self)
 
-    def response(self, wl, flux, z=0., kind='spline', mode_int='simps', is_out2zero=True, is_photons=True):
+    def response(self, wl, flux, z=0., kind='spline', mode_int='simpson', is_out2zero=True, is_photons=True):
         """Compute the response of this filter over the flux(wl)
 
         kind : str or int, optional (see scipy.interpolate)
@@ -486,8 +549,8 @@ class Band(object):
         if is_photons:
             integrand = integrand * trim_wl / (phys.c * phys.cm_to_angs * phys.h)
 
-        if mode_int == 'simps':
-            res = scipy.integrate.simps(integrand, x=trim_wl, even='avg')
+        if mode_int == 'simpson':
+            res = scipy.integrate.simpson(integrand, x=trim_wl, even='avg')
         elif mode_int == 'trapz':
             res = scipy.integrate.trapz(integrand, x=trim_wl)
         else:
@@ -528,13 +591,13 @@ class BandUni(Band):
         self.resp_wl = np.ones(len(wl))  # response
 
     @property
-    def Norm(self, mode_int='simps'):
-        import scipy.integrate  # import simps as integralfunc
+    def Norm(self, mode_int='simpson'):
+        import scipy.integrate  # import simpson as integralfunc
         x = np.array(self.wl)
         y = np.array(self.resp_wl)
         # resp_b = np.ones(len(nu_b))
-        if mode_int == 'simps':
-            res = scipy.integrate.simps(y, x=x, even='avg')
+        if mode_int == 'simpson':
+            res = scipy.integrate.simpson(y, x=x, even='avg')
         elif mode_int == 'trapz':
             res = scipy.integrate.trapz(y, x=x)
         else:
@@ -617,13 +680,13 @@ class BandJoin(Band):
         self.resp_wl = resp_int  # response
 
     # @property
-    # def Norm(self, mode_int='simps'):
-    #     import scipy.integrate  # import simps as integralfunc
+    # def Norm(self, mode_int='simpson'):
+    #     import scipy.integrate  # import simpson as integralfunc
     #     x = np.array(self.wl)
     #     y = np.array(self.resp_wl)
     #     # resp_b = np.ones(len(nu_b))
-    #     if mode_int == 'simps':
-    #         res = scipy.integrate.simps(y, x=x, even='avg')
+    #     if mode_int == 'simpson':
+    #         res = scipy.integrate.simpson(y, x=x, even='avg')
     #     elif mode_int == 'trapz':
     #         res = scipy.integrate.trapz(y, x=x)
     #     else:
@@ -651,58 +714,27 @@ ROOT_DIRECTORY = dirname(dirname(dirname(os.path.abspath(__file__))))
 
 # @lru_cache
 def colors(bname=None, default='magenta'):
-    c = {'U': "blue", 'B': "cyan", 'V': "darkgreen", 'R': "red", 'I': "magenta",
-         'J': "blueviolet", 'H': "plum", 'K': "saddlebrown",
-         'BesU': "blue", 'BesB': "cyan", 'BesV': "darkgreen", 'BesR': "red", 'BesI': "magenta",
-         'SwiftU': "blue", 'SwiftB': "cyan", 'SwiftV': "darkgreen",
-         'KaitU': "blue", 'KaitB': "cyan", 'KaitV': "darkgreen", 'KaitR': "red", 'KaitI': "magenta",
-         'massJ': "green", 'massH': "cyan", 'massK': "black",
-         'ABGrondJ': "darkolivegreen", 'ABGrondH': "teal", 'ABGrondK': "silver",
-         'GrondJ': "darkgreen", 'GrondH': "darkcyan", 'GrondK': "dimgray",
-         'LcoJ': "green", 'LcoH': "cyan", 'LcoK': "black",
-         'UVM2': "skyblue", 'UVW1': "orange", 'UVW2': "mediumpurple",
-         'UVM2AB': "powderblue", 'UVW1AB': "moccasin", 'UVW2AB': "thistle",
-         'UVM2o': "deepskyblue", 'UVW1o': "darkviolet", 'UVW2o': "darkblue",
-         'USNO40i': "blue", 'USNO40g': "cyan", 'USNO40z': "darkgreen", 'USNO40r': "darkviolet", 'USNO40u': "magenta",
-         'F105W': "magenta", 'F435W': "skyblue", 'F606W': "cyan", 'F125W': "g",
-         'F140W': "orange", 'F160W': "r", 'F814W': "blue",
-         'Kepler': "magenta", 'Lum': "orchid",
-         'g': "olive", 'r': "red", 'i': "plum", 'u': "darkslateblue", 'z': "chocolate",
-         'Sdssg': "olive", 'Sdssr': "pink", 'Sdssi': "magenta", 'Sdssu': "blue", 'Sdssz': "chocolate",
-         'PS1g': "olive", 'PS1r': "red", 'PS1i': "magenta", 'PS1u': "blue", 'PS1z': "chocolate", 'PS1y': "cyan",
-         'PS1w': "orange", 'y': 'y', 'Y': 'y', 'w': 'tomato',
-         'AtlasC': "cyan", 'AtlasO': "orange",
-         'UBVRI': 'chocolate', 'GaiaG': 'g', 'TESSRed': 'orchid',
-         'L_ubvri': 'sandybrown', 'L_bol': 'saddlebrown', 'XEUV<325': 'sienna', 'IR>890': 'peru',
-         Band.NameBol: 'black', Band.NameUBVRI: 'dimgrey', Band.NameBVRI: 'saddlebrown', Band.NameBolQuasi: 'dimgray'}
     # for Subaru HCS: colors
     for b in list('grizY'):
-        c['HSC' + b] = c[b]
+        Band.dic_colors['HSC' + b] = Band.dic_colors[b]
 
     if bname is None:
-        return c
+        return Band.dic_colors
     else:
-        if bname in c:
-            return c[bname]
+        if bname in Band.dic_colors:
+            return Band.dic_colors[bname]
         return default
 
 
 def lntypes(bname=None, default='-'):
-    ln = {"U": "-", 'B': "-", 'V': "-", 'R': "-", 'I': "-",
-          'UVM2': "-.", 'UVW1': "-.", 'UVW2': "-.",
-          'UVM2AB': ".", 'UVW1AB': ".", 'UVW2AB': ".",
-          'F125W': ":",
-          'F160W': "-.", 'F140W': "--", 'F105W': "-.", 'F435W': "--", 'F606W': "-.", 'F814W': "--", 'u': "--",
-          'g': "--", 'r': "--", 'i': "--", 'z': "--", 'Y': '--', 'GaiaG': '--',
-          Band.NameBol: '-', Band.NameUBVRI: '--', Band.NameBVRI: '-.', Band.NameBolQuasi: ':'}
     # for Subaru HCS: colors
     for b in list('grizY'):
-        ln['HSC' + b] = ln[b]
+        Band.dic_lntype['HSC' + b] = Band.dic_lntype[b]
 
     if bname is None:
-        return ln
+        return Band.dic_lntype
     else:
-        return ln[bname]
+        return Band.dic_lntype[bname]
         # if bname in lntypes:
         #     return lntypes[bname]
         # return default
@@ -730,11 +762,14 @@ def band_load_names(path=Band.DirRoot):
             res[bname] = b
         return res
 
-    bol = BandUni.get_bol()
-    qbol = BandUni.get_qbol()
-    ubvri = BandJoin.get_ubvri()
-    bvri = BandJoin.get_bvri()
-    bands = {Band.NameBol: bol, Band.NameUBVRI: ubvri, Band.NameBVRI: bvri, Band.NameBolQuasi: qbol}
+    bands = {Band.NameBol: BandUni.get_bol(), 
+             Band.NameUBVRI: BandJoin.get_ubvri(), 
+             Band.NameBVRI: BandJoin.get_bvri(), 
+             Band.NameBolQuasi: BandUni.get_qbol(), 
+             Band.NameF1150: BandUni(name=Band.NameF1150, wlrange=(1150, 1900)), 
+             Band.NameF1500: BandUni(name=Band.NameF1500, wlrange=(1500, 2800))
+             }
+    
     for d, dir_names, file_names in os.walk(path):
         if Band.FileFilters in file_names:  # check that there are info-file in this directory
             fname = os.path.join(d, Band.FileFilters)
@@ -743,6 +778,20 @@ def band_load_names(path=Band.DirRoot):
                 bands.update(bs)
 
     return bands
+
+
+def band_add_new_bol(name, Ushort, Rlong, c=None, ln=None, length=300):
+    b = BandUni(name=name, wlrange=(Ushort, Rlong), length=length)  
+    if (not Band.add_band(name, b)):
+        print(f'The band {name} have been added before.')
+        return False
+    # if c is not None and not name in Band.dic_colors:
+    #     Band.add_color(name, c)
+    # if ln is not None and not name in Band.dic_lntype:
+    #     Band.add_lntype(name, ln)
+    return True
+
+
 
 
 def get_names():
@@ -818,27 +867,28 @@ def band_by_name(name):
         return None
 
 
-def print_bands(ncol=5):
+def print_bands(ncol=5, is_print=True):
+    res = ''
     bands = sorted(get_names())
-    print("Available bands:")
+    res += "\nAvailable bands: \n"
     # print "   Available bands: \n   %s" % '-'.join(sorted(bands))
     if bands is not None and len(bands) > 0:
         s = '  '
         c = bands[0][0]
         for b in bands:
             if b[0] != c:
-                print(s)
+                res += s
                 c = b[0]
-                s = "   %-7s " % b
+                s = "\n   %-7s " % b
             else:
                 s += " %-7s " % b
         if s != '':
-            print(s)
+            res += s
     else:
-        print("You have not load them yet. Try: band.Band.load_settings() ")
+        res += "\nYou have not load them yet. Try: band.Band.load_settings() "
 
     alias = band_get_aliases()
-    print("\nAvailable aliases of bands: ")
+    res += "\n\n Available aliases of bands: \n"
     if alias is not None and len(alias) > 0:
         col = 0
         s = ''
@@ -846,10 +896,15 @@ def print_bands(ncol=5):
             col += 1
             s += " %3s => %-7s " % (k, v)
             if col == ncol:
-                print(s)
+                res += s
                 col = 0
                 s = ''
         if s != '':
-            print(s)
+            res += "\n"+s
     else:
-        print("     No aliases or you have not load them yet. Try: band.Band.load_settings() ")
+        res += "\n     No aliases or you have not load them yet. Try: band.Band.load_settings() "
+
+    if is_print:
+        print(res)
+    
+    return res

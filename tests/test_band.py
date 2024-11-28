@@ -18,7 +18,7 @@ class BandTests(unittest.TestCase):
             self.assertTrue(bname in band.colors(), "You have not color for band: %s" % bname)
 
     def test_band_by_name(self):
-        b = band.band_by_name("BesU")
+        b = band.band_by_name("Ubes")
         self.assertTrue(b.is_load, "The band should be loaded and with data")
 
     def test_aliases_load(self):
@@ -27,7 +27,7 @@ class BandTests(unittest.TestCase):
         self.assertTrue(len(aliases), "Should be more aliases.")
 
     def test_aliases(self):
-        bo = band.band_by_name("BesU")
+        bo = band.band_by_name("Ubes")
         ba = band.band_by_name("U")
         self.assertTrue(ba.is_load, "The band should be loaded and with data")
         self.assertCountEqual(bo.wl, ba.wl, msg="The alias wl should be the same as original")

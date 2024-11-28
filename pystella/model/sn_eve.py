@@ -15,7 +15,6 @@ except:
 from pystella.util.phys_var import phys
 
 logger = logging.getLogger(__name__)
-# logger = logging.getLogger(__name__)
 # logger.setLevel(logging.INFO)
 
 __author__ = 'bakl'
@@ -367,10 +366,10 @@ class PreSN(object):
             #     f.write(' %4d %12.4e %12.4e %12.4e %12.4e %12.4e %12.4e %12.4e %12.4e \n' % _)
             # 'evehyd.trf: idum,dum,Radius(j),RHOeve(j),TMPR(j),VELOC(j), dum,dum; '
             a = '#No. M  R  Rho T   V   M  dum '.split()
-            f.write('  ' + '             '.join(a) + '\n')
+            f.write('  ' + (' '*18).join(a) + '\n')
             # for _ in zip(zones, self.m / phys.M_sun, self.r, np.log10(self.rho), np.log10(self.T), self.V, self.m / phys.M_sun, dum):
             for _ in zip(zones, self.m / phys.M_sun, self.r, self.rho, self.T, self.V, self.m / phys.M_sun, dum):
-                f.write(' %4d %15.8e %15.8e %15.7e %15.7e %15.7e  %15.7e  %8.1e\n' % _)
+                f.write(' %4d %24.16e %24.16e %24.16e %15.7e %15.7e  %24.16e  %8.1e\n' % _)
                 # f.write(' %4d %15.5e %15.5e %15.5e %15.5e %15.5e  %15.5e  %8.1e\n' % _)
         return os.path.isfile(fname)
 
@@ -444,7 +443,7 @@ class PreSN(object):
             x = self.V / 1e5  # to km/s
             ax.set_xlabel(r'V [$km\, s^{-1}$]')
         elif x.lower() == 'z':  # zones
-            x = np.arange(0, stop=self.nzon, dtype=np.int) + 1
+            x = np.arange(0, stop=self.nzon, dtype=int) + 1
             ax.set_xlabel(r'Zone')
         else:
             x = self.r
@@ -572,7 +571,7 @@ class PreSN(object):
             xi = self.V * xnorm
             ax.set_xlabel(r'V [$km\, s^{-1}$]')
         elif x == 'z':
-            xi = np.arange(0, self.nzon, dtype=np.int) + 1
+            xi = np.arange(0, self.nzon, dtype=int) + 1
             ax.set_xlabel(r'Zone')
         else:
             xi = self.r * xnorm
@@ -1106,7 +1105,7 @@ def load_rho(fname, path: str = None):
             col_names.append(e)
             usecols.append(i)
 
-    logger.info(' col_names=  %s' % ' '.join(col_names))
+    logger.info(' col_names=  {}'.format(' '.join(col_names)))
     # logger.info(' usecols=  {}'.format(usecols))
     dt = np.dtype({'names': col_names, 'formats': np.repeat('f8', len(col_names))})
 
@@ -1117,9 +1116,14 @@ def load_rho(fname, path: str = None):
     name = os.path.basename(os.path.splitext(fname)[0])
     col_map = {PreSN.sR: 'lgR', PreSN.sM: 'mass', PreSN.sT: 'lgTp', PreSN.sRho: 'lgRho', PreSN.sV: 'u'}
     presn = PreSN(name, nz)
-    presn.set_hyd('V', np.zeros(nz))
+    presn.set_hyd(PreSN.sV, np.zeros(nz))
     for k, v in col_map.items():
-        presn.set_hyd(k, data[v], is_exp=v.startswith('lg'))
+        try:
+            presn.set_hyd(k, data[v], is_exp=v.startswith('lg'))
+        except ValueError as ex:
+                logger.warn('No col: {} (set {} = 0.) in data from: {}. '.format(v, k, fname))
+                presn.set_hyd(k, np.zeros(nz))
+
 
     # CGS
     presn.set_hyd('M', presn.m * phys.M_sun)

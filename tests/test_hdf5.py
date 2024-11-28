@@ -54,7 +54,7 @@ class TestHDF5(unittest.TestCase):
         snh5 = ps.H5Stella(join(path, name))  # ('lvl14E5R50M26Ni2m2b1m3Z01h5.h5')
         hyd = snh5.Hyd
 
-        times = hyd.T
+        times = hyd.Time
         x = hyd.R
         y = hyd.Rho
 
@@ -98,7 +98,7 @@ class TestHDF5(unittest.TestCase):
 
         tau = snh5.Tau
 
-        times = hyd.T
+        times = hyd.Time
         it = 15
         zones = np.arange(0, tau.Nzon, 1)
         print('Plot the flux t[{}]= {} '.format(it, times[it]))
@@ -152,7 +152,7 @@ class TestHDF5(unittest.TestCase):
 
         fh = snh5.Tau
 
-        times = hyd.T
+        times = hyd.Time
         it = 20
         r = np.log10(hyd.R)
         zones = np.arange(0, fh.Nzon, 1)

@@ -193,12 +193,12 @@ class Spectrum(object):
 
     def compute_flux_nu_bol(self):
         from scipy import integrate
-        Hnu = integrate.simps(self._flux * self._freq, self._freq)
+        Hnu = integrate.simpson(self._flux * self._freq, self._freq)
         return abs(Hnu)  # due to order freq
 
     def compute_flux_bol(self):
         from scipy import integrate
-        H = integrate.simps(self.Flux, self.Freq)
+        H = integrate.simpson(self.Flux, self.Freq)
         return abs(H)  # due to order freq
 
     def cut_flux(self, bottom):
@@ -260,8 +260,7 @@ class Spectrum(object):
         star.set_redshift(z)
         star.set_magnification(magnification)
         # mag = star.flux_to_mag(b)
-        if b.Name in [band.Band.NameBol, band.Band.NameBolQuasi,
-                      band.Band.NameUBVRI, band.Band.NameBVRI]:
+        if isinstance(b, band.BandUni) or b.Name in [band.Band.NameUBVRI, band.Band.NameBVRI]:
             mag = star.magBol(b)
         else:
             mag = star.magAB(b)

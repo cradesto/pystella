@@ -301,6 +301,8 @@ def main(name=None, model_ext='.ph'):
                     print('No such band: ' + bname)
                     sys.exit(2)
                 bnames.append(bname)
+            if len(bshift) == 0:
+                bshift = None
             continue
         if opt == '-c':
             c = ps.cb.lc_wrapper(str(arg))
@@ -391,6 +393,9 @@ def main(name=None, model_ext='.ph'):
                 nm = os.path.splitext(os.path.basename(str(arg)))[0]
                 if os.path.exists(os.path.join(path, nm + model_ext)):
                     names.append(nm)
+                elif is_curve_tt:
+                    if os.path.exists(os.path.join(path, nm + '.tt')):
+                        names.append(nm)
                 else:
                     files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))
                              and fnmatch.fnmatch(f, arg)]

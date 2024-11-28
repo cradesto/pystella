@@ -247,7 +247,7 @@ class flx_reader(object):
 
         if nu is None:
             logger.warning("No frequencies supplied - will plot vs. bin index")
-            x = np.arange(self.records[0].Mfreq).astype(np.float) + 1
+            x = np.arange(self.records[0].Mfreq).astype(float) + 1
             xlabel = r"frequency bin index"
         else:
             x = nu

@@ -4,6 +4,7 @@ import logging
 # import numpy as np
 
 import pystella.model.sn_eve as sneve
+from pystella.model.supr_eve import PreSupremna
 import pystella.rf.light_curve_plot as lcp
 from pystella import phys
 
@@ -47,16 +48,16 @@ def get_parser():
     import argparse
     from argparse import RawTextHelpFormatter
 
-    parser = argparse.ArgumentParser(description='Process PreSN configuration.', formatter_class=RawTextHelpFormatter)
+    parser = argparse.ArgumentParser(description='Process PreSupremna configuration.', formatter_class=RawTextHelpFormatter)
 
-    parser.add_argument('-b', '--box',
-                        required=False,
-                        type=str,
-                        default=None,
-                        dest='box',
-                        help='Make boxcar average, for example: '
-                             'Delta_mass:Number:[M_uplim]:[True, if info], -b 0.5:4 . '
-                             'Use key -e _ELEM [-e _Ni56]to exclude elements')
+    # parser.add_argument('-b', '--box',
+    #                     required=False,
+    #                     type=str,
+    #                     default=None,
+    #                     dest='box',
+    #                     help='Make boxcar average, for example: '
+    #                          'Delta_mass:Number:[M_uplim]:[True, if info], -b 0.5:4 . '
+    #                          'Use key -e _ELEM [-e _Ni56]to exclude elements')
 
     parser.add_argument('-r', '--rho', nargs="?",
                         required=False,
@@ -65,15 +66,9 @@ def get_parser():
                         metavar="<r OR m>",
                         help="Plot Rho-figure")
 
-    parser.add_argument('--is_dum', nargs="?",
-                        required=False,
-                        const=True,
-                        dest="is_dum",
-                        help="Set is_dum = TRUE to parse abn-file with dum columns")
-
     parser.add_argument('--no-norm', nargs="?",
                         required=False,
-                        const=True,
+                        const=False,
                         dest="is_no_norm",
                         help="Use --no-norm skip element normalization after reshape.")
 
@@ -113,40 +108,7 @@ def get_parser():
                         default='H:He:C:O:Si:Fe:Ni:Ni56',
                         dest="elements",
                         help="Elements directory. \n   Available: {0}".format(':'.join(sneve.eve_elements)))
-    parser.add_argument('--reshape',
-                        required=False,
-                        type=str,
-                        default=None,
-                        dest="reshape",
-                        help="Reshape parameters of envelope from nstart to nend to nz-zones."
-                             "\n Format: --reshape NZON:AXIS:XMODE:START:END:KIND. You may use * to set default value."
-                             "\n NZON: value of zones between START and END. "
-                             "If < 0 Nzon is the same as Nzon of the initial model "
-                             "\n AXIS: [M* OR R OR V] - reshape along mass or radius or velocity coordinate."
-                             "\n XMODE: [lin OR rlog OR resize*] - linear OR reversed log10 OR add/remove points. "
-                             "\n START: zone number to start reshaping. Default: 0 (first zone)"
-                             "\n END: zone number to end reshaping. Default: None,  (equal last zone)"
-                             "\n KIND: [np OR interp1d(..kind)], kind is  ('np=np.interp', 'linear', 'nearest', "
-                             "'zero', 'slinear', 'quadratic, 'cubic', "
-                             "'spline' = UnivariateSpline, 'gauss' = gaussian_filter1d). Default: np "
-                        )
-    parser.add_argument('--smooth',
-                        required=False,
-                        type=str,
-                        default=None,
-                        dest="smooth",
-                        help="Smoothing density of envelope. "
-                             "The smoothing procedure is used Savitzky–Golay filter with parameters. "
-                             "See https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.savgol_filter.html "
-                             "\n Format: --smooth WINDOW_LENGTH:POLYORDER:MODE:IS_INFO."
-                             "\n WINDOW_LENGTH: The length of the filter window."
-                             "\n POLYORDER: The order of the polynomial used to fit the samples."
-                             "POLYORDER must be less than WINDOW_LENGTH."
-                             "\n MODE: Must be ‘mirror’, ‘constant’, ‘nearest’, ‘wrap’ or ‘interp’. Default: interp "
-                             "\n IS_INFO: is any to print additional info. Default: False "
-                             "\n Example: --smooth 5:2 OR  --smooth 5:2:nearest:1"
-                        )
-
+    
     parser.add_argument('--log',
                         required=False,
                         type=str,
@@ -225,6 +187,7 @@ def main():
     logger.setLevel(level)
     logging.basicConfig(level=level)
     logging.getLogger('pystella.model.sn_eve').setLevel(level)
+    logging.getLogger('pystella.model.supr_eve').setLevel(level)
 
 
     # if args.elements:
@@ -261,7 +224,7 @@ def main():
         parser.print_help()
         sys.exit(2)
 
-    if len(names) > 1 or args.reshape is not None or args.box is not None:  # special case
+    if len(names) > 1:  # special case
         markers_cycler = cycle(markers_style)
         lines_cycler = cycle(lines_style)
     else:
@@ -277,88 +240,10 @@ def main():
         if len(path) == 0:
             path = pathDef
         # print("Run eve-model %s in %s" % (name, path))
-
-        if fullname.endswith('hyd') or fullname.endswith('abn'):
-            name = fullname.replace('.hyd', '')  # remove extension
-            name = name.replace('.abn', '')  # remove extension
-            try:
-                # With header
-                eve = sneve.load_hyd_abn(name=name, path=path, is_dm=False, is_dum=args.is_dum)
-            except ValueError:
-                # No header
-                eve = sneve.load_hyd_abn(name=name, path=path, is_dm=False, is_dum=args.is_dum, skiprows=0)
-        else:
-            name = fullname.replace('.rho', '')  # remove extension
-            rho_file = os.path.join(path, name + '.rho')
-            eve = sneve.load_rho(rho_file)
-
-        # Reshape
-        if args.reshape is not None:
-            a = args.reshape.split(':')
-            nz, axis, xmode = get(a, 0, eve.nzon), get(a, 1, 'M'), get(a, 2, 'resize')  # rlog
-            start, end = get(a, 3, 0), get(a, 4, None)
-            kind = get(a, 5, 'np')
-            start = int(start)
-            if end is None or end.upper() in 'NONE':
-                end = None
-            if end is not None:
-                end = int(end)
-            nz = int(nz)
-            print(f'Resize: before Nzon={eve.nzon}')
-            print(f'Resize parameters: nznew= {nz}  axis={axis}  xmode={xmode}  '
-                  f'start= {start}  end= {end} kind= {kind}')
-            print("The element masses: before Resize")
-            print_masses(eve)
-            eve_reshape = eve.reshape(nz=nz, axis=axis, xmode=xmode, start=start, end=end, kind=kind)
-            # eve = eve_resize
-            print(f'Resize: after Nzon={eve_reshape.nzon}')
-            print("The element masses: after Resize")
-            print_masses(eve_reshape)
-            if  not args.is_no_norm:
-                eve_reshape.chem_norm()
-                # eve = eve_resize
-                print(f'After chem_norm: Nzon={eve_reshape.nzon}')
-                print("The element masses: after chem_norm")
-                print_masses(eve_reshape)
-            eve, eve_prev = eve_reshape, eve
-
-        # Boxcar
-        if args.box is not None:
-            is_info = False
-            m_up = None
-            s = args.box.split(':')
-            dm, n = float(s[0]), int(s[1])
-            print(f'Running boxcar average: dm= {dm} Msun  Repeats= {n}')
-            if len(s) > 2:
-                m_up = float(s[2])
-                print(f'The mass has up limit: m_up= {m_up}')
-            if len(s) > 3:
-                is_info = bool(s[3])
-            print("The element masses: Before boxcar")
-            print_masses(eve)
-            eve_box = eve.boxcar(box_dm=dm, n=n, el_included=elements, m_uplim=m_up, is_info=is_info)
-            print("The element masses: After boxcar")
-            print_masses(eve_box)
-            eve, eve_prev = eve_box, eve
-
-        # Smooth
-        if args.smooth is not None:
-            is_info = False
-            s = args.smooth.split(':')
-            window_length, polyorder = int(s[0]), int(s[1])
-            mode = 'interp'
-            if len(s) == 3:
-                mode = s[2]
-            if len(s) == 4:
-                is_info = True
-            print(f'Running Savitzky-Golay filter to Rho: '
-                  f'window_length= {window_length} Msun  polyorder= {polyorder} mode= {mode}')
-            print("The element masses: Before smoothing")
-            print_masses(eve, is_el=is_info)
-            eve_smooth = eve.smooth(window_length=window_length, polyorder=polyorder, mode=mode)
-            print("The element masses: After smoothing")
-            print_masses(eve_smooth, is_el=is_info)
-            eve, eve_prev = eve_smooth, eve
+    
+        name = fullname.replace('.rho', '')  # remove extension
+        rho_file = os.path.join(path, name + '.rho')
+        eve = PreSupremna.load_rho(rho_file)
 
         if args.write_to:
             fname = os.path.expanduser(args.write_to)

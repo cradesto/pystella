@@ -21,8 +21,8 @@ class TestStellaShockWaveDetail(unittest.TestCase):
     def test_reading(self):
         nzon = 100
         ntimes = 20
-        self.assertEquals(self.swd.Nzon, nzon, "Error in zon setting: swd.Nzon=%d, but should be %d"
-                          % (self.swd.Nzon, nzon))
+        self.assertEquals(self.swd.NzonMax, nzon, "Error in zon setting: swd.Nzon=%d, but should be %d"
+                          % (self.swd.NzonMax, nzon))
         self.assertEquals(self.swd.Ntimes, ntimes, "Error in time reading: swd.Ntimes=%d, but should be %d"
                           % (self.swd.Ntimes, ntimes))
 
@@ -31,8 +31,8 @@ class TestStellaShockWaveDetail(unittest.TestCase):
         idx, t = self.swd.time_nearest(time)
         b = self.swd.block_nearest(time)
 
-        self.assertEquals(self.swd.Nzon, len(b.R), "Error in block size: len(block)[%d] != Nzon [%d]"
-                          % (len(b.R), self.swd.Nzon))
+        self.assertEquals(self.swd.NzonMax, len(b.R), "Error in block size: len(block)[%d] != Nzon [%d]"
+                          % (len(b.R), self.swd.NzonMax))
 
         # self.assertTrue(np.all([b.Tau[i] < b.Tau[i+1] for i in range(0, b.Nzon-1)]),
         #                 "The Tau should be a monotonically increasing function")

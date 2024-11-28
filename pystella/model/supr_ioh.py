@@ -14,38 +14,38 @@ LEGEND_MASK_Rho = 0x01
 LEGEND_MASK_Vars = 0x10
 
 
-class StellaShockWaveDetail:
+class SupremnaIonHistory:
     """
-    Reader for swd-files
+    Reader for ioh-files
+    do i=1,idIon;
+         write(19,'(i7,i4,i6,f15.10,207f7.3,1p,e12.3,i7)') i,kmxSav(i),NstepxSav(i),
+            TimexSav(i)*Utime/SecsINYR,(XionOut(kion,i),kion=1,mmat), log10(XionOut(mmat+1,i)),nextKmIon(i);
+      enddo;  
     """
+    c_ext = "ioh"
 
     def __init__(self, name, path='./'):
-        """Creates a StellaShockWaveDetail instance.  Required parameters:  name."""
+        """Creates a SupremnaIonHistory instance.  Required parameters:  name."""
         fname, ext = os.path.splitext(name)
-        if ext == "swd":
+        if ext == SupremnaIonHistory.c_ext:
             name = fname
         self._name = name
         self._path = path  # path to model files
         self._times = None
-        self._nzon_min = None
-        self._nzon_max = None
+        self._nzon = None
         self._data = None
-        self._nzon = []
+        self.load()
 
     def __str__(self):
-        return "%s, path: %s" % (self._name, self._path)
+        return "{}, path: {}. Nzon: {}, Ntimes: {}".format(self.Name, self._path, self.Nzon, self.Ntimes)
 
     def __repr__(self):
-        return "%s, path: %s" % (self._name, self._path)
-        # return "%s" % self.name
+        return "{}, path: {}. Nzon: {}, Ntimes: {}".format(self.Name, self._path, self.Nzon, self.Ntimes)
 
     @property
-    def NzonMin(self):
-        return self._nzon_min
-    
-    @property
-    def NzonMax(self):
-        return self._nzon_max
+    def Nzon(self):
+        return self._nzon
+
     @property
     def Times(self):
         return self._times
@@ -67,33 +67,38 @@ class StellaShockWaveDetail:
         Load datd from swd-file
         :return:
         """
-        fname = os.path.expanduser(os.path.join(self._path, self._name + ".swd"))
-        # tout, Km,log10(AMPR),log10(UR*Ry(Km)),Uy(Km)*1.D+6/(UTIME*CRAP),
-        # log10(max(UTP*Ty(Km),1.d0)),log10(max(UTP*TpRAD,1.d0)),
-        # PLLOG,PLOG,QVLOG,log10(max(eng,1.d-50)),Flum*1.d-40,WRKX(Km);
-        colstr = "tday km lgM lgR14 V8 lgT lgTrad lgDm6 lgP7  lgQv lgEng Flum40 cap"
+        fname = os.path.expanduser(os.path.join(self._path, self._name +'.'+SupremnaIonHistory.c_ext))
+        # do i=1,idIon;
+        #      write(19,'(i7,i4,i6,f15.10,207f7.3,1p,e12.3,i7)') i,kmxSav(i),NstepxSav(i),
+        #         TimexSav(i)*Utime/SecsINYR,(XionOut(kion,i),kion=1,mmat), log10(XionOut(mmat+1,i)),nextKmIon(i);
+        #   enddo;  
+
+        d = np.loadtxt(fname)
+        idIon, ncols = d.shape
+        mmat = ncols - 6 
+
+        xion = ['X'+str(i) for i in range(1,mmat+1)]
+
+        colstr = "i km NstepxSav"
+        colstr += " tyear "
+        colstr += ' '.join(xion)
+        colstr += " XionOut nextKmIon"
+        formats = [int] * 3 + [float]  # "i km NstepxSav" + " time "
+        formats += [float] * len(xion) # ' '.join(xion) 
+        formats += [float, int]  # " XionOut nextKmIon"
         cols = [s.strip() for s in colstr.split()]
-        dt = np.dtype({'names': cols, 'formats': [float] * len(cols)})
+        dt = np.dtype({'names': cols, 'formats': formats})
         data = np.loadtxt(fname, dtype=dt)
 
-        times = np.unique(data['tday'])
-        if data['tday'][0] != 0.:
+        self._nzon = int(np.max(data['km']))
+        times = np.unique(data['tyear'])
+        if data['tyear'][0] != 0.:
             times = np.delete(times, np.where(times == 0.))
         self._times = times
-        self._nzon = np.zeros(len(times), dtype=int)
-        # find nzon for each saved moment
-        for i, t in enumerate(times):
-            b, e = np.where(data['tday'] == t)[0]
-            self._nzon[i] = e - b + 1
-            # print(f"{i=} {t=} {b= }  {e=}  nzon= {self._nzon[i]}")
 
-        self._nzon_min = np.min(self._nzon)
-        self._nzon_max = np.max(self._nzon)
-        # self.ntimes = len(self.times)   # len(data['tday']) // self.nzon
-        self._nzon_min = np.min(self._nzon)
-        self._nzon_max = np.max(self._nzon)
+        # self.ntimes = len(self.times)   # len(data['tyear']) // self.nzon
         self._data = data
-        logger.debug(f"Read data from  {fname}. NzonMin= {self.NzonMin} NzonMax= {self.NzonMax}")
+        logger.debug("Read data from  %s " % fname)
         return self
 
     def time_nearest(self, time):
@@ -101,34 +106,24 @@ class StellaShockWaveDetail:
         return idx, self.Times[idx]
 
     def block_nearest(self, time):
-        # idx = (np.abs(self._data['tday'] - time)).argmin()
-        idx, t = self.time_nearest(time)
-        if idx < 0:
-            print('Error: no the nearest time for t= {}'.format(time))
-            return None
-        return self[idx]
-        # b = self.lines2idx(idx)
-        # e = b + self._nzon[idx]
-        # block = self._data[:][b:e]
-        # return BlockSwd(self._data['tday'][idx], block,(b,e))
-
-    def lines2idx(self, idx):
-        return int(np.sum(self._nzon[:idx]))
+        idx = (np.abs(self._data['tyear'] - time)).argmin()
+        b = idx
+        e = b + self._nzon
+        block = self._data[:][b:e]
+        return BlockSwd(self._data['tyear'][idx], block)
 
     def __getitem__(self, idx):
-        b = self.lines2idx(idx)
-        e = b + self._nzon[idx]
-        # print(f"{idx=} {b= }  {e=}  nzon= {self._nzon[idx]}")
+        b = idx * self._nzon
+        e = b + self._nzon
         block = self._data[:][b:e]
-
-        return BlockSwd(self.Times[idx], block, (b,e))
+        return BlockIOH(self._data['tyear'][idx], block)
 
     def evolution(self, var, nz):
         """Return the time evolution VAR in zone NZ"""
-        if nz < 1 or nz > self.NzonMin:
-            raise ValueError('NZ should be in range: 0 - {}'.format(self.NzonMin))
+        if nz < 1 or nz > self.Nzon:
+            raise ValueError('NZ should be in range: 0 - {}'.format(self.Nzon))
 
-        if var not in vars(BlockSwd):
+        if var not in vars(BlockIOH):
             raise ValueError('var should be property of BlockSwd, like Zon, M, R, Vel, T, Trad, Rho, Lum, Cappa, M')
 
         # x = []
@@ -137,75 +132,16 @@ class StellaShockWaveDetail:
             b = self.block_nearest(time)
             v = getattr(b, var)[nz]
             yield time, v
-        # return False
-        #     x.append(time)
-        #     y.append(v)
-        # return x, y
 
-    def taus(self):
-        """Compute tau for each moment of time
-        Return: 2d-array[i,k], where i - time index, k - zone index.
-        """
-        taus = np.zeros((self.Ntimes, self.NzonMax))
-        for i, time in enumerate(self.Times):
-            s = self[i]
-            # tau = s.Tau
-            taus[i, :] = s.Tau[:]
-            # for k in range(self.Nzon-1, 1, -1):
-            #     tau += s.Cappa[k] * s.Rho[k] * (s.R[k] - s.R[k-1])
-            #     taus[i, k] = tau
-        return taus
-
-    def params_ph(self, cols=('R', 'M', 'T', 'V', 'Rho'), tau_ph=2. / 3.):
-        is_str = isinstance(cols, str)
-        if is_str:
-            cols = [cols]
-        res = {k: np.zeros(self.Ntimes) for k in ['time', 'zone'] + list(cols)}
-        taus = self.taus()
-        for i, time in enumerate(self.Times):
-            s = self[i]
-            kph = 1  # todo check the default value
-            for k in range(self.NzonMax - 1, 1, -1):
-                if taus[i][k] >= tau_ph:
-                    kph = k
-                    break
-            res['time'][i] = time
-            res['zone'][i] = kph
-            for v in cols:
-                res[v][i] = getattr(s, v)[kph]
-            # res['R'][i] = s.R[kph]
-            # res['M'][i] = s.M[kph]
-            # res['T'][i] = s.T[kph]
-            # res['V'][i] = s.V[kph] / 1e8  # to 1000 km/s
-        return res
-
-    def vel_ph(self, tau_ph=2. / 3., z=0.):
-        v_dat = self.params_ph(tau_ph=tau_ph, cols=['V'])
-        t = v_dat['time'] * (1. + z)  # redshifted time
-        v = v_dat['V']
-        z = v_dat['zone']
-        return t, v, z
-
-
-class BlockSwd:
+class BlockIOH:
     """
         Block swd-data for given time
-        line: "tday km lgM lgR14 V8 lgT lgTrad lgDm6 lgP7  lgQv lgEng Flum40 cap"
+        line: "tyear km lgM lgRpc V8 lgT lgTrad lgDm6 lgP7  lgQv lgEng Flum40 cap"
     """
 
-    def __init__(self, time, block, pos):
+    def __init__(self, time, block):
         self._time = time
         self._block = block
-        self._position = pos
-
-    @property
-    def Pos(self):
-        """
-        The function returns the block position in swd-file: [b,e],
-        where b -- the number of the first line and
-        e -- the number of the last line 
-        """
-        return self._position
 
     @property
     def Time(self):
@@ -221,7 +157,7 @@ class BlockSwd:
 
     @property
     def R(self):
-        return 10. ** self._block['lgR14']  # [cm]
+        return 10. ** self._block['lgRpc']  # [cm]
 
     def Rsun(self):
         return self.R / phys.R_sun  # [Rsun]
@@ -235,25 +171,37 @@ class BlockSwd:
         return self._block['V8']  # [1000 km/s]
 
     @property
-    def T(self):
-        return 10. ** self._block['lgT']  # [K]
+    def Te(self):
+        return 10. ** self._block['lgTe']  # [K]
 
     @property
-    def Trad(self):
-        return 10. ** self._block['lgTrad']  # [K]
+    def Ti(self):
+        return 10. ** self._block['lgTi']  # [K]
 
     @property
     def Rho(self):
-        return 10. ** (self._block['lgDm6'] - 6.)  # [g*cm-3]
+        return 10. ** (self._block['lgPl'] - 6.)  # [g*cm-3]
 
     @property
     def Lum(self):
         return self._block['Flum40'] * 1e40  # [erg/s]  ??
 
     @property
-    def Cappa(self):
-        return self._block['cap']  # [cm^2/g]   ??
-
+    def lgPl(self):
+        return self._block['lgPl']  
+    
+    @property
+    def lgPe(self):
+        return self._block['lgPe']  
+    
+    @property
+    def lgPi(self):
+        return self._block['lgPi']  
+    
+    @property
+    def lgEng(self):
+        return self._block['lgEng']  
+    
     @property
     def Mtot(self):
         return 10 ** self._block['lgM'][0]  # [Msun]   ??
@@ -261,14 +209,6 @@ class BlockSwd:
     @property
     def M(self):
         return self.Mtot - 10 ** self._block['lgM']  # [Msun]   ??
-
-    @property
-    def Tau(self):
-        tau = np.zeros(self.Nzon)
-        for i in range(self.Nzon - 2, 0, -1):
-            tau[i] = tau[i + 1] + self.Cappa[i] * self.Rho[i] * (self.R[i + 1] - self.R[i])
-        tau[self.Nzon - 1] = tau[self.Nzon - 2] / 2.
-        return tau
 
 
 # ==================================================================
@@ -284,7 +224,7 @@ def plot_swd(axs, b, **kwargs):
     name = kwargs.get('name', '')
     xlim = kwargs.get('xlim', None)
     ylim_rho = kwargs.get('ylim_rho', None)
-    ylim_par = kwargs.get('ylim_par', (0., 9.9))
+    ylim_par = kwargs.get('ylim_par', (0., 15.9))
     legmask = kwargs.get('legmask', 0x11)  # mask 0x11 - both, 0x01-rho, 0x10 - pars
     is_frameon = kwargs.get('is_frameon', False)
     islim = kwargs.get('islim', True)
@@ -309,8 +249,6 @@ def plot_swd(axs, b, **kwargs):
         x, xlabel = b.R / axeX, r'Ejecta Radius, [$\mathtt{R}_\odot$]'
     elif axeX == 'lgr':
         x, xlabel = b.R, r'Ejecta Radius, [cm]'
-    elif axeX == 'z':
-        x, xlabel = b.Zon, r'Zone'
     elif axeX == 'm':
         x, xlabel = b.M, r'Ejecta Mass [$\mathtt{M}_\odot$]'
     elif isfloat(axeX):
@@ -327,7 +265,7 @@ def plot_swd(axs, b, **kwargs):
         axrho.plot(x, y, label=rf'$\rho$ {name}', color='black', ls=ls, linewidth=lw)
 
     if is_day:
-        axrho.text(.02, text_posy, r'$%5.2f^d$' % b.Time, horizontalalignment='left',
+        axrho.text(.02, text_posy, r'$%5.2f^y$' % b.Time, horizontalalignment='left',
                    transform=axrho.transAxes)
 
     if islim:
@@ -349,7 +287,7 @@ def plot_swd(axs, b, **kwargs):
         axpar = axrho.twinx()
         axpar.set_ylim(ylim_par)
         if is_yrlabel:
-            axpar.set_ylabel(r'T, Vel, Lum, $\tau$')
+            axpar.set_ylabel(r'$T_e, T_i, Vel, Lum$')
         else:
             axpar.set_yticklabels([])
 
@@ -358,16 +296,16 @@ def plot_swd(axs, b, **kwargs):
     else:
         axrho.set_yticklabels([])
 
-    # y2 = b.Tau
-    y2 = np.ma.masked_where(b.Tau <= 0., b.Tau)
-    axpar.plot(x, y2, color='red', ls=ls, label=r'$\tau$')
-
     if tnorm is None:
-        y2 = np.log10(b.T)
-        axpar.plot(x, y2, color='green', ls=ls, label=r'$\log(T)$')
+        y2 = np.log10(b.Te)
+        axpar.plot(x, y2, color='green', ls=ls, label=r'$\log(Te)$')
+        y2 = np.log10(b.Ti)
+        axpar.plot(x, y2, color='red', ls=ls, label=r'$\log(Ti)$')
     else:
-        y2 = b.T / tnorm
-        axpar.plot(x, y2, color='green', ls=ls, label='T{0:d}'.format(int(np.log10(tnorm))))
+        y2 = b.Te / tnorm
+        axpar.plot(x, y2, color='green', ls=ls, label='Te{0:d}'.format(int(np.log10(tnorm))))
+        y2 = b.Ti / tnorm
+        axpar.plot(x, y2, color='red', ls=ls, label='Ti{0:d}'.format(int(np.log10(tnorm))))
 
     y2 = np.ma.log10(b.Lum) - np.log10(lumnorm)
     y22 = np.ma.log10(-b.Lum) - np.log10(lumnorm)

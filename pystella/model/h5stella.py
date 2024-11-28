@@ -34,7 +34,7 @@ class H5Stella(object):
 
     @property
     def Name(self):
-        return os.path.basename(self.Fname)[0]
+        return os.path.splitext(os.path.basename(self.Fname))[0]
 
     @property
     def Fname(self):
@@ -81,12 +81,33 @@ class H5Stella(object):
         with h5py.File(self.Fname, "r") as h5f:
             res = H5Hyd('Hyd').fill(h5f)
         return res
+    
+    @property
+    def Abun(self):
+        logging.debug('Abun from {}'.format(self.Fname))
+        with h5py.File(self.Fname, "r") as h5f:
+            res = H5Abun('AbunIso').fill(h5f)
+        return res
 
     @property
     def Yabun(self):
         logging.debug('Yabun from {}'.format(self.Fname))
         with h5py.File(self.Fname, "r") as h5f:
             yabun = np.array(h5f.get('/presn/Yabun'))  
+        return yabun
+    
+    @property
+    def Xisotopes(self):
+        logging.debug('Xisotopes from {}'.format(self.Fname))
+        with h5py.File(self.Fname, "r") as h5f:
+            yabun = np.array(h5f.get('/presn/Xisotopes'))  
+        return yabun    
+    
+    @property
+    def M(self):
+        logging.debug('Mass from {}'.format(self.Fname))
+        with h5py.File(self.Fname, "r") as h5f:
+            yabun = np.array(h5f.get('/presn/M'))  
         return yabun
 
     def ds_write(self, path, ds, attrs=None):
@@ -142,7 +163,7 @@ class H5TimeElement(object):
         return self._s
 
     @property
-    def T(self):
+    def Time(self):
         """
         Time
         :return:
@@ -179,7 +200,7 @@ class H5TimeElement(object):
         return self
 
     def IdxByTime(self, time):
-        for idx, t in enumerate(self.T):
+        for idx, t in enumerate(self.Time):
             if t >= time:
                 return idx
         return -1
@@ -287,6 +308,46 @@ class H5Hyd(H5TimeElement):
                 return self.Val[:, :, k]
         return None
 
+class H5Abun(H5TimeElement):
+    def __init__(self, name):
+        self._name = name
+        super(H5Abun, self).__init__(name, path='/timing/AbunIso')
+
+    @property
+    def Nvars(self):
+        return self.Shape[-1]
+
+    @property
+    def Columns(self):
+        return self.Attrs['columns'].decode()
+
+    def Var(self, ncol):
+        return self.Val[:, :, ncol]
+
+    def el(self, name):
+        """
+        Extract variable as property with name from the "column" attribute.
+        :param name: name of  variable
+        :return: array of variable
+        """
+        if self.Attrs is None:
+            raise ValueError('There are no any Attributes.')
+        s = 'columns'
+        if s not in self.Attrs:
+            raise ValueError('There is no "{}" in  Attrs.'.format(s))
+        columns = self.Attrs['columns'].decode()
+        # return columns
+        #
+        # columns = columns
+        if name not in columns:
+            raise ValueError('There is no key: "{}" in  columns: {}.'.format(name, s))
+
+        cols = columns.split()
+        for k, c in enumerate(cols):
+            if c == name:
+                return self.Val[:, :, k]
+        return None
+
 
 def main():
     import matplotlib.pyplot as plt
@@ -314,7 +375,7 @@ def main():
             plt.subplot(2, 2, i + 1)
             x = hyd.Val[num, :, 0]
             y = hyd.Val[num, :, i]
-            plt.plot(x, y, '-', label='{} t={:.3f}'.format(str(var, 'utf-8'), hyd.T[num]))
+            plt.plot(x, y, '-', label='{} t={:.3f}'.format(str(var, 'utf-8'), hyd.Time[num]))
             plt.xscale('log')
             plt.yscale('log')
         plt.legend()

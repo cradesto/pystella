@@ -93,7 +93,7 @@ def plot_all(models_dic, bands, title='', is_time_points=True):
 
 
 def cache_load(fname, colnames, skiprows=1):
-    dtype = np.dtype({'names': colnames, 'formats': [np.float64] * len(colnames)})
+    dtype = np.dtype({'names': colnames, 'formats': [float] * len(colnames)})
     block = np.loadtxt(fname, skiprows=skiprows, dtype=dtype)
     return block
 

@@ -65,7 +65,7 @@ markers = list(markers.keys())
 #         s += '-' + str(abs(shift))
 #     return s
 def lbl(b, band_shift, length=0):
-    shift = band_shift[b]
+    shift = band_shift(b)
     if shift == int(shift):
         shift = int(shift)
     # if shift == 0:
@@ -84,8 +84,8 @@ def lbl(b, band_shift, length=0):
     return s
 
 
-def lbl_length(bshifts):
-    return max((len(lbl(b, bshifts)) for b in bshifts.keys()))
+def lbl_length(bshifts, bnames):
+    return max((len(lbl(b, bshifts)) for b in bnames))
 
 
 def plot_lum_models(ax, models_dic, bands, **kwargs):
@@ -191,13 +191,17 @@ def plot_ubv_models(ax, models_dic, bands, **kwargs):
     is_compute_y_lim = ylim is None
 
     t_points = [0.2, 1, 2, 3, 4, 5, 10, 20, 40, 80, 150]
-    colors = band.colors()
-    band_shift = dict((k, 0) for k, v in colors.items())  # no y-shift
-    if bshift is not None:
-        for k, v in bshift.items():
-            band_shift[k] = v
+    # colors = band.colors()
+    def band_shift(bn):
+        if bshift is not None:
+            return bshift[bn]
+        return 0.
+    #     band_shift = dict((k, 0) for k, v in band.colors().items())  # no y-shift
+    # if bshift is not None:
+    #     for k, v in bshift.items():
+    #         band_shift[k] = v
 
-    lbl_len = lbl_length(band_shift)
+    lbl_len = lbl_length(band_shift, bands)
 
     mi = 0
     x_max = []
@@ -212,8 +216,8 @@ def plot_ubv_models(ax, models_dic, bands, **kwargs):
         for ib, bname in enumerate(bands):
             lc = mdic[bname]
             x = lc.Time
-            y = lc.Mag + band_shift[bname]
-            bcolor = colors[bname]
+            y = lc.Mag + band_shift(bname)
+            bcolor = band.colors(bname)
             dash = dashes[ib]
             if len(models_dic) == 1:
                 if is_dashes:
@@ -772,8 +776,8 @@ def plot_shock_details(swd, times, **kwargs):
             ticks_on(axpar)
             dic_axes['r'].append({'itime': i, 't': t, 'rho': axrho, 'par': axpar})
 
-    if 'rnorm' in kwargs:
-        kwargs.pop('rnorm')
+    if 'axeX' in kwargs:
+        kwargs.pop('axeX')
     axes2 = []
     # Plot mass column
     for i, t in enumerate(times):
@@ -791,7 +795,7 @@ def plot_shock_details(swd, times, **kwargs):
             legmask = sn_swd.LEGEND_MASK_Vars
         b = swd.block_nearest(t)
         axrho, axpar = sn_swd.plot_swd((axrho, axpar), b, name=swd.Name, is_xlabel=(i == len(times) - 1),
-                                       rnorm='m', legmask=legmask, is_yllabel=False, text_posy=0.88,
+                                       axeX='m', legmask=legmask, is_yllabel=False, text_posy=0.88,
                                        **kwargs)
         if not is_ax_old:
             dic_axes['m'].append({'itime': i, 't': t, 'rho': axrho, 'par': axpar})

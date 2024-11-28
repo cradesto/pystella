@@ -18,8 +18,11 @@ from .model import sn_eve as eve
 from .model.stella import Stella
 from .model.SneSpace import SneSpace
 from .model.h5stella import H5Stella, H5Fh
-from .model import PreSN
+from .model import PreSN, AZ
 from .model import Snec, Mesa
+from .model import Supremna, SupremnaShockWaveDetail
+from .model import SupremnaIonHistory
+
 
 from .rf.band import Band, BandUni
 from .rf.spectrum import SeriesSpectrum, Spectrum, SpectrumDilutePlanck, SpectrumPlanck

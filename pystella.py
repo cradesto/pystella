@@ -178,6 +178,13 @@ class MyPrompt(HistConsole):
         MyPrompt.call_cmd(script, args)
 
     @staticmethod
+    def do_h5(args):
+        """Work with Stella models via h5-file. For detailed help type 'h5 -h'.
+        """
+        script = os.path.join(ROOT_DIRECTORY, 'h5.py')
+        MyPrompt.call_cmd(script, args)
+
+    @staticmethod
     def do_snec(args):
         """Convert SNEC models to  Stella models. For detailed help type 'snec -h'.
         """
@@ -272,7 +279,7 @@ class MyPrompt(HistConsole):
 
     @staticmethod
     def do_eve(args):
-        """Plot Stella Light Curves. For detailed help type 'eve -h'.
+        """Plot Stella Chemical structure. For detailed help type 'reve -h'.
         """
         if len(args) == 0:
             name = 'No data. Please provide a rho-file.'
@@ -281,6 +288,19 @@ class MyPrompt(HistConsole):
         print("eve %s" % name)
         script = os.path.join(ROOT_DIRECTORY, 'eve.py')
         MyPrompt.call_cmd(script, args)
+
+    @staticmethod
+    def do_reve(args):
+        """Plot Supremna Light Curves. For detailed help type 'reve -h'.
+        """
+        if len(args) == 0:
+            name = 'No data. Please provide a rho-file.'
+        else:
+            name = args
+        print("reve %s" % name)
+        script = os.path.join(ROOT_DIRECTORY, 'rsn_eve.py')
+        MyPrompt.call_cmd(script, args)
+
 
     @staticmethod
     def do_swd(args):
@@ -293,6 +313,20 @@ class MyPrompt(HistConsole):
         print("swd %s" % name)
         script = os.path.join(ROOT_DIRECTORY, 'swd.py')
         MyPrompt.call_cmd(script, args)
+
+    @staticmethod
+    def do_rswd(args):
+        """Plot  Supremna Shock Wave Details. For detailed help type 'rswd -h'.
+        """
+        script = os.path.join(ROOT_DIRECTORY, 'rsn_swd.py')
+        MyPrompt.call_cmd(script, args)
+
+    @staticmethod
+    def do_reng(args):
+        """Plot  Supremna Energy Details. For detailed help type 'reng -h'.
+        """
+        script = os.path.join(ROOT_DIRECTORY, 'rsn_eng.py')
+        MyPrompt.call_cmd(script, args)        
 
     @staticmethod
     def do_bands(args):

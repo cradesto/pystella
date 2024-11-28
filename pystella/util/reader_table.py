@@ -24,7 +24,7 @@ def read_table_header_float(fname, header=None, skip=0):
                 header = line
                 break
     names = [s for s in header.split()]
-    dt = np.dtype({'names': names, 'formats': [np.float64] * len(names)})
+    dt = np.dtype({'names': names, 'formats': [float] * len(names)})
     block = np.loadtxt(fname, skiprows=skip+1, dtype=dt, comments='#')
     return block
 
@@ -131,7 +131,7 @@ def read_obs_table_header(fname, header=None, skip=0, colt=('time', 'JD', 'MJD')
     usecols = list(od.keys())
     names = list(od.values())
 
-    dt = np.dtype({'names': names, 'formats': [np.float64] * len(names)})
+    dt = np.dtype({'names': names, 'formats': [float] * len(names)})
     block = np.loadtxt(fname, skiprows=max(lskip, skip)+1, dtype=dt, comments=comments, usecols=usecols)
     return block, cols_data
 
@@ -179,7 +179,7 @@ def curves2table(curves):
         # # a[:, :-1] = lc.Mag
         combined = np.vstack((a, vals))
         return combined
-    # a = np.array(curves.TimeCommon, dtype=[('time', np.float64, (len(curves.TimeCommon)))])
+    # a = np.array(curves.TimeCommon, dtype=[('time', float, (len(curves.TimeCommon)))])
     # a = np.empty([0, len(curves.TimeCommon)])
     # a = np.array([0,100])
     # a = np.append(a, [curves.TimeCommon], axis=0)
@@ -191,8 +191,8 @@ def curves2table(curves):
         if lc.IsErr:
             a = add(a, lc.MagErr)
             names.append('err'+lc.Band.Name)
-    # dt = {'names': names, 'formats': [np.float64] * len(names)}
-    dt = list(zip(names, [np.float64] * len(names)))
+    # dt = {'names': names, 'formats': [float] * len(names)}
+    dt = list(zip(names, [float] * len(names)))
     a = a.T
     a.dtype = np.dtype(dt)
     # a.dtype = np.dtype(dt)

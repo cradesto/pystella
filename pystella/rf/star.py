@@ -164,7 +164,7 @@ class Star:
         else:
             flux_spline = np.interp(wl_b, wl_s, flux, 0, 0)  # One-dimensional linear interpolation.
 
-        a = integrate.simps(flux_spline * band.resp_wl * wl_b, wl_b) / (phys.c * phys.cm_to_angs) / phys.h
+        a = integrate.simpson(flux_spline * band.resp_wl * wl_b, wl_b) / (phys.c * phys.cm_to_angs) / phys.h
         return a
 
     def magAB(self, b, kind='spline'):  # kind='spline' log  line
@@ -192,7 +192,7 @@ class Star:
         Bolometric magnitude via Luminosity of Sun
         :return:
         """
-        from scipy.integrate import simps
+        from scipy.integrate import simpson
 
         lum = Band.response_nu(self.Freq, self.Flux, b, is_freq_norm=False)
         M = phys.Mag_sun + 5. * np.log10(self.distance/phys.pc) - 5
@@ -205,9 +205,9 @@ class Star:
         Bolometric magnitude via Luminosity of Sun
         :return:
         """
-        from scipy.integrate import simps
+        from scipy.integrate import simpson
 
-        lum = simps(self.Flux[::-1], self.Freq[::-1])
+        lum = simpson(self.Flux[::-1], self.Freq[::-1])
         # lum = np.trapz(self.Flux[::-1], self.Freq[::-1])
         M = phys.Mag_sun + 5. * np.log10(self.distance/phys.pc) - 5
         bol = M - 2.5 * np.log10(np.abs(lum) / phys.L_sun)

@@ -175,7 +175,7 @@ def curves_read_mix(fname, dtype=None,
     band.Band.load_settings()
 
     if dtype is None:
-        dtype = [('time', np.float), ('filter', 'S8'), ('mag', np.float), ('err', np.float)]
+        dtype = [('time', float), ('filter', 'S8'), ('mag', float), ('err', float)]
 
     lc_data = np.loadtxt(fname, skiprows=skiprows, dtype=dtype, comments=comments)  # jd filter mag mage
     if is_out:
@@ -244,7 +244,7 @@ def curves2nparray(curves):
 
     res = np.column_stack(data)
     # res = np.dstack(data)
-    dtype['formats'] = [np.float64] * len(dtype['names'])
+    dtype['formats'] = [float] * len(dtype['names'])
     res.dtype = dtype
     return res.ravel()
 
@@ -285,7 +285,7 @@ def curves2nparraymix(curves):
 
     # res = np.column_stack(data)
     # res = np.dstack(data)
-    # dtype['formats'] = [np.float64] * len(dtype['names'])
+    # dtype['formats'] = [float] * len(dtype['names'])
     # res.dtype = dtype
     return data
     # return res.ravel()

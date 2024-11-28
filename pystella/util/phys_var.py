@@ -39,22 +39,34 @@ class phys:
     def pc2cm(parsec):
         """Takes in a measurement in parsecs and returns cm"""
         return parsec * phys.pc
+    
+    @staticmethod
+    def cm2pc(d):
+        """Takes in a measurement in cm and returns parsecs"""
+        return d / phys.pc
 
     @staticmethod
     def cosmology_D_by_z(*args, **kwargs): # clone
         return cosmology_D_by_z(*args, **kwargs)
 
     @staticmethod
-    def dist2MD(d):  # clone
-        return dist2MD(d)
+    def dist2MD(d):  
+        """Convert the distance [pc] to the Module Distance"""
+        import math
+        return 5.*math.log10(d) - 5.
+
+    @staticmethod
+    def MD2dist(md):  # 
+        """Takes module distance and return the distance in pc"""
+        return 10.0**((md + 5.) / 5.)
 
 
-def dist2MD(d):
-    """
-    Convert the distance [pc] to the Module Distance
-    """
-    import math
-    return 5*math.log10(d) - 5.
+# def dist2MD(d):
+#     """
+#     Convert the distance [pc] to the Module Distance
+#     """
+#     import math
+#     return 5.*math.log10(d) - 5.
 
 
 def cosmology_D_by_z(z, H0=67.7, Omega_m=0.31, Omega_e=0.69):
