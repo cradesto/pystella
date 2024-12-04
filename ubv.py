@@ -301,6 +301,8 @@ def main(name=None, model_ext='.ph'):
                     print('No such band: ' + bname)
                     sys.exit(2)
                 bnames.append(bname)
+            if len(bshift) == 0:
+                bshift = None
             continue
         if opt == '-c':
             c = ps.cb.lc_wrapper(str(arg))

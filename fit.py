@@ -161,13 +161,21 @@ def get_parser():
                         default=None,
                         dest="tlim",
                         help="The range of fitting in model LC. Default: None (all points). "
-                             "For negative value use as '-t '\-100:200'. Format: {0}".format('2:50'))
+                             "For negative value use as -t -100:200. Format: {0}".format('2:50'))
     parser.add_argument('-z',
                         required=False,
                         type=float,
                         default=0,
                         dest="redshift",
                         help="Redshift for the model .  Default: 0")
+    parser.add_argument('--ylim',
+                        required=False,
+                        type=str,
+                        default=0,
+                        dest="ylim",
+                        help="Y-limits for iach fit-plot.  Default: None (auto). "
+                             r"Use as --ylim '\-15:\-19.9' "
+                        )
     parser.add_argument('--curve-tt',
                         action='store_const',
                         const=True,
@@ -203,7 +211,9 @@ def plot_curves(curves_o, res_models, res_sorted, **kwargs):
     ncol = min(3, int(np.sqrt(num)))  # 2 if num > 1 else 1
     nrow = math.ceil(num / ncol)
     # fig = plt.figure(figsize=(12, nrow * 4))
-    fig = plt.figure(figsize=(min(ncol, 2) * 5, max(nrow, 2) * 5))
+    height_ax = int(len(curves_o.BandNames)*1.5) + 1
+    fig = plt.figure(figsize=(min(ncol, 2) * 5, max(nrow, 2) * height_ax))
+    # fig = plt.figure(figsize=(min(ncol, 2) * 5, max(nrow, 2) * 5))
     plt.matplotlib.rcParams.update({'font.size': font_size})
 
     # tshift0 = ps.first(curves_o).tshift
@@ -220,6 +230,7 @@ def plot_curves(curves_o, res_models, res_sorted, **kwargs):
             xlim = ax.get_xlim()
         else:
             ax.set_xlim(xlim)
+
         lt = {lc.Band.Name: 'o' for lc in curves_o}
         # curves_o.set_tshift(tshift0)
         lcp.curves_plot(curves_o, ax, xlim=xlim, lt=lt, markersize=2, is_legend=False, is_line=False)
@@ -232,6 +243,9 @@ def plot_curves(curves_o, res_models, res_sorted, **kwargs):
         # bbox=dict(facecolor='green', alpha=0.3))
 
         # fix axes
+        if ylim is not None:
+            ax.set_ylim(ylim)
+            
         if ncol == 1:
             ax.yaxis.tick_left()
             ax.yaxis.set_label_position("left")
@@ -949,6 +963,12 @@ def main():
         tlim = list(map(float, args.tlim.replace('\\', '').split(':')))
     logger.info('Time limits for models: {}'.format(':'.join(map(str, tlim))))
 
+    ylim = None
+    if args.ylim:
+        ylim = list(map(float, args.ylim.replace('\\', '').split(':')))
+    logger.info('Y-limits: {}'.format(':'.join(map(str, ylim))))
+    
+
     # The fit engine
     fitter = engines(args.engine)
     fitter.is_info = args.is_not_quiet  # fitter = FitMPFit(is_debug=args.is_not_quiet)
@@ -1092,7 +1112,7 @@ def main():
         # vel_o.tshift = best_tshift
         fig = plot_curves_vel(curves_o, vels_o, res_models, res_sorted, vels_m)
     else:
-        fig = plot_curves(curves_o, res_models, res_sorted, xlim=tlim)
+        fig = plot_curves(curves_o, res_models, res_sorted, xlim=tlim, ylim=ylim)
 
     if args.save_file is not None:
         fsave = args.save_file
