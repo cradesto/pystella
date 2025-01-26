@@ -18,7 +18,7 @@ matplotlib
 
 Cython
 emcee
-sklearn
+scikit-learn
 
 corner
 gptools

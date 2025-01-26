@@ -1,8 +1,11 @@
 import os
 import numpy as np
+from pystella.rf.spectrum import SeriesSpectrum, Spectrum
 
 
-def read(name, path='./', t_diff=1.005, t_beg=float('-inf'), t_end=float('inf'), is_nfrus=True):
+def read(name: str, path: str = './',
+         t_diff: float = 1.005, t_beg: float = float('-inf'), t_end: float = float('inf'),
+         is_nfrus: bool = True) -> SeriesSpectrum:
     """
     Read SED from ph-file.
     :param name: model (file without extension)
@@ -13,7 +16,6 @@ def read(name, path='./', t_diff=1.005, t_beg=float('-inf'), t_end=float('inf'),
     :param is_nfrus: Get nrus from the first data row
     :return: SeriesSpectrum
     """
-    from pystella.rf.spectrum import SeriesSpectrum, Spectrum
 
     # read first line with frequencies
     fname = os.path.join(path, name + '.ph')
