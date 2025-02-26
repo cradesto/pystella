@@ -386,7 +386,7 @@ def main():
                                                       ylim_par=ylim_par,
                                                       dic_axes=dic_axes, ls=next(ls_cycle))
             if args.frho is not None:
-                ps.lcp.plot_swd_chem(dic_axes, args.frho, Supremna.Path)
+                ps.lcp.plot_swd_chem(dic_axes, args.frho, supr.Path)
 
             if args.is_save:
                 fsave = os.path.expanduser("~/rswd_{0}_t{1}.pdf".format(name, str.replace(args.times, ':', '-')))

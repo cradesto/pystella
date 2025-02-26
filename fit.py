@@ -362,7 +362,7 @@ def plot_curves_vel(curves_o, vels_o, res_models, res_sorted, vels_m, **kwargs):
 
 def plot_squared_grid(res_sorted, path='./', **kwargs):
     from matplotlib import pyplot as plt
-    from mpl_toolkits.mplot3d import Axes3D
+    # from mpl_toolkits.mplot3d import Axes3D
 
     font_size = kwargs.get('font_size', 10)
     is_show = kwargs.get('is_show', False)
@@ -762,7 +762,7 @@ def fit_mfl(args, curves_o, bnames, fitter, name, path, t_diff, tlim, is_fit_sig
     return curves_m, fit_result, res
 
 
-def fit_mfl_vel(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, tlim, is_sigma, is_spline=False, Vnorm=1e8, dt0=0):
+def fit_mfl_vel(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, tlim, is_sigma, is_spline=False, vnorm=1e8, dt0=0):
     distance = args.distance  # pc
     z = args.redshift
     # Set distance and redshift
@@ -801,10 +801,10 @@ def fit_mfl_vel(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, tlim
     # compute model velocities
     try:
         tbl = ps.vel.compute_vel_res_tt(name, path)
-        vel_m = ps.vel.VelocityCurve('Vel', tbl['time'], tbl['vel'] / Vnorm)
+        vel_m = ps.vel.VelocityCurve('Vel', tbl['time'], tbl['vel'] / vnorm)
     except ps.vel.VelocityException as ex:
         tbl = ps.vel.compute_vel_swd(name, path)
-        vel_m = ps.vel.VelocityCurve('Vel', tbl['time'], tbl['vel'] / Vnorm)
+        vel_m = ps.vel.VelocityCurve('Vel', tbl['time'], tbl['vel'] / vnorm)
     if vel_m is None:
         raise ValueError('Problem with vel_m via swd.')
     logger.debug('{}'.format(np.array2string(vel_m.T)))
