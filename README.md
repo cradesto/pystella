@@ -1,7 +1,7 @@
 # PySTELLA
 
 IMPORTANT: the package is under heavy development. 
-Keep this in mind if you want to use it on your research.
+Keep this in mind if you want to use it in your research.
 
 ## Command shell
 
