@@ -155,7 +155,7 @@ def get_parser():
                         default=None,
                         dest="save_file",
                         help="To save the result plot to pdf-file.")
-    parser.add_argument('-t', '--time',
+    parser.add_argument('--tlim',
                         required=False,
                         type=str,
                         default=None,
@@ -211,7 +211,7 @@ def plot_curves(curves_o, res_models, res_sorted, **kwargs):
     ncol = min(3, int(np.sqrt(num)))  # 2 if num > 1 else 1
     nrow = math.ceil(num / ncol)
     # fig = plt.figure(figsize=(12, nrow * 4))
-    height_ax = int(len(curves_o.BandNames)*1.5) + 1
+    height_ax = int( (len(curves_o.BandNames) + 1) * 1.2)
     fig = plt.figure(figsize=(min(ncol, 2) * 5, max(nrow, 2) * height_ax))
     # fig = plt.figure(figsize=(min(ncol, 2) * 5, max(nrow, 2) * 5))
     plt.matplotlib.rcParams.update({'font.size': font_size})
@@ -961,12 +961,12 @@ def main():
 
     if args.tlim:
         tlim = list(map(float, args.tlim.replace('\\', '').split(':')))
-    logger.info('Time limits for models: {}'.format(':'.join(map(str, tlim))))
+        logger.info('Time limits for models: {}'.format(':'.join(map(str, tlim))))
 
     ylim = None
     if args.ylim:
         ylim = list(map(float, args.ylim.replace('\\', '').split(':')))
-    logger.info('Y-limits: {}'.format(':'.join(map(str, ylim))))
+        logger.info('Y-limits: {}'.format(':'.join(map(str, ylim))))
     
 
     # The fit engine

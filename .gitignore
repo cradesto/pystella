@@ -63,3 +63,4 @@ target/
 test_mags_UBVRI.txt
 emacs.desktop
 lock
+tests/data/stella/neR600M23Ni005E20.h5

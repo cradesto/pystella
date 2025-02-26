@@ -14,7 +14,7 @@ def distance_modulus(distance):
 
 def distance_from_modulus(md):
     """Given the distance modulus, return the distance to the source, in parsecs."""
-    return 10.0 ** (md + 5) / 5
+    return 10.0 ** ((md + 5.) / 5.)
 
 
 def val_to_hz(val, inp="Hz"):

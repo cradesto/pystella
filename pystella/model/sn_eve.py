@@ -1027,13 +1027,16 @@ class PreSN(object):
             logger.debug(f'Attempt # {l}')
             for k in range(clone.nzon):
                 if m[k] > m_uplim:
-                    logger.warn(f'Exit from zone cycle m[k] > m_uplim: k= {k} m= {m[k]:.4f} m_uplim= {m_uplim:.4f}')
+                    logger.warning(f'Exit from zone cycle m[k] > m_uplim: k= {k} m= {m[k]:.4f} m_uplim= {m_uplim:.4f}')
                     break #  stop because mass is over the limit
                 kk = k + 1
                 dm = dmass[k]
-                while dm < box_dm and kk <= clone.nzon:
+                while dm <= box_dm and kk < clone.nzon:
                     kk += 1
                     dm = np.sum(dmass[k:kk])
+                # No averaging near the outer boundary
+                if( dm < box_dm ):
+                    exit
 
                 logger.debug(f'{k}: kk= {kk} dm= {dm:.4f} m= {m[k]:.4f}')
                 if dm > 1e-6:
