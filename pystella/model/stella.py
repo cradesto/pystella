@@ -15,15 +15,15 @@ class Stella:
         if info:
             self.info()
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "%s, path: %s" % (self.name, self.path)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "%s, path: %s" % (self.name, self.path)
         # return "%s" % self.name
 
     @property
-    def Name(self):
+    def Name(self) -> str:
         """
         Alias for self.name
         :return: name
@@ -31,46 +31,49 @@ class Stella:
         return self.name
 
     @property
-    def Path(self):
+    def Path(self) -> str:
         """
         Alias for self.path
         :return: path
         """
         return self.path
 
-    def is_any_data(self, ext=('tt', 'ph', 'res', 'swd')):
+    def is_any_data(self, ext=('h5','tt', 'ph', 'res', 'swd')) -> bool:
         return any(map(os.path.isfile, [os.path.join(self.path, self.name + '.' + e) for e in ext]))
 
     @property
-    def is_ph(self):
+    def is_ph(self) -> bool:
         fname = os.path.join(self.path, self.name + '.ph')
         return os.path.isfile(fname)
 
     @property
-    def is_tau(self):
+    def is_tau(self) -> bool:
         fname = os.path.join(self.path, self.name + '.tau')
         return os.path.isfile(fname)
 
     @property
-    def is_swd(self):
+    def is_swd(self) -> bool:
         fname = os.path.join(self.path, self.name + '.swd')
         return os.path.isfile(fname)
 
     @property
-    def is_res(self):
+    def is_res(self) -> bool:
         fname = os.path.join(self.path, self.name + '.res')
         return os.path.isfile(fname)
 
     @property
-    def is_tt(self):
+    def is_tt(self) -> bool:
         fname = os.path.join(self.path, self.name + '.tt')
         return os.path.isfile(fname)
 
     @property
-    def is_flx(self):
+    def is_flx(self) -> bool:
         return self.is_any_data(ext=['flx'])
         # fname = os.path.join(self.path, self.name + '.flx')
         # return os.path.isfile(fname)
+    @property
+    def is_h5(self) -> bool:
+        return self.is_any_data(ext=['h5'])
 
     def get_eve(self, name=None, path=None, is_hyd_abn=False, **kwargs):
         from pystella.model import sn_eve
@@ -91,6 +94,10 @@ class Stella:
     def get_tt(self):
         from pystella.model.sn_tt import StellaTt
         return StellaTt(self.name, self.path)
+
+    def get_h5(self):
+        from pystella.model import H5Stella
+        return H5Stella(os.path.join(self.path, self.name + '.h5'))
 
     def get_swd(self):
         from pystella.model.sn_swd import StellaShockWaveDetail

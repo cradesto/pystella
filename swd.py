@@ -247,13 +247,17 @@ def main():
 
     for i, nm in enumerate(names):
         path, name = os.path.split(nm)
+        is_h5 = name.endswith(".h5")
         if len(path) == 0:
             path = pathDef
         name = name.replace('.swd', '')  # remove extension
 
         print("Run swd-model %s %s for %s moments" % (path, name, args.times))
         stella = ps.Stella(name, path=path)
-        swd = stella.get_swd().load()
+        if is_h5:
+            h5stl = stella.get_h5()
+        else:
+            swd =  stella.get_swd().load()
 
         if args.is_uph:
             logger.info(' Compute and print uph')

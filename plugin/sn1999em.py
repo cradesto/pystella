@@ -8,7 +8,7 @@ import os
 from pystella.rf import band
 from pystella.rf.lc import SetLightCurve, LightCurve
 
-sn_path = os.path.expanduser('~/Sn/Release/svn_kepler/stella/branches/lucy/run/res/sncurve/sn1999em')
+sn_path = os.path.expanduser('~/Sn/my/obs/sn/sn1999em')
 
 
 def plot(ax, dic=None):
