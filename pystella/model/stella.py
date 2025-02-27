@@ -4,7 +4,7 @@ from pystella.rf.reddening import ReddeningLaw, LawFitz
 
 __author__ = 'bakl'
 
-stella_extensions = ('tt', 'swd', 'lbol', 'res', 'dat', 'ph', "mrt", 'eve', 'rho', 'xni', 'flx')
+stella_extensions = ('h5','tt', 'swd', 'lbol', 'res', 'dat', 'ph', "mrt", 'eve', 'rho', 'xni', 'flx')
 
 
 class Stella:
@@ -96,7 +96,7 @@ class Stella:
         return StellaTt(self.name, self.path)
 
     def get_h5(self):
-        from pystella.model import H5Stella
+        from pystella.model.h5stella import H5Stella
         return H5Stella(os.path.join(self.path, self.name + '.h5'))
 
     def get_swd(self):
@@ -116,7 +116,8 @@ class Stella:
 
     def get_ph(self, t_diff=1.005, t_beg=float('-inf'), t_end=float('inf'), is_nfrus=True):
         from pystella.model import sn_ph as ph
-        res = ph.read(self.name, self.path, t_diff=t_diff, t_beg=t_beg, t_end=t_end, is_nfrus=is_nfrus)
+        freqs, phdata = ph.read(self.name, self.path) #, t_diff=t_diff, t_beg=t_beg, t_end=t_end, is_nfrus=is_nfrus)
+        res = ph.select(freqs, phdata, name=self.name, t_diff=t_diff, t_beg=t_beg, t_end=t_end, is_nfrus=is_nfrus)
         return res
 
     def curves(self, bands, z=0., distance=10., ebv=0., Rv=None, law=LawFitz, mode=ReddeningLaw.SMC, **kwargs):

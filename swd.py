@@ -250,12 +250,16 @@ def main():
         is_h5 = name.endswith(".h5")
         if len(path) == 0:
             path = pathDef
-        name = name.replace('.swd', '')  # remove extension
+        if is_h5:
+            name = name.replace('.h5', '')  # remove extension
+        else:
+            name = name.replace('.swd', '')  # remove extension
 
         print("Run swd-model %s %s for %s moments" % (path, name, args.times))
         stella = ps.Stella(name, path=path)
         if is_h5:
-            h5stl = stella.get_h5()
+            h5swd = stella.get_h5().Swd
+            swd = h5swd.to_swd()
         else:
             swd =  stella.get_swd().load()
 

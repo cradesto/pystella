@@ -994,9 +994,6 @@ def main():
                 logger.info("Fitting for model %s %s for %s moments" % (path, name, tlim))
             else:
                 logger.info("Fitting for model %s %s, dt0= %f" % (path, name, args.dt0))
-        # curves_m = lcf.curves_compute(name, path, bnames, z=args.redshift, distance=args.distance,
-        #                               t_beg=tlim[0], t_end=tlim[1], t_diff=t_diff)
-        # res = fitter.fit_curves(curves_o, curves_m)
         if vels_o is None:
             curves_m, res, res_full = fit_mfl(args, curves_o, bnames, fitter, name, path, t_diff, tlim, is_sigma)
         else:

@@ -3,18 +3,12 @@ import numpy as np
 from pystella.rf.spectrum import SeriesSpectrum, Spectrum
 
 
-def read(name: str, path: str = './',
-         t_diff: float = 1.005, t_beg: float = float('-inf'), t_end: float = float('inf'),
-         is_nfrus: bool = True) -> SeriesSpectrum:
+def read(name: str, path: str = './'):
     """
     Read SED from ph-file.
     :param name: model (file without extension)
     :param path: the model directory
-    :param t_diff: minimum difference between subsequent time moments
-    :param t_beg: start time of spectrum
-    :param t_end: end time of spectrum
-    :param is_nfrus: Get nrus from the first data row
-    :return: SeriesSpectrum
+    :return: freqs, data
     """
 
     # read first line with frequencies
@@ -31,7 +25,22 @@ def read(name: str, path: str = './',
     # freqs = np.exp(math.log(10) * freqs)
 
     data = np.loadtxt(fname, comments='!', skiprows=1)
+    return freqs, data
 
+
+def select(freqs, data, name: str = 'unknown', 
+         t_diff: float = 1.005, t_beg: float = float('-inf'), t_end: float = float('inf'),
+         is_nfrus: bool = True) -> SeriesSpectrum:
+    """
+    Read SED from ph-file.
+    :param freqs: the frequentis
+    :param data: the model ph-data
+    :param t_diff: minimum difference between subsequent time moments
+    :param t_beg: start time of spectrum
+    :param t_end: end time of spectrum
+    :param is_nfrus: Get nrus from the first data row
+    :return: SeriesSpectrum
+    """
     times = np.array(data[:, 0])
     is_times = np.zeros(len(times), dtype=bool)
     k = 1

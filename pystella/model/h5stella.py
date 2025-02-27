@@ -9,6 +9,7 @@ import logging
 import numpy as np
 import sys
 
+
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 # logger.setLevel(logging.INFO)
@@ -81,6 +82,19 @@ class H5Stella(object):
         with h5py.File(self.Fname, "r") as h5f:
             res = H5Hyd('Hyd').fill(h5f)
         return res
+    @property
+    def Res(self):
+        logging.debug('Res from {}'.format(self.Fname))
+        with h5py.File(self.Fname, "r") as h5f:
+            res = H5Res('res').fill(h5f)
+        return res
+    
+    @property
+    def Swd(self):
+        logging.debug('Swd from {}'.format(self.Fname))
+        with h5py.File(self.Fname, "r") as h5f:
+            res = H5Swd('Swd').fill(h5f)
+        return res
     
     @property
     def Abun(self):
@@ -109,6 +123,25 @@ class H5Stella(object):
         with h5py.File(self.Fname, "r") as h5f:
             yabun = np.array(h5f.get('/presn/M'))  
         return yabun
+
+    @property
+    def Tt(self):
+        logging.debug('tt from {}'.format(self.Fname))
+        with h5py.File(self.Fname, "r") as h5f:
+            tt = np.array(h5f.get('/radtrans/tt'))  
+        return tt
+
+    @property
+    def Ph(self):
+        logging.debug('ph from {}'.format(self.Fname))
+        with h5py.File(self.Fname, "r") as h5f:
+            ph = np.array(h5f.get('/radtrans/ph')).T  
+            freqs = np.array(h5f.get('/radtrans/freqs'))
+        
+        freqs = np.array(freqs).reshape(-1)
+        freqs = np.power(10, freqs)
+        # print(f"{freqs=}")
+        return  freqs, ph
 
     def ds_write(self, path, ds, attrs=None):
         """
@@ -268,10 +301,10 @@ class H5Iray(H5FreqTimeElement):
         return self.Shape[-1]
 
 
-class H5Hyd(H5TimeElement):
-    def __init__(self, name):
+class H5ColumnsTimeElement(H5TimeElement):
+    def __init__(self, name, path):
         self._name = name
-        super(H5Hyd, self).__init__(name, path='/timing/Hyd')
+        super(H5Hyd, self).__init__(name, path)
 
     @property
     def Nvars(self):
@@ -279,7 +312,14 @@ class H5Hyd(H5TimeElement):
 
     @property
     def Columns(self):
-        return self.Attrs['columns'].decode()
+        columns = self.Attrs['columns']
+
+        if isinstance(columns, str):
+            columns = self.Attrs['columns'].decode()
+        elif isinstance(columns, np.ndarray):
+            columns = [c.decode().strip() for c in columns]
+
+        return columns
 
     def Var(self, ncol):
         return self.Val[:, :, ncol]
@@ -295,9 +335,9 @@ class H5Hyd(H5TimeElement):
         s = 'columns'
         if s not in self.Attrs:
             raise ValueError('There is no "{}" in  Attrs.'.format(s))
-        columns = self.Attrs['columns'].decode()
-        # return columns
-        #
+        
+        columns = self.Columns        
+        print(f"{columns=}")
         # columns = columns
         if name not in columns:
             raise ValueError('There is no key: "{}" in  columns: {}.'.format(name, s))
@@ -307,6 +347,35 @@ class H5Hyd(H5TimeElement):
             if c == name:
                 return self.Val[:, :, k]
         return None
+    
+class H5Hyd(H5ColumnsTimeElement):
+    def __init__(self, name):
+        super(H5ColumnsTimeElement, self).__init__(name, path='/timing/Hyd')
+
+class H5Res(H5ColumnsTimeElement):
+    def __init__(self, name):
+        super(H5ColumnsTimeElement, self).__init__(name, path='/timing/res')
+
+class H5Swd(H5ColumnsTimeElement):
+
+    def __init__(self, name):
+        super(H5ColumnsTimeElement, self).__init__(name, path='/timing/swd')   
+
+    def to_swd(self):
+        from pystella.model.sn_swd import StellaShockWaveDetail
+
+        cols = "km lgM lgR14 V8 lgT lgTrad lgDm6 lgP7  lgQv lgEng Flum40 cap".split()
+        print(f"In h5 columns: {self.Columns}")
+        print(f"Using columns: {cols}")
+        if len(self.Columns) != len(cols):
+            raise ValueError(f"Numbers of clolums is wrong: {len(self.Columns)=} != {len(cols)=}")
+        # cols = [s.strip() for s in colstr.split()]
+        dt = np.dtype({'names': cols, 'formats': [float] * len(cols)})
+        data = np.array(self.Val, dtype=dt)
+        print(data.shape)
+        times = self.Time
+        swd = StellaShockWaveDetail(self.Name)        
+        return swd.parse_data(times, data)
 
 class H5Abun(H5TimeElement):
     def __init__(self, name):

@@ -75,10 +75,14 @@ class StellaShockWaveDetail:
         cols = [s.strip() for s in colstr.split()]
         dt = np.dtype({'names': cols, 'formats': [float] * len(cols)})
         data = np.loadtxt(fname, dtype=dt)
-
         times = np.unique(data['tday'])
         if data['tday'][0] != 0.:
             times = np.delete(times, np.where(times == 0.))
+
+        logger.debug(f"Loaded data from  {fname}")
+    #     return self.parse_data(times, data)
+
+    # def parse_data(self, times, data):
         self._times = times
         self._nzon = np.zeros(len(times), dtype=int)
         # find nzon for each saved moment
@@ -93,7 +97,7 @@ class StellaShockWaveDetail:
         self._nzon_min = np.min(self._nzon)
         self._nzon_max = np.max(self._nzon)
         self._data = data
-        logger.debug(f"Read data from  {fname}. NzonMin= {self.NzonMin} NzonMax= {self.NzonMax}")
+        logger.debug(f"Parsed data. NzonMin= {self.NzonMin} NzonMax= {self.NzonMax}")
         return self
 
     def time_nearest(self, time):
