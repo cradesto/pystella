@@ -372,10 +372,12 @@ class H5Swd(H5ColumnsTimeElement):
         # cols = [s.strip() for s in colstr.split()]
         dt = np.dtype({'names': cols, 'formats': [float] * len(cols)})
         data = np.array(self.Val, dtype=dt)
-        print(data.shape)
         times = self.Time
-        swd = StellaShockWaveDetail(self.Name)        
-        return swd.parse_data(times, data)
+        nt, nz, nv = data.shape
+        print(f"{nt=}, {nz=}, {nv=}")
+        nzon = np.ones(nt, dtype=int) * nz
+        swd = StellaShockWaveDetail(self.Name, times, nzon, data)
+        return swd
 
 class H5Abun(H5TimeElement):
     def __init__(self, name):

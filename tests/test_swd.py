@@ -15,8 +15,7 @@ class TestStellaShockWaveDetail(unittest.TestCase):
         name = 'rednova_R3.2_M6_Ni0_E0.25'
         path = join(dirname(abspath(__file__)), 'data', 'stella')
         stella = Stella(name, path=path)
-        self.swd = stella.get_swd()
-        self.swd.load()
+        self.swd = stella.get_swd_file()
 
     def test_reading(self):
         nzon = 100

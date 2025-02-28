@@ -222,14 +222,15 @@ def curves_by_ext(fname, t_diff, path, z, ebv, magnification, distance, bnames):
     from pystella.rf.light_curve_func import series_spec_reddening
 
     name, extension = os.path.splitext(fname)
-    print('curves_by_ext. name: {} extension: {}'.format(name, extension))
+    extension = extension.strip().lower()
+    # print('curves_by_ext. name: {} extension: {}'.format(name, extension))
 
     mdl = ps.Stella(name, path=path)
-    if extension.strip().lower() == '.tt':  # tt
-        print("The curves [UBVRI+bol] was taken from tt-file. IMPORTANT: distance: 10 pc, z=0, E(B-V) = 0")
+    if extension == '.tt':  # tt
+        print(f"The [UBVRI+bol] curves of {name} were taken from tt-file: {fname}. IMPORTANT: distance: 10 pc, z=0, E(B-V) = 0")
         curves = mdl.get_tt().read_curves()
-    elif (extension.strip().lower() == '.h5'):
-        print("The curves was taken from h5-file")
+    elif (extension == '.h5'):
+        print(f"The curves of {name} were taken from h5-file: {fname}")
         freqs, phdata = mdl.get_h5().Ph
         series = ph.select(freqs, phdata, name=mdl.Name, t_diff=t_diff, is_nfrus=False)
         if ebv > 0:

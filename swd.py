@@ -261,7 +261,7 @@ def main():
             h5swd = stella.get_h5().Swd
             swd = h5swd.to_swd()
         else:
-            swd =  stella.get_swd().load()
+            swd =  stella.get_swd_file()
 
         if args.is_uph:
             logger.info(' Compute and print uph')

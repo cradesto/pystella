@@ -99,11 +99,17 @@ class Stella:
         from pystella.model.h5stella import H5Stella
         return H5Stella(os.path.join(self.path, self.name + '.h5'))
 
-    def get_swd(self):
-        from pystella.model.sn_swd import StellaShockWaveDetail
-        swd = StellaShockWaveDetail(self.name, self.path)
+    def get_swd_file(self):
+        from pystella.model.sn_swd import StellaShockWaveDetailFile
+        swd = StellaShockWaveDetailFile(os.path.join(self.path, self.name + '.swd'))
         return swd
-
+    
+    def get_swd_h5(self):
+        # from pystella.model.sn_swd import StellaShockWaveDetail
+        h5swd = self.get_h5().Swd
+        swd = h5swd.to_swd()
+        return swd
+    
     def get_tau(self):
         from pystella.model.sn_tau import StellaTauDetail
         tau = StellaTauDetail(self.name, self.path)
