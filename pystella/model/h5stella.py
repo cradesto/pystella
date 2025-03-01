@@ -370,11 +370,15 @@ class H5Swd(H5ColumnsTimeElement):
         if len(self.Columns) != len(cols):
             raise ValueError(f"Numbers of clolums is wrong: {len(self.Columns)=} != {len(cols)=}")
         # cols = [s.strip() for s in colstr.split()]
-        dt = np.dtype({'names': cols, 'formats': [float] * len(cols)})
-        data = np.array(self.Val, dtype=dt)
+        # dt = np.dtype({'names': cols, 'formats': [float] * len(cols)})
+        dt = np.dtype([(c,float) for c in cols])
         times = self.Time
-        nt, nz, nv = data.shape
+        nt, nz, nv = self.Val.shape
         print(f"{nt=}, {nz=}, {nv=}")
+        data = []
+        for i, t in enumerate(times):
+            data.append(np.array(list(map(tuple, self.Val[i])), dtype=dt))
+        # data = np.asarray(data)
         nzon = np.ones(nt, dtype=int) * nz
         swd = StellaShockWaveDetail(self.Name, times, nzon, data)
         return swd

@@ -187,7 +187,7 @@ class StellaShockWaveDetailFile(StellaShockWaveDetail):
         self._nzon = np.zeros(len(times), dtype=int)
         # find nzon for each saved moment
         for i, t in enumerate(times):
-            b, e = np.where(data['tday'] == t)[0]
+            b, e = np.where(data['tday'] == t)[0][0:2]
             self._nzon[i] = e - b + 1
             # print(f"{i=} {t=} {b= }  {e=}  nzon= {self._nzon[i]}")
 
