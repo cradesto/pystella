@@ -1036,7 +1036,7 @@ class PreSN(object):
                     dm = np.sum(dmass[k:kk])
                 # No averaging near the outer boundary
                 if( dm < box_dm ):
-                    exit
+                    break
 
                 logger.debug(f'{k}: kk= {kk} dm= {dm:.4f} m= {m[k]:.4f}')
                 if dm > 1e-6:
