@@ -573,6 +573,10 @@ class PreSN(object):
         elif x == 'z':
             xi = np.arange(0, self.nzon, dtype=int) + 1
             ax.set_xlabel(r'Zone')
+        elif x == 'lgR':
+            xi = self.r * xnorm
+            ax.set_xlabel(r'R [cm]')
+            ax.set_xscale('log')
         else:
             xi = self.r * xnorm
             ax.set_xlabel(r'R [cm]')
@@ -816,7 +820,7 @@ class PreSN(object):
         :param start: zone number to start reshaping. Default: 0 (first zone)
         :param end: zone number to end reshaping. Default: None,  (equal last zone)
         :param axis: [M OR R OR V] - reshape along mass or radius or velocity coordinate. Default: M
-        :param xmode: [lin OR rlog OR resize] - linear OR reversed log10 OR add/remove points. Default: resize
+        :param xmode: [lin OR rlog OR resize OR tau] - linear OR reversed log10 OR add/remove points OR insert with k=0.4(axis='R'). Default: resize
         :param kind: [np OR interp1d(..kind)], kind is  ('np=np.interp', 'linear', 'nearest', 'zero', 'slinear', 'quadratic, 'cubic'). Default: np
         :return: new preSN with reshaping zones
         """
@@ -849,6 +853,49 @@ class PreSN(object):
             xn = np.insert(x, idx + 1, p)
             return xn
 
+        def add_point_tau(r, rho, n_new, tau_lim=10, kappa=0.4):  
+            """
+            If tau > tau_lim insert the new point 
+            :param x: array
+            :param tau_lim:  tau limit, to insert 
+            :param kappa:  simple opacity 
+            :return:
+            """
+            if not axis == PreSN.sR:
+                raise ValueError("Add point tau is worked for  axis == 'r' only.")
+            
+            dr = np.diff(r)
+            dr = np.insert(dr, 0, r[0])
+            r_new = np.copy(r)
+            n = len(r)            
+            if n_new <= n:
+                raise ValueError(f"To add point new Nzon (={n_new}) should be larger current Nzon (={n}) .")
+            
+            n_points = n_new - n  # number points
+            for idx in range(n-1, 1, -1):  # in 
+                # print(f"{idx=}")
+                if n_points <= 0:
+                    print(f"n_points <= 0: {n_points=} ")
+                    break
+                if n-idx > n_points:
+                    print(f"n-idx > n_points: {idx=}  {n_points=} ")
+                    break
+                r_e = r[idx]
+                # r_b = r[idx-1]
+                # dr = r_e - r_b
+                tau_z = dr[idx] * rho[idx] * kappa
+                print(f"{idx=}  {r_e=}  {rho[idx]=}  {tau_z=}")
+                if tau_z > tau_lim: # insert point to
+                    inserted = min(int(tau_z/tau_lim), n_points)
+                    print(f"{tau_z=}  {inserted=}  {idx=}")
+                    for i in range(1,inserted+1):
+                        dr_ = i * tau_lim / (rho[idx] * kappa )
+                        r_new = np.insert(r_new, idx, r_e-dr_)
+                    n_points -= inserted
+            
+                xn = r_new / max(abs(r_new))  # norm
+            return xn        
+
         def remove_point(x):  # 'lin' 'log'
             """
             Find min delta and remove the right point
@@ -867,7 +914,7 @@ class PreSN(object):
             Add or remove points in the array x
             :param x:  the array is not changed
             :param n: number points to add or remove
-            :param mode:  should be "lin" or "geom". Default: lin
+            :param mode:  should be "lin" or "geom" or "tau". Default: lin
             :return: the resized array
             """
             n_old = len(x)
@@ -891,6 +938,8 @@ class PreSN(object):
                 res = rlogspace(x[0], x[-1], n)
             elif xmode == 'resize':
                 res = resize_points(x, n)
+            elif xmode == 'tau':
+                res = add_point_tau(self.r, self.rho, n)            
             else:
                 raise ValueError('Such xmode "{}" is not supported.'.format(xmode))
             return res
