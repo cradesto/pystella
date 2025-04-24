@@ -274,6 +274,7 @@ def main(name=None, model_ext='.ph'):
     label = None
     fsave = None
     fname = None
+    fname_out = None
     # path = ''
     path = os.getcwd()
     z = 0.
@@ -368,7 +369,7 @@ def main(name=None, model_ext='.ph'):
         if opt == '-w':
             is_save_mags = True
             if arg != '1':
-                fname = arg.strip()
+                fname_out = arg.strip()
             continue
         if opt == '-t':
             is_plot_time_points = True
@@ -489,17 +490,17 @@ def main(name=None, model_ext='.ph'):
         # save curves to files
         if is_save_mags:
             for curves in models_mags.values():
-                if fname is None:
-                    fname = os.path.join(path, curves.Name)
+                if fname_out is None:
+                    fname_out = os.path.join(path, curves.Name)
                     if z > 0.:
-                        fname = '{}_Z{:.2g}'.format(fname, z)
+                        fname_out = '{}_Z{:.2g}'.format(fname_out, z)
                     if distance > 10.:
-                        fname = '{}_D{:.2e}'.format(fname, distance)
+                        fname_out = '{}_D{:.2e}'.format(fname_out, distance)
                     if e > 0:
-                        fname = '{}_E{:0.2g}'.format(fname, e)
-                    fname = '{}{}'.format(fname, '.ubv')
-                if ps.lcf.curves_save(curves, fname):
-                    print("Magnitudes of {} have been saved to {}".format(curves.Name, fname))
+                        fname_out = '{}_E{:0.2g}'.format(fname_out, e)
+                    fname_out = '{}{}'.format(fname_out, '.ubv')
+                if ps.lcf.curves_save(curves, fname_out):
+                    print("Magnitudes of {} have been saved to {}".format(curves.Name, fname_out))
                 else:
                     print("Error with Magnitudes saved to {}".format(curves.Name, fname))
         # plot

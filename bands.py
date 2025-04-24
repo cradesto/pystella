@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # #!/usr/bin/python3
 
+import os
 import numpy as np
 
 from pystella.util.phys_var import phys
@@ -98,7 +99,7 @@ def plot_Kepler():
     # plt.show()
 
 
-def plot_bands(bands, color_dic=None, is_norm=False):   
+def plot_bands(bands, color_dic=None, is_norm=False, is_save=False):   
     for bname in bands:
         b = band.band_by_name(bname)
         if color_dic is None:
@@ -115,7 +116,13 @@ def plot_bands(bands, color_dic=None, is_norm=False):
     plt.ylabel('Amplitude Response')
     plt.xlabel('Wave [A]')
     plt.grid(linestyle=':')
-    plt.show()
+    if is_save:
+        fplot = os.path.expanduser("~/band_{0}.pdf".format('-'.join(bands)))
+        print("Save plot to {0}".format(fplot))
+        plt.savefig(fplot, bbox_inches='tight')
+    else:
+        plt.show()
+    
 
 def get_parser(times='1:4:15:65', bnames='U:B:V:R', tau_ph=2. / 3):
     import argparse
@@ -145,6 +152,11 @@ def get_parser(times='1:4:15:65', bnames='U:B:V:R', tau_ph=2. / 3):
                             dest="is_norm",
                             metavar="normalize bands",
                             help="Normalize bands to max-min values")
+    parser.add_argument('-s', '--save',
+                        action='store_const',
+                        const=True,
+                        dest="is_save",
+                        help="To save the result plot to pdf-file. Format: swd_[name]_t[times].pdf.")
     return parser
 
 # def usage():
@@ -169,18 +181,6 @@ def main():
     parser = get_parser()
     args, unknownargs = parser.parse_known_args()
 
-    # if len(names) == 0:
-    #     # logger.error(" No data. Use key '-i' ")
-    #     parser.print_help()
-    #     sys.exit(2)
-
-    # try:
-    #     opts, args = getopt.getopt(sys.argv[1:], "hb:")
-    # except getopt.GetoptError as err:
-    #     print(str(err))  # will print something like "option -a not recognized"
-    #     usage()
-    #     sys.exit(2)
-
     bands = []
     if args.bnames:
         bands = str(args.bnames).split(':')
@@ -190,6 +190,7 @@ def main():
         opt = str(args.add).split(':')
         if len(opt) < 3:
             print('To add new band you should set up it correctly. See -h') 
+            print("-"*50)
             parser.print_help()
         else:
             name, lWv, rWv = opt[0:3]
@@ -204,22 +205,15 @@ def main():
             plot_bands([name])
         sys.exit(2)
     
-    # for opt, arg in opts:
-    #     if opt == '-b':
-    #         bands = str(arg).split('-')
-    #         continue
-    #     elif opt == '-h':
-    #         parser.print_help()
-    #         sys.exit(2)
-
-    band.print_bands()
-    print("-"*50)
+    # band.print_bands()
+    # print("-"*50)
 
     if len(bands) > 0:
         try:
-            plot_bands(bands, is_norm=args.is_norm)
-        except AttributeError:
+            plot_bands(bands, is_norm=args.is_norm, is_save=args.is_save)
+        except AttributeError as ex:
             parser.print_help()
+            print(ex)
             sys.exit(2)
     else:
         plot_UBVRI()
