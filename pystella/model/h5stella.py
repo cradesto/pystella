@@ -128,15 +128,15 @@ class H5Stella(object):
     def Tt(self):
         logging.debug('tt from {}'.format(self.Fname))
         with h5py.File(self.Fname, "r") as h5f:
-            tt = np.array(h5f.get('/radtrans/tt'))  
+            tt = np.array(h5f.get('/sn/radtrans/tt'))  
         return tt
 
     @property
     def Ph(self):
         logging.debug('ph from {}'.format(self.Fname))
         with h5py.File(self.Fname, "r") as h5f:
-            ph = np.array(h5f.get('/radtrans/ph')).T  
-            freqs = np.array(h5f.get('/radtrans/freqs'))
+            ph = np.array(h5f.get('/sn/radtrans/ph')).T  
+            freqs = np.array(h5f.get('/sn/radtrans/freqs'))
         
         freqs = np.array(freqs).reshape(-1)
         freqs = np.power(10, freqs)
@@ -276,25 +276,25 @@ class H5FreqTimeElement(H5TimeElement):
 class H5Fh(H5FreqTimeElement):
     def __init__(self, name):
         self._name = name
-        super(H5Fh, self).__init__(name, path='/timing/Fh')
+        super(H5Fh, self).__init__(name, path='/sn/Fh')
 
 
 class H5Fj(H5FreqTimeElement):
     def __init__(self, name):
         self._name = name
-        super(H5Fj, self).__init__(name, path='/timing/Fj')
+        super(H5Fj, self).__init__(name, path='/sn/Fj')
 
 
 class H5Tau(H5FreqTimeElement):
     def __init__(self, name):
         self._name = name
-        super(H5Tau, self).__init__(name, path='/timing/Tau')
+        super(H5Tau, self).__init__(name, path='/sn/Tau')
 
 
 class H5Iray(H5FreqTimeElement):
     def __init__(self, name):
         self._name = name
-        super(H5Iray, self).__init__(name, path='/timing/Iray')
+        super(H5Iray, self).__init__(name, path='/sn/Iray')
 
     @property
     def Nrays(self):
@@ -350,16 +350,16 @@ class H5ColumnsTimeElement(H5TimeElement):
     
 class H5Hyd(H5ColumnsTimeElement):
     def __init__(self, name):
-        super(H5ColumnsTimeElement, self).__init__(name, path='/timing/Hyd')
+        super(H5ColumnsTimeElement, self).__init__(name, path='/sn/Hyd')
 
 class H5Res(H5ColumnsTimeElement):
     def __init__(self, name):
-        super(H5ColumnsTimeElement, self).__init__(name, path='/timing/res')
+        super(H5ColumnsTimeElement, self).__init__(name, path='/sn/res')
 
 class H5Swd(H5ColumnsTimeElement):
 
     def __init__(self, name):
-        super(H5ColumnsTimeElement, self).__init__(name, path='/timing/swd')   
+        super(H5ColumnsTimeElement, self).__init__(name, path='/sn/swd')   
 
     def to_swd(self):
         from pystella.model.sn_swd import StellaShockWaveDetail
@@ -386,7 +386,7 @@ class H5Swd(H5ColumnsTimeElement):
 class H5Abun(H5TimeElement):
     def __init__(self, name):
         self._name = name
-        super(H5Abun, self).__init__(name, path='/timing/AbunIso')
+        super(H5Abun, self).__init__(name, path='/sn/AbunIso')
 
     @property
     def Nvars(self):

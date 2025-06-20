@@ -130,7 +130,7 @@ def hdf2presn(fnameh5, idx_time):
                 print(i, ename)
                 presn.set_chem(ename, data_chem[:,i]*ps.AZ[ename])
     else:
-        logger.info(' Load abn-data from  /timing/AbunIso')
+        logger.info(' Load abn-data from  /sn/AbunIso')
         abun = snh5.Abun
         elements = abun.Columns.split()
         # print("Colunms: ", abun.Columns)
