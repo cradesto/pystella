@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 from os.path import dirname, abspath
 
 # matplotlib.use("Agg")
@@ -9,6 +10,7 @@ import math
 import pystella as ps
 
 import logging
+
 
 mpl_logger = logging.getLogger('matplotlib')
 mpl_logger.setLevel(logging.ERROR)
@@ -215,6 +217,37 @@ def usage():
     ps.band.print_bands()
 
 
+def curves_by_ext(fname, t_diff, path, z, ebv, magnification, distance, bnames):
+    from pystella.model import sn_ph as ph
+    from pystella.rf.light_curve_func import series_spec_reddening
+
+    name, extension = os.path.splitext(fname)
+    extension = extension.strip().lower()
+    # print('curves_by_ext. name: {} extension: {}'.format(name, extension))
+
+    mdl = ps.Stella(name, path=path)
+    if extension == '.tt':  # tt
+        print(f"The [UBVRI+bol] curves of {name} were taken from tt-file: {fname}. IMPORTANT: distance: 10 pc, z=0, E(B-V) = 0")
+        curves = mdl.get_tt().read_curves()
+    elif (extension == '.h5'):
+        print(f"The curves of {name} were taken from h5-file: {fname}")
+        freqs, phdata = mdl.get_h5().Ph
+        series = ph.select(freqs, phdata, name=mdl.Name, t_diff=t_diff, is_nfrus=False)
+        if ebv > 0:
+            ss = series.copy()
+            series = series_spec_reddening(ss, ebv=ebv) #, Rv=Rv, law=law, mode=mode)
+        # light curves
+        curves = series.flux_to_curves(bnames, z=z, d=ps.phys.pc2cm(distance), magnification=magnification)
+    # elif is_curve_old:  # old
+    #     print("Use old proc for Stella magnitudes")
+    #     curves = ps.lcf.curves_compute(name, path, bnames, z=z, distance=distance,
+    #                                            magnification=magnification, t_diff=t_diff)
+    #     if is_extinction:
+    #         curves = ps.lcf.curves_reddening(curves, ebv=e, z=z)
+    else:
+        curves = mdl.curves(bnames, z=z, distance=distance, ebv=ebv, magnification=magnification, t_diff=t_diff)
+                            
+    return curves
 
 
 def main(name=None, model_ext='.ph'):
@@ -228,8 +261,6 @@ def main(name=None, model_ext='.ph'):
     is_save_plot = False
     is_plot_time_points = False
     is_extinction = False
-    is_curve_old = False
-    is_curve_tt = False
     is_axes_right = False
     is_grid = False
     is_lum = False
@@ -243,6 +274,7 @@ def main(name=None, model_ext='.ph'):
     label = None
     fsave = None
     fname = None
+    fname_out = None
     # path = ''
     path = os.getcwd()
     z = 0.
@@ -269,9 +301,8 @@ def main(name=None, model_ext='.ph'):
         sys.exit(2)
 
     if len(args) > 0:
-        path, name = os.path.split(str(args[0]))
+        path, fname = os.path.split(str(args[0]))
         path = os.path.expanduser(path)
-        name = name.replace('.ph', '')
     elif len(opts) == 0:
         usage()
         sys.exit(2)
@@ -329,9 +360,6 @@ def main(name=None, model_ext='.ph'):
             is_save_plot = True
             fsave = str.strip(arg)
             continue
-        if opt == '--curve-old':
-            is_curve_old = True
-            continue
         if opt == '--curve-tt':
             is_curve_tt = True
             continue
@@ -341,7 +369,7 @@ def main(name=None, model_ext='.ph'):
         if opt == '-w':
             is_save_mags = True
             if arg != '1':
-                fname = arg.strip()
+                fname_out = arg.strip()
             continue
         if opt == '-t':
             is_plot_time_points = True
@@ -385,33 +413,34 @@ def main(name=None, model_ext='.ph'):
             sys.exit(2)
 
     # Set model names
-    names = []
+    fnames = []
     is_set_model = False
-    if name is None:
+    if fname is None:
         for opt, arg in opts:
             if opt == '-i':
-                nm = os.path.splitext(os.path.basename(str(arg)))[0]
-                if os.path.exists(os.path.join(path, nm + model_ext)):
-                    names.append(nm)
-                elif is_curve_tt:
-                    if os.path.exists(os.path.join(path, nm + '.tt')):
-                        names.append(nm)
+                lpath, nm = os.path.split(str(arg))
+                # print(f"{lpath=}, {nm=}")
+                # nm = os.path.splitext(os.path.basename(str(arg)))[0]
+                if os.path.exists(os.path.join(path, nm)):
+                    fnames.append(nm)
+                elif os.path.exists(os.path.join(path, nm + model_ext)):
+                    fnames.append(nm + model_ext)
                 else:
                     files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))
                              and fnmatch.fnmatch(f, arg)]
                     for f in files:
                         nm = os.path.splitext(os.path.basename(f))[0]
-                        names.append(nm)
-                    names = list(set(names))
-                    print('Input {} models: {}'.format(len(names), ' '.join(names)))
+                        fnames.append(nm)
+                    fnames = list(set(fnames))
+                    print('Input {} models: {}'.format(len(fnames), ' '.join(fnames)))
                 is_set_model = True
     else:
-        print(name)
-        names.append(name)
+        print(fname)
+        fnames.append(fname)
         is_set_model = True
 
-    if len(names) == 0 and not is_set_model:  # run for all files in the path
-        names = ps.path.get_model_names(path, model_ext)
+    if len(fnames) == 0 and not is_set_model:  # run for all files in the path
+        fnames = ps.path.get_model_fnames(path, model_ext)
 
     # Set distance and redshift
     if distance is None:
@@ -426,25 +455,12 @@ def main(name=None, model_ext='.ph'):
             print("  Cosmology D(z)={0:E} Mpc".format(ps.cosmology_D_by_z(z)))
 
     # Run models
-    if len(names) > 0:
+    if len(fnames) > 0:
         models_mags = {}  # dict((k, None) for k in names)
         models_vels = {}  # dict((k, None) for k in names)
-        for i, name in enumerate(names):
-            mdl = ps.Stella(name, path=path)
-
-            if is_curve_tt:  # tt
-                print("The curves [UBVRI+bol] was taken from tt-file. IMPORTANT: distance: 10 pc, z=0, E(B-V) = 0")
-                curves = mdl.get_tt().read_curves()
-            elif is_curve_old:  # old
-                print("Use old proc for Stella magnitudes")
-                curves = ps.lcf.curves_compute(name, path, bnames, z=z, distance=distance,
-                                               magnification=magnification, t_diff=t_diff)
-                if is_extinction:
-                    curves = ps.lcf.curves_reddening(curves, ebv=e, z=z)
-            else:
-                curves = mdl.curves(bnames, z=z, distance=distance, ebv=e, magnification=magnification,
-                                    t_diff=t_diff)
-
+        for i, fname in enumerate(fnames):
+            curves = curves_by_ext(fname, t_diff, path, z, e, magnification, distance, bnames)
+            name = curves.Name
             models_mags[name] = curves
 
             if vel_mode is not None:
@@ -459,10 +475,10 @@ def main(name=None, model_ext='.ph'):
                 if vels is None:
                     sys.exit("Error: no data for: %s in %s" % (name, path))
                 models_vels[name] = vels
-                print("[%d/%d] Done mags & velocity for %s" % (i + 1, len(names), name))
+                print("[%d/%d] Done mags & velocity for %s" % (i + 1, len(fnames), name))
             else:
                 models_vels = None
-                print("[%d/%d] Done mags for %s" % (i + 1, len(names), name))
+                print("[%d/%d] Done mags for %s" % (i + 1, len(fnames), name))
 
         if label is None:
             if callback is not None:
@@ -474,17 +490,17 @@ def main(name=None, model_ext='.ph'):
         # save curves to files
         if is_save_mags:
             for curves in models_mags.values():
-                if fname is None:
-                    fname = os.path.join(path, curves.Name)
+                if fname_out is None:
+                    fname_out = os.path.join(path, curves.Name)
                     if z > 0.:
-                        fname = '{}_Z{:.2g}'.format(fname, z)
+                        fname_out = '{}_Z{:.2g}'.format(fname_out, z)
                     if distance > 10.:
-                        fname = '{}_D{:.2e}'.format(fname, distance)
+                        fname_out = '{}_D{:.2e}'.format(fname_out, distance)
                     if e > 0:
-                        fname = '{}_E{:0.2g}'.format(fname, e)
-                    fname = '{}{}'.format(fname, '.ubv')
-                if ps.lcf.curves_save(curves, fname):
-                    print("Magnitudes of {} have been saved to {}".format(curves.Name, fname))
+                        fname_out = '{}_E{:0.2g}'.format(fname_out, e)
+                    fname_out = '{}{}'.format(fname_out, '.ubv')
+                if ps.lcf.curves_save(curves, fname_out):
+                    print("Magnitudes of {} have been saved to {}".format(curves.Name, fname_out))
                 else:
                     print("Error with Magnitudes saved to {}".format(curves.Name, fname))
         # plot

@@ -10,3 +10,11 @@ def get_model_names(path, model_ext):
     for f in files:
         names.append(os.path.splitext(f)[0])
     return names
+
+def get_model_fnames(path, model_ext):
+    files = [f for f in os.listdir(path) if isfile(join(path, f)) and f.endswith(model_ext)]
+    fnames = []
+    for f in files:
+        lpath, nm = os.path.split(f)
+        fnames.append(nm)
+    return fnames

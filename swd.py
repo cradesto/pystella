@@ -55,7 +55,7 @@ def plot_uph(uph, vnorm=1.e8, label='', lw=2, fontsize=18, ls="-", color='blue')
     return fig
 
 
-def make_cartoon(swd, times, vnorm, axeX, lumnorm, is_legend, fout=None):
+def make_cartoon(swd, times, vnorm, axeX, lumnorm, is_legend, fout=None, xlim=None):
     import subprocess
     import matplotlib.pyplot as plt
 
@@ -65,7 +65,7 @@ def make_cartoon(swd, times, vnorm, axeX, lumnorm, is_legend, fout=None):
     # time = np.exp(np.linspace(np.log(times[0]), np.log(times[-1]), 50))
     for i, t in enumerate(time.compressed()):
         fig = ps.lcp.plot_shock_details(swd, times=[t], vnorm=vnorm, axeX=axeX,
-                                        lumnorm=lumnorm, is_legend=is_legend)
+                                        lumnorm=lumnorm, is_legend=is_legend, xlim=xlim)
         fsave = os.path.expanduser("img{0}.{1:04d}.png".format(swd.Name, i))
         print("Save plot to {0} at t={1}".format(fsave, t))
         fig.savefig(fsave, bbox_inches='tight')
@@ -151,6 +151,12 @@ def get_parser(times='1:4:15:65', bnames='U:B:V:R', tau_ph=2. / 3):
                         default='0.001:11',
                         dest="ylim_par",
                         help="Ylim for the parameter axes. Default: 0:9.9")
+    parser.add_argument('--xlim',
+                        required=False,
+                        type=str,
+                        default=None, #'1e12:1e16',
+                        dest="xlim",
+                        help="Xlim for the x-axes. Default: None")
     parser.add_argument('-c', action='store_const', dest='constant_value',
                         const='value-to-store',
                         help='Store a constant value')
@@ -216,6 +222,7 @@ def main():
     dic_axes = None
     ylim_par = None
     is_legend = True
+    xlim = None
     ls_cycle = cycle(ps.linestyles_extend)
     marker_cycle = cycle(ps.lcp.markers)
 
@@ -244,16 +251,26 @@ def main():
         sys.exit(2)
 
     times = list(map(float, args.times.split(':')))
+    if args.xlim:
+        xlim = list(map(float, args.xlim.split(':')))
 
     for i, nm in enumerate(names):
         path, name = os.path.split(nm)
+        is_h5 = name.endswith(".h5")
         if len(path) == 0:
             path = pathDef
-        name = name.replace('.swd', '')  # remove extension
+        if is_h5:
+            name = name.replace('.h5', '')  # remove extension
+        else:
+            name = name.replace('.swd', '')  # remove extension
 
         print("Run swd-model %s %s for %s moments" % (path, name, args.times))
         stella = ps.Stella(name, path=path)
-        swd = stella.get_swd().load()
+        if is_h5:
+            h5swd = stella.get_h5().Swd
+            swd = h5swd.to_swd()
+        else:
+            swd =  stella.get_swd_file()
 
         if args.is_uph:
             logger.info(' Compute and print uph')
@@ -272,13 +289,13 @@ def main():
                 if args.is_save:
                     fsave = os.path.expanduser("~/uph_{0}.pdf".format(name))
         elif args.is_mult:
-            make_cartoon(swd, times, vnorm=args.vnorm, axeX=args.axeX,
+            make_cartoon(swd, times, vnorm=args.vnorm, axeX=args.axeX, xlim=xlim,
                          lumnorm=args.lumnorm, is_legend=is_legend)
             return
         else:
             # ls = next(ls_cycle) # skip solid
             fig, dic_axes = ps.lcp.plot_shock_details(swd, times=times,
-                                                      vnorm=args.vnorm, axeX=args.axeX, tnorm=args.tnorm,
+                                                      vnorm=args.vnorm, axeX=args.axeX, tnorm=args.tnorm, xlim=xlim,
                                                       lumnorm=args.lumnorm, is_legend=is_legend, is_axes=True,
                                                       ylim_par=ylim_par,
                                                       dic_axes=dic_axes, ls=next(ls_cycle))

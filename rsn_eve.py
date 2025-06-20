@@ -162,8 +162,8 @@ def main():
 
     def get(arr, i, default):
         if i < len(arr):
-            if a[i] != '*':
-                return a[i]
+            if arr[i] != '*':
+                return arr[i]
         return default
 
     parser = get_parser()

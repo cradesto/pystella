@@ -10,13 +10,12 @@ from pystella.model.stella import Stella
 __author__ = 'bakl'
 
 
-class TestStellaShockWaveDetail(unittest.TestCase):
+class TestStellaShockWaveDetailFile(unittest.TestCase):
     def setUp(self):
         name = 'rednova_R3.2_M6_Ni0_E0.25'
         path = join(dirname(abspath(__file__)), 'data', 'stella')
         stella = Stella(name, path=path)
-        self.swd = stella.get_swd()
-        self.swd.load()
+        self.swd = stella.get_swd_file()
 
     def test_reading(self):
         nzon = 100
@@ -78,10 +77,9 @@ class TestStellaShockWaveDetail(unittest.TestCase):
 
     def test_swd_evolution_exeption_nz(self):
         def func():
-            self.swd.load()
             times = []
             rhos = []
-            for t, y in self.swd.evolution('Rho', self.swd.Nzon+1):
+            for t, y in self.swd.evolution('Rho', self.swd.NzonMax+1):
                 times.append(t)
                 rhos.append(y)
             # # t, y = self.swd.evolution('Rho', self.swd.Nzon+1)
@@ -90,7 +88,7 @@ class TestStellaShockWaveDetail(unittest.TestCase):
 
     def test_swd_evolution_exeption_val(self):
         def func():
-            t, y = self.swd.evolution('bad_value', self.swd.Nzon)
+            t, y = self.swd.evolution('bad_value', self.swd.NzonMax)
 
         self.assertRaises(ValueError, func)
 

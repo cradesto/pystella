@@ -225,7 +225,7 @@ def compute_vel_swd(name, path, z=0., is_info=False):
     if not model.is_swd:
         raise VelocityException("There are no swd-file for %s in the directory: %s " % (name, path))
 
-    swd = model.get_swd().load()
+    swd = model.get_swd_file()
     data = swd.params_ph(cols=['V'])
 
     res = np.array(np.zeros(len(data['V'])),

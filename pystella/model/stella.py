@@ -4,7 +4,7 @@ from pystella.rf.reddening import ReddeningLaw, LawFitz
 
 __author__ = 'bakl'
 
-stella_extensions = ('tt', 'swd', 'lbol', 'res', 'dat', 'ph', "mrt", 'eve', 'rho', 'xni', 'flx')
+stella_extensions = ('h5','tt', 'swd', 'lbol', 'res', 'dat', 'ph', "mrt", 'eve', 'rho', 'xni', 'flx')
 
 
 class Stella:
@@ -15,15 +15,15 @@ class Stella:
         if info:
             self.info()
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "%s, path: %s" % (self.name, self.path)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "%s, path: %s" % (self.name, self.path)
         # return "%s" % self.name
 
     @property
-    def Name(self):
+    def Name(self) -> str:
         """
         Alias for self.name
         :return: name
@@ -31,46 +31,49 @@ class Stella:
         return self.name
 
     @property
-    def Path(self):
+    def Path(self) -> str:
         """
         Alias for self.path
         :return: path
         """
         return self.path
 
-    def is_any_data(self, ext=('tt', 'ph', 'res', 'swd')):
+    def is_any_data(self, ext=('h5','tt', 'ph', 'res', 'swd')) -> bool:
         return any(map(os.path.isfile, [os.path.join(self.path, self.name + '.' + e) for e in ext]))
 
     @property
-    def is_ph(self):
+    def is_ph(self) -> bool:
         fname = os.path.join(self.path, self.name + '.ph')
         return os.path.isfile(fname)
 
     @property
-    def is_tau(self):
+    def is_tau(self) -> bool:
         fname = os.path.join(self.path, self.name + '.tau')
         return os.path.isfile(fname)
 
     @property
-    def is_swd(self):
+    def is_swd(self) -> bool:
         fname = os.path.join(self.path, self.name + '.swd')
         return os.path.isfile(fname)
 
     @property
-    def is_res(self):
+    def is_res(self) -> bool:
         fname = os.path.join(self.path, self.name + '.res')
         return os.path.isfile(fname)
 
     @property
-    def is_tt(self):
+    def is_tt(self) -> bool:
         fname = os.path.join(self.path, self.name + '.tt')
         return os.path.isfile(fname)
 
     @property
-    def is_flx(self):
+    def is_flx(self) -> bool:
         return self.is_any_data(ext=['flx'])
         # fname = os.path.join(self.path, self.name + '.flx')
         # return os.path.isfile(fname)
+    @property
+    def is_h5(self) -> bool:
+        return self.is_any_data(ext=['h5'])
 
     def get_eve(self, name=None, path=None, is_hyd_abn=False, **kwargs):
         from pystella.model import sn_eve
@@ -92,11 +95,21 @@ class Stella:
         from pystella.model.sn_tt import StellaTt
         return StellaTt(self.name, self.path)
 
-    def get_swd(self):
-        from pystella.model.sn_swd import StellaShockWaveDetail
-        swd = StellaShockWaveDetail(self.name, self.path)
-        return swd
+    def get_h5(self):
+        from pystella.model.h5stella import H5Stella
+        return H5Stella(os.path.join(self.path, self.name + '.h5'))
 
+    def get_swd_file(self):
+        from pystella.model.sn_swd import StellaShockWaveDetailFile
+        swd = StellaShockWaveDetailFile(os.path.join(self.path, self.name + '.swd'))
+        return swd
+    
+    def get_swd_h5(self):
+        # from pystella.model.sn_swd import StellaShockWaveDetail
+        h5swd = self.get_h5().Swd
+        swd = h5swd.to_swd()
+        return swd
+    
     def get_tau(self):
         from pystella.model.sn_tau import StellaTauDetail
         tau = StellaTauDetail(self.name, self.path)
@@ -109,7 +122,8 @@ class Stella:
 
     def get_ph(self, t_diff=1.005, t_beg=float('-inf'), t_end=float('inf'), is_nfrus=True):
         from pystella.model import sn_ph as ph
-        res = ph.read(self.name, self.path, t_diff=t_diff, t_beg=t_beg, t_end=t_end, is_nfrus=is_nfrus)
+        freqs, phdata = ph.read(self.name, self.path) #, t_diff=t_diff, t_beg=t_beg, t_end=t_end, is_nfrus=is_nfrus)
+        res = ph.select(freqs, phdata, name=self.name, t_diff=t_diff, t_beg=t_beg, t_end=t_end, is_nfrus=is_nfrus)
         return res
 
     def curves(self, bands, z=0., distance=10., ebv=0., Rv=None, law=LawFitz, mode=ReddeningLaw.SMC, **kwargs):

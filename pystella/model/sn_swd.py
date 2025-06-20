@@ -18,26 +18,25 @@ class StellaShockWaveDetail:
     """
     Reader for swd-files
     """
-
-    def __init__(self, name, path='./'):
-        """Creates a StellaShockWaveDetail instance.  Required parameters:  name."""
-        fname, ext = os.path.splitext(name)
-        if ext == "swd":
-            name = fname
+    def __init__(self, name, times, nzon, data):
+        """Creates a StellaShockWaveDetail instance.  
+        Required parameters:  name, times, nzon_min, nzon_max, data."""
         self._name = name
-        self._path = path  # path to model files
-        self._times = None
-        self._nzon_min = None
-        self._nzon_max = None
-        self._data = None
-        self._nzon = []
+        self._times = times
+        self._nzon = nzon
+        if nzon is not None:
+            self._nzon_min = np.min(self._nzon)
+            self._nzon_max = np.max(self._nzon)
+        else:
+            self._nzon_min = None
+            self._nzon_max = None
+        self._data = data
 
     def __str__(self):
-        return "%s, path: %s" % (self._name, self._path)
+        return f"{self._name}"
 
     def __repr__(self):
-        return "%s, path: %s" % (self._name, self._path)
-        # return "%s" % self.name
+        return f"{self._name}"
 
     @property
     def NzonMin(self):
@@ -62,40 +61,6 @@ class StellaShockWaveDetail:
     def Name(self):
         return self._name
 
-    def load(self):
-        """
-        Load datd from swd-file
-        :return:
-        """
-        fname = os.path.expanduser(os.path.join(self._path, self._name + ".swd"))
-        # tout, Km,log10(AMPR),log10(UR*Ry(Km)),Uy(Km)*1.D+6/(UTIME*CRAP),
-        # log10(max(UTP*Ty(Km),1.d0)),log10(max(UTP*TpRAD,1.d0)),
-        # PLLOG,PLOG,QVLOG,log10(max(eng,1.d-50)),Flum*1.d-40,WRKX(Km);
-        colstr = "tday km lgM lgR14 V8 lgT lgTrad lgDm6 lgP7  lgQv lgEng Flum40 cap"
-        cols = [s.strip() for s in colstr.split()]
-        dt = np.dtype({'names': cols, 'formats': [float] * len(cols)})
-        data = np.loadtxt(fname, dtype=dt)
-
-        times = np.unique(data['tday'])
-        if data['tday'][0] != 0.:
-            times = np.delete(times, np.where(times == 0.))
-        self._times = times
-        self._nzon = np.zeros(len(times), dtype=int)
-        # find nzon for each saved moment
-        for i, t in enumerate(times):
-            b, e = np.where(data['tday'] == t)[0]
-            self._nzon[i] = e - b + 1
-            # print(f"{i=} {t=} {b= }  {e=}  nzon= {self._nzon[i]}")
-
-        self._nzon_min = np.min(self._nzon)
-        self._nzon_max = np.max(self._nzon)
-        # self.ntimes = len(self.times)   # len(data['tday']) // self.nzon
-        self._nzon_min = np.min(self._nzon)
-        self._nzon_max = np.max(self._nzon)
-        self._data = data
-        logger.debug(f"Read data from  {fname}. NzonMin= {self.NzonMin} NzonMax= {self.NzonMax}")
-        return self
-
     def time_nearest(self, time):
         idx = (np.abs(self.Times - time)).argmin()
         return idx, self.Times[idx]
@@ -112,16 +77,9 @@ class StellaShockWaveDetail:
         # block = self._data[:][b:e]
         # return BlockSwd(self._data['tday'][idx], block,(b,e))
 
-    def lines2idx(self, idx):
-        return int(np.sum(self._nzon[:idx]))
 
     def __getitem__(self, idx):
-        b = self.lines2idx(idx)
-        e = b + self._nzon[idx]
-        # print(f"{idx=} {b= }  {e=}  nzon= {self._nzon[idx]}")
-        block = self._data[:][b:e]
-
-        return BlockSwd(self.Times[idx], block, (b,e))
+        return BlockSwd(self.Times[idx], self._data[idx])
 
     def evolution(self, var, nz):
         """Return the time evolution VAR in zone NZ"""
@@ -186,26 +144,81 @@ class StellaShockWaveDetail:
         z = v_dat['zone']
         return t, v, z
 
+class StellaShockWaveDetailFile(StellaShockWaveDetail):
+    def __init__(self, fname):
+        """Creates a StellaShockWaveDetail instance.  Required parameters:  name."""
+        if not fname.endswith(".swd"):
+            raise ValueError(f"{fname} should be swd-file!")        
+        if not os.path.exists(fname):
+            raise ValueError(f"{fname} should be exists!")
+        # print(f"Init swd from {fname}")
+        self._fname = fname  
+        path, fname = os.path.split(fname)
+        name, ext = os.path.splitext(fname)
+        self._path = path  # path to model files
+        super(StellaShockWaveDetailFile, self).__init__(name, times=None, nzon=None, data=None)
+        self.load()
 
+    def __str__(self):
+        return "%s, path: %s" % (self._name, self._path)
+
+    def __repr__(self):
+        return "%s, path: %s" % (self._name, self._path)
+        # return "%s" % self.name
+
+    def load(self):
+        """
+        Load datd from swd-file
+        :return:
+        """
+        # tout, Km,log10(AMPR),log10(UR*Ry(Km)),Uy(Km)*1.D+6/(UTIME*CRAP),
+        # log10(max(UTP*Ty(Km),1.d0)),log10(max(UTP*TpRAD,1.d0)),
+        # PLLOG,PLOG,QVLOG,log10(max(eng,1.d-50)),Flum*1.d-40,WRKX(Km);
+        colstr = "tday km lgM lgR14 V8 lgT lgTrad lgDm6 lgP7  lgQv lgEng Flum40 cap"
+        cols = [s.strip() for s in colstr.split()]
+        dt = np.dtype({'names': cols, 'formats': [float] * len(cols)})
+        data = np.loadtxt(self._fname, dtype=dt)
+        times = np.unique(data['tday'])
+        if data['tday'][0] != 0.:
+            times = np.delete(times, np.where(times == 0.))
+
+        logger.debug(f"Loaded data from  {self._fname}") 
+        self._times = times
+        self._nzon = np.zeros(len(times), dtype=int)
+        # find nzon for each saved moment
+        for i, t in enumerate(times):
+            b, e = np.where(data['tday'] == t)[0][0:2]
+            self._nzon[i] = e - b + 1
+            # print(f"{i=} {t=} {b= }  {e=}  nzon= {self._nzon[i]}")
+
+        self._nzon_min = np.min(self._nzon)
+        self._nzon_max = np.max(self._nzon)
+        # self.ntimes = len(self.times)   # len(data['tday']) // self.nzon
+        self._nzon_min = np.min(self._nzon)
+        self._nzon_max = np.max(self._nzon)
+        self._data = data
+        logger.debug(f"Parsed data. NzonMin= {self.NzonMin} NzonMax= {self.NzonMax}")
+        return self
+    
+    def lines2idx(self, idx):
+        return int(np.sum(self._nzon[:idx]))
+    
+    def __getitem__(self, idx):
+        b = self.lines2idx(idx)
+        e = b + self._nzon[idx]
+        # print(f"{idx=} {b= }  {e=}  nzon= {self._nzon[idx]}")
+        block = self._data[:][b:e]
+        return BlockSwdFile(self.Times[idx], block, (b,e))
+    
 class BlockSwd:
     """
         Block swd-data for given time
         line: "tday km lgM lgR14 V8 lgT lgTrad lgDm6 lgP7  lgQv lgEng Flum40 cap"
     """
 
-    def __init__(self, time, block, pos):
+    def __init__(self, time, block):
         self._time = time
         self._block = block
-        self._position = pos
-
-    @property
-    def Pos(self):
-        """
-        The function returns the block position in swd-file: [b,e],
-        where b -- the number of the first line and
-        e -- the number of the last line 
-        """
-        return self._position
 
     @property
     def Time(self):
@@ -269,6 +282,20 @@ class BlockSwd:
             tau[i] = tau[i + 1] + self.Cappa[i] * self.Rho[i] * (self.R[i + 1] - self.R[i])
         tau[self.Nzon - 1] = tau[self.Nzon - 2] / 2.
         return tau
+
+class BlockSwdFile(BlockSwd):
+    def __init__(self, time, block, pos):
+        super(BlockSwdFile, self).__init__(time, block)
+        self._position = pos
+        
+    @property
+    def Pos(self):
+        """
+        The function returns the block position in swd-file: [b,e],
+        where b -- the number of the first line and
+        e -- the number of the last line 
+        """
+        return self._position 
 
 
 # ==================================================================

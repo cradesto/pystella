@@ -723,6 +723,8 @@ def plot_shock_details(swd, times, **kwargs):
     is_adjust = kwargs.get('is_adjust', True)
     is_axes = kwargs.get('is_axes', False)
     dic_axes = kwargs.get('dic_axes', None)
+    xlim_args = kwargs.pop('xlim', None)
+    
     is_ax_old = False
     xlim = None
     ylim_rho = None
@@ -795,13 +797,16 @@ def plot_shock_details(swd, times, **kwargs):
             legmask = sn_swd.LEGEND_MASK_Vars
         b = swd.block_nearest(t)
         axrho, axpar = sn_swd.plot_swd((axrho, axpar), b, name=swd.Name, is_xlabel=(i == len(times) - 1),
-                                       axeX='m', legmask=legmask, is_yllabel=False, text_posy=0.88,
+                                       axeX='m', legmask=legmask, is_yllabel=False, text_posy=0.88, 
                                        **kwargs)
         if not is_ax_old:
             dic_axes['m'].append({'itime': i, 't': t, 'rho': axrho, 'par': axpar})
             ticks_on(axrho)
             axpar.tick_params(direction='in', which='major', length=5)
             ticks_on(axpar)
+
+    if xlim_args is not None:
+        xlim = xlim_args
 
     # Set limits
     for i, ax in enumerate(axes1):

@@ -385,13 +385,17 @@ def main():
         if args.is_structure:
             fig = eve.plot_structure(elements=elements, title=name, ylimChem=(1e-8, 1.))
         else:
+            handles_prev = []
             if args.is_chem:
                 # print "Plot eve-model %s" % name
                 ax = eve.plot_chem(elements=elements, ax=ax, x=args.x, ylim=(1e-8, 1.), marker=marker,
                                    markersize=markersize, leg_loc='lower center')
+                handles_prev.append(mlines.Line2D([], [], color='black', marker=marker, markersize=markersize, label='After', linestyle=ls))
                 if eve_prev is not None:
                     eve_prev.plot_chem(elements=elements, ax=ax, x=args.x, ylim=(1e-8, 1.), marker=marker,
-                                       markersize=max(1, markersize - 2), alpha=0.5, leg_loc='lower center')
+                                       markersize=max(1, markersize - 2), alpha=0.4, leg_loc='lower center')
+                    handles_prev.append(mlines.Line2D([], [], color='black', marker=marker, label='Before', linestyle=ls
+                                                      , markersize=max(1, markersize - 2), alpha=0.4))
                     # ax.set_title('{}: before boxcar'.format(eve_prev.Name))
 
             if args.rho:
@@ -403,7 +407,7 @@ def main():
                     ax2 = ax
                 ax2 = eve.plot_rho(x=args.x, ax=ax2, ls=ls, marker=marker)
                 if eve_prev is not None:
-                    eve_prev.plot_rho(x=args.x, ax=ax2, ls=ls, markersize=max(1, markersize - 2), alpha=0.5)
+                    eve_prev.plot_rho(x=args.x, ax=ax2, ls=ls, markersize=max(1, markersize - 2), alpha=0.4)
             else:
                 ls = 'None'
 
@@ -414,6 +418,8 @@ def main():
                 if ax2 is None:
                     ax2 = ax.twinx()
                 ax2.legend(handles=handles_nm, loc=4, fancybox=False, frameon=False)
+            elif (len(handles_prev) > 1):
+                ax.legend(handles=handles_prev, fancybox=False, frameon=False)
 
             if args.is_verb:
                 m_tot = 0.

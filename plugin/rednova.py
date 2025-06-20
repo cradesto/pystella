@@ -9,7 +9,7 @@ from pystella.rf import band
 from pystella.rf.lc import SetLightCurve, LightCurve
 from pystella.util.reader_table import read_table_header_float, table2curves
 
-sn_path = os.path.expanduser('~/Sn/Release/svn_kepler/stella/branches/lucy/run/res/sncurve/rednovaM31')
+sn_path = os.path.expanduser('~/Sn/my/obs/sn/rednovaM31')
 
 
 def plot(ax, dic=None):

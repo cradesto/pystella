@@ -155,19 +155,27 @@ def get_parser():
                         default=None,
                         dest="save_file",
                         help="To save the result plot to pdf-file.")
-    parser.add_argument('-t', '--time',
+    parser.add_argument('--tlim',
                         required=False,
                         type=str,
                         default=None,
                         dest="tlim",
                         help="The range of fitting in model LC. Default: None (all points). "
-                             "For negative value use as '-t '\-100:200'. Format: {0}".format('2:50'))
+                             "For negative value use as -t -100:200. Format: {0}".format('2:50'))
     parser.add_argument('-z',
                         required=False,
                         type=float,
                         default=0,
                         dest="redshift",
                         help="Redshift for the model .  Default: 0")
+    parser.add_argument('--ylim',
+                        required=False,
+                        type=str,
+                        default=0,
+                        dest="ylim",
+                        help="Y-limits for iach fit-plot.  Default: None (auto). "
+                             r"Use as --ylim '\-15:\-19.9' "
+                        )
     parser.add_argument('--curve-tt',
                         action='store_const',
                         const=True,
@@ -203,7 +211,9 @@ def plot_curves(curves_o, res_models, res_sorted, **kwargs):
     ncol = min(3, int(np.sqrt(num)))  # 2 if num > 1 else 1
     nrow = math.ceil(num / ncol)
     # fig = plt.figure(figsize=(12, nrow * 4))
-    fig = plt.figure(figsize=(min(ncol, 2) * 5, max(nrow, 2) * 5))
+    height_ax = int( (len(curves_o.BandNames) + 1) * 1.2)
+    fig = plt.figure(figsize=(min(ncol, 2) * 5, max(nrow, 2) * height_ax))
+    # fig = plt.figure(figsize=(min(ncol, 2) * 5, max(nrow, 2) * 5))
     plt.matplotlib.rcParams.update({'font.size': font_size})
 
     # tshift0 = ps.first(curves_o).tshift
@@ -220,6 +230,7 @@ def plot_curves(curves_o, res_models, res_sorted, **kwargs):
             xlim = ax.get_xlim()
         else:
             ax.set_xlim(xlim)
+
         lt = {lc.Band.Name: 'o' for lc in curves_o}
         # curves_o.set_tshift(tshift0)
         lcp.curves_plot(curves_o, ax, xlim=xlim, lt=lt, markersize=2, is_legend=False, is_line=False)
@@ -232,6 +243,9 @@ def plot_curves(curves_o, res_models, res_sorted, **kwargs):
         # bbox=dict(facecolor='green', alpha=0.3))
 
         # fix axes
+        if ylim is not None:
+            ax.set_ylim(ylim)
+            
         if ncol == 1:
             ax.yaxis.tick_left()
             ax.yaxis.set_label_position("left")
@@ -348,7 +362,7 @@ def plot_curves_vel(curves_o, vels_o, res_models, res_sorted, vels_m, **kwargs):
 
 def plot_squared_grid(res_sorted, path='./', **kwargs):
     from matplotlib import pyplot as plt
-    from mpl_toolkits.mplot3d import Axes3D
+    # from mpl_toolkits.mplot3d import Axes3D
 
     font_size = kwargs.get('font_size', 10)
     is_show = kwargs.get('is_show', False)
@@ -748,7 +762,7 @@ def fit_mfl(args, curves_o, bnames, fitter, name, path, t_diff, tlim, is_fit_sig
     return curves_m, fit_result, res
 
 
-def fit_mfl_vel(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, tlim, is_sigma, is_spline=False, Vnorm=1e8, dt0=0):
+def fit_mfl_vel(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, tlim, is_sigma, is_spline=False, vnorm=1e8, dt0=0):
     distance = args.distance  # pc
     z = args.redshift
     # Set distance and redshift
@@ -787,10 +801,10 @@ def fit_mfl_vel(args, curves_o, vels_o, bnames, fitter, name, path, t_diff, tlim
     # compute model velocities
     try:
         tbl = ps.vel.compute_vel_res_tt(name, path)
-        vel_m = ps.vel.VelocityCurve('Vel', tbl['time'], tbl['vel'] / Vnorm)
+        vel_m = ps.vel.VelocityCurve('Vel', tbl['time'], tbl['vel'] / vnorm)
     except ps.vel.VelocityException as ex:
         tbl = ps.vel.compute_vel_swd(name, path)
-        vel_m = ps.vel.VelocityCurve('Vel', tbl['time'], tbl['vel'] / Vnorm)
+        vel_m = ps.vel.VelocityCurve('Vel', tbl['time'], tbl['vel'] / vnorm)
     if vel_m is None:
         raise ValueError('Problem with vel_m via swd.')
     logger.debug('{}'.format(np.array2string(vel_m.T)))
@@ -947,7 +961,13 @@ def main():
 
     if args.tlim:
         tlim = list(map(float, args.tlim.replace('\\', '').split(':')))
-    logger.info('Time limits for models: {}'.format(':'.join(map(str, tlim))))
+        logger.info('Time limits for models: {}'.format(':'.join(map(str, tlim))))
+
+    ylim = None
+    if args.ylim:
+        ylim = list(map(float, args.ylim.replace('\\', '').split(':')))
+        logger.info('Y-limits: {}'.format(':'.join(map(str, ylim))))
+    
 
     # The fit engine
     fitter = engines(args.engine)
@@ -974,9 +994,6 @@ def main():
                 logger.info("Fitting for model %s %s for %s moments" % (path, name, tlim))
             else:
                 logger.info("Fitting for model %s %s, dt0= %f" % (path, name, args.dt0))
-        # curves_m = lcf.curves_compute(name, path, bnames, z=args.redshift, distance=args.distance,
-        #                               t_beg=tlim[0], t_end=tlim[1], t_diff=t_diff)
-        # res = fitter.fit_curves(curves_o, curves_m)
         if vels_o is None:
             curves_m, res, res_full = fit_mfl(args, curves_o, bnames, fitter, name, path, t_diff, tlim, is_sigma)
         else:
@@ -1092,7 +1109,7 @@ def main():
         # vel_o.tshift = best_tshift
         fig = plot_curves_vel(curves_o, vels_o, res_models, res_sorted, vels_m)
     else:
-        fig = plot_curves(curves_o, res_models, res_sorted, xlim=tlim)
+        fig = plot_curves(curves_o, res_models, res_sorted, xlim=tlim, ylim=ylim)
 
     if args.save_file is not None:
         fsave = args.save_file

@@ -99,14 +99,14 @@ class SnEveTests(unittest.TestCase):
         # todo check range for Rho, V, T
         for k in (0, -1):
             self.assertAlmostEqual(eve.m[k]/evenew.m[k], 1.,
-                                   msg="Mass PreSn: you have the first zone where old mass {} = new {}".
-                                   format(eve.m[k], evenew.m[k]))
+                                   msg="Mass PreSn: you have the [{}] zone where old mass {} = new {}".
+                                   format(k, eve.m[k], evenew.m[k]))
             self.assertAlmostEqual(eve.r[k]/evenew.r[k], 1.,
-                                   msg="Radius PreSn: you have the last zone where old r {} = new {}".
-                                   format(eve.r[k], evenew.r[k]))
+                                   msg="Radius PreSn: you have the [{}] zone where old r {} = new {}".
+                                   format(k, eve.r[k], evenew.r[k]))
             self.assertAlmostEqual(eve.rho[k]/evenew.rho[k], 1.,
-                                   msg="Density PreSn: you have the last zone where old rho {} = new {}".
-                                   format(eve.rho[k], evenew.rho[k]))
+                                   msg="Density PreSn: you have the [{}] zone where old rho {} = new {}".
+                                   format(k, eve.rho[k], evenew.rho[k]))
         nzon = 500
         nstart = 309
         evenew = eve.reshape(nz=nzon, start=nstart, end=None)
