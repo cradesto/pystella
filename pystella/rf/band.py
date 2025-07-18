@@ -55,7 +55,7 @@ class Band(object):
         'F105W': "magenta", 'F435W': "skyblue", 'F606W': "cyan", 'F125W': "g",
         'F140W': "orange", 'F160W': "r", 'F814W': "blue",
         'Kepler': "magenta", 'Lum': "orchid",
-        'g': "olive", 'r': "red", 'i': "plum", 'u': "darkslateblue", 'z': "chocolate",
+        'g': "olive", 'r': "lightcoral", 'i': "plum", 'u': "darkslateblue", 'z': "chocolate",
         'gSdss': "olive", 'rSdss': "pink", 'iSdss': "magenta", 'uSdss': "blue", 'zSdss': "chocolate",
         'PS1g': "olive", 'PS1r': "red", 'PS1i': "magenta", 'PS1u': "blue", 'PS1z': "chocolate", 'PS1y': "cyan",
         'PS1w': "orange", 'y': 'y', 'Y': 'y', 'w': 'tomato',
@@ -727,15 +727,21 @@ def colors(bname=None, default='magenta'):
         return default
 
 
-def lntypes(bname=None, default='-'):
+def lntypes(bname=None, default=None):
     # for Subaru HCS: colors
     for b in list('grizY'):
-        Band.dic_lntype['HSC' + b] = Band.dic_lntype[b]
+        Band.add_lntype('HSC' + b, Band.dic_lntype[b])
+        # Band.dic_lntype['HSC' + b] = Band.dic_lntype[b]
 
     if bname is None:
         return Band.dic_lntype
     else:
-        return Band.dic_lntype[bname]
+        if default is not None:
+            if bname in Band.dic_lntype:
+                return Band.dic_lntype[bname]
+            return default
+        else:
+            return Band.dic_lntype[bname]
         # if bname in lntypes:
         #     return lntypes[bname]
         # return default
