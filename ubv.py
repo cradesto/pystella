@@ -77,8 +77,6 @@ def plot_grid(models_dic, bnames, call=None, **kwargs):
     if title:
         axs.ravel()[0].set_title(title)
 
-    # fig.tight_layout()
-    # plt.show()
     return fig
 
 
@@ -171,7 +169,6 @@ def plot_all(models_vels, models_dic, bnames, d=10, call=None, **kwargs):
         axUbvR.minorticks_on()
     if is_grid:
         axUbv.grid(linestyle=':')
-    #    plt.show(block=True)
     if is_vel:
         # gs1.tight_layout(fig, rect=[0, 0, 0, 0.])
         fig.tight_layout()

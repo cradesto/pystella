@@ -31,6 +31,9 @@ class Spectrum(object):
     def __len__(self):
         return len(self._freq)
 
+    def __str__(self):
+        return "{}: Nfreq= {}".format(self.Name, len(self._freq))
+    
     @property
     def Name(self):
         return self._name
@@ -61,7 +64,7 @@ class Spectrum(object):
 
     @property
     def Wl(self):
-        return rf.val_to_wl(self.Freq)
+        return rf.val_to_wl(self.Freq, inp="Hz")
         # return np.array(map(lambda x: phys.c/x, self.Freq))
         # return phys.c / self.Freq
 
@@ -302,7 +305,7 @@ class Spectrum(object):
         # flux = flux_freq * freq ** 2 / phys.c
         flux_freq = np.asarray(flux)/freq**2 * phys.c  # Flux_lambda (ergs/s/cm)
         if u_lmd == "A":
-            flux_freq *= 1e8  # Flux_lambda (ergs/s/Angstrom)
+            flux_freq *= 1e8  # Flux_lambda from (ergs/s/Angstrom) to (ergs/s/cm)
         return Spectrum(name, freq, flux_freq)
 
     @staticmethod

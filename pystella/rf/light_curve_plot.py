@@ -571,7 +571,9 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname=None, *
             color = band.colors(bname)
 
         if is_line:
-            ax.plot(x, y, label=lbl, color=color, ls=ls[bname], linewidth=linewidth)
+            ls = band.lntypes(bname, default='-')
+            # ls = ls[bname]
+            ax.plot(x, y, label=lbl, color=color, ls=ls, linewidth=linewidth)
         else:
             if lc.IsErr:
                 y_el = np.copy(lc.MagErr)
