@@ -119,7 +119,7 @@ def get_parser(times='41:75:150:300'):
                         required=False,
                         default='lgr',  
                         dest="axeXL",
-                        help="Radius normalization for the left column, example: 'lgr[*], 'm', 'z' or 'sun' or 1e13")
+                        help="Radius normalization for the left column, example: 'lgr[*], 'm', 'z', 'pc', 'sun' or 1e13")
     parser.add_argument('--xr',
                         required=False,
                         default='m',  
