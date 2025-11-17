@@ -44,6 +44,7 @@ class Band(object):
         'massJ': "green", 'massH': "cyan", 'massK': "black",
         'massJAB': "darkgreen", 'massHAB': "darkcyan", 'massKAB': "dimgray",
         'KgoJ': "darkolivegreen", 
+        'FUV': "blue", 'NUV': "darkcyan",
         'GrondJAB': "darkolivegreen", 'GrondHAB': "teal", 'GrondKAB': "silver",
         'GrondJ': "darkgreen", 'GrondH': "darkcyan", 'GrondK': "dimgray",
         'LcoJ': "green", 'LcoH': "cyan", 'LcoK': "black",

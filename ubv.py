@@ -496,10 +496,14 @@ def main(name=None, model_ext='.ph'):
                     if e > 0:
                         fname_out = '{}_E{:0.2g}'.format(fname_out, e)
                     fname_out = '{}{}'.format(fname_out, '.ubv')
-                if ps.lcf.curves_save(curves, fname_out):
-                    print("Magnitudes of {} have been saved to {}".format(curves.Name, fname_out))
+
+                if is_lum:
+                    raise ValueError("Not implimented save Luminocities for option <--lum> yet. TODO.")
                 else:
-                    print("Error with Magnitudes saved to {}".format(curves.Name, fname))
+                    if ps.lcf.curves_save(curves, fname_out):
+                        print("Magnitudes of {} have been saved to {}".format(curves.Name, fname_out))
+                    else:
+                        print("Error with Magnitudes saved to {}".format(curves.Name, fname))
         # plot
         elif not is_quiet:
             if opt_grid in view_opts[1:]:
