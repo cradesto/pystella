@@ -192,7 +192,7 @@ class Star:
         Bolometric magnitude via Luminosity of Sun
         :return:
         """
-        from scipy.integrate import simpson
+        # from scipy.integrate import simpson
 
         lum = Band.response_nu(self.Freq, self.Flux, b, is_freq_norm=False)
         M = phys.Mag_sun + 5. * np.log10(self.distance/phys.pc) - 5
