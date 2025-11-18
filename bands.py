@@ -133,7 +133,7 @@ def get_parser(times='1:4:15:65', bnames='U:B:V:R', tau_ph=2. / 3):
                         required=False,
                         type=str,
                         dest="add",
-                        help="<nm:leftWv:rightWv:[color]:[lntype]> "
+                        help="<nm:leftWv(A):rightWv(A):[color]:[lntype]> "
                             ", where nm - the name of new band, leftWv and rightWv are left and right wavelength range in AA. "
                             "Ex: f1150:1150:1900 . Default color is black, ln is solid line. "
                             "See colors https://matplotlib.org/stable/gallery/color/named_colors.html")

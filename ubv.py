@@ -495,10 +495,16 @@ def main(name=None, model_ext='.ph'):
                         fname_out = '{}_D{:.2e}'.format(fname_out, distance)
                     if e > 0:
                         fname_out = '{}_E{:0.2g}'.format(fname_out, e)
-                    fname_out = '{}{}'.format(fname_out, '.ubv')
+                    if is_lum: 
+                        fname_out = '{}{}'.format(fname_out, '.lum')
+                    else:
+                        fname_out = '{}{}'.format(fname_out, '.ubv')
 
                 if is_lum:
-                    raise ValueError("Not implimented save Luminocities for option <--lum> yet. TODO.")
+                    if ps.lcf.lums_save(curves, fname_out):
+                        print("Luminosities of {} have been saved to {}".format(curves.Name, fname_out))
+                    else:
+                        print("Error with Luminosities saved to {}".format(curves.Name, fname))
                 else:
                     if ps.lcf.curves_save(curves, fname_out):
                         print("Magnitudes of {} have been saved to {}".format(curves.Name, fname_out))
