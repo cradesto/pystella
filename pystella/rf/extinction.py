@@ -25,7 +25,7 @@ def read_data():
     # with open(fname, 'rb') as fh:
     with open(fname, 'r') as fh:
         data = np.loadtxt(fh, comments='#', skiprows=1,
-                          converters={0: lambda s: s.decode("utf-8")},
+                          converters={0: lambda s: s},
                           dtype={'names': ('band', 'lambdaeff', 'Rv2.1', 'Rv3.1', 'Rv4.1', 'Rv5.1'),
                                  'formats': ('U12', float, float, float, float, float)}, )
 
