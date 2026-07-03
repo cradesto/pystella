@@ -79,7 +79,7 @@ def plot_Misc():
     #     plt.plot(b.wl * phys.cm_to_angs, b.resp_wl, v, label=k, linewidth=2)
     # plt.legend(loc=4)
     # plt.ylabel('Amplitude Response')
-    # plt.xlabel('Wave [A]')
+    # plt.xlabel('Wavelength [A]')
     # plt.grid(linestyle=':')
     # plt.show()
 
@@ -89,14 +89,6 @@ def plot_Kepler():
 
     bands = dict(Kepler="magenta")
     plot_bands(bands.keys(), bands)
-    # for k, v in bands.items():
-    #     b = band.band_by_name(k)
-    #     plt.plot(b.wl * phys.cm_to_angs, b.resp_wl, v, label=k, linewidth=2)
-    # plt.legend(loc=4)
-    # plt.ylabel('Amplitude Response')
-    # plt.xlabel('Wave [A]')
-    # plt.grid(linestyle=':')
-    # plt.show()
 
 
 def plot_bands(bands, color_dic=None, is_norm=False, is_save=False):   
@@ -114,7 +106,7 @@ def plot_bands(bands, color_dic=None, is_norm=False, is_save=False):
 
     plt.legend(loc=4)
     plt.ylabel('Amplitude Response')
-    plt.xlabel('Wave [A]')
+    plt.xlabel('Wavelength [A]')
     plt.grid(linestyle=':')
     if is_save:
         fplot = os.path.expanduser("~/band_{0}.pdf".format('-'.join(bands)))
@@ -141,8 +133,8 @@ def get_parser(times='1:4:15:65', bnames='U:B:V:R', tau_ph=2. / 3):
                         required=False,
                         type=str,
                         dest="add",
-                        help="<nm:leftWv:rightWv:[color]:[lntype]> "
-                            ", where nm - the name of new band, leftWv and rightWv are left and right wave range in AA. "
+                        help="<nm:leftWv(A):rightWv(A):[color]:[lntype]> "
+                            ", where nm - the name of new band, leftWv and rightWv are left and right wavelength range in AA. "
                             "Ex: f1150:1150:1900 . Default color is black, ln is solid line. "
                             "See colors https://matplotlib.org/stable/gallery/color/named_colors.html")
     
@@ -164,7 +156,7 @@ def get_parser(times='1:4:15:65', bnames='U:B:V:R', tau_ph=2. / 3):
 #     print("  bands.py [params]")
 #     print("  -b <bands>: string, default: U-B-V-R-I, for example U-B-V")
 #     print("  --add nm:leftWv:rightWv:color:lntype  string. "
-#           "nm - the name of new band. leftWv and rightWv are left and right wave range in AA. "
+#           "nm - the name of new band. leftWv and rightWv are left and right wavelength range in AA. "
 #           "for example f1150:1150:1900. Default color is black, ln is solid line. "
 #           "See colors https://matplotlib.org/stable/gallery/color/named_colors.html")
 #     print("  -h  print usage")

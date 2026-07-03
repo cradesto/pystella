@@ -237,6 +237,9 @@ def plot_swd(axs, b, **kwargs):
     if axeX == 'sun':
         rnorm = phys.R_sun
         x, xlabel = b.R / rnorm, r'Ejecta Radius, [$\mathtt{R}_\odot$]'
+    elif axeX == 'pc':
+        rnorm = phys.pc
+        x, xlabel = b.R / rnorm, r'Ejecta Radius, [pc]'
     elif axeX in ['r', 'lgr']:
         x, xlabel = b.R, r'Ejecta Radius, [cm]'
     elif axeX == 'z':

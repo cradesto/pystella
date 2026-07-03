@@ -44,6 +44,7 @@ class Band(object):
         'massJ': "green", 'massH': "cyan", 'massK': "black",
         'massJAB': "darkgreen", 'massHAB': "darkcyan", 'massKAB': "dimgray",
         'KgoJ': "darkolivegreen", 
+        'FUV': "blue", 'NUV': "darkcyan",
         'GrondJAB': "darkolivegreen", 'GrondHAB': "teal", 'GrondKAB': "silver",
         'GrondJ': "darkgreen", 'GrondH': "darkcyan", 'GrondK': "dimgray",
         'LcoJ': "green", 'LcoH': "cyan", 'LcoK': "black",
@@ -579,7 +580,7 @@ class Band(object):
 
 
 class BandUni(Band):
-    def __init__(self, name='bol', wlrange=(1e1, 5e4), length=300):
+    def __init__(self, name:str='bol', wlrange=(1e1, 5e4), length:int=300):
         """Creates a band with uniform responce.
         :param name:  default 'Uniform'.
         :param wlrange:  the wavelength range, default (1e1, 5e4) [A]
@@ -592,7 +593,7 @@ class BandUni(Band):
         self.resp_wl = np.ones(len(wl))  # response
 
     @property
-    def Norm(self, mode_int='simpson'):
+    def Norm(self, mode_int:str='simpson'):
         import scipy.integrate  # import simpson as integralfunc
         x = np.array(self.wl)
         y = np.array(self.resp_wl)

@@ -102,18 +102,26 @@ def plot_lum_models(ax, models_dic, bands, **kwargs):
     is_dashes = kwargs.get('is_dashes', False)
     line_styles = kwargs.get('linestyles', linestyles)
     #    linestyles = kwargs.get('linestyles', ['-'])
-
     is_compute_x_lim = xlim is None
     is_compute_y_lim = ylim is None
 
     t_points = [0.2, 1, 2, 3, 4, 5, 10, 20, 40, 80, 150]
     colors = band.colors()
-    band_shift = dict((k, 0) for k, v in colors.items())  # no y-shift
-    if bshift is not None:
-        for k, v in bshift.items():
-            band_shift[k] = v
+    # band_shift = dict((k, 0) for k, v in colors.items())  # no y-shift
+    # if bshift is not None:
+    #     for k, v in bshift.items():
+    #         band_shift[k] = v
+        
+    def band_shift(bn):
+            if bshift is not None:
+                return bshift[bn]
+            return 0.
+        #     band_shift = dict((k, 0) for k, v in band.colors().items())  # no y-shift
+        # if bshift is not None:
+        #     for k, v in bshift.items():
+        #         band_shift[k] = v
 
-    lbl_len = lbl_length(band_shift)
+    lbl_len = lbl_length(band_shift, bands)
 
     mi = 0
     x_max = []

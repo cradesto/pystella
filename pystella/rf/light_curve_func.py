@@ -96,6 +96,32 @@ def curves_save_mags(curves, fname, sep='\t'):
     return True
 
 
+def lums_save(curves, fname, sep='\t', is_mix=False):
+    """
+    Save curves to CSV-format. For band-column format it's required the  common time for all LC.
+    :param curves: saved curves
+    :param fname: output file
+    :param sep: string or character separating columns.
+    :param is_mix: format flag. If True, save rows format
+    :return: True if Success, otherwise False
+    """
+    if curves.Length == 0:
+        print("Nothing to save: curves.Length=%d" % curves.Length)
+        return False
+
+    if curves.IsCommonTime and not is_mix:
+        arr = curves2nparray(curves, is_lum=True)
+        fmt_header = "%10s  " * len(arr.dtype.names)
+        header = fmt_header % arr.dtype.names
+        fmt = "%10.3e  "  # time
+        fmt += "%10.4e  " * (len(arr.dtype.names)-1)  # mags
+    else:
+        raise ValueError("No implimented saving Luminosities if not (curves.IsCommonTime and not is_mix)! ")
+    
+    np.savetxt(fname, arr, delimiter=sep, header=header, comments='', fmt=fmt)
+    return True
+
+
 def curves_save(curves, fname, sep='\t', is_mix=False):
     """
     Save curves to CSV-format. For band-column format it's required the  common time for all LC.
@@ -129,7 +155,6 @@ def curves_save(curves, fname, sep='\t', is_mix=False):
 
     np.savetxt(fname, arr, delimiter=sep, header=header, comments='', fmt=fmt)
     return True
-
 
 def curves_read(fname, is_out=False):
     """
@@ -212,7 +237,7 @@ def curves_read_mix(fname, dtype=None,
     return curves
 
 
-def curves2nparray(curves):
+def curves2nparray(curves, is_lum=False):
     """
        Convert curves to numpy array.
     :param curves:
@@ -232,14 +257,19 @@ def curves2nparray(curves):
     dtype = {'names': ['time']}
     data = [curves.TimeCommon]
     for lc in curves:
+        b = lc.Band
         # res = np.hstack((res, lc.Mag.reshape(lc.Length, 1)))
         # res = np.column_stack((res, lc.Mag))
-        dtype['names'].append(lc.Band.Name)
-        data.append(lc.Mag)
+        dtype['names'].append(b.Name)
+        if is_lum:
+            y = b.mag2lum(lc.Mag)
+        else:
+            y = lc.Mag
+        data.append(y)
         if lc.IsErr:
             # res = np.hstack((res, lc.Err.reshape(lc.Length, 1)))
             # res = np.column_stack(res, lc.Err)
-            dtype['names'].append('err'+lc.Band.Name)
+            dtype['names'].append('err'+b.Name)
             data.append(lc.Err)
 
     res = np.column_stack(data)
