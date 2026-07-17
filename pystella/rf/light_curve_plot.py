@@ -513,7 +513,8 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname=None, *
             colors = {lc.Band.Name: colors for lc in curves}
     :return: ax
     """
-    ls = kwargs.get('ls', {lc.Band.Name: '-' for lc in curves})
+#    ls = kwargs.get('ls', {lc.Band.Name: band.lntypes(lc.Band.Name, default='-') for lc in curves})
+    ls = kwargs.get('ls', {lc.Band.Name: False for lc in curves})
     if isinstance(ls, str):
         c = ls.strip()
         ls = {lc.Band.Name: c for lc in curves}
@@ -541,6 +542,7 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname=None, *
     length_lo_up_lims = kwargs.get('length_lo_up_lims', 0.5)
 
     is_new_fig = ax is None
+
     if is_new_fig:
         plt.matplotlib.rcParams.update({'font.size': 14})
         fig = plt.figure(figsize=figsize)
@@ -579,9 +581,12 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname=None, *
             color = band.colors(bname)
 
         if is_line:
-            ls = band.lntypes(bname, default='-')
-            # ls = ls[bname]
-            ax.plot(x, y, label=lbl, color=color, ls=ls, linewidth=linewidth)
+            ls_ = ls[bname] if ls[bname] else band.lntypes(bname, default='-')
+            # if not ls[bname]:
+            #     ls_ = band.lntypes(bname, default='-')
+            # else:
+            #     ls_ = ls[bname]
+            ax.plot(x, y, label=lbl, color=color, ls=ls_, linewidth=linewidth)
         else:
             if lc.IsErr:
                 y_el = np.copy(lc.MagErr)
