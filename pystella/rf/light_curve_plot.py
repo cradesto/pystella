@@ -591,13 +591,18 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname=None, *
             if lc.IsErr:
                 y_el = np.copy(lc.MagErr)
                 y_eu = np.copy(lc.MagErr)
-                lolims = np.array(y_el == -2, dtype=bool)
-                uplims = np.array(y_eu == -1, dtype=bool)
+                lolims = ~np.array(y_el != -2, dtype=bool)
+                uplims = ~np.array(y_eu != -1, dtype=bool)
+                mask = np.array([e != -1 and e != -2 for e in y_el], dtype=bool)
                 y_el[lolims] = length_lo_up_lims
                 y_eu[uplims] = length_lo_up_lims
-                ax.errorbar(x, y, label=lbl, yerr=[y_el, y_eu], fmt=marker[bname],
-                            lolims=lolims, uplims=uplims, xlolims=lolims, xuplims=uplims,
+                # print(f"cplot: {lc.Band.Name} y_el={y_el}")
+                # print(f"cplot: {lc.Band.Name} y_eu={y_eu}")
+                ax.errorbar(x[mask], y[mask], label=lbl, yerr=[y_el[mask], y_eu[mask]], fmt=marker[bname],
                             color=color, ls='', markersize=markersize, )
+                ax.errorbar(x[~mask], y[~mask], fmt=marker[bname],
+                                            lolims=lolims, uplims=uplims, xlolims=lolims, xuplims=uplims,
+                                            color=color, ls='', markersize=markersize, )
             else:
                 # ax.plot(x, y, label='{0} {1}'.format(bname, fname), color=bcolors[bname], ls='',
                 #         marker=marker, markersize=markersize)
