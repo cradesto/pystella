@@ -208,7 +208,7 @@ class Star:
         from scipy.integrate import simpson
 
         lum = simpson(self.Flux[::-1], self.Freq[::-1])
-        # lum = np.trapz(self.Flux[::-1], self.Freq[::-1])
+        # lum = np.trapezoid(self.Flux[::-1], self.Freq[::-1])
         M = phys.Mag_sun + 5. * np.log10(self.distance/phys.pc) - 5
         bol = M - 2.5 * np.log10(np.abs(lum) / phys.L_sun)
         # print('bol= ', bol)

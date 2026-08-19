@@ -239,7 +239,7 @@ class PreSN(object):
         """
 
         def m_el(e):
-            return np.trapz(self.el(e), self.m)
+            return np.trapezoid(self.el(e), self.m)
 
         def m_el_diff(e):
             dmass = np.diff(self.m)

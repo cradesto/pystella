@@ -52,7 +52,7 @@ def read_obs_table_header(fname, header=None, skip=0, colt=('time', 'JD', 'MJD')
     :param include_patterns:  list or None
         Which columns to read as the pattern of regular expression.
         Default None, results in all columns being read.
-        Example: ['Vel\d+','Vel.*']
+        Example: ['Vel\\d+','Vel.*']
         The columns with errors, like 'err'+use_names, also will be read.
     :param is_out:  bool, optional
         If True the skipped, header and first file-rows are printed.

@@ -223,7 +223,7 @@ class Spectrum(object):
             wavelengthMax = self.Wl.max()
 
         mask = np.logical_and(np.greater(self.Wl, wavelengthMin), np.less(self.Wl, wavelengthMax))
-        flux = np.trapz(self.FluxWl[mask], self.Wl[mask])
+        flux = np.trapezoid(self.FluxWl[mask], self.Wl[mask])
         return flux
 
     def smooth(self, smoothPix):
