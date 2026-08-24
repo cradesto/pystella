@@ -39,7 +39,7 @@ class StellaRes:
         else:
             return None
 
-    def read_res_block(self, start, end, is_new_std=True):
+    def read_res_block(self, start, end, is_new_std=True, is_fmt_old=False):
         """
         Read one part of res-data
         @param start: line number to start
@@ -50,8 +50,10 @@ class StellaRes:
         from itertools import islice
 
         fname = os.path.join(self.path, self.name + ".res")
-        col_w = "i5 f10 f12 f8 f10 f8 f7 f7 f7 f7 e10 e10 e10 e10 i5 e10 e10 e10 e10 e10"
-        # col_w = "i4 f9 f12 f8 f10 f8 f7 f7 f7 f7 e10 e10 e10 e10 i5 e10 e10 e10 e10 e10"
+        # col_w = "i5 f10 f12 f8 f10 f8 f7 f7 f7 f7 e10 e10 e10 e10 i5 e10 e10 e10 e10 e10"
+        if is_fmt_old:
+            col_w = "i4 f9 f12 f8 f10 f8 f7 f7 f7 f7 e10 e10 e10 e10 i5 e10 e10 e10 e10 e10"
+            
         colstr = "ZON M R14 V8 T5 Trad5 lgDm6   lgP7  lgQv lgQRT XHI ENG LUM CAPPA ZON1 n_bar n_e Fe II III"
         if is_new_std:
             col_w = "i5 f12 f12 f8 f10 f8 f7 f7 f7 f7 e10 e10 e10 e10 i5 e10 e10 e10 e10 e10"

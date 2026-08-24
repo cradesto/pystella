@@ -241,8 +241,8 @@ def compute_vel_swd(name, path, z=0., is_info=False):
     return res
 
 
-def compute_vel_res_tt(name, path, z=0., t_beg=0.1, t_end=None, line_header=80,
-                       is_info=False, is_new_std=False):
+def compute_vel_res_tt(name, path, z=0., t_beg=0.1, t_end=None, line_header=80, is_vel_interp=True,
+                       is_info=False, is_new_std=False, is_fmt_old=True):
     if is_info:
         print(f'Run model: {name} in dir: {path} z= {z}')
     model = Stella(name, path=path)
@@ -263,23 +263,30 @@ def compute_vel_res_tt(name, path, z=0., t_beg=0.1, t_end=None, line_header=80,
     for i, (t, start, end) in enumerate(res.blocks()):
         if t < min(tt['time']) or t > max(tt['time']):
             if is_info:
-                print('Error: nblock= {}: t_res[={:e}] not in range time_tt: {:e}, {:e}'.format(i, t, min(tt['time']),
+                print('Error: is is not in tt-range: nblock= {}: t_res[={:e}] not in range time_tt: {:e}, {:e}'.format(i, t, min(tt['time']),
                                                                                                 max(tt['time'])))
             continue
 
         r_ph = np.interp(t, tt['time'], tt['Rph'])  # One-dimensional linear interpolation.
-        block = res.read_res_block(start, end, is_new_std=is_new_std)
+        block = res.read_res_block(start, end, is_new_std=is_new_std, is_fmt_old=is_fmt_old)
         if block is None:
+            if is_info:
+                print(f'Error: res-block is None: nblock= {i}: t_res[={t:e}] not in range time_tt: {min(tt['time']):e}, {max(tt['time']):e}')
             break
-        if True:
+        if is_vel_interp:
             vel = np.interp(r_ph, block['R14'] * 1e14, block['V8'] * 1e8, 0, 0)  # One-dimensional linear interpolation.
             if is_info:
                 # print('            blockR14= {}   blockV8= {}'.format(block['R14'], block['V8']))
-                print('nblock= {} [{}:{}]: t= {:e} r_ph= {:e}   vel= {:e}'.format(i, start, end, t, r_ph, vel))
-            vels.append(vel)
+                print('interp: nblock= {} [{}:{}]: t= {:e} r_ph= {:e}   vel= {:e}'.format(i, start, end, t, r_ph, vel))
         else:
-            idx = np.abs(block['R14'] - r_ph / 1e14).argmin()
-            vels.append(block['V8'][idx] * 1e8)
+            idx = np.abs(block['R14'] - r_ph/1e14).argmin()
+            vel = block['V8'][idx] * 1e8
+            if is_info:
+                # print('            blockR14= {}   blockV8= {}'.format(block['R14'], block['V8']))
+                r_ph_idx = tt['Rph'][np.abs(tt['time'] - t).argmin()]
+                print(f'val: nblock= {i}[{start}:{end}] idx={idx}: t= {t:e} r_ph= {r_ph:e} [{r_ph_idx=:e}]   vel= {vel:e}')
+                # print(f"     block['V8'][idx={idx}] ", block['V8'][idx])
+        vels.append(vel)
 
         radii.append(r_ph)
         times.append(t * (1. + z))  # redshifted time

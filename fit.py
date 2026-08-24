@@ -211,7 +211,7 @@ def plot_curves(curves_o, res_models, res_sorted, **kwargs):
     ncol = min(3, int(np.sqrt(num)))  # 2 if num > 1 else 1
     nrow = math.ceil(num / ncol)
     # fig = plt.figure(figsize=(12, nrow * 4))
-    height_ax = int( (len(curves_o.BandNames) + 1) * 1.2)
+    height_ax = min(4, int( (len(curves_o.BandNames) + 1) * 1.2))
     fig = plt.figure(figsize=(min(ncol, 2) * 5, max(nrow, 2) * height_ax))
     # fig = plt.figure(figsize=(min(ncol, 2) * 5, max(nrow, 2) * 5))
     plt.matplotlib.rcParams.update({'font.size': font_size})
@@ -1107,7 +1107,7 @@ def main():
 
     if vels_o is not None and vels_o.Length > 0:
         # vel_o.tshift = best_tshift
-        fig = plot_curves_vel(curves_o, vels_o, res_models, res_sorted, vels_m)
+        fig = plot_curves_vel(curves_o, vels_o, res_models, res_sorted, vels_m, xlim=tlim)
     else:
         fig = plot_curves(curves_o, res_models, res_sorted, xlim=tlim, ylim=ylim)
 

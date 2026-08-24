@@ -97,13 +97,17 @@ class FitGP:
         data_scale = np.max(y) - np.min(y)
         noise_std = np.median(yerr)
 
-        length_scale = 0.01 * time_scale
+        length_scale = max(2., min(50., 0.1 * time_scale))
+
+        # Задаем масштаб по вертикали (С) и ядро Матерна 5/2 для времени
+        # kernel = ConstantKernel(1.0, (1e-3, 1e3)) * Matern(length_scale=20.0, length_scale_bounds=(1.0, 100.0), nu=2.5)
+        # Здесь length_scale=20.0 означает, что характерное время изменения блеска измеряется десятками дней.
 
         kernel = ConstantKernel(0.1) \
-                 + Matern(length_scale=length_scale, nu=3 / 2) \
+                 + Matern(length_scale=length_scale, nu=3./2., length_scale_bounds=(3.0, 50.0)) \
                  + WhiteKernel(noise_level=noise_std**2)
         alpha = (yerr / y) ** 2  # yerr ** 2
-        gp = gaussian_process.GaussianProcessRegressor(kernel=kernel, alpha=alpha)
+        gp = gaussian_process.GaussianProcessRegressor(kernel=kernel, alpha=alpha, n_restarts_optimizer=10)
         X_obs = t.reshape(-1, 1)
         gp.fit(X_obs, y)
         return gp

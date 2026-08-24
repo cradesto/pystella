@@ -513,7 +513,8 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname=None, *
             colors = {lc.Band.Name: colors for lc in curves}
     :return: ax
     """
-    ls = kwargs.get('ls', {lc.Band.Name: '-' for lc in curves})
+#    ls = kwargs.get('ls', {lc.Band.Name: band.lntypes(lc.Band.Name, default='-') for lc in curves})
+    ls = kwargs.get('ls', {lc.Band.Name: False for lc in curves})
     if isinstance(ls, str):
         c = ls.strip()
         ls = {lc.Band.Name: c for lc in curves}
@@ -541,6 +542,7 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname=None, *
     length_lo_up_lims = kwargs.get('length_lo_up_lims', 0.5)
 
     is_new_fig = ax is None
+
     if is_new_fig:
         plt.matplotlib.rcParams.update({'font.size': 14})
         fig = plt.figure(figsize=figsize)
@@ -579,20 +581,28 @@ def curves_plot(curves, ax=None, xlim=None, ylim=None, title=None, fname=None, *
             color = band.colors(bname)
 
         if is_line:
-            ls = band.lntypes(bname, default='-')
-            # ls = ls[bname]
-            ax.plot(x, y, label=lbl, color=color, ls=ls, linewidth=linewidth)
+            ls_ = ls[bname] if ls[bname] else band.lntypes(bname, default='-')
+            # if not ls[bname]:
+            #     ls_ = band.lntypes(bname, default='-')
+            # else:
+            #     ls_ = ls[bname]
+            ax.plot(x, y, label=lbl, color=color, ls=ls_, linewidth=linewidth)
         else:
             if lc.IsErr:
                 y_el = np.copy(lc.MagErr)
                 y_eu = np.copy(lc.MagErr)
-                lolims = np.array(y_el == -2, dtype=bool)
-                uplims = np.array(y_eu == -1, dtype=bool)
+                lolims = ~np.array(y_el != -2, dtype=bool)
+                uplims = ~np.array(y_eu != -1, dtype=bool)
+                mask = np.array([e != -1 and e != -2 for e in y_el], dtype=bool)
                 y_el[lolims] = length_lo_up_lims
                 y_eu[uplims] = length_lo_up_lims
-                ax.errorbar(x, y, label=lbl, yerr=[y_el, y_eu], fmt=marker[bname],
-                            lolims=lolims, uplims=uplims, xlolims=lolims, xuplims=uplims,
+                # print(f"cplot: {lc.Band.Name} y_el={y_el}")
+                # print(f"cplot: {lc.Band.Name} y_eu={y_eu}")
+                ax.errorbar(x[mask], y[mask], label=lbl, yerr=[y_el[mask], y_eu[mask]], fmt=marker[bname],
                             color=color, ls='', markersize=markersize, )
+                ax.errorbar(x[~mask], y[~mask], fmt=marker[bname],
+                                            lolims=lolims, uplims=uplims, xlolims=lolims, xuplims=uplims,
+                                            color=color, ls='', markersize=markersize, )
             else:
                 # ax.plot(x, y, label='{0} {1}'.format(bname, fname), color=bcolors[bname], ls='',
                 #         marker=marker, markersize=markersize)

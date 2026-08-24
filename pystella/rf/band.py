@@ -554,7 +554,7 @@ class Band(object):
         if mode_int == 'simpson':
             res = scipy.integrate.simpson(integrand, x=trim_wl, even='avg')
         elif mode_int == 'trapz':
-            res = np.trapz(integrand, x=trim_wl)
+            res = np.trapezoid(integrand, x=trim_wl)
         else:
             res = (trim_wl[-1] - trim_wl[0]) / (len(trim_wl) - 1) * sum(integrand)
 
